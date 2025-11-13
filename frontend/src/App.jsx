@@ -96,7 +96,7 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">SafePath</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Tryver</h1>
               <p className="text-gray-600">Accessible navigation for everyone</p>
             </div>
             <div className="space-x-4">
@@ -180,7 +180,7 @@ function App() {
 
             {/* Visual Demo */}
             <div className="bg-white rounded-2xl shadow-xl p-8">
-              <h3 className="text-2xl font-bold text-center mb-8">How SafePath Protects You</h3>
+              <h3 className="text-2xl font-bold text-center mb-8">How Tryver Protects You</h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                 <div className="space-y-4">
                   <div className="flex items-start space-x-4">
@@ -230,7 +230,7 @@ function App() {
                   <thead>
                     <tr className="bg-gray-50">
                       <th className="px-6 py-4 text-left font-semibold text-gray-900">Feature</th>
-                      <th className="px-6 py-4 text-center font-semibold text-green-600">SafePath</th>
+                      <th className="px-6 py-4 text-center font-semibold text-green-600">Tryver</th>
                       <th className="px-6 py-4 text-center font-semibold text-blue-600">BlindSquare</th>
                       <th className="px-6 py-4 text-center font-semibold text-red-600">Google Maps</th>
                     </tr>
@@ -286,7 +286,7 @@ function App() {
         {activeTab === "demo" && (
           <div className="space-y-8">
             <div className="bg-white rounded-2xl shadow-xl p-8">
-              <h3 className="text-2xl font-bold text-center mb-8">How SafePath Works</h3>
+              <h3 className="text-2xl font-bold text-center mb-8">How Tryver Works</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="text-center">
@@ -348,7 +348,7 @@ function App() {
         <div className="text-center mt-16">
           <h3 className="text-3xl font-bold text-gray-900 mb-4">Ready to Navigate Safely?</h3>
           <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-            Join thousands of users who trust SafePath for their daily navigation needs. 
+            Join as the first users of Tryver for their daily navigation needs. 
             Completely free, completely accessible.
           </p>
           <div className="space-x-4">
@@ -366,8 +366,8 @@ function App() {
       <footer className="bg-white mt-20 border-t">
         <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <div className="text-center text-gray-600">
-            <p>SafePath - Making the world more accessible, one route at a time</p>
-            <p className="mt-2 text-sm">No API keys required • 100% client-side processing • Your privacy protected</p>
+            <p>Tryver - Making the world more accessible, one route at a time</p>
+            <p className="mt-2 text-sm">100% client-side processing • Your privacy protected</p>
           </div>
         </div>
       </footer>
