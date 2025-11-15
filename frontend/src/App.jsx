@@ -90,32 +90,35 @@ function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50/30">
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+      <header className="bg-white/90 backdrop-blur-md border-b border-emerald-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Tryver</h1>
-              <p className="text-gray-600">Accessible navigation for everyone</p>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+                Tryver
+              </h1>
+              <p className="text-slate-600 text-sm mt-1">Accessible navigation for everyone</p>
             </div>
-            <div className="space-x-4">
+            <div className="flex gap-3">
               <a href="/login">
                 <button 
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors"
+                  className="px-6 py-2.5 border border-slate-300 rounded-lg font-medium text-slate-700 hover:bg-slate-50 transition-all duration-200 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:outline-none"
                   aria-label="Sign in to your account"
                 >
                   Sign In
                 </button>
               </a>
+
               <a href="/login">
                 <button 
-                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors"
+                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 text-white font-medium rounded-lg hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:outline-none"
                   aria-label="Create new account"
                 >
-                  Sign Up
+                  Sign up
                 </button>
-              </a>
+              </a> 
             </div>
           </div>
         </div>
@@ -124,137 +127,163 @@ function App() {
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight lg:text-6xl">
-            Navigate Safely
-          </h2>
-          <p className="mt-5 max-w-xl mx-auto text-xl text-gray-500">
-            The first navigation app designed specifically for blind and deaf users with real-time emergency avoidance
+          <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full text-sm font-medium mb-6">
+            🎯 Built for Accessibility • 100% Free Forever
+          </div>
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-slate-900 mb-6 leading-tight">
+            Navigate The World
+            <span className="block bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+              Safely & Confidently
+            </span>
+          </h1>
+          <p className="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            The first navigation app designed specifically for blind and deaf users with 
+            <span className="font-semibold text-slate-900"> real-time emergency avoidance</span> and multi-sensory guidance.
           </p>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex justify-center mb-12">
-          <div className="flex space-x-1 bg-white rounded-lg p-1 shadow-md">
-            <button
-              onClick={() => setActiveTab("features")}
-              className={`px-6 py-3 rounded-md font-medium transition-colors ${
-                activeTab === "features" 
-                  ? "bg-blue-500 text-white" 
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Features
-            </button>
-            <button
-              onClick={() => setActiveTab("comparison")}
-              className={`px-6 py-3 rounded-md font-medium transition-colors ${
-                activeTab === "comparison" 
-                  ? "bg-blue-500 text-white" 
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Vs Competitors
-            </button>
-            <button
-              onClick={() => setActiveTab("demo")}
-              className={`px-6 py-3 rounded-md font-medium transition-colors ${
-                activeTab === "demo" 
-                  ? "bg-blue-500 text-white" 
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              How It Works
-            </button>
+        {/* Navigation Tabs - Enhanced for Accessibility */}
+        <div className="flex justify-center mb-16" role="tablist" aria-label="App features navigation">
+          <div className="flex bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-lg border border-emerald-200">
+            {[
+              { id: "features", label: "Key Features" },
+              { id: "comparison", label: "Vs Competitors" },
+              { id: "demo", label: "How It Works" }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-controls={`${tab.id}-panel`}
+                className={`px-8 py-4 rounded-xl font-semibold transition-all duration-300 ${
+                  activeTab === tab.id 
+                    ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg transform scale-105" 
+                    : "text-slate-600 hover:text-slate-900 hover:bg-emerald-50"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Features Tab */}
-        {activeTab === "features" && (
-          <div className="space-y-12">
+        {/* Features Panel */}
+        <div 
+          id="features-panel"
+          role="tabpanel"
+          aria-labelledby="features"
+          className={activeTab === "features" ? "block" : "hidden"}
+        >
+          <div className="space-y-16">
             {/* Features Grid */}
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {features.map((feature, index) => (
-                <div key={index} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-                  <div className="text-3xl mb-4">{feature.icon}</div>
-                  <h4 className="font-semibold text-lg mb-2">{feature.title}</h4>
-                  <p className="text-gray-600">{feature.description}</p>
+                <div 
+                  key={index}
+                  className="group bg-white/80 backdrop-blur-sm rounded-2xl p-8 border border-emerald-200 hover:border-emerald-300 transition-all duration-300 hover:shadow-xl hover:transform hover:-translate-y-2"
+                >
+                  <div className="text-4xl mb-6 transform group-hover:scale-110 transition-transform duration-300">
+                    {feature.icon}
+                  </div>
+                  <h3 className="font-bold text-xl text-slate-900 mb-3">{feature.title}</h3>
+                  <p className="text-slate-600 leading-relaxed">{feature.description}</p>
                 </div>
               ))}
             </div>
 
             {/* Visual Demo */}
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <h3 className="text-2xl font-bold text-center mb-8">How Tryver Protects You</h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-4">
-                    <div className="bg-red-100 p-3 rounded-full">⚠️</div>
-                    <div>
-                      <h4 className="font-semibold">Emergency Detection</h4>
-                      <p className="text-gray-600">Real-time monitoring of fires, crimes, and disasters</p>
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-10 border border-emerald-200 shadow-sm">
+              <h2 className="text-3xl font-bold text-center text-slate-900 mb-12">
+                Real-Time Protection System
+              </h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div className="space-y-6">
+                  {[
+                    {
+                      icon: "⚠️",
+                      color: "red",
+                      title: "Emergency Detection",
+                      description: "Real-time monitoring of fires, crimes, and disasters"
+                    },
+                    {
+                      icon: "🔄",
+                      color: "emerald",
+                      title: "Automatic Rerouting",
+                      description: "Instantly finds safer alternative routes"
+                    },
+                    {
+                      icon: "🎯",
+                      color: "blue",
+                      title: "Multi-Sensory Alerts",
+                      description: "Voice, vibration, and visual notifications"
+                    }
+                  ].map((item, index) => (
+                    <div key={index} className="flex items-start gap-5 p-4 rounded-2xl bg-slate-50/50 hover:bg-white transition-colors duration-200">
+                      <div className={`bg-${item.color}-100 p-4 rounded-2xl text-2xl flex-shrink-0`}>
+                        {item.icon}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-lg text-slate-900 mb-2">{item.title}</h4>
+                        <p className="text-slate-600">{item.description}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-start space-x-4">
-                    <div className="bg-green-100 p-3 rounded-full">🔄</div>
-                    <div>
-                      <h4 className="font-semibold">Automatic Rerouting</h4>
-                      <p className="text-gray-600">Instantly finds safer alternative routes</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-4">
-                    <div className="bg-blue-100 p-3 rounded-full">🎯</div>
-                    <div>
-                      <h4 className="font-semibold">Multi-Sensory Alerts</h4>
-                      <p className="text-gray-600">Voice, vibration, and visual notifications</p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-                <div className="bg-gray-100 rounded-lg p-6 text-center">
-                  <div className="text-6xl mb-4">🗺️</div>
-                  <p className="text-gray-500">Interactive safety map visualization</p>
-                  <div className="mt-4 flex justify-center space-x-2">
-                    <span className="bg-red-500 text-white px-2 py-1 rounded text-sm">Danger</span>
-                    <span className="bg-yellow-500 text-white px-2 py-1 rounded text-sm">Crowded</span>
-                    <span className="bg-green-500 text-white px-2 py-1 rounded text-sm">Safe</span>
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-8 text-center border border-emerald-200">
+                  <div className="text-7xl mb-6">🗺️</div>
+                  <p className="text-slate-700 font-medium mb-6">Interactive safety map with real-time updates</p>
+                  <div className="flex justify-center gap-3 flex-wrap">
+                    <span className="bg-red-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-sm">Danger Zone</span>
+                    <span className="bg-amber-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-sm">Crowded Area</span>
+                    <span className="bg-emerald-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-sm">Safe Route</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Comparison Tab */}
-        {activeTab === "comparison" && (
+        {/* Comparison Panel */}
+        <div 
+          id="comparison-panel"
+          role="tabpanel"
+          aria-labelledby="comparison"
+          className={activeTab === "comparison" ? "block" : "hidden"}
+        >
           <div className="space-y-8">
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h3 className="text-2xl font-bold text-center mb-8">How We Compare to Other Solutions</h3>
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-emerald-200 shadow-sm">
+              <h2 className="text-3xl font-bold text-center text-slate-900 mb-12">
+                Unmatched Accessibility & Safety
+              </h2>
               
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              {/* Comparison Table */}
+              <div className="overflow-x-auto rounded-2xl border border-emerald-200">
+                <table className="w-full" aria-label="Feature comparison table">
                   <thead>
-                    <tr className="bg-gray-50">
-                      <th className="px-6 py-4 text-left font-semibold text-gray-900">Feature</th>
-                      <th className="px-6 py-4 text-center font-semibold text-green-600">Tryver</th>
-                      <th className="px-6 py-4 text-center font-semibold text-blue-600">BlindSquare</th>
-                      <th className="px-6 py-4 text-center font-semibold text-red-600">Google Maps</th>
+                    <tr className="bg-slate-50/80">
+                      <th className="px-8 py-6 text-left font-bold text-slate-900 text-lg">Navigation Feature</th>
+                      <th className="px-8 py-6 text-center font-bold text-emerald-700 text-lg">Tryver</th>
+                      <th className="px-8 py-6 text-center font-bold text-blue-700 text-lg">BlindSquare</th>
+                      <th className="px-8 py-6 text-center font-bold text-red-700 text-lg">Google Maps</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-slate-200">
                     {competitorComparison.map((row, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 font-medium text-gray-900">{row.feature}</td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                      <tr key={index} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-8 py-5 font-semibold text-slate-900">{row.feature}</td>
+                        <td className="px-8 py-5 text-center">
+                          <span className="bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full text-sm font-bold shadow-sm">
                             {row.safepath}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                        <td className="px-8 py-5 text-center">
+                          <span className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-bold">
                             {row.blindsquare}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
+                        <td className="px-8 py-5 text-center">
+                          <span className="bg-red-100 text-red-800 px-4 py-2 rounded-full text-sm font-bold">
                             {row.googleMaps}
                           </span>
                         </td>
@@ -265,113 +294,160 @@ function App() {
               </div>
 
               {/* Key Differentiators */}
-              <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center p-6 bg-green-50 rounded-lg">
-                  <div className="text-4xl mb-4">🎯</div>
-                  <h4 className="font-bold text-lg mb-2">Specialized</h4>
-                  <p className="text-gray-600">Built specifically for accessibility needs</p>
-                </div>
-                <div className="text-center p-6 bg-green-50 rounded-lg">
-                  <div className="text-4xl mb-4">🆓</div>
-                  <h4 className="font-bold text-lg mb-2">Completely Free</h4>
-                  <p className="text-gray-600">No premium tiers or hidden costs</p>
-                </div>
-                <div className="text-center p-6 bg-green-50 rounded-lg">
-                  <div className="text-4xl mb-4">🛡️</div>
-                  <h4 className="font-bold text-lg mb-2">Safety First</h4>
-                  <p className="text-gray-600">Proactive emergency avoidance</p>
-                </div>
+              <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+                {[
+                  {
+                    icon: "🎯",
+                    title: "Specialized Design",
+                    description: "Built specifically for accessibility needs from the ground up"
+                  },
+                  {
+                    icon: "🆓",
+                    title: "Completely Free",
+                    description: "No premium tiers, subscriptions, or hidden costs"
+                  },
+                  {
+                    icon: "🛡️",
+                    title: "Safety First",
+                    description: "Proactive emergency avoidance and real-time protection"
+                  }
+                ].map((item, index) => (
+                  <div key={index} className="text-center p-8 bg-gradient-to-b from-white to-emerald-50/50 rounded-2xl border border-emerald-200 hover:shadow-lg transition-all duration-300">
+                    <div className="text-5xl mb-6">{item.icon}</div>
+                    <h3 className="font-bold text-xl text-slate-900 mb-4">{item.title}</h3>
+                    <p className="text-slate-600 leading-relaxed">{item.description}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Demo Tab */}
-        {activeTab === "demo" && (
+        {/* Demo Panel */}
+        <div 
+          id="demo-panel"
+          role="tabpanel"
+          aria-labelledby="demo"
+          className={activeTab === "demo" ? "block" : "hidden"}
+        >
           <div className="space-y-8">
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <h3 className="text-2xl font-bold text-center mb-8">How Tryver Works</h3>
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-10 border border-emerald-200 shadow-sm">
+              <h2 className="text-3xl font-bold text-center text-slate-900 mb-12">
+                Simple, Intuitive Navigation
+              </h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="text-center">
-                  <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                    1
+              {/* Process Steps */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+                {[
+                  {
+                    step: "1",
+                    title: "Set Your Destination",
+                    description: "Enter where you want to go using voice, text, or preset locations"
+                  },
+                  {
+                    step: "2",
+                    title: "Safety Analysis",
+                    description: "We analyze routes for emergencies, crowds, and accessibility"
+                  },
+                  {
+                    step: "3",
+                    title: "Guided Navigation",
+                    description: "Follow safe routes with multi-sensory guidance"
+                  }
+                ].map((step, index) => (
+                  <div key={index} className="text-center group">
+                    <div className="bg-gradient-to-br from-emerald-600 to-green-600 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl font-black text-white shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                      {step.step}
+                    </div>
+                    <h3 className="font-bold text-xl text-slate-900 mb-4">{step.title}</h3>
+                    <p className="text-slate-600 leading-relaxed">{step.description}</p>
                   </div>
-                  <h4 className="font-bold text-lg mb-2">Set Your Destination</h4>
-                  <p className="text-gray-600">Enter where you want to go using voice, text, or preset locations</p>
-                </div>
-                <div className="text-center">
-                  <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                    2
-                  </div>
-                  <h4 className="font-bold text-lg mb-2">Safety Analysis</h4>
-                  <p className="text-gray-600">We analyze routes for emergencies, crowds, and accessibility</p>
-                </div>
-                <div className="text-center">
-                  <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                    3
-                  </div>
-                  <h4 className="font-bold text-lg mb-2">Guided Navigation</h4>
-                  <p className="text-gray-600">Follow safe routes with multi-sensory guidance</p>
-                </div>
+                ))}
               </div>
 
               {/* User Scenarios */}
-              <div className="mt-12">
-                <h4 className="text-xl font-bold text-center mb-6">Designed For Real-World Scenarios</h4>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 p-6 rounded-lg">
-                    <div className="flex items-center mb-4">
-                      <div className="text-2xl mr-4">👨‍🦯</div>
-                      <h5 className="font-semibold">For Blind Users</h5>
+              <div>
+                <h3 className="text-2xl font-bold text-center text-slate-900 mb-12">
+                  Designed For Real Accessibility Needs
+                </h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {[
+                    {
+                      icon: "👨‍🦯",
+                      title: "For Blind Users",
+                      features: [
+                        "Detailed voice descriptions of surroundings",
+                        "Haptic feedback for turns and alerts", 
+                        "Avoidance of construction and obstacles",
+                        "Audio-based safety notifications"
+                      ]
+                    },
+                    {
+                      icon: "🧏‍♀️",
+                      title: "For Deaf Users",
+                      features: [
+                        "Strong visual and vibration alerts",
+                        "Emergency visual indicators",
+                        "Text-based route instructions",
+                        "Flashing light warnings for dangers"
+                      ]
+                    }
+                  ].map((scenario, index) => (
+                    <div key={index} className="bg-gradient-to-br from-slate-50 to-emerald-50/30 p-8 rounded-2xl border border-emerald-200 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center mb-6">
+                        <div className="text-4xl mr-5">{scenario.icon}</div>
+                        <h4 className="font-bold text-xl text-slate-900">{scenario.title}</h4>
+                      </div>
+                      <ul className="space-y-4">
+                        {scenario.features.map((feature, featureIndex) => (
+                          <li key={featureIndex} className="flex items-start">
+                            <span className="text-emerald-500 mr-3 mt-1">✓</span>
+                            <span className="text-slate-700">{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <ul className="space-y-2 text-gray-600">
-                      <li>• Detailed voice descriptions of surroundings</li>
-                      <li>• Haptic feedback for turns and alerts</li>
-                      <li>• Avoidance of construction and obstacles</li>
-                    </ul>
-                  </div>
-                  <div className="bg-gray-50 p-6 rounded-lg">
-                    <div className="flex items-center mb-4">
-                      <div className="text-2xl mr-4">🧏‍♀️</div>
-                      <h5 className="font-semibold">For Deaf Users</h5>
-                    </div>
-                    <ul className="space-y-2 text-gray-600">
-                      <li>• Strong visual and vibration alerts</li>
-                      <li>• Emergency visual indicators</li>
-                      <li>• Text-based route instructions</li>
-                    </ul>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Call to Action */}
-        <div className="text-center mt-16">
-          <h3 className="text-3xl font-bold text-gray-900 mb-4">Ready to Navigate Safely?</h3>
-          <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-            Join as the first users of Tryver for their daily navigation needs. 
+        <div className="text-center mt-20 bg-gradient-to-br from-emerald-600 to-green-700 rounded-3xl p-12 text-white shadow-2xl">
+          <h2 className="text-4xl font-black mb-6">Ready to Navigate with Confidence?</h2>
+          <p className="text-emerald-100 text-xl mb-8 max-w-2xl mx-auto leading-relaxed">
+            Begin navigating safetly with Tryver.
             Completely free, completely accessible.
           </p>
-          <div className="space-x-4">
-            <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors">
-              Get Started Free
-            </button>
-            <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors">
-              Learn More
-            </button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <a href="/login">
+              <button 
+                className="px-10 py-4 bg-white text-slate-900 font-bold rounded-2xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 focus:ring-4 focus:ring-white/50 focus:outline-none text-lg"
+                aria-label="Get started with Tryver for free"
+              >
+                Get Started Free
+              </button>
+            </a>
+            
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="bg-white mt-20 border-t">
-        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <div className="text-center text-gray-600">
-            <p>Tryver - Making the world more accessible, one route at a time</p>
-            <p className="mt-2 text-sm">100% client-side processing • Your privacy protected</p>
+      <footer className="bg-slate-900 text-white mt-20">
+        <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent">
+              Tryver
+            </h3>
+            <p className="text-slate-400 max-w-md mx-auto leading-relaxed">
+              Making the world more accessible and safe for everyone, one route at a time.
+            </p>
+            <div className="mt-8 pt-8 border-t border-slate-800 text-slate-500 text-sm">
+              <p>© 2025 Tryver. All rights reserved. Built with ♥ for the accessibility community.</p>
+            </div>
           </div>
         </div>
       </footer>
