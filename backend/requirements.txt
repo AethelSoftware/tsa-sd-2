@@ -1,7 +1,7 @@
 alembic==1.16.5
 annotated-types==0.7.0
 anyio==4.8.0
-audioop-lts==0.2.2
+# audioop-lts==0.2.2 #Only needed for Python 3.13+
 audioread==3.1.0
 bcrypt==4.3.0
 bidict==0.23.1
