@@ -100,18 +100,22 @@ function App() {
               <p className="text-gray-600">Accessible navigation for everyone</p>
             </div>
             <div className="space-x-4">
-              <button 
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors"
-                aria-label="Sign in to your account"
-              >
-                Sign In
-              </button>
-              <button 
-                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors"
-                aria-label="Create new account"
-              >
-                Sign Up
-              </button>
+              <a href="/login">
+                <button 
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors"
+                  aria-label="Sign in to your account"
+                >
+                  Sign In
+                </button>
+              </a>
+              <a href="/login">
+                <button 
+                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors"
+                  aria-label="Create new account"
+                >
+                  Sign Up
+                </button>
+              </a>
             </div>
           </div>
         </div>
