@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -26,24 +26,27 @@ const Login = () => {
     setError('');
 
     try {
-      // For demo purposes - in real app, you'd call your backend
-      if (isLogin) {
-        // Simulate login
-        console.log('Logging in:', formData);
-        // Redirect to dashboard after successful login
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1000);
+      const endpoint = isLogin ? '/api/auth/email-login' : '/api/auth/signup';
+      
+      const response = await fetch(`http://127.0.0.1:5000${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+        credentials: 'include' // Important for sessions
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Success - redirect to dashboard
+        navigate('/dashboard');
       } else {
-        // Simulate signup
-        console.log('Signing up:', formData);
-        // Redirect to dashboard after successful signup
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1000);
+        setError(data.error || 'Something went wrong');
       }
     } catch (err) {
-      setError(err.message || 'Something went wrong');
+      setError('Network error: Could not connect to server');
     } finally {
       setLoading(false);
     }
@@ -216,7 +219,6 @@ const Login = () => {
 
       {/* Right Side - Image/Visual Area */}
       <div className="hidden lg:flex flex-1 relative bg-gradient-to-br from-emerald-600/90 to-green-700/90 items-center justify-center p-12">
-        {/* Temporary background image */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
@@ -225,8 +227,6 @@ const Login = () => {
         />
         
         <div className="relative z-10 max-w-lg text-center text-white space-y-8">
-
-          {/* Dummy testimonial */}
           <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
             <div className="flex items-center justify-center mb-4">
               <div className="flex text-amber-400">
