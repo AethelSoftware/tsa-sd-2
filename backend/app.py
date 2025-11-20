@@ -2,13 +2,18 @@ from flask import Flask, jsonify, redirect, session, url_for
 from flask_cors import CORS
 from flask_pymongo import PyMongo
 from flask import g
+from dotenv import load_dotenv
+from bson import ObjectId
 from authlib.integrations.flask_client import OAuth
 import datetime
 import os
 import requests as request
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb+srv://jshah26:tsasd2026@tsa-sd-2026.h9qb1rd.mongodb.net/TRYVER"
-app.secret_key = os.environ.get("SECRET_KEY") or "dev-secret-key-123"  # Required for sessions
+
+load_dotenv()
+
+app.secret_key = os.environ.get("SESSION_SECRET") or "dev-secret-key-123"  # Required for sessions
 
 # Instantiate the DB and OAuth authorization with our flask app. 
 mongo = PyMongo(app)
@@ -16,6 +21,15 @@ oauth = OAuth(app)
 
 
 CORS(app, resources={r"/api/*": {"origins": "*"}})  # allow all origins for /api/*
+
+google = oauth.register(name="google",
+                        authorize_url = "https://accounts.google.com/o/oauth2/v2/auth",
+                        access_token_url = "https://oauth2.googleapis.com/token",
+                        client_id = os.environ.get("GOOGLE_CLIENT_ID"),
+                        client_secret = os.environ.get("GOOGLE_CLIENT_SECRET"),
+                        server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+                        userinfo_endpoint = "https://openidconnect.googleapis.com/v1/userinfo",
+                        client_kwargs = {"scope":"openid email profile"})
 
 @app.route("/api/hello")
 def hello():
@@ -25,8 +39,9 @@ def hello():
 @app.route("/api/auth/login")
 def login():
     # Initial OAuth Login
-    redirect_uri = url_for('auth_callback', _external=True)
-    return google.authorize_redirect(redirect_uri)
+    # redirect_uri = url_for('auth_callback', _external=True)
+    return google.authorize_redirect(os.environ.get("GOOGLE_REDIRECT_URI"))
+    
 
 @app.route("/api/auth/callback")
 def auth_callback():
@@ -99,11 +114,11 @@ def manage_preferences():
         return jsonify({"error" : "Not authenticated"}), 401
     
     if request.method == "GET":
-        db_user = mongo.db.users.find_one({'google_id' : user['sub']})
+        db_user = mongo.db.User_Accounts.find_one({'google_id' : user['sub']})
         return jsonify(db_user.get('preferences', {}))
     elif request.method == "PUT":
         preferences = request.json
-        mongo.db.users.update_one(
+        mongo.db.User_Accounts.update_one(
             {'google_id': user['sub']},
             {'$set': {'preferences': preferences}}
         )
@@ -117,12 +132,12 @@ def manage_emergency_contacts():
         return jsonify({"error": "Not authenticated"}), 401
     
     if request.method == 'GET':
-        db_user = mongo.db.users.find_one({'google_id': user['sub']})
+        db_user = mongo.db.User_Accounts.find_one({'google_id': user['sub']})
         return jsonify(db_user.get('preferences', {}).get('emergency_contacts', []))
     
     elif request.method == 'POST':
         contact = request.json
-        mongo.db.users.update_one(
+        mongo.db.User_Accounts.update_one(
             {'google_id': user['sub']},
             {'$push': {'preferences.emergency_contacts': contact}}
         )
@@ -130,7 +145,7 @@ def manage_emergency_contacts():
     
     elif request.method == 'DELETE':
         contact_id = request.json.get('id')
-        mongo.db.users.update_one(
+        mongo.db.User_Accounts.update_one(
             {'google_id': user['sub']},
             {'$pull': {'preferences.emergency_contacts': {'id': contact_id}}}
         )
@@ -144,13 +159,13 @@ def manage_routines():
         return jsonify({"error": "Not authenticated"}), 401
     
     if request.method == 'GET':
-        db_user = mongo.db.users.find_one({'google_id': user['sub']})
+        db_user = mongo.db.User_Accounts.find_one({'google_id': user['sub']})
         return jsonify(db_user.get('preferences', {}).get('routines', []))
     
     elif request.method == 'POST':
         routine = request.json
         routine['id'] = str(ObjectId())
-        mongo.db.users.update_one(
+        mongo.db.User_Accounts.update_one(
             {'google_id': user['sub']},
             {'$push': {'preferences.routines': routine}}
         )
@@ -158,7 +173,7 @@ def manage_routines():
     
     elif request.method == 'PUT':
         routine = request.json
-        mongo.db.users.update_one(
+        mongo.db.User_Accounts.update_one(
             {'google_id': user['sub'], 'preferences.routines.id': routine['id']},
             {'$set': {'preferences.routines.$': routine}}
         )
@@ -166,7 +181,7 @@ def manage_routines():
     
     elif request.method == 'DELETE':
         routine_id = request.json.get('id')
-        mongo.db.users.update_one(
+        mongo.db.User_Accounts.update_one(
             {'google_id': user['sub']},
             {'$pull': {'preferences.routines': {'id': routine_id}}}
         )
