@@ -19,14 +19,15 @@ import {
   Crown,
   Navigation,
   AlertCircle,
-  Vibrate,
-  Sun,
-  Bell
+  Bell,
+  Menu,
+  X as CloseIcon
 } from "lucide-react";
 
 function App() {
   const [activeTab, setActiveTab] = useState("features");
   const [isVisible, setIsVisible] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
@@ -117,12 +118,6 @@ function App() {
     }
   ];
 
-  const fadeInUp = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
       {/* Header */}
@@ -134,16 +129,18 @@ function App() {
                 <Navigation className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                   Tryver
                 </h1>
-                <p className="text-slate-600 text-sm">Accessible navigation for everyone</p>
+                <p className="text-slate-600 text-xs sm:text-sm">Accessible navigation for everyone</p>
               </div>
             </div>
-            <nav className="flex gap-3" aria-label="Main navigation">
+            
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex gap-3" aria-label="Main navigation">
               <a href="/login">
                 <button 
-                  className="px-6 py-2.5 border border-slate-300 rounded-lg font-medium text-slate-700 hover:bg-slate-50 transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none focus:ring-offset-white"
+                  className="px-4 sm:px-6 py-2 border border-slate-300 rounded-lg font-medium text-slate-700 hover:bg-slate-50 transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none text-sm sm:text-base"
                   aria-label="Sign in to your account"
                 >
                   Sign In
@@ -151,42 +148,75 @@ function App() {
               </a>
               <a href="/signup">
                 <button 
-                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none focus:ring-offset-white"
+                  className="px-4 sm:px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none text-sm sm:text-base"
                   aria-label="Create new account"
                 >
                   Sign Up
                 </button>
               </a>
             </nav>
+
+            {/* Mobile Menu Button */}
+            <button
+              className="md:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? <CloseIcon className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
+
+          {/* Mobile Menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden mt-4 pb-4 border-t border-slate-200 pt-4">
+              <div className="flex flex-col gap-3">
+                <a href="/login">
+                  <button 
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg font-medium text-slate-700 hover:bg-slate-50 transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    aria-label="Sign in to your account"
+                  >
+                    Sign In
+                  </button>
+                </a>
+                <a href="/signup">
+                  <button 
+                    className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:shadow-lg transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    aria-label="Create new account"
+                  >
+                    Sign Up
+                  </button>
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className={`text-center mb-16 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-          <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium mb-8" role="status">
-            <Accessibility className="h-4 w-4" />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+        <div className={`text-center mb-8 sm:mb-12 lg:mb-16 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium mb-6 sm:mb-8" role="status">
+            <Accessibility className="h-3 w-3 sm:h-4 sm:w-4" />
             Built for Accessibility • 100% Free Forever
           </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-6 leading-tight">
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-slate-900 mb-4 sm:mb-6 leading-tight">
             Navigate The World
-            <span className="block bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mt-2">
+            <span className="block bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mt-1 sm:mt-2">
               Safely & Confidently
             </span>
           </h1>
-          <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed mb-8">
+          <p className="text-base sm:text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed mb-6 sm:mb-8 px-4">
             The first navigation app designed specifically for blind and deaf users with 
             <strong className="font-semibold text-slate-900"> real-time emergency avoidance</strong> and multi-sensory guidance.
           </p>
         </div>
 
         {/* Navigation Tabs - Enhanced for Accessibility */}
-        <div className="flex justify-center mb-16" role="tablist" aria-label="App features navigation">
-          <div className="flex bg-white/80 backdrop-blur-sm rounded-xl p-1 shadow-lg border border-slate-200">
+        <div className="flex justify-center mb-8 sm:mb-12 lg:mb-16" role="tablist" aria-label="App features navigation">
+          <div className="flex bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-1 shadow-lg border border-slate-200 max-w-full overflow-x-auto">
             {[
-              { id: "features", label: "Key Features", icon: Award },
-              { id: "comparison", label: "Vs Competitors", icon: Shield },
+              { id: "features", label: "Features", icon: Award },
+              { id: "comparison", label: "Comparison", icon: Shield },
               { id: "demo", label: "How It Works", icon: Navigation }
             ].map((tab) => (
               <button
@@ -195,13 +225,13 @@ function App() {
                 role="tab"
                 aria-selected={activeTab === tab.id}
                 aria-controls={`${tab.id}-panel`}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-300 min-w-[140px] justify-center ${
+                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-300 min-w-[100px] sm:min-w-[140px] justify-center whitespace-nowrap text-xs sm:text-sm ${
                   activeTab === tab.id 
                     ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg" 
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 }`}
               >
-                <tab.icon className="h-4 w-4" />
+                <tab.icon className="h-3 w-3 sm:h-4 sm:w-4" />
                 {tab.label}
               </button>
             ))}
@@ -215,34 +245,30 @@ function App() {
           aria-labelledby="features"
           className={activeTab === "features" ? "block" : "hidden"}
         >
-          <div className="space-y-16">
+          <div className="space-y-8 sm:space-y-12 lg:space-y-16">
             {/* Features Grid */}
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {features.map((feature, index) => (
                 <div 
                   key={index}
-                  className="group bg-white rounded-xl p-6 border border-slate-200 hover:border-blue-300 transition-all duration-300 hover:shadow-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2"
-                  style={{
-                    transitionDelay: `${index * 100}ms`,
-                    ...(isVisible ? fadeInUp.animate : fadeInUp.initial)
-                  }}
+                  className="group bg-white rounded-lg sm:rounded-xl p-4 sm:p-6 border border-slate-200 hover:border-blue-300 transition-all duration-300 hover:shadow-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2"
                 >
-                  <div className="bg-blue-100 p-3 rounded-lg w-fit mb-4 group-hover:scale-110 transition-transform duration-300">
-                    <feature.icon className="h-6 w-6 text-blue-600" />
+                  <div className="bg-blue-100 p-2 sm:p-3 rounded-lg w-fit mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <feature.icon className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                   </div>
-                  <h3 className="font-bold text-lg text-slate-900 mb-2">{feature.title}</h3>
-                  <p className="text-slate-600 leading-relaxed text-sm">{feature.description}</p>
+                  <h3 className="font-bold text-base sm:text-lg text-slate-900 mb-2">{feature.title}</h3>
+                  <p className="text-slate-600 leading-relaxed text-xs sm:text-sm">{feature.description}</p>
                 </div>
               ))}
             </div>
 
             {/* Visual Demo */}
-            <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
-              <h2 className="text-2xl font-bold text-center text-slate-900 mb-8">
+            <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border border-slate-200 shadow-sm">
+              <h2 className="text-xl sm:text-2xl font-bold text-center text-slate-900 mb-6 sm:mb-8">
                 Real-Time Protection System
               </h2>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                <div className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-center">
+                <div className="space-y-3 sm:space-y-4">
                   {[
                     {
                       icon: AlertCircle,
@@ -265,30 +291,30 @@ function App() {
                   ].map((item, index) => (
                     <div 
                       key={index} 
-                      className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 hover:bg-white transition-colors duration-200 border border-transparent hover:border-slate-200"
+                      className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-slate-50 hover:bg-white transition-colors duration-200 border border-transparent hover:border-slate-200"
                     >
-                      <div className={`bg-${item.color}-100 p-3 rounded-lg flex-shrink-0`}>
-                        <item.icon className={`h-5 w-5 text-${item.color}-600`} />
+                      <div className={`bg-${item.color}-100 p-2 sm:p-3 rounded-lg flex-shrink-0`}>
+                        <item.icon className={`h-4 w-4 sm:h-5 sm:w-5 text-${item.color}-600`} />
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-slate-900 mb-1">{item.title}</h4>
-                        <p className="text-slate-600 text-sm">{item.description}</p>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-slate-900 text-sm sm:text-base mb-1">{item.title}</h4>
+                        <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">{item.description}</p>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 text-center border border-blue-200">
-                  <Map className="h-16 w-16 text-blue-600 mx-auto mb-4" />
-                  <p className="text-slate-700 font-medium mb-4">Interactive safety map with real-time updates</p>
-                  <div className="flex justify-center gap-2 flex-wrap">
-                    <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3" /> Danger Zone
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg sm:rounded-xl p-4 sm:p-6 text-center border border-blue-200">
+                  <Map className="h-12 w-12 sm:h-16 sm:w-16 text-blue-600 mx-auto mb-3 sm:mb-4" />
+                  <p className="text-slate-700 font-medium text-sm sm:text-base mb-3 sm:mb-4">Interactive safety map with real-time updates</p>
+                  <div className="flex flex-wrap justify-center gap-1 sm:gap-2">
+                    <span className="bg-red-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                      <AlertTriangle className="h-2 w-2 sm:h-3 sm:w-3" /> Danger
                     </span>
-                    <span className="bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-                      <Users className="h-3 w-3" /> Crowded Area
+                    <span className="bg-amber-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                      <Users className="h-2 w-2 sm:h-3 sm:w-3" /> Crowded
                     </span>
-                    <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-                      <Check className="h-3 w-3" /> Safe Route
+                    <span className="bg-green-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                      <Check className="h-2 w-2 sm:h-3 sm:w-3" /> Safe
                     </span>
                   </div>
                 </div>
@@ -304,58 +330,58 @@ function App() {
           aria-labelledby="comparison"
           className={activeTab === "comparison" ? "block" : "hidden"}
         >
-          <div className="space-y-8">
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-              <h2 className="text-2xl font-bold text-center text-slate-900 mb-8">
+          <div className="space-y-6 sm:space-y-8">
+            <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-sm">
+              <h2 className="text-xl sm:text-2xl font-bold text-center text-slate-900 mb-6 sm:mb-8">
                 Unmatched Accessibility & Safety
               </h2>
               
               {/* Comparison Table */}
-              <div className="overflow-x-auto rounded-lg border border-slate-200">
-                <table className="w-full" aria-label="Feature comparison table">
+              <div className="overflow-x-auto rounded-lg border border-slate-200 -mx-2 sm:mx-0">
+                <table className="w-full min-w-[600px] sm:min-w-0" aria-label="Feature comparison table">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-left font-bold text-slate-900">Navigation Feature</th>
-                      <th className="px-6 py-4 text-center font-bold text-blue-700">
-                        <div className="flex items-center justify-center gap-2">
-                          <Crown className="h-4 w-4" />
+                      <th className="px-3 sm:px-6 py-3 text-left font-bold text-slate-900 text-sm">Navigation Feature</th>
+                      <th className="px-3 sm:px-6 py-3 text-center font-bold text-blue-700 text-sm">
+                        <div className="flex items-center justify-center gap-1 sm:gap-2">
+                          <Crown className="h-3 w-3 sm:h-4 sm:w-4" />
                           Tryver
                         </div>
                       </th>
-                      <th className="px-6 py-4 text-center font-bold text-slate-700">BlindSquare</th>
-                      <th className="px-6 py-4 text-center font-bold text-slate-700">Google Maps</th>
+                      <th className="px-3 sm:px-6 py-3 text-center font-bold text-slate-700 text-sm">BlindSquare</th>
+                      <th className="px-3 sm:px-6 py-3 text-center font-bold text-slate-700 text-sm">Google Maps</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {competitorComparison.map((row, index) => (
                       <tr key={index} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4 font-semibold text-slate-900 text-sm">{row.feature}</td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1">
-                            <Check className="h-3 w-3" /> {row.safepath}
+                        <td className="px-3 sm:px-6 py-3 font-semibold text-slate-900 text-xs sm:text-sm">{row.feature}</td>
+                        <td className="px-3 sm:px-6 py-3 text-center">
+                          <span className="bg-blue-100 text-blue-800 px-2 sm:px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1">
+                            <Check className="h-2 w-2 sm:h-3 sm:w-3" /> {row.safepath}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 ${
+                        <td className="px-3 sm:px-6 py-3 text-center">
+                          <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 ${
                             row.blindsquare === "Not Available" 
                               ? "bg-red-100 text-red-800" 
                               : row.blindsquare === "Partial"
                               ? "bg-amber-100 text-amber-800"
                               : "bg-green-100 text-green-800"
                           }`}>
-                            {row.blindsquare === "Not Available" ? <X className="h-3 w-3" /> : <Check className="h-3 w-3" />}
+                            {row.blindsquare === "Not Available" ? <X className="h-2 w-2 sm:h-3 sm:w-3" /> : <Check className="h-2 w-2 sm:h-3 sm:w-3" />}
                             {row.blindsquare}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 ${
+                        <td className="px-3 sm:px-6 py-3 text-center">
+                          <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 ${
                             row.googleMaps === "Not Available" 
                               ? "bg-red-100 text-red-800" 
                               : row.googleMaps === "Limited" || row.googleMaps === "Alerts Only"
                               ? "bg-amber-100 text-amber-800"
                               : "bg-green-100 text-green-800"
                           }`}>
-                            {row.googleMaps === "Not Available" ? <X className="h-3 w-3" /> : <Check className="h-3 w-3" />}
+                            {row.googleMaps === "Not Available" ? <X className="h-2 w-2 sm:h-3 sm:w-3" /> : <Check className="h-2 w-2 sm:h-3 sm:w-3" />}
                             {row.googleMaps}
                           </span>
                         </td>
@@ -366,7 +392,7 @@ function App() {
               </div>
 
               {/* Key Differentiators */}
-              <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="mt-8 sm:mt-12 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 {[
                   {
                     icon: Target,
@@ -386,13 +412,13 @@ function App() {
                 ].map((item, index) => (
                   <div 
                     key={index} 
-                    className="text-center p-6 bg-white rounded-xl border border-slate-200 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                    className="text-center p-4 sm:p-6 bg-white rounded-lg sm:rounded-xl border border-slate-200 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                   >
-                    <div className="bg-blue-100 p-3 rounded-lg w-fit mx-auto mb-4">
-                      <item.icon className="h-6 w-6 text-blue-600" />
+                    <div className="bg-blue-100 p-2 sm:p-3 rounded-lg w-fit mx-auto mb-3 sm:mb-4">
+                      <item.icon className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                     </div>
-                    <h3 className="font-bold text-lg text-slate-900 mb-3">{item.title}</h3>
-                    <p className="text-slate-600 text-sm leading-relaxed">{item.description}</p>
+                    <h3 className="font-bold text-base sm:text-lg text-slate-900 mb-2 sm:mb-3">{item.title}</h3>
+                    <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">{item.description}</p>
                   </div>
                 ))}
               </div>
@@ -407,18 +433,18 @@ function App() {
           aria-labelledby="demo"
           className={activeTab === "demo" ? "block" : "hidden"}
         >
-          <div className="space-y-8">
-            <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
-              <h2 className="text-2xl font-bold text-center text-slate-900 mb-8">
+          <div className="space-y-6 sm:space-y-8">
+            <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border border-slate-200 shadow-sm">
+              <h2 className="text-xl sm:text-2xl font-bold text-center text-slate-900 mb-6 sm:mb-8">
                 Simple, Intuitive Navigation
               </h2>
               
               {/* Process Steps */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
                 {[
                   {
                     step: "1",
-                    title: "Set Your Destination",
+                    title: "Set Destination",
                     description: "Enter where you want to go using voice, text, or preset locations"
                   },
                   {
@@ -433,21 +459,21 @@ function App() {
                   }
                 ].map((step, index) => (
                   <div key={index} className="text-center group">
-                    <div className="bg-gradient-to-br from-blue-600 to-indigo-600 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 text-lg font-bold text-white shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                    <div className="bg-gradient-to-br from-blue-600 to-indigo-600 w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl flex items-center justify-center mx-auto mb-3 sm:mb-4 text-sm sm:text-lg font-bold text-white shadow-lg transform group-hover:scale-110 transition-transform duration-300">
                       {step.step}
                     </div>
-                    <h3 className="font-bold text-lg text-slate-900 mb-3">{step.title}</h3>
-                    <p className="text-slate-600 text-sm leading-relaxed">{step.description}</p>
+                    <h3 className="font-bold text-base sm:text-lg text-slate-900 mb-2 sm:mb-3">{step.title}</h3>
+                    <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">{step.description}</p>
                   </div>
                 ))}
               </div>
 
               {/* User Scenarios */}
               <div>
-                <h3 className="text-xl font-bold text-center text-slate-900 mb-8">
+                <h3 className="text-lg sm:text-xl font-bold text-center text-slate-900 mb-6 sm:mb-8">
                   Designed For Real Accessibility Needs
                 </h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   {[
                     {
                       icon: Eye,
@@ -470,17 +496,17 @@ function App() {
                       ]
                     }
                   ].map((scenario, index) => (
-                    <div key={index} className="bg-slate-50 p-6 rounded-xl border border-slate-200 hover:shadow-lg transition-all duration-300">
-                      <div className="flex items-center mb-4">
-                        <div className="bg-blue-100 p-2 rounded-lg mr-4">
-                          <scenario.icon className="h-5 w-5 text-blue-600" />
+                    <div key={index} className="bg-slate-50 p-4 sm:p-6 rounded-lg sm:rounded-xl border border-slate-200 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-center mb-3 sm:mb-4">
+                        <div className="bg-blue-100 p-2 rounded-lg mr-3 sm:mr-4">
+                          <scenario.icon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                         </div>
-                        <h4 className="font-bold text-lg text-slate-900">{scenario.title}</h4>
+                        <h4 className="font-bold text-base sm:text-lg text-slate-900">{scenario.title}</h4>
                       </div>
-                      <ul className="space-y-3" role="list">
+                      <ul className="space-y-2 sm:space-y-3" role="list">
                         {scenario.features.map((feature, featureIndex) => (
-                          <li key={featureIndex} className="flex items-start text-sm">
-                            <Check className="h-4 w-4 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                          <li key={featureIndex} className="flex items-start text-xs sm:text-sm">
+                            <Check className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 sm:mr-3 mt-0.5 flex-shrink-0" />
                             <span className="text-slate-700">{feature}</span>
                           </li>
                         ))}
@@ -494,24 +520,24 @@ function App() {
         </div>
 
         {/* Call to Action */}
-        <div className="text-center mt-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-10 text-white shadow-xl">
-          <h2 className="text-3xl font-bold mb-4">Ready to Navigate with Confidence?</h2>
-          <p className="text-blue-100 text-lg mb-6 max-w-2xl mx-auto leading-relaxed">
+        <div className="text-center mt-12 sm:mt-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl sm:rounded-2xl p-6 sm:p-8 lg:p-10 text-white shadow-xl">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4">Ready to Navigate with Confidence?</h2>
+          <p className="text-blue-100 text-sm sm:text-base lg:text-lg mb-4 sm:mb-6 max-w-2xl mx-auto leading-relaxed px-4">
             Begin navigating safely with Tryver. Completely free, completely accessible.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
             <a href="/signup">
               <button 
-                className="px-8 py-3 bg-white text-slate-900 font-bold rounded-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 focus:ring-4 focus:ring-white/50 focus:outline-none flex items-center gap-2"
+                className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-white text-slate-900 font-bold rounded-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 focus:ring-4 focus:ring-white/50 focus:outline-none flex items-center gap-2 justify-center text-sm sm:text-base"
                 aria-label="Get started with Tryver for free"
               >
-                <Navigation className="h-5 w-5" />
+                <Navigation className="h-4 w-4 sm:h-5 sm:w-5" />
                 Get Started Free
               </button>
             </a>
             <a href="/demo">
               <button 
-                className="px-8 py-3 border border-white/30 text-white font-medium rounded-lg hover:bg-white/10 transition-all duration-200 focus:ring-2 focus:ring-white focus:outline-none"
+                className="w-full sm:w-auto px-6 sm:px-8 py-3 border border-white/30 text-white font-medium rounded-lg hover:bg-white/10 transition-all duration-200 focus:ring-2 focus:ring-white focus:outline-none text-sm sm:text-base"
                 aria-label="Watch product demo"
               >
                 Watch Demo
@@ -522,21 +548,21 @@ function App() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-white mt-16">
-        <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+      <footer className="bg-slate-900 text-white mt-12 sm:mt-16">
+        <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
               <div className="bg-white p-1 rounded-lg">
-                <Navigation className="h-6 w-6 text-blue-600" />
+                <Navigation className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
               </div>
-              <h3 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+              <h3 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
                 Tryver
               </h3>
             </div>
-            <p className="text-slate-400 max-w-md mx-auto leading-relaxed text-sm">
+            <p className="text-slate-400 max-w-md mx-auto leading-relaxed text-xs sm:text-sm px-4">
               Making the world more accessible and safe for everyone, one route at a time.
             </p>
-            <div className="mt-8 pt-8 border-t border-slate-800 text-slate-500 text-xs">
+            <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-slate-800 text-slate-500 text-xs">
               <p>© 2025 Tryver. All rights reserved. Built with accessibility in mind for the global community.</p>
             </div>
           </div>
