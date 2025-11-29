@@ -9,7 +9,7 @@ import datetime
 import os
 import requests as request
 app = Flask(__name__)
-app.config["MONGO_URI"] = "mongodb+srv://jshah26:tsasd2026@tsa-sd-2026.h9qb1rd.mongodb.net/TRYVER"
+# app.config["MONGO_URI"] = "mongodb+srv://jshah26:tsasd2026@tsa-sd-2026.h9qb1rd.mongodb.net/TRYVER"
 
 load_dotenv()
 
