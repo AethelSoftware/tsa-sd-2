@@ -11,6 +11,7 @@ import math
 import os
 from scipy import stats
 import warnings
+import time
 warnings.filterwarnings('ignore')
 
 class AdvancedSafetyRoutingAI:
@@ -112,6 +113,23 @@ class AdvancedSafetyRoutingAI:
                 main = data['main']
                 visibility = data.get('visibility', 10000)
                 wind = data.get('wind', {})
+
+
+                # Get Unix stamped time for the current time and sunrise/sunset. 
+                current_time = time.time()
+                sys = data.get('sys', {})
+                sunrise = sys.get("sunrise", current_time)
+                sunset = sys.get("sunset", current_time)
+
+                # compute absolute differences in hours (durations)
+                sunrise_diff_hours = abs(current_time - float(sunrise)) / 3600.0
+                sunset_diff_hours = abs(current_time - float(sunset)) / 3600.0
+
+                # normalized 0..1 (0 = very close, 1 = far).
+                sunrise_diff_norm = min(1.0, sunrise_diff_hours / 12.0)
+                sunset_diff_norm = min(1.0, sunset_diff_hours / 12.0)
+
+                
                
                 # Weather condition scoring
                 condition_scores = {
@@ -130,6 +148,7 @@ class AdvancedSafetyRoutingAI:
                 visibility_norm = min(1.0, visibility / 10000.0)
                 wind_speed_norm = min(1.0, wind.get('speed', 0) / 50.0)  # 0-50 mph scale
                 precipitation = 1.0 if 'rain' in condition else 0.0
+                timing = 1.0 if min(sunrise_diff_norm, sunset_diff_norm) > 0.1 else 0.0
                
                 return {
                     'condition_score': condition_score,
@@ -137,7 +156,8 @@ class AdvancedSafetyRoutingAI:
                     'humidity_norm': humidity_norm,
                     'visibility_norm': visibility_norm,
                     'wind_speed_norm': wind_speed_norm,
-                    'precipitation': precipitation
+                    'precipitation': precipitation,
+                    'timing':timing
                 }
                
         except Exception as e:
