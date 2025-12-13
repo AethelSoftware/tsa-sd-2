@@ -339,6 +339,13 @@ def get_safety_score():
         data = request.json
         lat = data.get('lat')
         lng = data.get('lng')
+
+        """
+        @FIXME: need to update with actual values of the destination
+        """
+
+        d_lat = 0.0
+        d_lng = 0.0
         
         if not lat or not lng:
             return jsonify({"error": "Latitude and longitude required"}), 400
@@ -346,8 +353,11 @@ def get_safety_score():
         # Import and use the AI model
         from ai_safety_model import safety_ai
         # Set the model's internal lat/long attributes and then predict
+
         safety_ai.lat = float(lat)
         safety_ai.long = float(lng)
+        safety_ai.d_lat = d_lat
+        safety_ai.d_long = d_lng
         result = safety_ai.predict_safety_score()
         
         return jsonify({

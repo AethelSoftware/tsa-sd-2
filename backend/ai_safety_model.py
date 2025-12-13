@@ -14,8 +14,11 @@ import warnings
 import time
 warnings.filterwarnings('ignore')
 
+MAX_DISTANCE = 1000
+THRESHOLD = 0.25
+
 class AdvancedSafetyRoutingAI:
-    def _init_(self, lat: float | int, long: float | int):
+    def _init_(self, lat: float | int, long: float | int, d_lat: float | int, d_long: float | int):
         self.model = None
         self.scaler = StandardScaler()
         self.poly = PolynomialFeatures(degree=2, include_bias=False)
@@ -33,6 +36,8 @@ class AdvancedSafetyRoutingAI:
         self.ensemble_models = []
         self.lat = lat
         self.long = long
+        self.d_lat = d_lat
+        self.d_long = d_long
        
     def fetch_real_time_data(self):
         """Fetch comprehensive real-time data from multiple APIs"""
@@ -109,6 +114,10 @@ class AdvancedSafetyRoutingAI:
             }
            
             response = requests.get(url, params=params, timeout=10)
+
+            """
+            @FIXME should we include the sunrise/sunset stuff? Might be redundant. 
+            """
            
             if response.status_code == 200:
                 data = response.json()
@@ -718,21 +727,113 @@ class AdvancedSafetyRoutingAI:
        
         return (min_score, recommendations)
     
-    # If the score is below a specific threshold, then provide alernative destinations that are safer. 
-    def provide_alternate_suggestion(self, safety_score: float):
+    # Determine the relevant destination. 
+    def find_relevant_location(self):
 
         # First send HTTP request to the API. 
-        REQUEST_URL = "https://overpass-api.de/api/interpreter"
+        OVERPASS_URL = "https://overpass-api.de/api/interpreter"
         
         # Structure the query
 
-        query = """
+        query = f"""
         [out: json];
         (
-        node["amenity"="cafe"](around:1000, )
+            node(around:30, {self.d_lat}, {self.d_long});
+            way(around:30, {self.d_lat}, {self.d_long});
         );
+        
+        out tags center; 
 
         """
+        response = requests.post(
+            OVERPASS_URL,
+            data={"data":query}
+        )
+
+        data = response.json()
+        elements = data["elements"]
+
+        if not elements:
+            return None
+
+        relevant_location = max(elements, key=lambda el: self.score_tags(el))
+        return relevant_location
+
+    # Assign a score to each tag detected in the radius to find the most relevant location. 
+    def score_tags(self, el) -> int:
+        tags = el.get("tags", {})
+        
+        # We prefer amenities and shops (more likely to be actual places that we care about).
+        # No need to worry about specific amenities, radius is low. 
+        score = 0
+        if "amenity" in tags: score += 5
+        if "shop" in tags: score += 5
+        if "name" in tags: score += 3
+        if el["type"] == "node": score += 1
+
+        return score
+    
+    # Find alternative destinations that are similar to the one the user inputed. 
+    def determine_nearby_locations(self, dest) -> str | list:
+        OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+
+        # Define primary keys: these contain more specific details about the destination itself.
+        PRIMARY_KEYS = ["shop", "amenity", "leisure", "tourism", "office"]
+        tags = dest["tags"]
+
+        #Iterate over the destination's tags to find the first one that matches one of the primary keys.
+        primary_value = []
+        for k in PRIMARY_KEYS:
+            if k in tags:
+                primary_value.append((k,tags[k]))
+                break
+        if len(primary_value) > 0:
+            key, prim_val = primary_value[0]
+        
+        #Query the API and find all elements with the following characteristics
+        query = f"""
+        [out: json]
+        (
+            node[{key} = {prim_val}](around: {MAX_DISTANCE}, {self.lat}, {self.long})
+            way[{key} = {prim_val}](around: {MAX_DISTANCE}, {self.lat}, {self.long})
+        );
+
+        out center; 
+        """
+        response = requests.post(
+            OVERPASS_URL,
+            data={"data":query}
+        )
+
+        data = response.json()
+
+        if data["elements"] is None:
+            return "There are no alternative locations in your area."
+        else:
+            return data["elements"]
+        
+    # Determine the safety scores for each of these new destinations.
+
+    """
+    @FIXME figure out what the route coords are and where they are calculated. 
+    We would pretty much need to use different lists of coords to each destination.
+
+    Would suggest creating a dictionary with keys containing destination and value being list of coords. 
+    """
+    def find_alt_route_safety(self, coords:list):
+        safety_score = self.calculate_route_safety(coords)["overall_safety"]
+        return safety_score if safety_score >= THRESHOLD else 0.0
+    
+    # Find the safest destination.
+
+    def find_safest_destination(self, alts):
+
+        safest_dest = max(alts, key=lambda coords: self.find_alt_route_safety(coords))
+        return safest_dest
+
+
+
+
 
 # Global instance
 safety_ai = AdvancedSafetyRoutingAI()
