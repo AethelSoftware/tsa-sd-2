@@ -345,7 +345,10 @@ def get_safety_score():
         
         # Import and use the AI model
         from ai_safety_model import safety_ai
-        result = safety_ai.predict_safety_score(float(lat), float(lng))
+        # Set the model's internal lat/long attributes and then predict
+        safety_ai.lat = float(lat)
+        safety_ai.long = float(lng)
+        result = safety_ai.predict_safety_score()
         
         return jsonify({
             "safety_score": result['safety_score'],
