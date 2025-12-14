@@ -18,13 +18,13 @@ MAX_DISTANCE = 1000
 THRESHOLD = 0.25
 
 class AdvancedSafetyRoutingAI:
-    def _init_(self, lat: float | int, long: float | int, d_lat: float | int, d_long: float | int):
+    def __init__(self):
         self.model = None
         self.scaler = StandardScaler()
         self.poly = PolynomialFeatures(degree=2, include_bias=False)
         self.feature_selector = None
         self.feature_names = [
-            'time_of_day', 'day_of_week', 'population_density',
+            'time_of_day', 'day_of_week', 'population_density', 
             'crime_index', 'lighting_score', 'business_density',
             'transit_access', 'sidewalk_score', 'historical_incidents',
             'weather_condition', 'emergency_distance', 'temperature',
@@ -34,46 +34,41 @@ class AdvancedSafetyRoutingAI:
         ]
         self.is_trained = False
         self.ensemble_models = []
-        self.lat = lat
-        self.long = long
-        self.d_lat = d_lat
-        self.d_long = d_long
-       
-    def fetch_real_time_data(self):
-        """Fetch comprehensive real-time data from multiple APIs"""
+        
+    def fetch_real_time_data(self, lat, lng):
+        # Fetch comprehensive real-time data from multiple APIs
         try:
             # Crime data from multiple police APIs
-            crime_data = self.get_crime_data_combined(self.lat, self.long)
-           
-            # Population density and urban metrics (use instance coordinates)
-            population_density = self.get_population_density(self.lat, self.long)
-            urbanization_index = self.get_urbanization_index(self.lat, self.long)
+            crime_data = self.get_crime_data_combined(lat, lng)
             
-           
+            # Population density and urban metrics
+            population_density = self.get_population_density(lat, lng)
+            urbanization_index = self.get_urbanization_index(lat, lng)
+            
             # Business and infrastructure data
-            business_density = self.get_business_density(self.lat, self.long)
-            lighting_score = self.get_lighting_score(self.lat, self.long)
-           
+            business_density = self.get_business_density(lat, lng)
+            lighting_score = self.get_lighting_score(lat, lng)
+            
             # Transit and accessibility
-            transit_access = self.get_transit_accessibility(self.lat, self.long)
-            sidewalk_score = self.get_sidewalk_score(self.lat, self.long)
-           
+            transit_access = self.get_transit_accessibility(lat, lng)
+            sidewalk_score = self.get_sidewalk_score(lat, lng)
+            
             # Emergency services
-            emergency_distance = self.get_emergency_services_distance(self.lat, self.long)
-           
+            emergency_distance = self.get_emergency_services_distance(lat, lng)
+            
             # Real weather data
-            weather_data = self.get_real_weather_data(self.lat, self.long)
-           
+            weather_data = self.get_real_weather_data(lat, lng)
+            
             # Socio-economic indicators (estimated)
-            economic_index = self.get_economic_index(self.lat. self.long)
-            education_index = self.get_education_index(self.lat, self.long)
-           
+            economic_index = self.get_economic_index(lat, lng)
+            education_index = self.get_education_index(lat, lng)
+            
             # Time-based features
             current_time = datetime.now()
             time_since_sunset = self.get_time_since_sunset(self.lat, self.long, current_time)
             holiday_indicator = self.get_holiday_indicator(current_time)
-            special_event = self.get_special_event_indicator(self.lat, self.long, current_time)
-           
+            special_event = self.get_special_event_indicator(lat, lng, current_time)
+            
             return {
                 'crime_index': crime_data,
                 'population_density': population_density,
@@ -99,50 +94,29 @@ class AdvancedSafetyRoutingAI:
         except Exception as e:
             print(f"Error fetching real-time data: {e}")
             return self.get_fallback_data()
-   
-    def get_real_weather_data(self):
-        """Get real weather data from OpenWeatherMap API"""
+    
+    def get_real_weather_data(self, lat, lng):
+        # Get real weather data from OpenWeatherMap API
         try:
             api_key = os.environ.get('OPENWEATHER_API_KEY', 'your_api_key_here')
             url = f"http://api.openweathermap.org/data/2.5/weather"
-           
+            
             params = {
                 'lat': self.lat,
                 'lon': self.long,
                 'appid': api_key,
                 'units': 'imperial'
             }
-           
+            
             response = requests.get(url, params=params, timeout=10)
-
-            """
-            @FIXME should we include the sunrise/sunset stuff? Might be redundant. 
-            """
-           
+            
             if response.status_code == 200:
                 data = response.json()
                 weather = data['weather'][0]
                 main = data['main']
                 visibility = data.get('visibility', 10000)
                 wind = data.get('wind', {})
-
-
-                # Get Unix stamped time for the current time and sunrise/sunset. 
-                current_time = time.time()
-                sys = data.get('sys', {})
-                sunrise = sys.get("sunrise", current_time)
-                sunset = sys.get("sunset", current_time)
-
-                # compute absolute differences in hours (durations)
-                sunrise_diff_hours = abs(current_time - float(sunrise)) / 3600.0
-                sunset_diff_hours = abs(current_time - float(sunset)) / 3600.0
-
-                # normalized 0..1 (0 = very close, 1 = far).
-                sunrise_diff_norm = min(1.0, sunrise_diff_hours / 12.0)
-                sunset_diff_norm = min(1.0, sunset_diff_hours / 12.0)
-
                 
-               
                 # Weather condition scoring
                 condition_scores = {
                     'clear': 0.9, 'few clouds': 0.8, 'scattered clouds': 0.7,
@@ -150,18 +124,17 @@ class AdvancedSafetyRoutingAI:
                     'light rain': 0.3, 'moderate rain': 0.2, 'heavy rain': 0.1,
                     'thunderstorm': 0.1, 'snow': 0.2, 'fog': 0.3
                 }
-               
+                
                 condition = weather['main'].lower()
                 condition_score = condition_scores.get(condition, 0.5)
-               
+                
                 # Normalize other weather factors
                 temp_norm = max(0, min(1, (main['temp'] - 0) / 100))  # 0-100°F scale
                 humidity_norm = main['humidity'] / 100.0
                 visibility_norm = min(1.0, visibility / 10000.0)
                 wind_speed_norm = min(1.0, wind.get('speed', 0) / 50.0)  # 0-50 mph scale
                 precipitation = 1.0 if 'rain' in condition else 0.0
-                timing = 1.0 if min(sunrise_diff_norm, sunset_diff_norm) > 0.1 else 0.0
-               
+                
                 return {
                     'condition_score': condition_score,
                     'temperature_norm': temp_norm,
@@ -171,10 +144,10 @@ class AdvancedSafetyRoutingAI:
                     'precipitation': precipitation,
                     'timing':timing
                 }
-               
+                
         except Exception as e:
             print(f"Weather API error: {e}")
-       
+        
         # Fallback weather data
         return {
             'condition_score': 0.7,
@@ -185,50 +158,50 @@ class AdvancedSafetyRoutingAI:
             'precipitation': 0.0,
             'timing':0.0
         }
-   
-    def get_crime_data_combined(self):
-        """Get comprehensive crime data from multiple sources"""
+    
+    def get_crime_data_combined(self, lat, lng):
+        # Get comprehensive crime data from multiple sources
         crime_scores = []
-       
+        
         try:
             # Source 1: Crimeometer API
             crimeometer_score = self.get_crimeometer_data()
             if crimeometer_score is not None:
                 crime_scores.append(crimeometer_score)
-           
+            
             # Source 2: Area demographic-based crime estimation
             demographic_score = self.get_demographic_crime_estimate()
             crime_scores.append(demographic_score)
-           
+            
             # Source 3: Infrastructure-based crime indicators
             infrastructure_score = self.get_crime_infrastructure_data()
             if infrastructure_score is not None:
                 crime_scores.append(infrastructure_score)
-           
+            
             # Source 4: Time-based crime patterns
             time_based_score = self.get_time_based_crime_estimate()
             crime_scores.append(time_based_score)
-           
+            
             # Use weighted average with confidence scores
             if crime_scores:
                 weights = [0.4, 0.3, 0.2, 0.1]  # Weights for each source
                 weighted_score = sum(s * w for s, w in zip(crime_scores, weights))
                 return min(weighted_score, 1.0)
-               
+                
         except Exception as e:
             print(f"Crime data combination error: {e}")
-       
+        
         return 0.5  # Default average crime score
-   
-    def get_crimeometer_data(self):
-        """Get crime data from Crimeometer API"""
+    
+    def get_crimeometer_data(self, lat, lng):
+        # Get crime data from Crimeometer API
         try:
             api_key = os.environ.get('CRIMEOMETER_API_KEY')
             if not api_key:
                 return None
-               
+                
             url = "https://api.crimeometer.com/v1/incidents/raw-data"
-           
+            
             params = {
                 'lat': self.lat,
                 'lon': self.long,
@@ -236,14 +209,14 @@ class AdvancedSafetyRoutingAI:
                 'datetime_ini': (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%dT%H:%M:%S.000Z'),
                 'datetime_end': datetime.now().strftime('%Y-%m-%dT%H:%M:%S.000Z'),
             }
-           
+            
             headers = {'X-Api-Key': api_key}
             response = requests.get(url, params=params, headers=headers, timeout=10)
-           
+            
             if response.status_code == 200:
                 data = response.json()
                 incidents = data.get('incidents', [])
-               
+                
                 # Calculate crime density with severity weighting
                 if incidents:
                     total_severity = 0
@@ -256,61 +229,61 @@ class AdvancedSafetyRoutingAI:
                             total_severity += 1
                         else:
                             total_severity += 0.5
-                   
+                    
                     crime_score = min(total_severity / 20.0, 1.0)
                     return crime_score
-                   
+                    
         except Exception as e:
             print(f"Crimeometer API error: {e}")
-       
+        
         return None
-   
-    def get_demographic_crime_estimate(self):
-        """Estimate crime based on demographic patterns"""
+    
+    def get_demographic_crime_estimate(self, lat, lng):
+        # Estimate crime based on demographic patterns
         try:
             # Use OpenStreetMap data to estimate demographics
-            building_density = self.get_population_density(self.lat,)
-            business_density = self.get_business_density()
-           
+            building_density = self.get_population_density(lat, lng)
+            business_density = self.get_business_density(lat, lng)
+            
             # Complex demographic crime model
             base_risk = 0.3
             density_factor = building_density * 0.4
             business_factor = business_density * 0.3
             time_factor = self.get_time_based_crime_estimate()
-           
+            
             crime_score = base_risk + density_factor + business_factor + time_factor
             return min(crime_score, 1.0)
-           
+            
         except:
             return 0.5
-   
-    def get_crime_infrastructure_data(self):
-        """Use infrastructure as crime indicator"""
+    
+    def get_crime_infrastructure_data(self, lat, lng):
+        # Use infrastructure as crime indicator
         try:
             overpass_query = f"""
-                [out:json];
-                (
-                                node["amenity"="bar"](around:1000,{self.lat},{self.long});
-                                node["amenity"="pub"](around:1000,{self.lat},{self.long});
-                                node["amenity"="nightclub"](around:1000,{self.lat},{self.long});
-                                node["shop"="alcohol"](around:1000,{self.lat},{self.long});
-                                node["amenity"="police"](around:1000,{self.lat},{self.long});
-                                node["amenity"="community_centre"](around:1000,{self.lat},{self.long});
-                );
-                out count;
-                """
+            [out:json];
+            (
+              node["amenity"="bar"](around:1000,{lat},{lng});
+              node["amenity"="pub"](around:1000,{lat},{lng});
+              node["amenity"="nightclub"](around:1000,{lat},{lng});
+              node["shop"="alcohol"](around:1000,{lat},{lng});
+              node["amenity"="police"](around:1000,{lat},{lng});
+              node["amenity"="community_centre"](around:1000,{lat},{lng});
+            );
+            out count;
+            """
             
             response = requests.post(
-                    'https://overpass-api.de/api/interpreter',
-                    data=overpass_query,
-                    timeout=10
-                )
+                'https://overpass-api.de/api/interpreter',
+                data=overpass_query,
+                timeout=10
+            )
             
             elements = response.json().get('elements', [])
             
             risk_indicators = 0
             safety_indicators = 0
-
+            
             for element in elements:
                 tags = element.get('tags', {})
                 amenity = tags.get('amenity', '')
@@ -327,12 +300,12 @@ class AdvancedSafetyRoutingAI:
             
         except:
             return None
-   
+    
     def get_time_based_crime_estimate(self):
-        """Time-based crime probability"""
+        # Time-based crime probability
         current_time = datetime.now()
         hour = current_time.hour
-       
+        
         # Crime follows specific temporal patterns
         if 0 <= hour <= 4:   # Late night - highest crime
             return 0.3
@@ -342,9 +315,9 @@ class AdvancedSafetyRoutingAI:
             return 0.1
         else:  # Daytime - lower crime
             return 0.0
-   
-    def get_urbanization_index(self):
-        """Calculate urbanization level"""
+    
+    def get_urbanization_index(self, lat, lng):
+        # Calculate urbanization level
         try:
             overpass_query = f"""
             [out:json];
@@ -356,30 +329,29 @@ class AdvancedSafetyRoutingAI:
             );
             out count;
             """
-           
+            
             response = requests.post(
                 'https://overpass-api.de/api/interpreter',
                 data=overpass_query,
                 timeout=10
             )
-           
+            
             elements = len(response.json().get('elements', []))
             return min(elements / 100.0, 1.0)
-           
+            
         except:
             return 0.5
-   
-    def get_economic_index(self):
-        """Estimate economic conditions (simplified)"""
-        # In production, use Census data or similar
-        business_density = self.get_business_density(self.lat, self.long)
-        urbanization = self.get_urbanization_index(self.lat, self.long)
-       
+    
+    def get_economic_index(self, lat, lng):
+        # Estimate economic conditions (simplified) bc i can't find census data anywhere
+        business_density = self.get_business_density(lat, lng)
+        urbanization = self.get_urbanization_index(lat, lng)
+        
         # Higher business density + urbanization = better economic conditions
         return (business_density * 0.6 + urbanization * 0.4) * 0.8 + 0.2
-   
-    def get_education_index(self):
-        """Estimate education levels (simplified)"""
+    
+    def get_education_index(self, lat, lng):
+        # Estimate education levels (hella simplified)
         try:
             overpass_query = f"""
             [out:json];
@@ -391,52 +363,49 @@ class AdvancedSafetyRoutingAI:
             );
             out count;
             """
-           
+            
             response = requests.post(
                 'https://overpass-api.de/api/interpreter',
                 data=overpass_query,
                 timeout=10
             )
-           
+            
             education_facilities = len(response.json().get('elements', []))
             return min(education_facilities / 10.0, 1.0)
-           
+            
         except:
             return 0.5
-   
-    def get_time_since_sunset(self, current_time):
-        """Calculate time since sunset (simplified)"""
+    
+    def get_time_since_sunset(self, lat, lng, current_time):
+        # Calculate time since sunset (hella simplified)
         # Simplified sunset calculation (6 PM)
         sunset_hour = 18
         current_hour = current_time.hour + current_time.minute / 60.0
-       
+        
         if current_hour >= sunset_hour:
             hours_since_sunset = current_hour - sunset_hour
         else:
             hours_since_sunset = current_hour + (24 - sunset_hour)
-       
+        
         return min(hours_since_sunset / 12.0, 1.0)  # Normalize to 0-1
-   
+    
     def get_holiday_indicator(self, current_time):
-        """Check if current date is a holiday"""
+        # Check if current date is a holiday
         # Simplified holiday detection
         holidays = [
             '01-01', '07-04', '12-25', '11-11', '05-31', '09-06'
         ]  # New Year, Independence Day, Christmas, etc.
-       
+        
         current_date = current_time.strftime('%m-%d')
         return 1.0 if current_date in holidays else 0.0
-   
-    def get_special_event_indicator(self, current_time):
-        """Check for special events in area"""
-        # Simplified event detection
-        # In production, integrate with event APIs
+    
+    def get_special_event_indicator(self, lat, lng, current_time):
+        # Check for special events in area
+        # I am defaulting to 0 bc we need more API's for this
+        # and i ain't finding it
         return 0.0  # Default no special events
-   
-    # Keep all your existing methods for population_density, business_density, etc.
-    # but add error handling and improvements
-   
-    def get_population_density(self):
+    
+    def get_population_density(self, lat, lng):
         try:
             overpass_query = f"""
             [out:json];
@@ -447,29 +416,28 @@ class AdvancedSafetyRoutingAI:
             );
             out count;
             """
-           
+            
             response = requests.post(
                 'https://overpass-api.de/api/interpreter',
                 data=overpass_query,
                 timeout=10
             )
-           
+            
             elements = len(response.json().get('elements', []))
             density = min(elements / 150.0, 1.0)
-           
+            
             # Apply non-linear transformation
             return density ** 0.7
-           
+            
         except:
             return 0.5
-   
-    # ... include all your other existing methods with similar enhancements ...
-   
-    def prepare_features(self):
-        """Prepare advanced feature vector with interaction terms"""
-        real_time_data = self.fetch_real_time_data()
+    
+    
+    def prepare_features(self, lat, lng):
+        # Prepare advanced feature vector with interaction terms
+        real_time_data = self.fetch_real_time_data(lat, lng)
         current_time = datetime.now()
-       
+        
         # Base features
         features = [
             current_time.hour / 24.0,
@@ -495,41 +463,41 @@ class AdvancedSafetyRoutingAI:
             real_time_data['holiday_indicator'],
             real_time_data['special_event']
         ]
-       
+        
         return np.array(features).reshape(1, -1)
-   
+    
     def train_model(self, training_data=None):
-        """Advanced ensemble training with feature engineering"""
+        # Advanced ensemble training with feature engineering
         if training_data is None:
             # Generate sophisticated synthetic training data
             np.random.seed(42)
             n_samples = 5000
-           
+            
             X = np.random.random((n_samples, len(self.feature_names)))
-           
+            
             # Create complex safety scoring function with interactions
             y = self.complex_safety_function(X)
-           
+            
             # Add noise with different variance
             noise = np.random.normal(0, 0.08, n_samples)
             y += noise
             y = np.clip(y, 0, 1)
         else:
             X, y = training_data
-       
+        
         # Feature engineering
         X_poly = self.poly.fit_transform(X)
-       
+        
         # Scale features
         X_scaled = self.scaler.fit_transform(X_poly)
-       
+        
         # Feature selection
         self.feature_selector = SelectFromModel(
             RandomForestRegressor(n_estimators=100, random_state=42),
             threshold='median'
         )
         X_selected = self.feature_selector.fit_transform(X_scaled, y)
-       
+        
         # Create ensemble of models
         models = [
             RandomForestRegressor(
@@ -546,120 +514,119 @@ class AdvancedSafetyRoutingAI:
                 random_state=42
             )
         ]
-       
+        
         # Train ensemble
         self.ensemble_models = []
         for model in models:
             model.fit(X_selected, y)
             self.ensemble_models.append(model)
-       
+        
         self.is_trained = True
-       
+        
         # Cross-validation scores
         cv_scores = []
         for model in self.ensemble_models:
             scores = cross_val_score(model, X_selected, y, cv=5, scoring='r2')
             cv_scores.append(scores.mean())
-       
+        
         return np.mean(cv_scores)
-   
+    
     def complex_safety_function(self, X):
-        """Complex safety scoring with non-linear relationships and interactions"""
+        # Complex safety scoring with non-linear relationships and interactions
         # Unpack features
         time_of_day, day_of_week, pop_density, crime_index, lighting, business, \
         transit, sidewalk, incidents, weather, emergency, temp, visibility, \
         precip, wind, humidity, urban, economic, education, sunset, holiday, event = X.T
-       
+        
         # Base safety components
         time_safety = 0.4 * (1 - time_of_day)  # Safer during day
         crime_safety = 0.25 * (1 - crime_index ** 1.5)  # Non-linear crime impact
         lighting_safety = 0.15 * lighting ** 0.8
         infrastructure_safety = 0.1 * (transit * 0.4 + sidewalk * 0.6)
         weather_safety = 0.1 * weather
-       
+        
         # Interaction terms
         night_crime_interaction = 0.05 * (time_of_day * crime_index)  # Worse at night
         weather_crime_interaction = 0.03 * ((1 - weather) * crime_index)  # Worse in bad weather
         density_lighting_interaction = 0.02 * (pop_density * (1 - lighting))  # Dense + dark = dangerous
-       
+        
         # Socio-economic factors
         socio_economic_safety = 0.08 * (economic * 0.6 + education * 0.4)
-       
+        
         # Emergency access
         emergency_safety = 0.07 * emergency
-       
+        
         # Combine all components
         safety_score = (
-            time_safety + crime_safety + lighting_safety +
-            infrastructure_safety + weather_safety -
-            night_crime_interaction - weather_crime_interaction -
-            density_lighting_interaction + socio_economic_safety +
+            time_safety + crime_safety + lighting_safety + 
+            infrastructure_safety + weather_safety - 
+            night_crime_interaction - weather_crime_interaction - 
+            density_lighting_interaction + socio_economic_safety + 
             emergency_safety
         )
-       
+        
         return np.clip(safety_score, 0, 1)
-   
-    def predict_safety_score(self):
-        """Advanced ensemble prediction"""
+    
+    def predict_safety_score(self, lat, lng):
+        # Advanced ensemble prediction
         if not self.is_trained:
             self.train_model()
-       
-        features = self.prepare_features()
+        
+        features = self.prepare_features(lat, lng)
         features_poly = self.poly.transform(features)
         features_scaled = self.scaler.transform(features_poly)
         features_selected = self.feature_selector.transform(features_scaled)
-       
+        
         # Ensemble prediction
         predictions = []
         for model in self.ensemble_models:
             pred = model.predict(features_selected)[0]
             predictions.append(pred)
-       
+        
         # Weighted average (could use model performance weights)
         safety_score = np.mean(predictions)
         safety_score = np.clip(safety_score, 0, 1)
-       
+        
         # Add uncertainty estimation
         uncertainty = np.std(predictions)
-       
+        
         return {
             'safety_score': float(safety_score),
             'uncertainty': float(uncertainty),
             'confidence': max(0, 1 - uncertainty * 2)
         }
-   
+    
     def calculate_route_safety(self, route_coordinates):
-        """Advanced route analysis with segment weighting"""
+        # Advanced route analysis with segment weighting
         safety_results = []
-       
+        
         for coord in route_coordinates:
             lat, lng = coord
 
             result = self.predict_safety_score()
             safety_results.append(result)
-       
+        
         safety_scores = [r['safety_score'] for r in safety_results]
         confidences = [r['confidence'] for r in safety_results]
-       
+        
         if safety_scores:
             # Weighted average considering confidence
             weights = np.array(confidences)
             weights = weights / np.sum(weights) if np.sum(weights) > 0 else np.ones_like(weights) / len(weights)
-           
+            
             weighted_avg = np.average(safety_scores, weights=weights)
             min_score = min(safety_scores)
-           
+            
             # Non-linear combination focusing on worst segments
             overall_score = 0.6 * min_score + 0.4 * weighted_avg
-           
+            
             # Risk clustering analysis
             risk_clusters = self.analyze_risk_clusters(safety_scores)
-           
+            
         else:
             overall_score = 0.5
             risk_clusters = []
-       
-
+        
         return {
             'overall_safety': overall_score,
             'safety_breakdown': safety_results,
@@ -668,17 +635,17 @@ class AdvancedSafetyRoutingAI:
             'recommendations': self.get_advanced_recommendations(safety_scores, risk_clusters),
             'confidence_score': np.mean(confidences) if confidences else 0.5
         }
-   
+    
     def analyze_risk_clusters(self, safety_scores, threshold=0.4):
-        """Identify clusters of high-risk segments"""
+        # Identify clusters of high-risk segments
         risk_segments = [i for i, score in enumerate(safety_scores) if score < threshold]
-       
+        
         if not risk_segments:
             return []
-       
+        
         clusters = []
         current_cluster = [risk_segments[0]]
-       
+        
         for i in range(1, len(risk_segments)):
             if risk_segments[i] - risk_segments[i-1] <= 2:  # Consecutive or nearby
                 current_cluster.append(risk_segments[i])
@@ -686,17 +653,17 @@ class AdvancedSafetyRoutingAI:
                 if len(current_cluster) >= 2:  # Only significant clusters
                     clusters.append(current_cluster)
                 current_cluster = [risk_segments[i]]
-       
+        
         if len(current_cluster) >= 2:
             clusters.append(current_cluster)
-       
+        
         return clusters
-   
-    def get_advanced_recommendations(self, safety_scores, risk_clusters) -> tuple:
-        """Generate sophisticated safety recommendations"""
+    
+    def get_advanced_recommendations(self, safety_scores, risk_clusters):
+        # Generate sophisticated safety recommendations
         recommendations = []
         min_score = min(safety_scores) if safety_scores else 0.5
-       
+        
         # Risk level based recommendations
         if min_score < 0.2:
             recommendations.extend([
@@ -710,130 +677,21 @@ class AdvancedSafetyRoutingAI:
                 "Travel with companion recommended",
                 "Avoid walking alone in high-risk segments"
             ])
-       
+        
         # Cluster-based recommendations
         if risk_clusters:
             largest_cluster = max(risk_clusters, key=len)
             if len(largest_cluster) >= 3:
                 recommendations.append(f"Extended high-risk area: {len(largest_cluster)} consecutive segments")
-       
+        
         # Time-based recommendations
         current_hour = datetime.now().hour
         if current_hour >= 22 or current_hour <= 5:
             recommendations.append("Enhanced caution advised during nighttime hours")
-       
+        
         if not recommendations:
             recommendations.append("Route appears generally safe - maintain situational awareness")
-       
-        return (min_score, recommendations)
-    
-    # Determine the relevant destination. 
-    def find_relevant_location(self):
-
-        # First send HTTP request to the API. 
-        OVERPASS_URL = "https://overpass-api.de/api/interpreter"
         
-        # Structure the query
+        return recommendations
 
-        query = f"""
-        [out: json];
-        (
-            node(around:30, {self.d_lat}, {self.d_long});
-            way(around:30, {self.d_lat}, {self.d_long});
-        );
-        
-        out tags center; 
-
-        """
-        response = requests.post(
-            OVERPASS_URL,
-            data={"data":query}
-        )
-
-        data = response.json()
-        elements = data["elements"]
-
-        if not elements:
-            return None
-
-        relevant_location = max(elements, key=lambda el: self.score_tags(el))
-        return relevant_location
-
-    # Assign a score to each tag detected in the radius to find the most relevant location. 
-    def score_tags(self, el) -> int:
-        tags = el.get("tags", {})
-        
-        # We prefer amenities and shops (more likely to be actual places that we care about).
-        # No need to worry about specific amenities, radius is low. 
-        score = 0
-        if "amenity" in tags: score += 5
-        if "shop" in tags: score += 5
-        if "name" in tags: score += 3
-        if el["type"] == "node": score += 1
-
-        return score
-    
-    # Find alternative destinations that are similar to the one the user inputed. 
-    def determine_nearby_locations(self, dest) -> str | list:
-        OVERPASS_URL = "https://overpass-api.de/api/interpreter"
-
-        # Define primary keys: these contain more specific details about the destination itself.
-        PRIMARY_KEYS = ["shop", "amenity", "leisure", "tourism", "office"]
-        tags = dest["tags"]
-
-        #Iterate over the destination's tags to find the first one that matches one of the primary keys.
-        primary_value = []
-        for k in PRIMARY_KEYS:
-            if k in tags:
-                primary_value.append((k,tags[k]))
-                break
-        if len(primary_value) > 0:
-            key, prim_val = primary_value[0]
-        
-        #Query the API and find all elements with the following characteristics
-        query = f"""
-        [out: json]
-        (
-            node[{key} = {prim_val}](around: {MAX_DISTANCE}, {self.lat}, {self.long})
-            way[{key} = {prim_val}](around: {MAX_DISTANCE}, {self.lat}, {self.long})
-        );
-
-        out center; 
-        """
-        response = requests.post(
-            OVERPASS_URL,
-            data={"data":query}
-        )
-
-        data = response.json()
-
-        if data["elements"] is None:
-            return "There are no alternative locations in your area."
-        else:
-            return data["elements"]
-        
-    # Determine the safety scores for each of these new destinations.
-
-    """
-    @FIXME figure out what the route coords are and where they are calculated. 
-    We would pretty much need to use different lists of coords to each destination.
-
-    Would suggest creating a dictionary with keys containing destination and value being list of coords. 
-    """
-    def find_alt_route_safety(self, coords:list):
-        safety_score = self.calculate_route_safety(coords)["overall_safety"]
-        return safety_score if safety_score >= THRESHOLD else 0.0
-    
-    # Find the safest destination.
-
-    def find_safest_destination(self, alts):
-
-        safest_dest = max(alts, key=lambda coords: self.find_alt_route_safety(coords))
-        return safest_dest
-
-
-
-
-
-# Global instance
 safety_ai = AdvancedSafetyRoutingAI()

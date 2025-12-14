@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'; // 👈 Import 
 import './index.css';
 import App from './App.jsx';
 import Login from './Login.jsx';
-import MapClone from './Dashboard.jsx';
+import DashboardPage from './Dashboard.jsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -12,7 +12,7 @@ createRoot(document.getElementById('root')).render(
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<MapClone />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
