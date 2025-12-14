@@ -1,38 +1,36 @@
 from flask import Flask, jsonify, redirect, session, url_for, request
 from flask_cors import CORS
 from flask_pymongo import PyMongo
-from flask import g
-from dotenv import load_dotenv
-from bson import ObjectId
 from authlib.integrations.flask_client import OAuth
-from datetime import datetime, timezone
+import datetime
 import os
-import secrets
+from bson import ObjectId
 
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb+srv://jshah26:tsasd2026@tsa-sd-2026.h9qb1rd.mongodb.net/TRYVER"
-
-load_dotenv()
-
-app.secret_key = os.environ.get("SESSION_SECRET") or secrets.token_hex(32)
+app.secret_key = os.environ.get("SESSION_SECRET") or "dev-secret-key-123"
 
 # Instantiate the DB and OAuth authorization with our flask app. 
 mongo = PyMongo(app)
 oauth = OAuth(app)
 
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
-
-# Configure Google OAuth with proper state handling
+# Correct Google OAuth configuration
 google = oauth.register(
-    name="google",
+    name='google',
     client_id=os.environ.get("GOOGLE_CLIENT_ID"),
     client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    access_token_url='https://accounts.google.com/o/oauth2/token',
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+    api_base_url='https://www.googleapis.com/oauth2/v1/',
+    userinfo_endpoint='https://openidconnect.googleapis.com/v1/userinfo',
     client_kwargs={
         'scope': 'openid email profile',
-        'code_challenge_method': 'S256'  # Enable PKCE for better security
-    }
+        'token_endpoint_auth_method': 'client_secret_post'
+    },
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration'
 )
+
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
 @app.route("/api/hello")
 def hello():
@@ -41,52 +39,28 @@ def hello():
 # --- OAuth ---
 @app.route("/api/auth/login")
 def login():
-    # Initiate OAuth flow with proper state management
     try:
-        # Generate a secure state token
-        state = secrets.token_urlsafe(16)
-        session['oauth_state'] = state
-        
         redirect_uri = url_for('auth_callback', _external=True)
-        print(f"Redirect URI: {redirect_uri}")
-        print(f"State: {state}")
-        
-        return google.authorize_redirect(redirect_uri, state=state)
+        print(f"Redirect URI: {redirect_uri}")  # Debug
+        return google.authorize_redirect(redirect_uri)
     except Exception as e:
         return jsonify({"error": f"OAuth setup failed: {str(e)}"}), 500
 
 @app.route("/api/auth/callback")
 def auth_callback():
-    # OAuth callback handler with state verification
     try:
-        # Verify state parameter to prevent CSRF
-        stored_state = session.get('oauth_state')
-        received_state = request.args.get('state')
-        
-        print(f"Stored state: {stored_state}")
-        print(f"Received state: {received_state}")
-        
-        if not stored_state or stored_state != received_state:
-            session.pop('oauth_state', None)
-            return jsonify({"error": "Invalid state parameter. Possible CSRF attack."}), 400
-        
-        # Clear the state after verification
-        session.pop('oauth_state', None)
-        
         # Get the token
         token = google.authorize_access_token()
-        print(f"Token received: {bool(token)}")
+        print(f"Token received: {token}")  # Debug
         
-        if not token:
-            return jsonify({"error": "Failed to get access token"}), 400
-            
-        # Get user info
-        user_info = google.userinfo()
-        print(f"User info: {user_info}")
+        # Get user info using the token
+        resp = google.get('userinfo', token=token)
+        user_info = resp.json()
+        print(f"User info: {user_info}")  # Debug
         
         if user_info and 'email' in user_info:
             # Store user in session
-            session['user'] = dict(user_info)
+            session['user'] = user_info
             
             # Save/update user in database
             user_data = {
@@ -94,43 +68,38 @@ def auth_callback():
                 'email': user_info['email'],
                 'name': user_info.get('name', ''),
                 'picture': user_info.get('picture', ''),
-                'last_login': datetime.now(timezone.utc),
+                'last_login': datetime.datetime.utcnow(), 
                 'preferences': {
                     'emergency_contacts': [],
                     'routines': [],
-                    'accessibility_needs': []
+                    'accessibility_needs': ['blind']
                 }
             }
             
             # Upsert user data
-            result = mongo.db.User_Accounts.update_one(
+            mongo.db.User_Accounts.update_one(
                 {'google_id': user_info['sub']},
                 {'$set': user_data},
                 upsert=True
             )
             
-            print(f"Database update result: {result.modified_count} documents modified")
-            
-            # Redirect to frontend
-            frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
-            return redirect(f"{frontend_url}/dashboard")
+            return redirect(os.environ.get('FRONTEND_URL') or 'http://localhost:3000/dashboard')
         else:
             return jsonify({"error": "Failed to get user info from Google"}), 400
             
     except Exception as e:
-        print(f"OAuth callback error: {str(e)}")
+        print(f"OAuth error: {str(e)}")  # Debug
         return jsonify({"error": f"Authentication failed: {str(e)}"}), 400
-
+    
 @app.route("/api/auth/logout")
 def logout():
-    # Logout user and clear session
+    # Logout user
     session.pop('user', None)
-    session.pop('oauth_state', None)
     return jsonify({"message": "Logged out successfully"})
 
 @app.route("/api/auth/user")
 def get_user():
-    # Get current user info
+    # Get user current info - FIXED: session.get('user')
     user = session.get('user')
     if user:
         db_user = mongo.db.User_Accounts.find_one({'google_id': user['sub']})
@@ -145,17 +114,6 @@ def get_user():
         })
     return jsonify({'logged_in': False})
 
-# Debug endpoint to check session state
-@app.route("/api/auth/debug")
-def auth_debug():
-    # Debug endpoint to check authentication state
-    return jsonify({
-        'session_keys': list(session.keys()),
-        'has_oauth_state': 'oauth_state' in session,
-        'has_user': 'user' in session,
-        'user_info': session.get('user', {}).get('email') if session.get('user') else None
-    })
-
 # Email/Password Signup Route
 @app.route("/api/auth/signup", methods=['POST'])
 def email_signup():
@@ -164,9 +122,6 @@ def email_signup():
         email = data.get('email')
         password = data.get('password')
         name = data.get('name')
-        
-        if not email or not password:
-            return jsonify({"error": "Email and password required"}), 400
         
         # Check if user already exists
         existing_user = mongo.db.User_Accounts.find_one({'email': email})
@@ -178,12 +133,12 @@ def email_signup():
             'email': email,
             'name': name,
             'password': password,  # In production, use proper hashing!
-            'created_at': datetime.now(timezone.utc),
-            'last_login': datetime.now(timezone.utc),
+            'created_at': datetime.datetime.utcnow(),
+            'last_login': datetime.datetime.utcnow(),
             'preferences': {
                 'emergency_contacts': [],
                 'routines': [],
-                'accessibility_needs': ['blind']
+                'accessibility_needs': ['blind']  # Default
             }
         }
         
@@ -216,9 +171,6 @@ def email_login():
         email = data.get('email')
         password = data.get('password')
         
-        if not email or not password:
-            return jsonify({"error": "Email and password required"}), 400
-        
         # Find user (in production, verify hashed password!)
         user = mongo.db.User_Accounts.find_one({'email': email, 'password': password})
         if not user:
@@ -227,7 +179,7 @@ def email_login():
         # Update last login
         mongo.db.User_Accounts.update_one(
             {'_id': user['_id']},
-            {'$set': {'last_login': datetime.now(timezone.utc)}}
+            {'$set': {'last_login': datetime.datetime.utcnow()}}
         )
         
         # Create session
@@ -252,7 +204,7 @@ def email_login():
 # Emergency and/or routine management
 @app.route("/api/user/preferences", methods=["GET", "PUT"])
 def manage_preferences():
-    # Get or update user preferences
+    # get or update user preferences
     user = session.get('user')
     if not user:
         return jsonify({"error": "Not authenticated"}), 401
@@ -297,7 +249,7 @@ def manage_emergency_contacts():
 
 @app.route("/api/routines", methods=['GET', 'POST', 'PUT', 'DELETE'])
 def manage_routines():
-   # Manage daily routines
+    # Manage daily routines
     user = session.get('user')
     if not user:
         return jsonify({"error": "Not authenticated"}), 401
@@ -331,91 +283,5 @@ def manage_routines():
         )
         return jsonify({"message": "Routine removed successfully"})
 
-# AI Safety Routes
-@app.route("/api/ai/safety-score", methods=['POST'])
-def get_safety_score():
-    # Get AI-powered safety score for a location
-    try:
-        data = request.json
-        lat = data.get('lat')
-        lng = data.get('lng')
-
-        """
-        @FIXME: need to update with actual values of the destination
-        """
-
-        d_lat = 0.0
-        d_lng = 0.0
-        
-        if not lat or not lng:
-            return jsonify({"error": "Latitude and longitude required"}), 400
-        
-        # Import and use the AI model
-        from ai_safety_model import safety_ai
-        # Set the model's internal lat/long attributes and then predict
-
-        safety_ai.lat = float(lat)
-        safety_ai.long = float(lng)
-        safety_ai.d_lat = d_lat
-        safety_ai.d_long = d_lng
-        result = safety_ai.predict_safety_score()
-        
-        return jsonify({
-            "safety_score": result['safety_score'],
-            "safety_level": safety_ai.get_safety_level(result['safety_score']),
-            "confidence": result['confidence'],
-            "location": {"lat": lat, "lng": lng},
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        })
-        
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/api/ai/route-safety", methods=['POST'])
-def analyze_route_safety():
-    # Analyze safety of a complete route
-    try:
-        data = request.json
-        route_coordinates = data.get('coordinates', [])
-        
-        if len(route_coordinates) < 2:
-            return jsonify({"error": "At least 2 coordinates required"}), 400
-        
-        # Import and use the AI model
-        from ai_safety_model import safety_ai
-        analysis = safety_ai.calculate_route_safety(route_coordinates)
-        
-        return jsonify({
-            "route_analysis": analysis,
-            "coordinates_analyzed": len(route_coordinates),
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        })
-        
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/api/ai/train-model", methods=['POST'])
-def train_ai_model():
-    # Retrain the AI model with new data
-    try:
-        from ai_safety_model import safety_ai
-        accuracy = safety_ai.train_model()
-        return jsonify({
-            "message": "AI model trained successfully",
-            "accuracy": accuracy,
-            "is_trained": safety_ai.is_trained
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# Health check route
-@app.route("/api/health")
-def health_check():
-    return jsonify({
-        "status": "healthy",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "version": "1.0.0"
-    })
-
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True)
