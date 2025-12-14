@@ -11,7 +11,11 @@ import math
 import os
 from scipy import stats
 import warnings
+import time
 warnings.filterwarnings('ignore')
+
+MAX_DISTANCE = 1000
+THRESHOLD = 0.25
 
 class AdvancedSafetyRoutingAI:
     def __init__(self):
@@ -61,7 +65,7 @@ class AdvancedSafetyRoutingAI:
             
             # Time-based features
             current_time = datetime.now()
-            time_since_sunset = self.get_time_since_sunset(lat, lng, current_time)
+            time_since_sunset = self.get_time_since_sunset(self.lat, self.long, current_time)
             holiday_indicator = self.get_holiday_indicator(current_time)
             special_event = self.get_special_event_indicator(lat, lng, current_time)
             
@@ -72,7 +76,7 @@ class AdvancedSafetyRoutingAI:
                 'lighting_score': lighting_score,
                 'transit_access': transit_access,
                 'sidewalk_score': sidewalk_score,
-                'historical_incidents': self.get_historical_incidents(lat, lng),
+                'historical_incidents': self.get_historical_incidents(self.lat, self.long),
                 'emergency_distance': emergency_distance,
                 'weather_condition': weather_data['condition_score'],
                 'temperature': weather_data['temperature_norm'],
@@ -98,8 +102,8 @@ class AdvancedSafetyRoutingAI:
             url = f"http://api.openweathermap.org/data/2.5/weather"
             
             params = {
-                'lat': lat,
-                'lon': lng,
+                'lat': self.lat,
+                'lon': self.long,
                 'appid': api_key,
                 'units': 'imperial'
             }
@@ -137,7 +141,8 @@ class AdvancedSafetyRoutingAI:
                     'humidity_norm': humidity_norm,
                     'visibility_norm': visibility_norm,
                     'wind_speed_norm': wind_speed_norm,
-                    'precipitation': precipitation
+                    'precipitation': precipitation,
+                    'timing':timing
                 }
                 
         except Exception as e:
@@ -150,7 +155,8 @@ class AdvancedSafetyRoutingAI:
             'humidity_norm': 0.5,
             'visibility_norm': 0.8,
             'wind_speed_norm': 0.3,
-            'precipitation': 0.0
+            'precipitation': 0.0,
+            'timing':0.0
         }
     
     def get_crime_data_combined(self, lat, lng):
@@ -159,16 +165,16 @@ class AdvancedSafetyRoutingAI:
         
         try:
             # Source 1: Crimeometer API
-            crimeometer_score = self.get_crimeometer_data(lat, lng)
+            crimeometer_score = self.get_crimeometer_data()
             if crimeometer_score is not None:
                 crime_scores.append(crimeometer_score)
             
             # Source 2: Area demographic-based crime estimation
-            demographic_score = self.get_demographic_crime_estimate(lat, lng)
+            demographic_score = self.get_demographic_crime_estimate()
             crime_scores.append(demographic_score)
             
             # Source 3: Infrastructure-based crime indicators
-            infrastructure_score = self.get_crime_infrastructure_data(lat, lng)
+            infrastructure_score = self.get_crime_infrastructure_data()
             if infrastructure_score is not None:
                 crime_scores.append(infrastructure_score)
             
@@ -197,8 +203,8 @@ class AdvancedSafetyRoutingAI:
             url = "https://api.crimeometer.com/v1/incidents/raw-data"
             
             params = {
-                'lat': lat,
-                'lon': lng,
+                'lat': self.lat,
+                'lon': self.long,
                 'distance': '1mi',
                 'datetime_ini': (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%dT%H:%M:%S.000Z'),
                 'datetime_end': datetime.now().strftime('%Y-%m-%dT%H:%M:%S.000Z'),
@@ -316,10 +322,10 @@ class AdvancedSafetyRoutingAI:
             overpass_query = f"""
             [out:json];
             (
-              way["building"](around:2000,{lat},{lng});
-              way["landuse"="commercial"](around:2000,{lat},{lng});
-              way["landuse"="industrial"](around:2000,{lat},{lng});
-              way["landuse"="residential"](around:2000,{lat},{lng});
+                            way["building"](around:2000,{self.lat},{self.long});
+                            way["landuse"="commercial"](around:2000,{self.lat},{self.long});
+                            way["landuse"="industrial"](around:2000,{self.lat},{self.long});
+                            way["landuse"="residential"](around:2000,{self.lat},{self.long});
             );
             out count;
             """
@@ -350,10 +356,10 @@ class AdvancedSafetyRoutingAI:
             overpass_query = f"""
             [out:json];
             (
-              node["amenity"="school"](around:2000,{lat},{lng});
-              node["amenity"="university"](around:2000,{lat},{lng});
-              node["amenity"="college"](around:2000,{lat},{lng});
-              node["amenity"="library"](around:2000,{lat},{lng});
+                            node["amenity"="school"](around:2000,{self.lat},{self.long});
+                            node["amenity"="university"](around:2000,{self.lat},{self.long});
+                            node["amenity"="college"](around:2000,{self.lat},{self.long});
+                            node["amenity"="library"](around:2000,{self.lat},{self.long});
             );
             out count;
             """
@@ -404,9 +410,9 @@ class AdvancedSafetyRoutingAI:
             overpass_query = f"""
             [out:json];
             (
-              node(around:1000,{lat},{lng});
-              way(around:1000,{lat},{lng});
-              relation(around:1000,{lat},{lng});
+                            node(around:1000,{self.lat},{self.long});
+                            way(around:1000,{self.lat},{self.long});
+                            relation(around:1000,{self.lat},{self.long});
             );
             out count;
             """
@@ -596,7 +602,8 @@ class AdvancedSafetyRoutingAI:
         
         for coord in route_coordinates:
             lat, lng = coord
-            result = self.predict_safety_score(lat, lng)
+
+            result = self.predict_safety_score()
             safety_results.append(result)
         
         safety_scores = [r['safety_score'] for r in safety_results]
