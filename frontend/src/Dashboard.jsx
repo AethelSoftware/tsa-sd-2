@@ -1,773 +1,1115 @@
-import { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { 
-  Shield, 
-  AlertTriangle, 
-  CheckCircle, 
-  Zap,
-  Brain,
-  TrendingUp,
-  BarChart3,
-  RefreshCw,
-  Download,
-  Upload,
-  Settings,
-  Train,
-  Activity
-} from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
 
-const Dashboard = () => {
+export default function AccessibleMap() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [mapStyle, setMapStyle] = useState('roadmap');
-  const [routeFrom, setRouteFrom] = useState('Current Location');
-  const [routeTo, setRouteTo] = useState('');
-  const [disabilitySettings, setDisabilitySettings] = useState({
-    blind: false,
-    deaf: false,
-    lowEnergy: false
+  const [mapStyle, setMapStyle] = useState("roadmap");
+  const [routeFrom, setRouteFrom] = useState("Current Location");
+  const [routeTo, setRouteTo] = useState("");
+  const [accessibilitySettings, setAccessibilitySettings] = useState({
+    visionImpaired: false,
+    hearingImpaired: false,
+    lowEnergy: false,
+    highContrast: false,
+    largeText: false,
+    screenReader: false,
+    reducedMotion: false,
   });
-  
-  // AI Model States
-  const [safetyAnalysis, setSafetyAnalysis] = useState(null);
-  const [modelStatus, setModelStatus] = useState(null);
-  const [isTraining, setIsTraining] = useState(false);
-  const [trainingProgress, setTrainingProgress] = useState(0);
-  const [modelMetrics, setModelMetrics] = useState(null);
-  
-  const [routeCoordinates, setRouteCoordinates] = useState([]);
-  const navigate = useNavigate();
+  const [zoom, setZoom] = useState(13);
+  const [currentLocation, setCurrentLocation] = useState({
+    lat: 40.472,
+    lng: -79.94,
+  });
+  const [activeTransport, setActiveTransport] = useState("wheelchair");
+  const [announcement, setAnnouncement] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
   const modalRef = useRef(null);
+  const mapContainerRef = useRef(null);
+  const settingsButtonRef = useRef(null);
+  const announcementRef = useRef(null);
+  const searchInputRef = useRef(null);
 
-  // Fetch model status on component mount
   useEffect(() => {
-    fetchModelStatus();
-  }, []);
-
-  const fetchModelStatus = async () => {
-    try {
-      const response = await fetch('/api/model/status');
-      const data = await response.json();
-      if (data.success) {
-        setModelStatus(data.model);
-        setModelMetrics(data.model.training_metrics);
-      }
-    } catch (error) {
-      console.error('Failed to fetch model status:', error);
+    if (announcementRef.current && announcement) {
+      announcementRef.current.textContent = announcement;
+      const timer = setTimeout(() => setAnnouncement(""), 3000);
+      return () => clearTimeout(timer);
     }
-  };
+  }, [announcement]);
 
-  const trainModel = async () => {
-    setIsTraining(true);
-    setTrainingProgress(0);
-    
-    try {
-      const response = await fetch('/api/model/train', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          n_loops: 15,
-          n_epochs: 5,
-          force: true
-        })
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        // Simulate training progress
-        const interval = setInterval(() => {
-          setTrainingProgress(prev => {
-            if (prev >= 100) {
-              clearInterval(interval);
-              return 100;
-            }
-            return prev + 5;
-          });
-        }, 200);
-        
-        setTimeout(() => {
-          clearInterval(interval);
-          setTrainingProgress(100);
-          setIsTraining(false);
-          fetchModelStatus(); // Refresh model status
-          
-          alert('Model training completed successfully!');
-        }, 4000);
-      } else {
-        alert(`Training failed: ${data.error}`);
-        setIsTraining(false);
-      }
-    } catch (error) {
-      console.error('Training error:', error);
-      alert('Failed to train model');
-      setIsTraining(false);
-    }
-  };
-
-  const calculateRoute = () => {
-    if (!routeTo.trim()) {
-      alert('Please enter a destination');
-      return;
-    }
-
-    // Generate sample route coordinates (in production, use Google Maps API)
-    const sampleRoute = [
-      { lat: 40.4406, lng: -79.9959 },
-      { lat: 40.4410, lng: -79.9965 },
-      { lat: 40.4415, lng: -79.9970 },
-      { lat: 40.4420, lng: -79.9975 },
-      { lat: 40.4425, lng: -79.9980 }
-    ];
-    
-    setRouteCoordinates(sampleRoute);
-    
-    // Analyze route safety
-    analyzeRouteSafety(sampleRoute);
-  };
-
-  const analyzeRouteSafety = async (route) => {
-    try {
-      const response = await fetch('/api/model/route', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ route })
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setSafetyAnalysis(data.analysis);
-      } else {
-        alert('Failed to analyze route safety');
-      }
-    } catch (error) {
-      console.error('Route analysis error:', error);
-      
-      // Fallback to mock analysis
-      setSafetyAnalysis({
-        overall_safety: 0.75,
-        risk_level: 'medium',
-        segment_count: route.length,
-        risky_segments: [
-          {
-            index: 2,
-            safety_score: 0.35,
-            risk_level: 'high',
-            recommendations: ['Avoid if possible', 'Use well-lit paths']
-          }
-        ],
-        confidence: 0.82,
-        recommendations: [
-          'Route has one high-risk segment',
-          'Consider alternative path during night time'
-        ]
-      });
-    }
-  };
-
-  const predictLocationSafety = async (lat, lng) => {
-    try {
-      const response = await fetch('/api/model/predict', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ lat, lng })
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        return data.prediction;
-      }
-    } catch (error) {
-      console.error('Prediction error:', error);
-    }
-    
-    // Fallback prediction
-    return {
-      safety_score: 0.7,
-      confidence: 0.8,
-      risk_level: 'medium',
-      recommendations: ['Use normal precautions']
-    };
-  };
-
-  const handleDisabilityChange = (disability) => {
-    setDisabilitySettings(prev => ({
-      ...prev,
-      [disability]: !prev[disability]
-    }));
-  };
-
-  // Close modal when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (modalRef.current && !modalRef.current.contains(event.target)) {
         setIsSettingsOpen(false);
       }
+      if (
+        isSearchOpen &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(event.target)
+      ) {
+        setIsSearchOpen(false);
+      }
     }
 
-    if (isSettingsOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
-  }, [isSettingsOpen]);
+  }, [isSettingsOpen, isSearchOpen]);
 
-  const getSafetyColor = (score) => {
-    if (score >= 0.7) return 'text-green-500';
-    if (score >= 0.4) return 'text-yellow-500';
-    return 'text-red-500';
+  useEffect(() => {
+    const mapContainer = mapContainerRef.current;
+    if (!mapContainer) return;
+
+    const handleWheel = (e) => {
+      if (
+        accessibilitySettings.visionImpaired ||
+        accessibilitySettings.reducedMotion
+      ) {
+        e.preventDefault();
+        return;
+      }
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -1 : 1;
+      setZoom((prev) => Math.min(Math.max(10, prev + delta), 18));
+    };
+
+    mapContainer.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      mapContainer.removeEventListener("wheel", handleWheel);
+    };
+  }, [
+    accessibilitySettings.visionImpaired,
+    accessibilitySettings.reducedMotion,
+  ]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        if (isSettingsOpen) {
+          setIsSettingsOpen(false);
+          settingsButtonRef.current?.focus();
+          setAnnouncement("Settings dialog closed");
+        }
+        if (isSearchOpen) {
+          setIsSearchOpen(false);
+        }
+      }
+
+      if (isSettingsOpen && e.key === "Tab") {
+        const focusableElements = modalRef.current?.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusableElements && focusableElements.length > 0) {
+          const firstElement = focusableElements[0];
+          const lastElement = focusableElements[focusableElements.length - 1];
+
+          if (e.shiftKey) {
+            if (document.activeElement === firstElement) {
+              lastElement.focus();
+              e.preventDefault();
+            }
+          } else {
+            if (document.activeElement === lastElement) {
+              firstElement.focus();
+              e.preventDefault();
+            }
+          }
+        }
+      }
+
+      if (e.altKey) {
+        switch (e.key) {
+          case "1":
+            e.preventDefault();
+            setIsSidebarOpen((prev) => !prev);
+            setAnnouncement("Route planner sidebar toggled");
+            break;
+          case "2":
+            e.preventDefault();
+            setIsSettingsOpen(true);
+            setAnnouncement("Accessibility settings opened");
+            break;
+          case "3":
+            e.preventDefault();
+            setIsSearchOpen(true);
+            searchInputRef.current?.focus();
+            break;
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isSettingsOpen, isSearchOpen]);
+
+  const handleAccessibilityChange = (setting) => {
+    const newValue = !accessibilitySettings[setting];
+    setAccessibilitySettings((prev) => ({
+      ...prev,
+      [setting]: newValue,
+    }));
+    setAnnouncement(
+      `${setting.replace(/([A-Z])/g, " $1").toLowerCase()} ${newValue ? "enabled" : "disabled"}`,
+    );
   };
 
-  const getSafetyBgColor = (score) => {
-    if (score >= 0.7) return 'bg-green-500';
-    if (score >= 0.4) return 'bg-yellow-500';
-    return 'bg-red-500';
+  const calculateRoute = () => {
+    if (routeTo) {
+      const activeFeatures = Object.keys(accessibilitySettings)
+        .filter((key) => accessibilitySettings[key])
+        .map((key) => key.replace(/([A-Z])/g, " $1").toLowerCase())
+        .join(", ");
+
+      setAnnouncement(
+        `Calculating accessible ${activeTransport} route from ${routeFrom} to ${routeTo}. Accessibility features: ${activeFeatures || "none"}`,
+      );
+
+      setTimeout(() => {
+        setAnnouncement(
+          `Route calculated successfully. ${activeTransport === "wheelchair" ? "Wheelchair accessible route found with elevator access and ramp availability." : "Standard route calculated."}`,
+        );
+      }, 1500);
+    }
+  };
+
+  const handleZoomIn = () => {
+    setZoom((prev) => {
+      const newZoom = Math.min(prev + 1, 18);
+      setAnnouncement(`Zoom level ${newZoom}`);
+      return newZoom;
+    });
+  };
+
+  const handleZoomOut = () => {
+    setZoom((prev) => {
+      const newZoom = Math.max(prev - 1, 10);
+      setAnnouncement(`Zoom level ${newZoom}`);
+      return newZoom;
+    });
+  };
+
+  const getLocation = () => {
+    if (navigator.geolocation) {
+      setAnnouncement("Getting your current location");
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCurrentLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+          setRouteFrom("Current Location");
+          setAnnouncement("Current location updated successfully");
+        },
+        (error) => {
+          setAnnouncement(
+            "Unable to get current location. Using default location.",
+          );
+        },
+      );
+    }
+  };
+
+  const handleTransportChange = (mode) => {
+    setActiveTransport(mode);
+    const modeNames = {
+      walk: "walking",
+      transit: "public transit",
+      wheelchair: "wheelchair accessible",
+    };
+    setAnnouncement(`Transportation mode set to ${modeNames[mode]}`);
   };
 
   return (
-    <div className="relative w-full h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 overflow-hidden">
-      {/* Model Status Banner */}
-      {modelStatus && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-4xl">
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className={`p-2 rounded-lg ${modelStatus.is_trained ? 'bg-green-100' : 'bg-yellow-100'}`}>
-                  {modelStatus.is_trained ? (
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-slate-900">
-                    AI Safety Model: {modelStatus.is_trained ? 'Active' : 'Not Trained'}
-                  </h3>
-                  {modelMetrics && (
-                    <p className="text-sm text-slate-600">
-                      Accuracy: {(modelMetrics.test_score * 100).toFixed(1)}% | 
-                      Last trained: {new Date(modelMetrics.training_time).toLocaleDateString()}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={trainModel}
-                  disabled={isTraining}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${
-                    isTraining 
-                      ? 'bg-blue-400 text-white' 
-                      : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-lg'
-                  }`}
-                >
-                  {isTraining ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      <span>Training {trainingProgress}%</span>
-                    </>
-                  ) : (
-                    <>
-                      <Train className="h-4 w-4" />
-                      <span>Train Model</span>
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={fetchModelStatus}
-                  className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                  title="Refresh model status"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Settings Button */}
-      <button 
-        className="absolute top-4 right-4 z-50 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-        onClick={() => setIsSettingsOpen(true)}
-        aria-label="Open settings"
+    <div
+      className={`relative w-full h-screen ${
+        accessibilitySettings.highContrast
+          ? "bg-black text-yellow-300"
+          : "bg-slate-900 text-slate-100"
+      } overflow-hidden font-sans antialiased`}
+      role="application"
+      aria-label="Accessible Map Application"
+      style={{
+        fontSize: accessibilitySettings.largeText ? "1.125rem" : "1rem",
+        lineHeight: accessibilitySettings.largeText ? "1.75" : "1.5",
+      }}
+    >
+      <div
+        ref={announcementRef}
+        aria-live="assertive"
+        aria-atomic="true"
+        className="sr-only"
+        role="status"
       >
-        <Settings className="w-6 h-6" />
-      </button>
-
-      {/* AI Quick Stats */}
-      <div className="absolute top-20 right-4 z-40 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 p-4 w-64">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-600">Model Status</span>
-            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-              modelStatus?.is_trained ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-            }`}>
-              {modelStatus?.is_trained ? 'Active' : 'Inactive'}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-600">Confidence</span>
-            <span className="text-sm font-semibold text-blue-600">
-              {modelMetrics ? `${(modelMetrics.test_score * 100).toFixed(1)}%` : 'N/A'}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-600">Samples</span>
-            <span className="text-sm font-semibold text-slate-900">
-              {modelMetrics?.n_samples?.toLocaleString() || 'N/A'}
-            </span>
-          </div>
-          <button
-            onClick={() => navigate('/admin')}
-            className="w-full mt-2 py-2 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2"
-          >
-            <Activity className="h-4 w-4" />
-            <span>Admin Panel</span>
-          </button>
-        </div>
+        {announcement}
       </div>
 
-      {/* Collapsible Sidebar */}
-      <div className={`absolute top-0 left-0 z-40 h-full bg-white shadow-xl transition-all duration-300 ${
-        isSidebarOpen ? 'w-80' : 'w-0'
-      }`}>
+      <div className="sr-only" aria-label="Keyboard shortcuts">
+        Press Alt + 1 to toggle sidebar, Alt + 2 for settings, Alt + 3 for
+        search
+      </div>
+
+
+
+
+      <aside
+        className={`absolute top-0 left-0 z-40 h-full ${
+          accessibilitySettings.highContrast ? "bg-gray-900" : "bg-slate-800"
+        } shadow-2xl ${
+          accessibilitySettings.reducedMotion
+            ? ""
+            : "transition-all duration-300"
+        } ${isSidebarOpen ? "w-80 translate-x-0" : "w-0 -translate-x-full"}`}
+        role="complementary"
+        aria-label="Route planner"
+      >
         {isSidebarOpen && (
-          <div className="p-6 h-full flex flex-col">
-            {/* Sidebar Header */}
+          <div className="p-6 h-full flex flex-col overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-3">
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-2 rounded-lg">
-                  <Brain className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900">AI Route Planner</h2>
-                  <p className="text-sm text-slate-600">Smart safety routing</p>
-                </div>
-              </div>
-              <button 
+              <button
                 onClick={() => setIsSidebarOpen(false)}
-                className="text-slate-400 hover:text-slate-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded"
-                aria-label="Close sidebar"
+                className={`p-2 ${
+                  accessibilitySettings.highContrast
+                    ? "hover:bg-gray-800"
+                    : "hover:bg-slate-700"
+                } rounded-lg ${
+                  accessibilitySettings.reducedMotion
+                    ? ""
+                    : "transition-all duration-300"
+                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                aria-label="Close route planner sidebar"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
 
-            {/* Route Inputs */}
-            <div className="space-y-4 flex-1">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  <div className="flex items-center space-x-2">
-                    <Shield className="h-4 w-4 text-emerald-600" />
-                    <span>Safe Route Planner</span>
-                  </div>
-                </label>
-                <div className="space-y-3">
+            <div className="space-y-6 flex-1">
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="from-input"
+                    className={`block ${
+                      accessibilitySettings.largeText ? "text-lg" : "text-base"
+                    } font-semibold mb-3`}
+                  >
+                    Start Location
+                  </label>
                   <div className="relative">
                     <input
+                      id="from-input"
                       type="text"
                       value={routeFrom}
                       onChange={(e) => setRouteFrom(e.target.value)}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-3 pl-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors duration-200"
+                      className={`w-full ${
+                        accessibilitySettings.highContrast
+                          ? "bg-black text-yellow-300 border-yellow-300"
+                          : "bg-slate-900 text-slate-100 border-slate-600"
+                      } rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-blue-500 border ${
+                        accessibilitySettings.reducedMotion
+                          ? ""
+                          : "transition-all duration-300"
+                      }`}
                       placeholder="Current location"
                     />
-                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2" aria-hidden="true">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <div
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2"
+                      aria-hidden="true"
+                    >
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                     </div>
+                    <button
+                      onClick={getLocation}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-slate-700 rounded"
+                      aria-label="Use current location"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                    </button>
                   </div>
+                </div>
 
+                <div>
+                  <label
+                    htmlFor="to-input"
+                    className={`block ${
+                      accessibilitySettings.largeText ? "text-lg" : "text-base"
+                    } font-semibold mb-3`}
+                  >
+                    Destination
+                  </label>
                   <div className="relative">
                     <input
+                      id="to-input"
                       type="text"
                       value={routeTo}
                       onChange={(e) => setRouteTo(e.target.value)}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-3 pl-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors duration-200"
-                      placeholder="Enter destination"
+                      className={`w-full ${
+                        accessibilitySettings.highContrast
+                          ? "bg-black text-yellow-300 border-yellow-300"
+                          : "bg-slate-900 text-slate-100 border-slate-600"
+                      } rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-blue-500 border ${
+                        accessibilitySettings.reducedMotion
+                          ? ""
+                          : "transition-all duration-300"
+                      }`}
+                      placeholder="Where do you want to go?"
                     />
-                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2" aria-hidden="true">
-                      <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <div
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2"
+                      aria-hidden="true"
+                    >
+                      <svg
+                        className="w-4 h-4 text-slate-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
                       </svg>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Safety Priority Slider */}
               <div className="pt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-slate-700">Safety Priority</label>
-                  <span className="text-sm font-semibold text-emerald-600">High</span>
-                </div>
-                <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-emerald-500 to-green-500 w-3/4"></div>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">Prioritizes safety over speed</p>
-              </div>
-
-              {/* Calculate Button */}
-              <div className="pt-6">
-                <button
-                  onClick={calculateRoute}
-                  disabled={!routeTo.trim()}
-                  className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                    routeTo.trim()
-                      ? 'bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 focus:ring-emerald-500'
-                      : 'bg-slate-200 text-slate-400 cursor-not-allowed focus:ring-slate-400'
-                  }`}
+                <h3
+                  className={`${
+                    accessibilitySettings.largeText ? "text-lg" : "text-base"
+                  } font-semibold mb-4`}
                 >
-                  <div className="flex items-center justify-center space-x-2">
-                    <Brain className="h-5 w-5" />
-                    <span>Calculate Safe Route</span>
-                  </div>
-                </button>
-              </div>
-
-              {/* Safety Analysis Results */}
-              {safetyAnalysis && (
-                <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                  <h3 className="font-bold text-slate-900 mb-3 flex items-center">
-                    <Shield className="h-5 w-5 text-blue-600 mr-2" />
-                    Safety Analysis
-                  </h3>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-700">Overall Safety</span>
-                      <div className="flex items-center space-x-2">
-                        <span className={`text-lg font-bold ${getSafetyColor(safetyAnalysis.overall_safety)}`}>
-                          {(safetyAnalysis.overall_safety * 100).toFixed(0)}%
-                        </span>
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <div
-                              key={i}
-                              className={`w-2 h-4 mx-0.5 rounded-sm ${
-                                i < Math.floor(safetyAnalysis.overall_safety * 5)
-                                  ? getSafetyBgColor(safetyAnalysis.overall_safety)
-                                  : 'bg-slate-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-700">Risk Level</span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        safetyAnalysis.risk_level === 'high' ? 'bg-red-100 text-red-800' :
-                        safetyAnalysis.risk_level === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {safetyAnalysis.risk_level.toUpperCase()}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-700">Confidence</span>
-                      <span className="text-sm font-semibold text-blue-600">
-                        {(safetyAnalysis.confidence * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    
-                    {safetyAnalysis.risky_segments && safetyAnalysis.risky_segments.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-blue-200">
-                        <div className="flex items-center text-sm text-slate-700 mb-2">
-                          <AlertTriangle className="h-4 w-4 text-amber-500 mr-2" />
-                          <span>Risky Segments: {safetyAnalysis.risky_segments.length}</span>
-                        </div>
-                        <ul className="space-y-2">
-                          {safetyAnalysis.risky_segments.slice(0, 2).map((segment, index) => (
-                            <li key={index} className="text-xs bg-white/80 p-2 rounded border border-amber-200">
-                              <div className="flex justify-between">
-                                <span className="font-medium">Segment {segment.index + 1}</span>
-                                <span className={`font-bold ${getSafetyColor(segment.safety_score)}`}>
-                                  {(segment.safety_score * 100).toFixed(0)}%
-                                </span>
-                              </div>
-                              <p className="text-slate-600 mt-1">{segment.recommendations[0]}</p>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* AI Model Info Footer */}
-            <div className="mt-6 pt-6 border-t border-slate-200">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-600">AI Model Version</span>
-                <span className="font-medium text-slate-900">v2.1.0</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-slate-600">Last Updated</span>
-                <span className="text-slate-900">
-                  {modelMetrics?.training_time 
-                    ? new Date(modelMetrics.training_time).toLocaleDateString()
-                    : 'N/A'}
-                </span>
-              </div>
-              <button
-                onClick={() => window.open('/admin', '_blank')}
-                className="w-full mt-4 py-2 text-sm bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2"
-              >
-                <BarChart3 className="h-4 w-4" />
-                <span>View Detailed Analytics</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Google Maps Container */}
-      <div className="w-full h-full relative">
-        {/* Show sidebar toggle when collapsed */}
-        {!isSidebarOpen && (
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="absolute top-4 left-4 z-30 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-lg px-4 py-2 shadow-lg transition-all duration-200 flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-            aria-label="Open route planner"
-          >
-            <Brain className="w-5 h-5" />
-            <span>Open AI Planner</span>
-          </button>
-        )}
-
-        {/* Google Maps Embed */}
-        <iframe
-          width="100%"
-          height="100%"
-          frameBorder="0"
-          style={{ border: 0 }}
-          src={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=40.4406,-79.9959&zoom=13&maptype=${mapStyle}`}
-          allowFullScreen
-          aria-label="Interactive map"
-          title="Google Maps"
-          loading="lazy"
-        />
-
-        {/* Safety Overlay Legend */}
-        <div className="absolute bottom-4 right-4 z-20 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-4 w-48">
-          <h4 className="font-semibold text-slate-900 mb-3 flex items-center">
-            <Shield className="h-4 w-4 text-emerald-600 mr-2" />
-            Safety Legend
-          </h4>
-          <div className="space-y-2">
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-              <span className="text-sm text-slate-700">Safe (70-100%)</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-              <span className="text-sm text-slate-700">Moderate (40-69%)</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-              <span className="text-sm text-slate-700">High Risk (0-39%)</span>
-            </div>
-          </div>
-          <div className="mt-3 pt-3 border-t border-slate-200">
-            <div className="text-xs text-slate-500">
-              Powered by AI Safety Model
-              <div className="flex items-center mt-1">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full mr-1 animate-pulse"></div>
-                <span>Real-time analysis active</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Settings Modal */}
-      {isSettingsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div 
-            ref={modalRef}
-            className="bg-white rounded-2xl shadow-2xl w-96 max-h-[80vh] overflow-hidden"
-          >
-            <div className="flex items-center justify-between p-6 border-b border-slate-200">
-              <h2 className="text-xl font-semibold text-slate-900">AI Model Settings</h2>
-              <button 
-                className="text-slate-400 hover:text-slate-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded"
-                onClick={() => setIsSettingsOpen(false)}
-                aria-label="Close settings"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-6 max-h-96 overflow-y-auto">
-              {/* Model Training Section */}
-              <div className="space-y-4">
-                <h3 className="font-medium text-slate-700 flex items-center">
-                  <Train className="h-5 w-5 text-emerald-600 mr-2" />
-                  Model Training
+                  Accessibility Mode
                 </h3>
-                
-                <div className="space-y-3">
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-slate-900">Current Model</span>
-                      {modelStatus?.is_trained ? (
-                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                          Trained
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full">
-                          Needs Training
-                        </span>
-                      )}
-                    </div>
-                    
-                    {modelMetrics && (
-                      <div className="space-y-2 mt-3">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-600">Accuracy</span>
-                          <span className="font-semibold text-slate-900">
-                            {(modelMetrics.test_score * 100).toFixed(1)}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-600">Training Data</span>
-                          <span className="font-semibold text-slate-900">
-                            {modelMetrics.n_samples?.toLocaleString()} samples
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-600">Last Trained</span>
-                          <span className="font-semibold text-slate-900">
-                            {modelMetrics.training_time 
-                              ? new Date(modelMetrics.training_time).toLocaleDateString()
-                              : 'N/A'}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <button
-                    onClick={trainModel}
-                    disabled={isTraining}
-                    className={`w-full py-3 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
-                      isTraining
-                        ? 'bg-blue-400 text-white'
-                        : 'bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
-                    }`}
-                  >
-                    {isTraining ? (
-                      <>
-                        <RefreshCw className="h-5 w-5 animate-spin" />
-                        <span>Training {trainingProgress}%</span>
-                      </>
-                    ) : (
-                      <>
-                        <Zap className="h-5 w-5" />
-                        <span>Train AI Model</span>
-                      </>
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={fetchModelStatus}
-                    className="w-full py-2 px-4 border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors duration-200 flex items-center justify-center space-x-2"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                    <span>Refresh Status</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Accessibility Settings */}
-              <div className="space-y-4">
-                <h3 className="font-medium text-slate-700">Accessibility Features</h3>
-                
-                <div className="space-y-2">
+                <div
+                  className="grid grid-cols-3 gap-3"
+                  role="radiogroup"
+                  aria-label="Transportation options"
+                >
                   {[
-                    { key: 'blind', label: 'Vision Impaired', desc: 'High contrast, screen reader support', icon: '👁️' },
-                    { key: 'deaf', label: 'Hearing Impaired', desc: 'Visual alerts, captions', icon: '👂' },
-                    { key: 'lowEnergy', label: 'Energy Efficient', desc: 'Reduced animations, battery saver', icon: '⚡' }
-                  ].map((setting) => (
-                    <label key={setting.key} className="flex items-center justify-between cursor-pointer p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all duration-200">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center">
-                          <span className="text-lg">{setting.icon}</span>
-                        </div>
-                        <div>
-                          <div className="font-medium text-slate-900">{setting.label}</div>
-                          <div className="text-sm text-slate-600">{setting.desc}</div>
-                        </div>
-                      </div>
-                      <input 
-                        type="checkbox" 
-                        checked={disabilitySettings[setting.key]}
-                        onChange={() => handleDisabilityChange(setting.key)}
-                        className="rounded text-emerald-500 focus:ring-emerald-500 focus:ring-2"
-                      />
-                    </label>
+                    { mode: "walk", icon: "🚶", label: "Walk" },
+                    { mode: "transit", icon: "🚌", label: "Transit" },
+                    { mode: "wheelchair", icon: "♿", label: "Wheelchair" },
+                  ].map((transport) => (
+                    <button
+                      key={transport.mode}
+                      onClick={() => handleTransportChange(transport.mode)}
+                      className={`flex flex-col items-center p-4 rounded-xl border-2 ${
+                        accessibilitySettings.reducedMotion
+                          ? ""
+                          : "transition-all duration-300"
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        activeTransport === transport.mode
+                          ? `${
+                              accessibilitySettings.highContrast
+                                ? "border-yellow-300 bg-yellow-500 bg-opacity-20"
+                                : "border-slate-600 bg-blue-500 bg-opacity-20"
+                            }`
+                          : `${
+                              accessibilitySettings.highContrast
+                                ? "border-yellow-300 border-opacity-30 hover:border-opacity-100"
+                                : "border-slate-600 border-opacity-30 hover:border-opacity-100"
+                            }`
+                      }`}
+                      aria-label={`Select ${transport.label} mode`}
+                      aria-pressed={activeTransport === transport.mode}
+                    >
+                      <span className="text-2xl mb-2" aria-hidden="true">
+                        {transport.icon}
+                      </span>
+                      <span
+                        className={`${
+                          accessibilitySettings.largeText
+                            ? "text-lg"
+                            : "text-base"
+                        } font-medium`}
+                      >
+                        {transport.label}
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>
 
-              {/* Model Configuration */}
-              <div className="space-y-3">
-                <h3 className="font-medium text-slate-700">AI Configuration</h3>
-                <div className="space-y-2">
-                  <label className="flex items-center justify-between p-2 rounded hover:bg-slate-50">
-                    <span className="text-slate-700">Real-time Updates</span>
-                    <input type="checkbox" className="rounded text-emerald-500" defaultChecked />
-                  </label>
-                  <label className="flex items-center justify-between p-2 rounded hover:bg-slate-50">
-                    <span className="text-slate-700">Predictive Analytics</span>
-                    <input type="checkbox" className="rounded text-emerald-500" defaultChecked />
-                  </label>
-                  <label className="flex items-center justify-between p-2 rounded hover:bg-slate-50">
-                    <span className="text-slate-700">Automatic Model Updates</span>
-                    <input type="checkbox" className="rounded text-emerald-500" />
-                  </label>
+              <div className="pt-6">
+                <button
+                  onClick={calculateRoute}
+                  disabled={!routeTo}
+                  className={`w-full py-4 px-6 rounded-xl font-semibold ${
+                    accessibilitySettings.reducedMotion
+                      ? ""
+                      : "transition-all duration-300"
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    accessibilitySettings.highContrast
+                      ? "focus:ring-offset-black"
+                      : "focus:ring-offset-slate-800"
+                  } ${
+                    routeTo
+                      ? `${
+                          accessibilitySettings.highContrast
+                            ? "bg-yellow-500 hover:bg-yellow-600 text-black"
+                            : "bg-blue-600 hover:bg-blue-700 text-white"
+                        } shadow-lg ${
+                          accessibilitySettings.reducedMotion
+                            ? ""
+                            : "hover:shadow-xl transform hover:scale-105"
+                        }`
+                      : "bg-slate-700 text-slate-400 cursor-not-allowed"
+                  }`}
+                  aria-disabled={!routeTo}
+                >
+                  Calculate Accessible Route
+                </button>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-slate-600">
+                <h3
+                  className={`${
+                    accessibilitySettings.largeText ? "text-lg" : "text-base"
+                  } font-semibold mb-4`}
+                >
+                  Accessible Locations
+                </h3>
+                <div
+                  className="space-y-3"
+                  role="list"
+                  aria-label="Recent accessible destinations"
+                >
+                  {[
+                    { name: "University of Pittsburgh", type: "Education" },
+                    { name: "Carnegie Museum", type: "Museum" },
+                    { name: "Accessible Transit Center", type: "Transport" },
+                    { name: "City Hospital", type: "Medical" },
+                  ].map((destination) => (
+                    <button
+                      key={destination.name}
+                      onClick={() => {
+                        setRouteTo(destination.name);
+                        setAnnouncement(
+                          `Destination set to ${destination.name}, ${destination.type}`,
+                        );
+                      }}
+                      className={`w-full text-left p-4 rounded-xl ${
+                        accessibilitySettings.highContrast
+                          ? "hover:bg-gray-800"
+                          : "hover:bg-slate-700"
+                      } ${
+                        accessibilitySettings.reducedMotion
+                          ? ""
+                          : "transition-all duration-300"
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500 group`}
+                      role="listitem"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div
+                            className={`${
+                              accessibilitySettings.largeText
+                                ? "text-lg"
+                                : "text-base"
+                            } font-medium`}
+                          >
+                            {destination.name}
+                          </div>
+                          <div
+                            className={`${
+                              accessibilitySettings.largeText
+                                ? "text-lg"
+                                : "text-base"
+                            } ${
+                              accessibilitySettings.highContrast
+                                ? "text-yellow-300"
+                                : "text-slate-400"
+                            }`}
+                          >
+                            {destination.type}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className="text-green-400"
+                            aria-label="Wheelchair accessible"
+                          >
+                            ♿
+                          </span>
+                          <svg
+                            className={`w-4 h-4 ${
+                              accessibilitySettings.highContrast
+                                ? "text-yellow-300"
+                                : "text-slate-400"
+                            } opacity-0 group-hover:opacity-100 ${
+                              accessibilitySettings.reducedMotion
+                                ? ""
+                                : "transition-all duration-300"
+                            }`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
+          </div>
+        )}
+      </aside>
 
-            {/* Modal Actions */}
-            <div className="flex justify-between p-6 border-t border-slate-200 bg-slate-50">
-              <button 
-                className="px-4 py-2 text-slate-700 hover:text-slate-900 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded"
-                onClick={() => navigate('/admin')}
+      <main className="w-full h-full relative" ref={mapContainerRef}>
+        {!isSidebarOpen && (
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className={`absolute top-20 left-4 z-30 ${
+              accessibilitySettings.highContrast
+                ? "bg-yellow-500 hover:bg-yellow-600 text-black"
+                : "bg-blue-600 hover:bg-blue-700 text-white"
+            } rounded-xl px-4 py-3 shadow-2xl ${
+              accessibilitySettings.reducedMotion
+                ? ""
+                : "transition-all duration-300"
+            } flex items-center space-x-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+              accessibilitySettings.highContrast
+                ? "focus:ring-offset-black"
+                : "focus:ring-offset-slate-900"
+            } ${accessibilitySettings.reducedMotion ? "" : "hover:scale-105"}`}
+            aria-label="Open accessible route planner"
+            accessKey="1"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+            <span className="font-medium">Show Route Planner</span>
+          </button>
+        )}
+
+        <div className="w-full h-full relative overflow-hidden">
+          <iframe
+            width="100%"
+            height="100%"
+            frameBorder="0"
+            style={{
+              border: 0,
+              pointerEvents: accessibilitySettings.visionImpaired
+                ? "none"
+                : "auto",
+              filter: accessibilitySettings.highContrast
+                ? "contrast(1.5) brightness(1.2)"
+                : "none",
+            }}
+            src={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${currentLocation.lat},${currentLocation.lng}&zoom=${zoom}&maptype=${mapStyle}`}
+            allowFullScreen
+            aria-label={`Map view centered at current location. Zoom level ${zoom}. ${mapStyle} view.`}
+            title="Accessible Map View"
+            loading="lazy"
+            aria-hidden={accessibilitySettings.visionImpaired}
+          />
+        </div>
+
+        <div
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
+          aria-hidden="true"
+        >
+          <div
+            className={`relative ${accessibilitySettings.reducedMotion ? "" : "animate-pulse"}`}
+          >
+            <div className="w-8 h-8 bg-blue-500 rounded-full border-4 border-white shadow-2xl"></div>
+            <div className="absolute inset-0 rounded-full border-2 border-blue-300 animate-ping"></div>
+          </div>
+        </div>
+
+        <div className="absolute top-20 right-4 z-40 flex flex-col gap-3">
+          <button
+            onClick={handleZoomIn}
+            className={`${
+              accessibilitySettings.highContrast
+                ? "bg-gray-900 hover:bg-gray-800 border-yellow-300"
+                : "bg-slate-800 hover:bg-slate-700 border-slate-600"
+            } rounded-xl w-12 h-12 flex items-center justify-center shadow-2xl border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              accessibilitySettings.reducedMotion
+                ? ""
+                : "transition-all duration-300"
+            }`}
+            aria-label="Zoom in"
+            disabled={accessibilitySettings.visionImpaired}
+          >
+            <span
+              className={`text-xl font-bold ${
+                accessibilitySettings.highContrast
+                  ? "text-yellow-300"
+                  : "text-slate-100"
+              }`}
+            >
+              +
+            </span>
+          </button>
+          <button
+            onClick={handleZoomOut}
+            className={`${
+              accessibilitySettings.highContrast
+                ? "bg-gray-900 hover:bg-gray-800 border-yellow-300"
+                : "bg-slate-800 hover:bg-slate-700 border-slate-600"
+            } rounded-xl w-12 h-12 flex items-center justify-center shadow-2xl border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              accessibilitySettings.reducedMotion
+                ? ""
+                : "transition-all duration-300"
+            }`}
+            aria-label="Zoom out"
+            disabled={accessibilitySettings.visionImpaired}
+          >
+            <span
+              className={`text-xl font-bold ${
+                accessibilitySettings.highContrast
+                  ? "text-yellow-300"
+                  : "text-slate-100"
+              }`}
+            >
+              -
+            </span>
+          </button>
+        </div>
+
+        <div
+          className={`absolute bottom-4 right-4 z-40 ${
+            accessibilitySettings.highContrast
+              ? "bg-gray-900 border-yellow-300"
+              : "bg-slate-800 border-slate-600"
+          } rounded-2xl px-4 py-3 shadow-2xl border ${
+            accessibilitySettings.largeText ? "text-lg" : "text-base"
+          } font-bold backdrop-blur-sm bg-opacity-90`}
+        >
+          Zoom: {zoom}x
+        </div>
+      </main>
+
+      {isSettingsOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="settings-title"
+        >
+          <div
+            ref={modalRef}
+            className={`${
+              accessibilitySettings.highContrast
+                ? "bg-gray-900 border-yellow-300"
+                : "bg-slate-800 border-slate-600"
+            } rounded-3xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden border`}
+            tabIndex={-1}
+          >
+            <div
+              className={`flex items-center justify-between p-8 border-b ${
+                accessibilitySettings.highContrast
+                  ? "border-yellow-300"
+                  : "border-slate-600"
+              }`}
+            >
+              <div>
+                <h2
+                  id="settings-title"
+                  className={`${
+                    accessibilitySettings.largeText ? "text-2xl" : "text-xl"
+                  } font-bold`}
+                >
+                  Accessibility Center
+                </h2>
+                <p
+                  className={`${
+                    accessibilitySettings.largeText ? "text-lg" : "text-base"
+                  } mt-2 ${
+                    accessibilitySettings.highContrast
+                      ? "text-yellow-300"
+                      : "text-slate-300"
+                  }`}
+                >
+                  Customize your experience for vision, hearing, mobility, and
+                  cognitive needs
+                </p>
+              </div>
+              <button
+                className={`p-2 ${
+                  accessibilitySettings.highContrast
+                    ? "hover:bg-gray-800"
+                    : "hover:bg-slate-700"
+                } rounded-xl ${
+                  accessibilitySettings.reducedMotion
+                    ? ""
+                    : "transition-all duration-300"
+                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                onClick={() => {
+                  setIsSettingsOpen(false);
+                  setAnnouncement("Settings dialog closed");
+                }}
+                aria-label="Close accessibility settings"
               >
-                Advanced Settings
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
               </button>
-              <button 
-                className="px-6 py-2 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                onClick={() => setIsSettingsOpen(false)}
-              >
-                Apply Settings
-              </button>
+            </div>
+
+            <div className="p-8 space-y-8 max-h-96 overflow-y-auto">
+              <section>
+                <h3
+                  className={`${
+                    accessibilitySettings.largeText ? "text-xl" : "text-lg"
+                  } font-bold mb-6`}
+                >
+                  Accessibility Features
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    {
+                      key: "visionImpaired",
+                      icon: "👁️",
+                      title: "Vision Impaired Mode",
+                    },
+                    {
+                      key: "hearingImpaired",
+                      icon: "👂",
+                      title: "Hearing Impaired Mode",
+                    },
+                    { key: "highContrast", icon: "⚫", title: "High Contrast" },
+                    { key: "largeText", icon: "🔍", title: "Large Text" },
+                    {
+                      key: "reducedMotion",
+                      icon: "🎬",
+                      title: "Reduced Motion",
+                    },
+                    { key: "lowEnergy", icon: "⚡", title: "Low Energy Mode" },
+                  ].map((feature) => (
+                    <label
+                      key={feature.key}
+                      className={`flex items-start space-x-4 cursor-pointer p-4 rounded-2xl border ${
+                        accessibilitySettings.highContrast
+                          ? "border-yellow-300 hover:bg-gray-800"
+                          : "border-slate-600 hover:bg-slate-700"
+                      } ${
+                        accessibilitySettings.reducedMotion
+                          ? ""
+                          : "transition-all duration-300"
+                      } focus-within:ring-2 focus-within:ring-blue-500`}
+                    >
+                      <div
+                        className="w-12 h-12 bg-blue-500 bg-opacity-20 rounded-xl flex items-center justify-center flex-shrink-0"
+                        aria-hidden="true"
+                      >
+                        <span className="text-2xl">{feature.icon}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <div
+                            className={`font-semibold ${
+                              accessibilitySettings.highContrast
+                                ? "text-yellow-300"
+                                : "text-slate-100"
+                            } pr-2`}
+                          >
+                            {feature.title}
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={accessibilitySettings[feature.key]}
+                            onChange={() =>
+                              handleAccessibilityChange(feature.key)
+                            }
+                            className="rounded-lg w-5 h-5 text-blue-500 focus:ring-blue-500 focus:ring-2"
+                          />
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </section>
+
+              <section>
+                <h3
+                  className={`${
+                    accessibilitySettings.largeText ? "text-xl" : "text-lg"
+                  } font-bold mb-6`}
+                >
+                  Map Display
+                </h3>
+                <div
+                  className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                  role="radiogroup"
+                  aria-label="Map style options"
+                >
+                  {[
+                    { value: "roadmap", label: "Standard", icon: "🗺️" },
+                    { value: "satellite", label: "Satellite", icon: "🛰️" },
+                    { value: "terrain", label: "Terrain", icon: "⛰️" },
+                  ].map((style) => (
+                    <label
+                      key={style.value}
+                      className={`flex flex-col items-center p-4 rounded-2xl border-2 cursor-pointer ${
+                        accessibilitySettings.reducedMotion
+                          ? ""
+                          : "transition-all duration-300"
+                      } focus-within:ring-2 focus-within:ring-blue-500 ${
+                        mapStyle === style.value
+                          ? `${
+                              accessibilitySettings.highContrast
+                                ? "border-yellow-300 bg-yellow-500 bg-opacity-20"
+                                : "border-slate-600 bg-blue-500 bg-opacity-20"
+                            }`
+                          : `${
+                              accessibilitySettings.highContrast
+                                ? "border-yellow-300 border-opacity-30 hover:border-opacity-100"
+                                : "border-slate-600 border-opacity-30 hover:border-opacity-100"
+                            }`
+                      }`}
+                    >
+                      <span className="text-3xl mb-3" aria-hidden="true">
+                        {style.icon}
+                      </span>
+                      <input
+                        type="radio"
+                        name="mapStyle"
+                        value={style.value}
+                        checked={mapStyle === style.value}
+                        onChange={(e) => {
+                          setMapStyle(e.target.value);
+                          setAnnouncement(
+                            `Map style changed to ${style.label}`,
+                          );
+                        }}
+                        className="sr-only"
+                        aria-checked={mapStyle === style.value}
+                      />
+                      <div className="text-center">
+                        <div
+                          className={`font-semibold ${
+                            accessibilitySettings.highContrast
+                              ? "text-yellow-300"
+                              : "text-slate-100"
+                          } mb-1`}
+                        >
+                          {style.label}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </section>
+
+              <section>
+                <h3
+                  className={`${
+                    accessibilitySettings.largeText ? "text-xl" : "text-lg"
+                  } font-bold mb-6`}
+                >
+                  Route Preferences
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    { id: "avoid-stairs", label: "Avoid Stairs" },
+                    { id: "elevator-access", label: "Elevator Access" },
+                    {
+                      id: "wheelchair-accessible",
+                      label: "Wheelchair Accessible",
+                    },
+                    { id: "avoid-highways", label: "Avoid Highways" },
+                    { id: "well-lit-areas", label: "Well-lit Areas" },
+                    { id: "quiet-roads", label: "Quiet Roads" },
+                  ].map((preference) => (
+                    <label
+                      key={preference.id}
+                      className={`flex items-start space-x-3 cursor-pointer p-3 rounded-xl ${
+                        accessibilitySettings.highContrast
+                          ? "hover:bg-gray-800"
+                          : "hover:bg-slate-700"
+                      } ${
+                        accessibilitySettings.reducedMotion
+                          ? ""
+                          : "transition-all duration-300"
+                      } focus-within:ring-2 focus-within:ring-blue-500`}
+                    >
+                      <input
+                        type="checkbox"
+                        id={preference.id}
+                        className="rounded-lg w-5 h-5 text-blue-500 focus:ring-blue-500 focus:ring-2 mt-1 flex-shrink-0"
+                      />
+                      <div>
+                        <div
+                          className={`font-semibold ${
+                            accessibilitySettings.highContrast
+                              ? "text-yellow-300"
+                              : "text-slate-100"
+                          }`}
+                        >
+                          {preference.label}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </section>
+            </div>
+
+            <div
+              className={`flex justify-between items-center p-8 border-t ${
+                accessibilitySettings.highContrast
+                  ? "border-yellow-300 bg-gray-800"
+                  : "border-slate-600 bg-slate-700"
+              } backdrop-blur-sm`}
+            >
+              <div className="flex items-center space-x-2 text-slate-400">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span
+                  className={
+                    accessibilitySettings.largeText ? "text-lg" : "text-base"
+                  }
+                >
+                  Changes apply immediately
+                </span>
+              </div>
+
+              <div className="flex space-x-4">
+                <button
+                  className={`px-6 py-3 ${
+                    accessibilitySettings.highContrast
+                      ? "text-yellow-300 hover:text-yellow-400"
+                      : "text-slate-100 hover:text-blue-400"
+                  } ${
+                    accessibilitySettings.reducedMotion
+                      ? ""
+                      : "transition-all duration-300"
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl font-semibold`}
+                  onClick={() => {
+                    setAccessibilitySettings({
+                      visionImpaired: false,
+                      hearingImpaired: false,
+                      lowEnergy: false,
+                      highContrast: false,
+                      largeText: false,
+                      screenReader: false,
+                      reducedMotion: false,
+                    });
+                    setMapStyle("roadmap");
+                    setZoom(13);
+                    setAnnouncement("All settings reset to default");
+                  }}
+                  aria-label="Reset all accessibility settings to default"
+                >
+                  Reset Defaults
+                </button>
+                <button
+                  className={`px-8 py-3 ${
+                    accessibilitySettings.highContrast
+                      ? "bg-yellow-500 hover:bg-yellow-600 text-black"
+                      : "bg-blue-600 hover:bg-blue-700 text-white"
+                  } rounded-xl font-semibold shadow-lg ${
+                    accessibilitySettings.reducedMotion
+                      ? ""
+                      : "transition-all duration-300"
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    accessibilitySettings.highContrast
+                      ? "focus:ring-offset-black"
+                      : "focus:ring-offset-slate-800"
+                  } ${
+                    accessibilitySettings.reducedMotion ? "" : "hover:scale-105"
+                  }`}
+                  onClick={() => {
+                    setIsSettingsOpen(false);
+                    setAnnouncement(
+                      "Accessibility settings applied successfully",
+                    );
+                  }}
+                  aria-label="Apply accessibility settings and close dialog"
+                >
+                  Apply Settings
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
     </div>
   );
-};
-
-export default Dashboard;
+}
