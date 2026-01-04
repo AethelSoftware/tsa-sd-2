@@ -1,0 +1,22 @@
+2026-01-03 22:03:58,139 - __main__ - ERROR - Import error: No module named 'googlemaps'
+2026-01-03 22:03:58,139 - __main__ - INFO - Creating minimal Flask app for testing
+2026-01-03 22:04:16,171 - __main__ - ERROR - Training failed: name 'get_safety_ai' is not defined
+Traceback (most recent call last):
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 163, in train_model_interactive
+    safety_ai = get_safety_ai()
+NameError: name 'get_safety_ai' is not defined
+2026-01-03 22:11:18,620 - ai_safety_model - INFO - No model found or retraining requested, will train when needed
+2026-01-03 22:11:18,620 - __main__ - ERROR - Import error: No module named 'backend'
+2026-01-03 22:11:18,621 - __main__ - INFO - Creating minimal Flask app for testing
+2026-01-03 22:11:26,914 - ai_safety_model - INFO - No model found or retraining requested, will train when needed
+2026-01-03 22:11:26,914 - ai_safety_model - INFO - Starting advanced training: 5 loops, 2 epochs
+2026-01-03 22:11:26,914 - ai_safety_model - INFO - Loop 1/5
+2026-01-03 22:11:26,928 - ai_safety_model - INFO - Loop 2/5
+2026-01-03 22:11:26,932 - ai_safety_model - INFO - Loop 3/5
+2026-01-03 22:11:26,935 - ai_safety_model - INFO - Loop 4/5
+2026-01-03 22:11:26,939 - ai_safety_model - INFO - Loop 5/5
+2026-01-03 22:11:26,942 - ai_safety_model - INFO - Performing feature engineering...
+2026-01-03 22:11:27,955 - ai_safety_model - INFO - Training ensemble models...
+2026-01-03 22:11:27,955 - ai_safety_model - INFO - Training neural network with multiple epochs...
+2026-01-03 22:11:30,135 - ai_safety_model - INFO - Training rf...
+2026-01-03 22:12:24,462 - ai_safety_model - INFO - Training gb...
