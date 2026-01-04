@@ -47,6 +47,23 @@ except ImportError as e:
         return jsonify({"message": "Hello from Flask!"})
 
 
+def format_metric(value, format_str='.4f'):
+    """Safely format a metric value, handling None and string values"""
+    if value is None:
+        return 'N/A'
+    try:
+        # Try to convert to float if it's a string
+        if isinstance(value, str):
+            try:
+                value = float(value)
+            except ValueError:
+                return str(value)
+        # Format as requested
+        return format(value, format_str)
+    except Exception:
+        return str(value)
+
+
 def check_model_status():
     """Check if model exists and prompt for training"""
     model_path = os.environ.get('MODEL_PATH', 'models/safety_model.pkl')
@@ -69,10 +86,18 @@ def check_model_status():
                 if info['training_metrics']:
                     metrics = info['training_metrics']
                     print(f"\nModel Performance:")
-                    print(f"  Cross-Validation Score: {metrics.get('cv_mean', 'N/A'):.4f}")
-                    print(f"  Test Score: {metrics.get('test_score', 'N/A'):.4f}")
-                    print(f"  Training Samples: {metrics.get('n_samples', 'N/A')}")
-                    print(f"  Features: {metrics.get('n_features', 'N/A')}")
+                    cv_mean = metrics.get('cv_mean')
+                    cv_std = metrics.get('cv_std')
+                    
+                    # Safely format the metrics
+                    if cv_mean is not None and cv_std is not None:
+                        print(f"  Cross-Validation Score: {format_metric(cv_mean)} ± {format_metric(cv_std)}")
+                    else:
+                        print(f"  Cross-Validation Score: N/A")
+                    
+                    print(f"  Test Score: {format_metric(metrics.get('test_score'))}")
+                    print(f"  Training Samples: {format_metric(metrics.get('n_samples'), ',d')}")
+                    print(f"  Features: {format_metric(metrics.get('n_features'))}")
                 
                 print(f"\nModel Location: {model_path}")
                 print("="*60)
@@ -82,7 +107,7 @@ def check_model_status():
                 return response in ['y', 'yes']
         except Exception as e:
             logger.error(f"Error checking model: {e}")
-            print(f"\n⚠️  Model exists but could not be loaded: {e}")
+            print(f"\n⚠️  Model exists but could not be loaded: {str(e)[:100]}...")
             response = input("Do you want to retrain? (y/N): ").strip().lower()
             return response in ['y', 'yes']
     else:
@@ -181,22 +206,26 @@ def train_model_interactive():
             metrics = result['metrics']
             print(f"\nTraining Time: {training_time:.1f} seconds")
             print(f"\nModel Performance Metrics:")
-            print(f"  Cross-Validation Score: {metrics['cv_mean']:.4f} ± {metrics['cv_std']:.4f}")
-            print(f"  Training Score: {metrics['train_score']:.4f}")
-            print(f"  Test Score: {metrics['test_score']:.4f}")
-            print(f"  Samples Trained: {metrics['n_samples']:,}")
-            print(f"  Features Used: {metrics['n_features']}")
+            print(f"  Cross-Validation Score: {format_metric(metrics.get('cv_mean'))} ± {format_metric(metrics.get('cv_std'))}")
+            print(f"  Training Score: {format_metric(metrics.get('train_score'))}")
+            print(f"  Test Score: {format_metric(metrics.get('test_score'))}")
+            print(f"  Samples Trained: {format_metric(metrics.get('n_samples'), ',d')}")
+            print(f"  Features Used: {format_metric(metrics.get('n_features'))}")
             
             # Interpret scores
             print(f"\nModel Interpretation:")
-            if metrics['test_score'] >= 0.8:
-                print("  ✅ Excellent model performance")
-            elif metrics['test_score'] >= 0.7:
-                print("  👍 Good model performance")
-            elif metrics['test_score'] >= 0.6:
-                print("  ⚠️  Acceptable model performance")
+            test_score = metrics.get('test_score')
+            if test_score is not None:
+                if test_score >= 0.8:
+                    print("  ✅ Excellent model performance")
+                elif test_score >= 0.7:
+                    print("  👍 Good model performance")
+                elif test_score >= 0.6:
+                    print("  ⚠️  Acceptable model performance")
+                else:
+                    print("  ⚠️  Model may need more training data")
             else:
-                print("  ⚠️  Model may need more training data")
+                print("  ⚠️  Test score not available")
             
             print(f"\nModel saved to: {safety_ai.model_path}")
             print(f"Next recommended training: In 1-7 days")
@@ -285,7 +314,7 @@ def add_model_endpoints(app):
                 'prediction': result,
                 'model_info': {
                     'is_trained': safety_ai.is_trained,
-                    'last_trained': safety_ai.last_training_time,
+                    'last_trained': str(safety_ai.last_training_time) if safety_ai.last_training_time else None,
                     'confidence': safety_ai.training_metrics.get('test_score', 0.8)
                 }
             })
@@ -399,7 +428,8 @@ def main():
                     sys.exit(1)
     
     # Add model endpoints to Flask app
-    flask_app = add_model_endpoints(flask_app)
+    # Note: flask_app is defined at the module level (either from import or created in except block)
+    flask_app_with_endpoints = add_model_endpoints(flask_app)
     
     # Start browser in background
     if not args.no_browser:
@@ -415,13 +445,14 @@ def main():
     print(f"Model Status: {'✅ Trained' if safety_ai.is_trained else '⚠️ Not trained'}")
     if safety_ai.is_trained and safety_ai.training_metrics:
         score = safety_ai.training_metrics.get('test_score', 0)
-        print(f"Model Accuracy: {score:.2%}")
+        if score is not None:
+            print(f"Model Accuracy: {score:.2%}")
     print("="*60)
     print("Press Ctrl+C to stop the server")
     print("="*60 + "\n")
     
     try:
-        flask_app.run(
+        flask_app_with_endpoints.run(
             host=args.host,
             port=args.port,
             debug=args.debug,

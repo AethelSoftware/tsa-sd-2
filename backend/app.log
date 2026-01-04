@@ -20,3 +20,75 @@ NameError: name 'get_safety_ai' is not defined
 2026-01-03 22:11:27,955 - ai_safety_model - INFO - Training neural network with multiple epochs...
 2026-01-03 22:11:30,135 - ai_safety_model - INFO - Training rf...
 2026-01-03 22:12:24,462 - ai_safety_model - INFO - Training gb...
+2026-01-04 08:55:29,539 - ai_safety_model - INFO - No model found or retraining requested, will train when needed
+2026-01-04 08:55:29,539 - __main__ - ERROR - Import error: No module named 'backend'
+2026-01-04 08:55:29,539 - __main__ - INFO - Creating minimal Flask app for testing
+2026-01-04 08:55:47,176 - ai_safety_model - INFO - No model found or retraining requested, will train when needed
+2026-01-04 08:55:47,178 - ai_safety_model - INFO - Starting advanced training: 5 loops, 2 epochs
+2026-01-04 08:55:47,178 - ai_safety_model - INFO - Loop 1/5
+2026-01-04 08:55:47,192 - ai_safety_model - INFO - Loop 2/5
+2026-01-04 08:55:47,197 - ai_safety_model - INFO - Loop 3/5
+2026-01-04 08:55:47,201 - ai_safety_model - INFO - Loop 4/5
+2026-01-04 08:55:47,205 - ai_safety_model - INFO - Loop 5/5
+2026-01-04 08:55:47,210 - ai_safety_model - INFO - Performing feature engineering...
+2026-01-04 08:55:48,145 - ai_safety_model - INFO - Training ensemble models...
+2026-01-04 08:55:48,145 - ai_safety_model - INFO - Training neural network with multiple epochs...
+2026-01-04 08:55:48,146 - ai_safety_model - INFO - Training rf...
+2026-01-04 08:56:28,819 - ai_safety_model - INFO - Training gb...
+2026-01-04 09:00:47,587 - ai_safety_model - INFO - Training ridge...
+2026-01-04 09:00:49,108 - ai_safety_model - INFO - Training stacking ensemble...
+2026-01-04 09:08:47,495 - ai_safety_model - INFO - Calculating training metrics...
+2026-01-04 09:08:47,989 - ai_safety_model - INFO - Training final model on all data...
+2026-01-04 09:26:14,863 - ai_safety_model - INFO - Model saved to models/safety_model.pkl
+2026-01-04 09:26:14,868 - ai_safety_model - INFO - Training completed. Train Score: 0.9355, Test Score: 0.8867
+2026-01-04 09:26:14,885 - __main__ - ERROR - Training failed: 'cv_mean'
+Traceback (most recent call last):
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 184, in train_model_interactive
+    print(f"  Cross-Validation Score: {metrics['cv_mean']:.4f} ± {metrics['cv_std']:.4f}")
+KeyError: 'cv_mean'
+2026-01-04 10:23:13,639 - ai_safety_model - INFO - Model loaded from models/safety_model.pkl
+2026-01-04 10:23:13,639 - ai_safety_model - INFO - Last trained: 2026-01-04 09:26:14.206577
+2026-01-04 10:23:13,639 - ai_safety_model - INFO - Loaded existing model from models/safety_model.pkl
+2026-01-04 10:23:13,640 - __main__ - ERROR - Import error: No module named 'backend'
+2026-01-04 10:23:13,640 - __main__ - INFO - Creating minimal Flask app for testing
+2026-01-04 10:23:13,687 - ai_safety_model - INFO - Model loaded from models/safety_model.pkl
+2026-01-04 10:23:13,687 - ai_safety_model - INFO - Last trained: 2026-01-04 09:26:14.206577
+2026-01-04 10:23:13,687 - ai_safety_model - INFO - Loaded existing model from models/safety_model.pkl
+2026-01-04 10:23:13,750 - ai_safety_model - INFO - Model loaded from models/safety_model.pkl
+2026-01-04 10:23:13,750 - ai_safety_model - INFO - Last trained: 2026-01-04 09:26:14.206577
+2026-01-04 10:23:13,750 - __main__ - ERROR - Error checking model: Unknown format code 'f' for object of type 'str'
+2026-01-04 10:23:43,664 - ai_safety_model - INFO - Model loaded from models/safety_model.pkl
+2026-01-04 10:23:43,665 - ai_safety_model - INFO - Last trained: 2026-01-04 09:26:14.206577
+2026-01-04 10:23:43,665 - ai_safety_model - INFO - Loaded existing model from models/safety_model.pkl
+2026-01-04 10:23:43,665 - ai_safety_model - INFO - Starting advanced training: 5 loops, 2 epochs
+2026-01-04 10:23:43,665 - ai_safety_model - INFO - Loop 1/5
+2026-01-04 10:23:43,671 - ai_safety_model - INFO - Loop 2/5
+2026-01-04 10:23:43,674 - ai_safety_model - INFO - Loop 3/5
+2026-01-04 10:23:43,676 - ai_safety_model - INFO - Loop 4/5
+2026-01-04 10:23:43,678 - ai_safety_model - INFO - Loop 5/5
+2026-01-04 10:23:43,680 - ai_safety_model - INFO - Performing feature engineering...
+2026-01-04 10:23:44,385 - ai_safety_model - INFO - Training ensemble models...
+2026-01-04 10:23:44,385 - ai_safety_model - INFO - Training neural network with multiple epochs...
+2026-01-04 10:23:44,425 - ai_safety_model - INFO - Training rf...
+2026-01-04 10:24:24,818 - ai_safety_model - INFO - Training gb...
+2026-01-04 10:28:31,236 - ai_safety_model - INFO - Training ridge...
+2026-01-04 10:28:32,830 - ai_safety_model - INFO - Training stacking ensemble...
+2026-01-04 10:36:19,673 - ai_safety_model - INFO - Calculating training metrics...
+2026-01-04 10:36:20,094 - ai_safety_model - INFO - Training final model on all data...
+2026-01-04 10:53:27,339 - ai_safety_model - INFO - Model saved to models/safety_model.pkl
+2026-01-04 10:53:27,341 - ai_safety_model - INFO - Training completed. Train Score: 0.9385, Test Score: 0.8768
+2026-01-04 12:33:59,248 - ai_safety_model - INFO - Model loaded from models/safety_model.pkl
+2026-01-04 12:33:59,249 - ai_safety_model - INFO - Last trained: 2026-01-04 10:53:26.874333
+2026-01-04 12:33:59,249 - ai_safety_model - INFO - Loaded existing model from models/safety_model.pkl
+2026-01-04 12:33:59,250 - __main__ - ERROR - Import error: No module named 'backend'
+2026-01-04 12:33:59,250 - __main__ - INFO - Creating minimal Flask app for testing
+2026-01-04 12:33:59,345 - ai_safety_model - INFO - Model loaded from models/safety_model.pkl
+2026-01-04 12:33:59,345 - ai_safety_model - INFO - Last trained: 2026-01-04 10:53:26.874333
+2026-01-04 12:33:59,346 - ai_safety_model - INFO - Loaded existing model from models/safety_model.pkl
+2026-01-04 12:33:59,414 - ai_safety_model - INFO - Model loaded from models/safety_model.pkl
+2026-01-04 12:33:59,414 - ai_safety_model - INFO - Last trained: 2026-01-04 10:53:26.874333
+2026-01-04 12:34:03,506 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-01-04 12:34:03,507 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-01-04 12:34:06,399 - werkzeug - INFO - 127.0.0.1 - - [04/Jan/2026 12:34:06] "GET /api/hello HTTP/1.1" 200 -
+2026-01-04 12:34:07,038 - werkzeug - INFO - 127.0.0.1 - - [04/Jan/2026 12:34:07] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -

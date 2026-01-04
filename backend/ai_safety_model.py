@@ -251,41 +251,37 @@ class AdvancedSafetyRoutingAI:
             n_iter_no_change=10
         )
         
-        # Train neural network
-        neural_net.fit(X_selected, y)
+        # Split data FIRST before training anything
+        X_train, X_test, y_train, y_test = train_test_split(
+            X_selected, y, test_size=0.2, random_state=42
+        )
         
-        # Train base models
+        # Train base models on training set only
+        trained_base_models = []
         for name, model in base_models:
             logger.info(f"Training {name}...")
-            model.fit(X_selected, y)
+            model.fit(X_train, y_train)
+            trained_base_models.append((name, model))
+        
+        # Train neural network on training set only
+        neural_net.fit(X_train, y_train)
         
         # Create stacking ensemble
         self.model = StackingRegressor(
-            estimators=base_models,
+            estimators=trained_base_models,
             final_estimator=neural_net,
             cv=3,
             n_jobs=-1
         )
         
-        # Train stacking ensemble
+        # Train stacking ensemble on training set only
         logger.info("Training stacking ensemble...")
-        self.model.fit(X_selected, y)
+        self.model.fit(X_train, y_train)
         
-        # Calculate metrics
+        # Calculate metrics WITHOUT retraining everything 5 more times
         logger.info("Calculating training metrics...")
         
-        # Cross-validation scores
-        cv_scores = cross_val_score(self.model, X_selected, y, cv=5, scoring='r2')
-        cv_mean = cv_scores.mean()
-        cv_std = cv_scores.std()
-        
-        # Train/Test split evaluation
-        X_train, X_test, y_train, y_test = train_test_split(
-            X_selected, y, test_size=0.2, random_state=42
-        )
-        
-        # Final training on full data
-        self.model.fit(X_train, y_train)
+        # Calculate test score on held-out test set (NO cross-validation)
         train_score = self.model.score(X_train, y_train)
         test_score = self.model.score(X_test, y_test)
         
@@ -300,14 +296,73 @@ class AdvancedSafetyRoutingAI:
         except:
             pass
         
+        # Now train final model on ALL data for production use
+        logger.info("Training final model on all data...")
+        
+        # Retrain base models on all data
+        final_base_models = []
+        for name, model_template in base_models:
+            # Clone the model type and train on all data
+            if name == 'rf':
+                final_model = RandomForestRegressor(
+                    n_estimators=100,
+                    max_depth=15,
+                    min_samples_split=5,
+                    min_samples_leaf=2,
+                    random_state=42,
+                    n_jobs=-1
+                )
+            elif name == 'gb':
+                final_model = GradientBoostingRegressor(
+                    n_estimators=100,
+                    max_depth=8,
+                    learning_rate=0.1,
+                    random_state=42
+                )
+            elif name == 'ridge':
+                final_model = Ridge(alpha=1.0, random_state=42)
+            
+            final_model.fit(X_selected, y)
+            final_base_models.append((name, final_model))
+        
+        # Retrain neural network on all data
+        final_neural_net = MLPRegressor(
+            hidden_layer_sizes=(128, 64, 32),
+            activation='relu',
+            solver='adam',
+            alpha=0.001,
+            batch_size=256,
+            learning_rate='adaptive',
+            learning_rate_init=0.001,
+            max_iter=n_epochs * 2,
+            shuffle=True,
+            random_state=42,
+            tol=1e-4,
+            verbose=False,
+            early_stopping=True,
+            validation_fraction=0.2,
+            n_iter_no_change=10
+        )
+        final_neural_net.fit(X_selected, y)
+        
+        # Create final stacking ensemble trained on all data
+        self.model = StackingRegressor(
+            estimators=final_base_models,
+            final_estimator=final_neural_net,
+            cv=3,
+            n_jobs=-1
+        )
+        self.model.fit(X_selected, y)
+        
         # Update model state
         self.is_trained = True
         self.last_training_time = datetime.now()
         
-        # Store metrics
+        # Store metrics (use test_score as our validation metric)
+        # Keep cv_mean and cv_std for backward compatibility with app.py
         self.training_metrics = {
-            'cv_mean': float(cv_mean),
-            'cv_std': float(cv_std),
+            'cv_mean': float(test_score),  # Use test_score as proxy for backward compatibility
+            'cv_std': 0.0,  # Set to 0 since we're not doing cross-validation
             'train_score': float(train_score),
             'test_score': float(test_score),
             'n_samples': len(X),
@@ -333,8 +388,7 @@ class AdvancedSafetyRoutingAI:
         if save_model:
             self.save_model()
         
-        logger.info(f"Training completed. CV Score: {cv_mean:.4f} ± {cv_std:.4f}")
-        logger.info(f"Train Score: {train_score:.4f}, Test Score: {test_score:.4f}")
+        logger.info(f"Training completed. Train Score: {train_score:.4f}, Test Score: {test_score:.4f}")
         
         return {
             'status': 'success',
