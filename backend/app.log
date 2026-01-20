@@ -134,3 +134,7 @@ KeyError: 'cv_mean'
 2026-01-20 16:47:53,485 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
 2026-01-20 16:47:53,485 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
 2026-01-20 16:47:55,960 - werkzeug - INFO - 127.0.0.1 - - [20/Jan/2026 16:47:55] "GET /api/hello HTTP/1.1" 200 -
+2026-01-20 17:42:25,932 - werkzeug - INFO - 127.0.0.1 - - [20/Jan/2026 17:42:25] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-01-20 17:42:25,945 - werkzeug - INFO - 127.0.0.1 - - [20/Jan/2026 17:42:25] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-01-20 18:25:20,715 - werkzeug - INFO - 127.0.0.1 - - [20/Jan/2026 18:25:20] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-01-20 18:25:20,720 - werkzeug - INFO - 127.0.0.1 - - [20/Jan/2026 18:25:20] "POST /api/calculate-route HTTP/1.1" 200 -

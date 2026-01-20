@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Text, Html } from '@react-three/drei';
+import { OrbitControls, Html } from '@react-three/drei';
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -10,10 +10,8 @@ import {
   Navigation, 
   AlertTriangle, 
   Volume2, 
-  VolumeX,
   Vibrate,
   Eye,
-  Ear,
   Map,
   Compass,
   Shield,
@@ -30,33 +28,42 @@ import {
   Building
 } from 'lucide-react';
 
+// Fix Leaflet default icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+const TOMTOM_API_KEY = 'pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM';
+
 // Custom leaflet icons
-const pedestrianIcon = L.divIcon({
-  html: `<div style="background-color: #3b82f6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);"></div>`,
-  className: 'custom-pedestrian-icon',
-  iconSize: [20, 20],
-  iconAnchor: [10, 10]
+const pedestrianIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
 });
 
-const hazardIcon = L.divIcon({
-  html: `<div style="background-color: #ef4444; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px rgba(239, 68, 68, 0.7); animation: pulse 1.5s infinite;"></div>
-         <style>
-           @keyframes pulse {
-             0% { transform: scale(1); opacity: 1; }
-             50% { transform: scale(1.2); opacity: 0.7; }
-             100% { transform: scale(1); opacity: 1; }
-           }
-         </style>`,
-  className: 'custom-hazard-icon',
-  iconSize: [16, 16],
-  iconAnchor: [8, 8]
+const hazardIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
 });
 
-const destinationIcon = L.divIcon({
-  html: `<div style="background-color: #10b981; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);"></div>`,
-  className: 'custom-destination-icon',
-  iconSize: [24, 24],
-  iconAnchor: [12, 12]
+const destinationIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
 });
 
 // 3D Pedestrian Component
@@ -66,7 +73,6 @@ const Pedestrian3D = React.memo(({ position, rotation, state, isUser }) => {
   
   useFrame((state) => {
     if (meshRef.current && state === 'walking') {
-      // Walking animation
       meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 5) * 0.1;
     }
     
@@ -83,19 +89,16 @@ const Pedestrian3D = React.memo(({ position, rotation, state, isUser }) => {
   
   return (
     <group ref={groupRef}>
-      {/* Body */}
       <mesh ref={meshRef} position={[0, 0.5, 0]} castShadow>
         <capsuleGeometry args={[0.1, 0.3, 4, 8]} />
         <meshStandardMaterial color={color} roughness={0.7} />
       </mesh>
       
-      {/* Head */}
       <mesh position={[0, 0.9, 0]} castShadow>
         <sphereGeometry args={[0.12, 16, 16]} />
         <meshStandardMaterial color={color} roughness={0.7} />
       </mesh>
       
-      {/* Arms */}
       <mesh position={[0.2, 0.6, 0]} rotation={[0, 0, 0.5]} castShadow>
         <cylinderGeometry args={[0.03, 0.03, 0.3, 8]} />
         <meshStandardMaterial color={color} roughness={0.7} />
@@ -105,7 +108,6 @@ const Pedestrian3D = React.memo(({ position, rotation, state, isUser }) => {
         <meshStandardMaterial color={color} roughness={0.7} />
       </mesh>
       
-      {/* Legs */}
       <mesh position={[0.08, 0.2, 0]} rotation={[0.2, 0, 0]} castShadow>
         <cylinderGeometry args={[0.04, 0.04, 0.4, 8]} />
         <meshStandardMaterial color={color} roughness={0.7} />
@@ -115,7 +117,6 @@ const Pedestrian3D = React.memo(({ position, rotation, state, isUser }) => {
         <meshStandardMaterial color={color} roughness={0.7} />
       </mesh>
       
-      {/* Direction indicator */}
       {isUser && (
         <mesh position={[0, 0.1, 0.3]} rotation={[Math.PI / 2, 0, 0]}>
           <coneGeometry args={[0.05, 0.1, 8]} />
@@ -123,7 +124,6 @@ const Pedestrian3D = React.memo(({ position, rotation, state, isUser }) => {
         </mesh>
       )}
       
-      {/* Status indicator */}
       <pointLight
         position={[0, 1.2, 0]}
         color={
@@ -174,7 +174,6 @@ const Hazard3D = React.memo(({ position, type, severity }) => {
         />
       </mesh>
       
-      {/* Severity indicator rings */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.5, 0.7, 32]} />
         <meshBasicMaterial 
@@ -185,7 +184,6 @@ const Hazard3D = React.memo(({ position, type, severity }) => {
         />
       </mesh>
       
-      {/* Warning symbol */}
       <Html position={[0, 1.5, 0]} center>
         <div className="flex items-center justify-center">
           <div className="bg-red-500 text-white px-2 py-1 rounded-lg text-sm font-bold animate-pulse">
@@ -210,7 +208,6 @@ const Building3D = React.memo(({ position, size, height }) => {
         metalness={0.2}
       />
       
-      {/* Windows */}
       <mesh position={[0, height/2 - 0.2, size[1]/2 + 0.01]}>
         <planeGeometry args={[size[0] * 0.8, height * 0.6]} />
         <meshStandardMaterial 
@@ -238,11 +235,10 @@ const CityScene = ({ pedestrians, hazards, userPosition, route }) => {
     }
   }, [userPosition, camera]);
   
-  // Generate buildings
   const buildings = [];
   for (let i = -5; i <= 5; i += 2) {
     for (let j = -5; j <= 5; j += 2) {
-      if (Math.abs(i) < 2 && Math.abs(j) < 2) continue; // Leave center empty
+      if (Math.abs(i) < 2 && Math.abs(j) < 2) continue;
       buildings.push({
         position: [i * 4, 0, j * 4],
         size: [3 + Math.random(), 3 + Math.random()],
@@ -253,10 +249,8 @@ const CityScene = ({ pedestrians, hazards, userPosition, route }) => {
   
   return (
     <>
-      {/* Ambient light */}
       <ambientLight intensity={0.5} />
       
-      {/* Directional light (sun) */}
       <directionalLight
         position={[10, 20, 10]}
         intensity={1}
@@ -270,19 +264,16 @@ const CityScene = ({ pedestrians, hazards, userPosition, route }) => {
         shadow-camera-bottom={-20}
       />
       
-      {/* Ground */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[100, 100]} />
         <meshStandardMaterial color="#4ade80" roughness={0.8} />
       </mesh>
       
-      {/* Roads */}
       <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[40, 40]} />
         <meshStandardMaterial color="#475569" roughness={0.9} />
       </mesh>
       
-      {/* Road markings */}
       {Array.from({ length: 9 }).map((_, i) => (
         <mesh key={i} position={[-16 + i * 4, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[0.5, 40]} />
@@ -290,12 +281,10 @@ const CityScene = ({ pedestrians, hazards, userPosition, route }) => {
         </mesh>
       ))}
       
-      {/* Buildings */}
       {buildings.map((building, index) => (
         <Building3D key={index} {...building} />
       ))}
       
-      {/* Route path */}
       {route && route.length > 1 && (
         <mesh>
           <tubeGeometry args={[
@@ -323,7 +312,6 @@ const CityScene = ({ pedestrians, hazards, userPosition, route }) => {
         </mesh>
       )}
       
-      {/* Hazards */}
       {hazards.map((hazard, index) => (
         <Hazard3D
           key={index}
@@ -333,7 +321,6 @@ const CityScene = ({ pedestrians, hazards, userPosition, route }) => {
         />
       ))}
       
-      {/* Pedestrians */}
       {pedestrians.map((pedestrian, index) => (
         <Pedestrian3D
           key={index}
@@ -348,10 +335,8 @@ const CityScene = ({ pedestrians, hazards, userPosition, route }) => {
         />
       ))}
       
-      {/* Grid helper */}
       <gridHelper args={[100, 100, '#94a3b8', '#94a3b8']} />
       
-      {/* Orbit controls */}
       <OrbitControls 
         enablePan={true}
         enableZoom={true}
@@ -367,7 +352,6 @@ const CityScene = ({ pedestrians, hazards, userPosition, route }) => {
 // Accessibility Audio Engine
 const useAudioEngine = () => {
   const audioContextRef = useRef(null);
-  const audioElements = useRef({});
   
   const initAudio = useCallback(() => {
     if (!audioContextRef.current) {
@@ -414,7 +398,6 @@ const useAudioEngine = () => {
       
       if (urgent) {
         utterance.onstart = () => {
-          // Visual feedback for deaf users
           document.documentElement.style.setProperty('--alert-pulse', 'pulse 0.5s infinite');
         };
         utterance.onend = () => {
@@ -468,6 +451,14 @@ const useAudioEngine = () => {
   };
 };
 
+function ChangeView({ center, zoom }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, zoom);
+  }, [center, zoom, map]);
+  return null;
+}
+
 // Main Live Navigation Component
 const LiveNavigation = () => {
   const [userPosition, setUserPosition] = useState([40.4406, -79.9959]);
@@ -492,10 +483,29 @@ const LiveNavigation = () => {
   const [remainingDistance, setRemainingDistance] = useState(0);
   const [estimatedTime, setEstimatedTime] = useState(0);
   const [emergencyMode, setEmergencyMode] = useState(false);
+  const [mapType, setMapType] = useState('openstreetmap');
   
   const audioEngine = useAudioEngine();
   const mapRef = useRef();
   const socketRef = useRef();
+  
+  const mapTypes = {
+    openstreetmap: {
+      name: 'OpenStreetMap',
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution: '© OpenStreetMap contributors'
+    },
+    tomtom: {
+      name: 'TomTom',
+      url: `https://{s}.api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png?key=${TOMTOM_API_KEY}`,
+      attribution: '© TomTom'
+    },
+    tomtomSatellite: {
+      name: 'TomTom Satellite',
+      url: `https://{s}.api.tomtom.com/map/1/tile/sat/main/{z}/{x}/{y}.jpg?key=${TOMTOM_API_KEY}`,
+      attribution: '© TomTom'
+    }
+  };
   
   // Initialize WebSocket connection
   useEffect(() => {
@@ -506,7 +516,6 @@ const LiveNavigation = () => {
     newSocket.on('connect', () => {
       console.log('Connected to tracking server');
       
-      // Start navigation with current location
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -538,13 +547,11 @@ const LiveNavigation = () => {
         setRemainingDistance(data.remaining_distance || 0);
         setEstimatedTime(data.estimated_arrival || 0);
         
-        // Update audio guidance
         if (accessibilitySettings.audioGuidance && data.state === 'walking') {
           audioEngine.playDirectionAudio('straight', data.remaining_distance);
         }
       }
       
-      // Update other pedestrians
       setPedestrians(prev => {
         const others = prev.filter(p => p.id !== data.user_id);
         return [...others, {
@@ -567,7 +574,6 @@ const LiveNavigation = () => {
         audioEngine.playHaptic('hazard');
       }
       
-      // Visual alert for deaf users
       if (accessibilitySettings.visualAlerts) {
         document.documentElement.style.setProperty('--hazard-alert', 'flash 1s 3');
       }
@@ -579,7 +585,6 @@ const LiveNavigation = () => {
         audioEngine.speak(`Rerouting due to ${data.reason.replace('_', ' ')}`);
         audioEngine.playHaptic('reroute');
         
-        // Update route
         if (data.new_route) {
           const newRouteCoords = data.new_route.map(segment => [
             segment.start.lat,
@@ -595,19 +600,17 @@ const LiveNavigation = () => {
         setNavigationState('arrived');
         audioEngine.speak('You have arrived at your destination');
         audioEngine.playHaptic('arrival');
-        audioEngine.playBeep(523, 500); // High C note
+        audioEngine.playBeep(523, 500);
       }
     });
     
     newSocket.on('accessibility_alert', (data) => {
       if (data.user_id === userId) {
-        // Handle accessibility-specific alerts
         if (data.audio_alert && accessibilitySettings.audioGuidance) {
           audioEngine.speak(data.audio_alert.message, 'alert', true);
         }
         
         if (data.visual_alert && accessibilitySettings.visualAlerts) {
-          // Implement visual alert
           const alertDiv = document.createElement('div');
           alertDiv.className = 'fixed inset-0 z-50 flex items-center justify-center';
           alertDiv.innerHTML = `
@@ -634,7 +637,6 @@ const LiveNavigation = () => {
   useEffect(() => {
     if (navigationState === 'walking' && socket) {
       const interval = setInterval(() => {
-        // Simulate movement along route
         if (route.length > 0) {
           const currentIndex = route.findIndex(coord => 
             Math.abs(coord[0] - userPosition[0]) < 0.0001 &&
@@ -664,9 +666,9 @@ const LiveNavigation = () => {
     const calculateSafety = async () => {
       try {
         const response = await fetch('http://localhost:5000/api/model/route', {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             route: route.map(coord => ({ lat: coord[0], lng: coord[1] }))
@@ -687,12 +689,10 @@ const LiveNavigation = () => {
     }
   }, [route]);
   
-  // Handle emergency mode
   const triggerEmergency = useCallback(() => {
     setEmergencyMode(true);
     audioEngine.speak('Emergency mode activated. Notifying emergency contacts.', 'emergency', true);
     
-    // Flash screen for deaf users
     if (accessibilitySettings.visualAlerts) {
       const flashInterval = setInterval(() => {
         document.body.style.backgroundColor = 
@@ -705,7 +705,6 @@ const LiveNavigation = () => {
       }, 5000);
     }
     
-    // Send emergency notification
     if (socket) {
       socket.emit('emergency_alert', {
         user_id: userId,
@@ -715,7 +714,6 @@ const LiveNavigation = () => {
     }
   }, [socket, userId, userPosition, audioEngine, accessibilitySettings.visualAlerts]);
   
-  // Accessibility settings handler
   const toggleAccessibilitySetting = useCallback((setting) => {
     setAccessibilitySettings(prev => ({
       ...prev,
@@ -725,7 +723,6 @@ const LiveNavigation = () => {
     audioEngine.speak(`${setting.replace(/([A-Z])/g, ' $1').toLowerCase()} ${!accessibilitySettings[setting] ? 'enabled' : 'disabled'}`);
   }, [accessibilitySettings, audioEngine]);
   
-  // Report hazard
   const reportHazard = useCallback((type, position) => {
     if (socket) {
       socket.emit('report_hazard', {
@@ -741,7 +738,6 @@ const LiveNavigation = () => {
     }
   }, [socket, audioEngine]);
   
-  // Request reroute
   const requestReroute = useCallback((reason) => {
     if (socket) {
       socket.emit('request_reroute', {
@@ -753,7 +749,6 @@ const LiveNavigation = () => {
   
   return (
     <div className={`min-h-screen ${accessibilitySettings.highContrast ? 'bg-black text-yellow-300' : 'bg-gradient-to-br from-slate-900 to-gray-900 text-slate-100'}`}>
-      {/* Accessibility Overlay */}
       <div className="fixed inset-0 pointer-events-none z-50">
         {accessibilitySettings.visualAlerts && emergencyMode && (
           <div className="absolute inset-0 bg-red-500 opacity-20 animate-pulse"></div>
@@ -761,7 +756,6 @@ const LiveNavigation = () => {
       </div>
       
       <div className="container mx-auto p-4">
-        {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 p-4 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10">
           <div className="flex items-center space-x-4">
             <div className="p-2 bg-blue-500/20 rounded-xl">
@@ -788,9 +782,7 @@ const LiveNavigation = () => {
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Panel - Controls & Info */}
           <div className="lg:col-span-1 space-y-6">
-            {/* User Info */}
             <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center">
                 <User className="h-5 w-5 mr-2" />
@@ -828,7 +820,6 @@ const LiveNavigation = () => {
               </div>
             </div>
             
-            {/* Accessibility Controls */}
             <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center">
                 <Eye className="h-5 w-5 mr-2" />
@@ -841,7 +832,7 @@ const LiveNavigation = () => {
                   { key: 'hapticFeedback', icon: Vibrate, label: 'Haptic Feedback' },
                   { key: 'visualAlerts', icon: Bell, label: 'Visual Alerts' },
                   { key: 'highContrast', icon: Zap, label: 'High Contrast' },
-                  { key: 'largeText', icon: Text, label: 'Large Text' },
+                  { key: 'largeText', icon: User, label: 'Large Text' },
                   { key: 'screenReader', icon: Radio, label: 'Screen Reader' }
                 ].map((setting) => (
                   <label
@@ -865,7 +856,6 @@ const LiveNavigation = () => {
               </div>
             </div>
             
-            {/* Quick Actions */}
             <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center">
                 <Zap className="h-5 w-5 mr-2" />
@@ -908,9 +898,7 @@ const LiveNavigation = () => {
             </div>
           </div>
           
-          {/* Center Panel - 3D View & Map */}
           <div className="lg:col-span-2 space-y-6">
-            {/* 3D Visualization */}
             <div className="bg-black rounded-2xl overflow-hidden border border-white/10" style={{ height: '400px' }}>
               <Canvas shadows camera={{ position: [10, 20, 10], fov: 50 }}>
                 <CityScene
@@ -925,21 +913,28 @@ const LiveNavigation = () => {
                 />
               </Canvas>
               
-              {/* Overlay Controls */}
               <div className="absolute top-4 right-4 flex space-x-2">
-                <button className="p-2 bg-black/50 backdrop-blur-sm rounded-lg hover:bg-black/70 transition-colors">
+                <button 
+                  onClick={() => setMapType('openstreetmap')}
+                  className={`p-2 ${mapType === 'openstreetmap' ? 'bg-blue-500/50' : 'bg-black/50'} backdrop-blur-sm rounded-lg hover:bg-black/70 transition-colors`}
+                >
+                  <Map className="h-5 w-5" />
+                </button>
+                <button 
+                  onClick={() => setMapType('tomtom')}
+                  className={`p-2 ${mapType === 'tomtom' ? 'bg-blue-500/50' : 'bg-black/50'} backdrop-blur-sm rounded-lg hover:bg-black/70 transition-colors`}
+                >
                   <Compass className="h-5 w-5" />
                 </button>
-                <button className="p-2 bg-black/50 backdrop-blur-sm rounded-lg hover:bg-black/70 transition-colors">
-                  <Users className="h-5 w-5" />
-                </button>
-                <button className="p-2 bg-black/50 backdrop-blur-sm rounded-lg hover:bg-black/70 transition-colors">
+                <button 
+                  onClick={() => setMapType('tomtomSatellite')}
+                  className={`p-2 ${mapType === 'tomtomSatellite' ? 'bg-blue-500/50' : 'bg-black/50'} backdrop-blur-sm rounded-lg hover:bg-black/70 transition-colors`}
+                >
                   <Building className="h-5 w-5" />
                 </button>
               </div>
             </div>
             
-            {/* 2D Map View */}
             <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-4" style={{ height: '400px' }}>
               <MapContainer
                 center={userPosition}
@@ -947,12 +942,12 @@ const LiveNavigation = () => {
                 style={{ height: '100%', width: '100%', borderRadius: '12px' }}
                 ref={mapRef}
               >
+                <ChangeView center={userPosition} zoom={17} />
                 <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  attribution={mapTypes[mapType].attribution}
+                  url={mapTypes[mapType].url}
                 />
                 
-                {/* Route */}
                 {route.length > 0 && (
                   <Polyline
                     positions={route}
@@ -962,7 +957,6 @@ const LiveNavigation = () => {
                   />
                 )}
                 
-                {/* User Marker */}
                 <Marker position={userPosition} icon={pedestrianIcon}>
                   <Popup>
                     <div className="p-2">
@@ -974,7 +968,6 @@ const LiveNavigation = () => {
                   </Popup>
                 </Marker>
                 
-                {/* Destination Marker */}
                 <Marker position={destination} icon={destinationIcon}>
                   <Popup>
                     <div className="p-2">
@@ -986,7 +979,6 @@ const LiveNavigation = () => {
                   </Popup>
                 </Marker>
                 
-                {/* Hazard Markers */}
                 {activeHazards.map((hazard, index) => (
                   <Marker
                     key={index}
@@ -1011,7 +1003,6 @@ const LiveNavigation = () => {
           </div>
         </div>
         
-        {/* Active Hazards Panel */}
         {activeHazards.length > 0 && (
           <div className="mt-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center">
@@ -1049,7 +1040,6 @@ const LiveNavigation = () => {
           </div>
         )}
         
-        {/* Accessibility Notifications */}
         <div className="fixed bottom-4 right-4 z-50 space-y-3">
           {accessibilitySettings.audioGuidance && navigationState === 'walking' && (
             <div className="bg-blue-500/20 backdrop-blur-sm border border-blue-500/30 rounded-xl p-3 animate-pulse">
@@ -1071,7 +1061,6 @@ const LiveNavigation = () => {
         </div>
       </div>
       
-      {/* Global Styles for Accessibility */}
       <style jsx global>{`
         :root {
           --alert-pulse: none;
@@ -1096,21 +1085,11 @@ const LiveNavigation = () => {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.3; }
         }
-        
-        .custom-pedestrian-icon {
-          animation: bounce 1s infinite;
-        }
-        
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-5px); }
-        }
       `}</style>
     </div>
   );
 };
 
-// Named exports for individual components (optional, for testing)
 export {
   Pedestrian3D,
   Hazard3D,
@@ -1119,5 +1098,4 @@ export {
   useAudioEngine
 };
 
-// Default export for the main component
 export default LiveNavigation;

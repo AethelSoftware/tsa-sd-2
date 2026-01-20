@@ -1,9 +1,91 @@
 import { useState, useRef, useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, CircleMarker } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix Leaflet default icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+const TOMTOM_API_KEY = 'pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM';
+
+// Custom icons
+const currentLocationIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+const wheelchairIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+const destinationIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+const hazardIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+// Map type definitions
+const mapTypes = {
+  openstreetmap: {
+    name: 'OpenStreetMap',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors'
+  },
+  tomtom: {
+    name: 'TomTom',
+    url: `https://{s}.api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png?key=${TOMTOM_API_KEY}`,
+    attribution: '© TomTom'
+  },
+  tomtomSatellite: {
+    name: 'TomTom Satellite',
+    url: `https://{s}.api.tomtom.com/map/1/tile/sat/main/{z}/{x}/{y}.jpg?key=${TOMTOM_API_KEY}`,
+    attribution: '© TomTom'
+  },
+  tomtomNight: {
+    name: 'TomTom Night',
+    url: `https://{s}.api.tomtom.com/map/1/tile/night/main/{z}/{x}/{y}.png?key=${TOMTOM_API_KEY}`,
+    attribution: '© TomTom'
+  }
+};
+
+function ChangeView({ center, zoom }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, zoom);
+  }, [center, zoom, map]);
+  return null;
+}
 
 export default function AccessibleMap() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [mapStyle, setMapStyle] = useState("roadmap");
+  const [mapType, setMapType] = useState("openstreetmap");
   const [routeFrom, setRouteFrom] = useState("Current Location");
   const [routeTo, setRouteTo] = useState("");
   const [accessibilitySettings, setAccessibilitySettings] = useState({
@@ -16,93 +98,20 @@ export default function AccessibleMap() {
     reducedMotion: false,
   });
   const [zoom, setZoom] = useState(13);
-  const [currentLocation, setCurrentLocation] = useState({
-    lat: 40.472,
-    lng: -79.94,
-  });
+  const [currentLocation, setCurrentLocation] = useState([40.472, -79.94]);
   const [activeTransport, setActiveTransport] = useState("wheelchair");
   const [announcement, setAnnouncement] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [calculatedRoute, setCalculatedRoute] = useState(null);
-  const [map, setMap] = useState(null);
-  const [directionsService, setDirectionsService] = useState(null);
-  const [directionsRenderer, setDirectionsRenderer] = useState(null);
+  const [routePath, setRoutePath] = useState([]);
+  const [destination, setDestination] = useState(null);
+  const [hazards, setHazards] = useState([]);
 
   const modalRef = useRef(null);
-  const mapContainerRef = useRef(null);
+  const mapRef = useRef(null);
   const settingsButtonRef = useRef(null);
   const announcementRef = useRef(null);
   const searchInputRef = useRef(null);
-
-  // Load Google Maps API
-  useEffect(() => {
-    if (!window.google) {
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-
-      script.onload = () => {
-        initializeMap();
-      };
-    } else {
-      initializeMap();
-    }
-
-    return () => {
-      if (directionsRenderer) {
-        directionsRenderer.setMap(null);
-      }
-    };
-  }, []);
-
-  const initializeMap = () => {
-    const mapOptions = {
-      center: { lat: currentLocation.lat, lng: currentLocation.lng },
-      zoom: zoom,
-      mapTypeId: mapStyle,
-      disableDefaultUI: false,
-      zoomControl: false,
-      styles: accessibilitySettings.highContrast ? highContrastMapStyle : [],
-    };
-
-    const newMap = new window.google.maps.Map(
-      mapContainerRef.current,
-      mapOptions
-    );
-
-    const newDirectionsService = new window.google.maps.DirectionsService();
-    const newDirectionsRenderer = new window.google.maps.DirectionsRenderer({
-      map: newMap,
-      suppressMarkers: false,
-      polylineOptions: {
-        strokeColor: activeTransport === "wheelchair" ? "#4285F4" : "#34A853",
-        strokeWeight: 6,
-        strokeOpacity: 0.8,
-      },
-    });
-
-    // Add current location marker
-    new window.google.maps.Marker({
-      position: { lat: currentLocation.lat, lng: currentLocation.lng },
-      map: newMap,
-      title: "Your Current Location",
-      icon: {
-        path: window.google.maps.SymbolPath.CIRCLE,
-        scale: 10,
-        fillColor: "#4285F4",
-        fillOpacity: 1,
-        strokeColor: "#ffffff",
-        strokeWeight: 2,
-      },
-    });
-
-    setMap(newMap);
-    setDirectionsService(newDirectionsService);
-    setDirectionsRenderer(newDirectionsRenderer);
-  };
 
   useEffect(() => {
     if (announcementRef.current && announcement) {
@@ -136,38 +145,6 @@ export default function AccessibleMap() {
   }, [isSettingsOpen, isSearchOpen]);
 
   useEffect(() => {
-    const mapContainer = mapContainerRef.current;
-    if (!mapContainer) return;
-
-    const handleWheel = (e) => {
-      if (
-        accessibilitySettings.visionImpaired ||
-        accessibilitySettings.reducedMotion
-      ) {
-        e.preventDefault();
-        return;
-      }
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -1 : 1;
-      setZoom((prev) => Math.min(Math.max(10, prev + delta), 18));
-      if (map) {
-        map.setZoom(zoom + delta);
-      }
-    };
-
-    mapContainer.addEventListener("wheel", handleWheel, { passive: false });
-
-    return () => {
-      mapContainer.removeEventListener("wheel", handleWheel);
-    };
-  }, [
-    accessibilitySettings.visionImpaired,
-    accessibilitySettings.reducedMotion,
-    map,
-    zoom,
-  ]);
-
-  useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
         if (isSettingsOpen) {
@@ -182,7 +159,7 @@ export default function AccessibleMap() {
 
       if (isSettingsOpen && e.key === "Tab") {
         const focusableElements = modalRef.current?.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
         );
         if (focusableElements && focusableElements.length > 0) {
           const firstElement = focusableElements[0];
@@ -227,26 +204,6 @@ export default function AccessibleMap() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isSettingsOpen, isSearchOpen]);
 
-  useEffect(() => {
-    if (map) {
-      map.setZoom(zoom);
-    }
-  }, [zoom, map]);
-
-  useEffect(() => {
-    if (map) {
-      map.setMapTypeId(mapStyle);
-    }
-  }, [mapStyle, map]);
-
-  useEffect(() => {
-    if (map && accessibilitySettings.highContrast) {
-      map.setOptions({ styles: highContrastMapStyle });
-    } else if (map) {
-      map.setOptions({ styles: [] });
-    }
-  }, [accessibilitySettings.highContrast, map]);
-
   const handleAccessibilityChange = (setting) => {
     const newValue = !accessibilitySettings[setting];
     setAccessibilitySettings((prev) => ({
@@ -254,9 +211,7 @@ export default function AccessibleMap() {
       [setting]: newValue,
     }));
     setAnnouncement(
-      `${setting.replace(/([A-Z])/g, " $1").toLowerCase()} ${
-        newValue ? "enabled" : "disabled"
-      }`
+      `${setting.replace(/([A-Z])/g, " $1").toLowerCase()} ${newValue ? "enabled" : "disabled"}`,
     );
   };
 
@@ -270,52 +225,21 @@ export default function AccessibleMap() {
     setAnnouncement("Calculating accessible route...");
 
     try {
-      // First try to get coordinates from the address
-      const geocoder = new window.google.maps.Geocoder();
-      const geocodeResult = await geocoder.geocode({
-        address: routeTo,
-      });
-
-      if (!geocodeResult.results[0]) {
-        throw new Error("Destination not found");
-      }
-
-      const destination = geocodeResult.results[0].geometry.location;
-      const origin = new window.google.maps.LatLng(
-        currentLocation.lat,
-        currentLocation.lng
-      );
-
-      // Call your backend AI model for route calculation
+      // Updated to match backend API endpoint
       const response = await fetch("http://localhost:5000/api/calculate-route", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          origin: {
-            lat: currentLocation.lat,
-            lng: currentLocation.lng,
-            address: routeFrom === "Current Location" ? "Current Location" : routeFrom,
-          },
-          destination: {
-            lat: destination.lat(),
-            lng: destination.lng(),
-            address: routeTo,
-          },
-          mode: activeTransport,
-          accessibilityFeatures: Object.keys(accessibilitySettings)
-            .filter((key) => accessibilitySettings[key])
-            .map((key) => ({
-              feature: key,
-              enabled: accessibilitySettings[key],
-            })),
-          preferences: {
-            avoidStairs: true,
-            elevatorAccess: true,
-            wheelchairAccessible: activeTransport === "wheelchair",
+          start_location: routeFrom === "Current Location" ? "Current Location" : routeFrom,
+          end_location: routeTo,
+          accessibility_preferences: {
+            elevator_access: true,
+            wheelchair: activeTransport === "wheelchair",
             wellLitAreas: accessibilitySettings.visionImpaired,
-          },
+            avoidStairs: true
+          }
         }),
       });
 
@@ -325,104 +249,55 @@ export default function AccessibleMap() {
 
       const routeData = await response.json();
 
-      if (routeData.route && directionsService && directionsRenderer) {
-        // Use Google Directions Service to display the route
-        directionsService.route(
-          {
-            origin: origin,
-            destination: destination,
-            travelMode: window.google.maps.TravelMode.WALKING,
-            provideRouteAlternatives: false,
-          },
-          (result, status) => {
-            if (status === "OK") {
-              directionsRenderer.setDirections(result);
-              setCalculatedRoute(result);
+      console.log("ROUTE DATA:", routeData); // Debug log
 
-              // Zoom to fit the route
-              const bounds = new window.google.maps.LatLngBounds();
-              bounds.extend(origin);
-              bounds.extend(destination);
-              map.fitBounds(bounds);
-
-              const activeFeatures = Object.keys(accessibilitySettings)
-                .filter((key) => accessibilitySettings[key])
-                .map((key) => key.replace(/([A-Z])/g, " $1").toLowerCase())
-                .join(", ");
-
-              setAnnouncement(
-                `Route calculated successfully! ${
-                  activeTransport === "wheelchair"
-                    ? "Wheelchair accessible route found with optimized path. "
-                    : ""
-                }Accessibility features: ${activeFeatures || "none"}. Estimated time: ${
-                  result.routes[0].legs[0].duration?.text || "Unknown"
-                }`
-              );
-            } else {
-              setAnnouncement("Could not calculate route. Please try again.");
-            }
-            setIsLoading(false);
+      if (routeData.success && routeData.route && routeData.route.coordinates) {
+        // Extract coordinates from the response
+        const coordinates = routeData.route.coordinates;
+        
+        // Validate we have at least 2 coordinates
+        if (coordinates.length >= 2) {
+          // Convert {lat, lng} objects to [lat, lng] arrays for Leaflet
+          const routeCoords = coordinates.map(coord => [coord.lat, coord.lng]);
+          setRoutePath(routeCoords);
+          
+          // Set destination marker from the last coordinate
+          if (routeCoords.length > 0) {
+            setDestination(routeCoords[routeCoords.length - 1]);
           }
-        );
+
+          const activeFeatures = Object.keys(accessibilitySettings)
+            .filter((key) => accessibilitySettings[key])
+            .map((key) => key.replace(/([A-Z])/g, " $1").toLowerCase())
+            .join(", ");
+
+          setAnnouncement(
+            `Route calculated successfully! ${
+              activeTransport === "wheelchair"
+                ? "Wheelchair accessible route found with optimized path. "
+                : ""
+            }Accessibility features: ${activeFeatures || "none"}. Distance: ${routeData.route.distance}, Duration: ${routeData.route.duration}`
+          );
+        } else {
+          setAnnouncement("Route calculated but needs more points to display. Try a different destination.");
+        }
       } else {
-        // Fallback to basic route calculation if AI model is not available
-        calculateBasicRoute(origin, destination);
+        setAnnouncement("Could not calculate route. Please try again.");
       }
     } catch (error) {
       console.error("Route calculation error:", error);
       setAnnouncement(
         "Error calculating route. Please check your destination and try again."
       );
+    } finally {
       setIsLoading(false);
     }
-  };
-
-  const calculateBasicRoute = (origin, destination) => {
-    if (!directionsService || !directionsRenderer) return;
-
-    const travelMode =
-      activeTransport === "wheelchair" || activeTransport === "walk"
-        ? window.google.maps.TravelMode.WALKING
-        : window.google.maps.TravelMode.TRANSIT;
-
-    directionsService.route(
-      {
-        origin: origin,
-        destination: destination,
-        travelMode: travelMode,
-        provideRouteAlternatives: true,
-      },
-      (result, status) => {
-        if (status === "OK") {
-          directionsRenderer.setDirections(result);
-          setCalculatedRoute(result);
-
-          const bounds = new window.google.maps.LatLngBounds();
-          bounds.extend(origin);
-          bounds.extend(destination);
-          map.fitBounds(bounds);
-
-          setAnnouncement(
-            `Route calculated successfully! Estimated time: ${
-              result.routes[0].legs[0].duration?.text || "Unknown"
-            }`
-          );
-        } else {
-          setAnnouncement("Could not calculate route. Please try again.");
-        }
-        setIsLoading(false);
-      }
-    );
   };
 
   const handleZoomIn = () => {
     setZoom((prev) => {
       const newZoom = Math.min(prev + 1, 18);
       setAnnouncement(`Zoom level ${newZoom}`);
-      if (map) {
-        map.setZoom(newZoom);
-      }
       return newZoom;
     });
   };
@@ -431,9 +306,6 @@ export default function AccessibleMap() {
     setZoom((prev) => {
       const newZoom = Math.max(prev - 1, 10);
       setAnnouncement(`Zoom level ${newZoom}`);
-      if (map) {
-        map.setZoom(newZoom);
-      }
       return newZoom;
     });
   };
@@ -443,37 +315,16 @@ export default function AccessibleMap() {
       setAnnouncement("Getting your current location");
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const newLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
+          const newLocation = [position.coords.latitude, position.coords.longitude];
           setCurrentLocation(newLocation);
           setRouteFrom("Current Location");
-          
-          if (map) {
-            map.setCenter(newLocation);
-            new window.google.maps.Marker({
-              position: newLocation,
-              map: map,
-              title: "Your Current Location",
-              icon: {
-                path: window.google.maps.SymbolPath.CIRCLE,
-                scale: 10,
-                fillColor: "#4285F4",
-                fillOpacity: 1,
-                strokeColor: "#ffffff",
-                strokeWeight: 2,
-              },
-            });
-          }
-          
           setAnnouncement("Current location updated successfully");
         },
         (error) => {
           setAnnouncement(
             "Unable to get current location. Using default location."
           );
-        }
+        },
       );
     }
   };
@@ -487,52 +338,15 @@ export default function AccessibleMap() {
     };
     setAnnouncement(`Transportation mode set to ${modeNames[mode]}`);
     
-    // Clear existing route when transport mode changes
-    if (directionsRenderer) {
-      directionsRenderer.setDirections({ routes: [] });
-      setCalculatedRoute(null);
-    }
+    setRoutePath([]);
+    setDestination(null);
   };
 
-  const highContrastMapStyle = [
-    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-    {
-      featureType: "administrative.locality",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#d59563" }],
-    },
-    {
-      featureType: "road",
-      elementType: "geometry",
-      stylers: [{ color: "#38414e" }],
-    },
-    {
-      featureType: "road",
-      elementType: "geometry.stroke",
-      stylers: [{ color: "#212a37" }],
-    },
-    {
-      featureType: "road",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#9ca5b3" }],
-    },
-    {
-      featureType: "road.highway",
-      elementType: "geometry",
-      stylers: [{ color: "#746855" }],
-    },
-    {
-      featureType: "road.highway",
-      elementType: "geometry.stroke",
-      stylers: [{ color: "#1f2835" }],
-    },
-    {
-      featureType: "road.highway",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#f3d19c" }],
-    },
+  const presetDestinations = [
+    { name: "University of Pittsburgh", coords: [40.4440, -79.9532], type: "Education" },
+    { name: "Carnegie Museum", coords: [40.4434, -79.9501], type: "Museum" },
+    { name: "Accessible Transit Center", coords: [40.4416, -79.9924], type: "Transport" },
+    { name: "City Hospital", coords: [40.4379, -79.9683], type: "Medical" },
   ];
 
   return (
@@ -564,383 +378,473 @@ export default function AccessibleMap() {
         search
       </div>
 
-      <aside
-        className={`absolute top-0 left-0 z-40 h-full ${
-          accessibilitySettings.highContrast ? "bg-gray-900" : "bg-slate-800"
-        } shadow-2xl ${
-          accessibilitySettings.reducedMotion
-            ? ""
-            : "transition-all duration-300"
-        } ${isSidebarOpen ? "w-80 translate-x-0" : "w-0 -translate-x-full"}`}
-        role="complementary"
-        aria-label="Route planner"
-      >
-        {isSidebarOpen && (
-          <div className="p-6 h-full flex flex-col overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className={`p-2 ${
-                  accessibilitySettings.highContrast
-                    ? "hover:bg-gray-800"
-                    : "hover:bg-slate-700"
-                } rounded-lg ${
-                  accessibilitySettings.reducedMotion
-                    ? ""
-                    : "transition-all duration-300"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                aria-label="Close route planner sidebar"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <div className="space-y-6 flex-1">
-              <div className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="from-input"
-                    className={`block ${
-                      accessibilitySettings.largeText ? "text-lg" : "text-base"
-                    } font-semibold mb-3`}
-                  >
-                    Start Location
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="from-input"
-                      type="text"
-                      value={routeFrom}
-                      onChange={(e) => setRouteFrom(e.target.value)}
-                      className={`w-full ${
-                        accessibilitySettings.highContrast
-                          ? "bg-black text-yellow-300 border-yellow-300"
-                          : "bg-slate-900 text-slate-100 border-slate-600"
-                      } rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-blue-500 border ${
-                        accessibilitySettings.reducedMotion
-                          ? ""
-                          : "transition-all duration-300"
-                      }`}
-                      placeholder="Current location"
-                    />
-                    <div
-                      className="absolute left-4 top-1/2 transform -translate-y-1/2"
-                      aria-hidden="true"
-                    >
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    </div>
-                    <button
-                      onClick={getLocation}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-slate-700 rounded"
-                      aria-label="Use current location"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
-                    </button>
+      {/* Main container with proper z-index stacking */}
+      <div className="relative w-full h-full">
+        {/* Map Container - Lower z-index */}
+        <div className="absolute inset-0 z-0">
+          <MapContainer
+            center={currentLocation}
+            zoom={zoom}
+            ref={mapRef}
+            className="w-full h-full"
+            style={{
+              pointerEvents: accessibilitySettings.visionImpaired
+                ? "none"
+                : "auto",
+              filter: accessibilitySettings.highContrast
+                ? "contrast(1.5) brightness(1.2)"
+                : "none",
+            }}
+            aria-label={`Interactive map view centered at current location. Zoom level ${zoom}.`}
+            role="application"
+          >
+            <ChangeView center={currentLocation} zoom={zoom} />
+            
+            <TileLayer
+              attribution={mapTypes[mapType].attribution}
+              url={mapTypes[mapType].url}
+            />
+            
+            {/* Current Location CircleMarker (replaces the absolute positioned div) */}
+            <CircleMarker
+              center={currentLocation}
+              radius={15}
+              pathOptions={{
+                color: '#3b82f6',
+                fillColor: '#3b82f6',
+                fillOpacity: 0.5,
+                weight: 2
+              }}
+            >
+              <Popup>
+                <div className="p-2">
+                  <div className="font-bold">You are here</div>
+                  <div className="text-sm text-slate-600">
+                    Current location
                   </div>
                 </div>
-
-                <div>
-                  <label
-                    htmlFor="to-input"
-                    className={`block ${
-                      accessibilitySettings.largeText ? "text-lg" : "text-base"
-                    } font-semibold mb-3`}
-                  >
-                    Destination
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="to-input"
-                      type="text"
-                      value={routeTo}
-                      onChange={(e) => setRouteTo(e.target.value)}
-                      className={`w-full ${
-                        accessibilitySettings.highContrast
-                          ? "bg-black text-yellow-300 border-yellow-300"
-                          : "bg-slate-900 text-slate-100 border-slate-600"
-                      } rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-blue-500 border ${
-                        accessibilitySettings.reducedMotion
-                          ? ""
-                          : "transition-all duration-300"
-                      }`}
-                      placeholder="Where do you want to go?"
-                    />
-                    <div
-                      className="absolute left-4 top-1/2 transform -translate-y-1/2"
-                      aria-hidden="true"
-                    >
-                      <svg
-                        className="w-4 h-4 text-slate-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
+              </Popup>
+            </CircleMarker>
+            
+            {/* Destination Marker */}
+            {destination && (
+              <Marker position={destination} icon={destinationIcon}>
+                <Popup>
+                  <div className="p-2">
+                    <div className="font-bold">Destination</div>
+                    <div className="text-sm text-slate-600">
+                      {routeTo}
                     </div>
                   </div>
-                </div>
-              </div>
+                </Popup>
+              </Marker>
+            )}
+            
+            {/* Route Path - Only show if we have at least 2 points */}
+            {routePath.length >= 2 && (
+              <Polyline
+                positions={routePath}
+                pathOptions={{
+                  color: activeTransport === "wheelchair" ? "#3b82f6" : "#10b981",
+                  weight: 4,
+                  opacity: 0.8,
+                  dashArray: activeTransport === "wheelchair" ? "10, 10" : undefined
+                }}
+              />
+            )}
+            
+            {/* Hazard Markers */}
+            {hazards.map((hazard, index) => (
+              <Marker key={index} position={hazard.position} icon={hazardIcon}>
+                <Popup>
+                  <div className="p-2">
+                    <div className="font-bold text-red-600 capitalize">
+                      {hazard.type}
+                    </div>
+                    <div className="text-sm text-slate-600">
+                      {hazard.description}
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        </div>
 
-              <div className="pt-4">
-                <h3
-                  className={`${
-                    accessibilitySettings.largeText ? "text-lg" : "text-base"
-                  } font-semibold mb-4`}
-                >
-                  Accessibility Mode
-                </h3>
-                <div
-                  className="grid grid-cols-3 gap-3"
-                  role="radiogroup"
-                  aria-label="Transportation options"
-                >
-                  {[
-                    { mode: "walk", icon: "🚶", label: "Walk" },
-                    { mode: "transit", icon: "🚌", label: "Transit" },
-                    { mode: "wheelchair", icon: "♿", label: "Wheelchair" },
-                  ].map((transport) => (
-                    <button
-                      key={transport.mode}
-                      onClick={() => handleTransportChange(transport.mode)}
-                      className={`flex flex-col items-center p-4 rounded-xl border-2 ${
-                        accessibilitySettings.reducedMotion
-                          ? ""
-                          : "transition-all duration-300"
-                      } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        activeTransport === transport.mode
-                          ? `${
-                              accessibilitySettings.highContrast
-                                ? "border-yellow-300 bg-yellow-500 bg-opacity-20"
-                                : "border-slate-600 bg-blue-500 bg-opacity-20"
-                            }`
-                          : `${
-                              accessibilitySettings.highContrast
-                                ? "border-yellow-300 border-opacity-30 hover:border-opacity-100"
-                                : "border-slate-600 border-opacity-30 hover:border-opacity-100"
-                            }`
-                      }`}
-                      aria-label={`Select ${transport.label} mode`}
-                      aria-pressed={activeTransport === transport.mode}
-                    >
-                      <span className="text-2xl mb-2" aria-hidden="true">
-                        {transport.icon}
-                      </span>
-                      <span
-                        className={`${
-                          accessibilitySettings.largeText
-                            ? "text-lg"
-                            : "text-base"
-                        } font-medium`}
-                      >
-                        {transport.label}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-6">
+        {/* Sidebar - Higher z-index */}
+        <aside
+          className={`absolute top-0 left-0 z-40 h-full ${
+            accessibilitySettings.highContrast ? "bg-gray-900" : "bg-slate-800"
+          } shadow-2xl ${
+            accessibilitySettings.reducedMotion
+              ? ""
+              : "transition-all duration-300"
+          } ${isSidebarOpen ? "w-80 translate-x-0" : "w-0 -translate-x-full"}`}
+          role="complementary"
+          aria-label="Route planner"
+          style={{ zIndex: 50 }} // Ensure sidebar is above map
+        >
+          {isSidebarOpen && (
+            <div className="p-6 h-full flex flex-col overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
                 <button
-                  onClick={calculateRoute}
-                  disabled={!routeTo || isLoading}
-                  className={`w-full py-4 px-6 rounded-xl font-semibold ${
+                  onClick={() => setIsSidebarOpen(false)}
+                  className={`p-2 ${
+                    accessibilitySettings.highContrast
+                      ? "hover:bg-gray-800"
+                      : "hover:bg-slate-700"
+                  } rounded-lg ${
                     accessibilitySettings.reducedMotion
                       ? ""
                       : "transition-all duration-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                    accessibilitySettings.highContrast
-                      ? "focus:ring-offset-black"
-                      : "focus:ring-offset-slate-800"
-                  } ${
-                    routeTo && !isLoading
-                      ? `${
-                          accessibilitySettings.highContrast
-                            ? "bg-yellow-500 hover:bg-yellow-600 text-black"
-                            : "bg-blue-600 hover:bg-blue-700 text-white"
-                        } shadow-lg ${
-                          accessibilitySettings.reducedMotion
-                            ? ""
-                            : "hover:shadow-xl transform hover:scale-105"
-                        }`
-                      : "bg-slate-700 text-slate-400 cursor-not-allowed"
-                  }`}
-                  aria-disabled={!routeTo || isLoading}
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  aria-label="Close route planner sidebar"
                 >
-                  {isLoading ? (
-                    <span className="flex items-center justify-center">
-                      <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Calculating...
-                    </span>
-                  ) : (
-                    "Calculate Accessible Route"
-                  )}
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
                 </button>
               </div>
 
-              <div className="mt-6 pt-6 border-t border-slate-600">
-                <h3
-                  className={`${
-                    accessibilitySettings.largeText ? "text-lg" : "text-base"
-                  } font-semibold mb-4`}
-                >
-                  Accessible Locations
-                </h3>
-                <div
-                  className="space-y-3"
-                  role="list"
-                  aria-label="Recent accessible destinations"
-                >
-                  {[
-                    { name: "University of Pittsburgh", type: "Education" },
-                    { name: "Carnegie Museum", type: "Museum" },
-                    { name: "Accessible Transit Center", type: "Transport" },
-                    { name: "City Hospital", type: "Medical" },
-                  ].map((destination) => (
-                    <button
-                      key={destination.name}
-                      onClick={() => {
-                        setRouteTo(destination.name);
-                        setAnnouncement(
-                          `Destination set to ${destination.name}, ${destination.type}`
-                        );
-                      }}
-                      className={`w-full text-left p-4 rounded-xl ${
-                        accessibilitySettings.highContrast
-                          ? "hover:bg-gray-800"
-                          : "hover:bg-slate-700"
-                      } ${
-                        accessibilitySettings.reducedMotion
-                          ? ""
-                          : "transition-all duration-300"
-                      } focus:outline-none focus:ring-2 focus:ring-blue-500 group`}
-                      role="listitem"
+              <div className="space-y-6 flex-1">
+                <div className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="from-input"
+                      className={`block ${
+                        accessibilitySettings.largeText ? "text-lg" : "text-base"
+                      } font-semibold mb-3`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div
-                            className={`${
-                              accessibilitySettings.largeText
-                                ? "text-lg"
-                                : "text-base"
-                            } font-medium`}
-                          >
-                            {destination.name}
-                          </div>
-                          <div
-                            className={`${
-                              accessibilitySettings.largeText
-                                ? "text-lg"
-                                : "text-base"
-                            } ${
-                              accessibilitySettings.highContrast
-                                ? "text-yellow-300"
-                                : "text-slate-400"
-                            }`}
-                          >
-                            {destination.type}
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span
-                            className="text-green-400"
-                            aria-label="Wheelchair accessible"
-                          >
-                            ♿
-                          </span>
-                          <svg
-                            className={`w-4 h-4 ${
-                              accessibilitySettings.highContrast
-                                ? "text-yellow-300"
-                                : "text-slate-400"
-                            } opacity-0 group-hover:opacity-100 ${
-                              accessibilitySettings.reducedMotion
-                                ? ""
-                                : "transition-all duration-300"
-                            }`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 5l7 7-7 7"
-                            />
-                          </svg>
-                        </div>
+                      Start Location
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="from-input"
+                        type="text"
+                        value={routeFrom}
+                        onChange={(e) => setRouteFrom(e.target.value)}
+                        className={`w-full ${
+                          accessibilitySettings.highContrast
+                            ? "bg-black text-yellow-300 border-yellow-300"
+                            : "bg-slate-900 text-slate-100 border-slate-600"
+                        } rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-blue-500 border ${
+                          accessibilitySettings.reducedMotion
+                            ? ""
+                            : "transition-all duration-300"
+                        }`}
+                        placeholder="Current location"
+                      />
+                      <div
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2"
+                        aria-hidden="true"
+                      >
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                       </div>
-                    </button>
-                  ))}
+                      <button
+                        onClick={getLocation}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-slate-700 rounded"
+                        aria-label="Use current location"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="to-input"
+                      className={`block ${
+                        accessibilitySettings.largeText ? "text-lg" : "text-base"
+                      } font-semibold mb-3`}
+                    >
+                      Destination
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="to-input"
+                        type="text"
+                        value={routeTo}
+                        onChange={(e) => setRouteTo(e.target.value)}
+                        className={`w-full ${
+                          accessibilitySettings.highContrast
+                            ? "bg-black text-yellow-300 border-yellow-300"
+                            : "bg-slate-900 text-slate-100 border-slate-600"
+                        } rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-blue-500 border ${
+                          accessibilitySettings.reducedMotion
+                            ? ""
+                            : "transition-all duration-300"
+                        }`}
+                        placeholder="Where do you want to go?"
+                      />
+                      <div
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2"
+                        aria-hidden="true"
+                      >
+                        <svg
+                          className="w-4 h-4 text-slate-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <h3
+                    className={`${
+                      accessibilitySettings.largeText ? "text-lg" : "text-base"
+                    } font-semibold mb-4`}
+                  >
+                    Accessibility Mode
+                  </h3>
+                  <div
+                    className="grid grid-cols-3 gap-3"
+                    role="radiogroup"
+                    aria-label="Transportation options"
+                  >
+                    {[
+                      { mode: "walk", icon: "🚶", label: "Walk" },
+                      { mode: "transit", icon: "🚌", label: "Transit" },
+                      { mode: "wheelchair", icon: "♿", label: "Wheelchair" },
+                    ].map((transport) => (
+                      <button
+                        key={transport.mode}
+                        onClick={() => handleTransportChange(transport.mode)}
+                        className={`flex flex-col items-center p-4 rounded-xl border-2 ${
+                          accessibilitySettings.reducedMotion
+                            ? ""
+                            : "transition-all duration-300"
+                        } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          activeTransport === transport.mode
+                            ? `${
+                                accessibilitySettings.highContrast
+                                  ? "border-yellow-300 bg-yellow-500 bg-opacity-20"
+                                  : "border-slate-600 bg-blue-500 bg-opacity-20"
+                              }`
+                            : `${
+                                accessibilitySettings.highContrast
+                                  ? "border-yellow-300 border-opacity-30 hover:border-opacity-100"
+                                  : "border-slate-600 border-opacity-30 hover:border-opacity-100"
+                              }`
+                        }`}
+                        aria-label={`Select ${transport.label} mode`}
+                        aria-pressed={activeTransport === transport.mode}
+                      >
+                        <span className="text-2xl mb-2" aria-hidden="true">
+                          {transport.icon}
+                        </span>
+                        <span
+                          className={`${
+                            accessibilitySettings.largeText
+                              ? "text-lg"
+                              : "text-base"
+                          } font-medium`}
+                        >
+                          {transport.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-6">
+                  <button
+                    onClick={calculateRoute}
+                    disabled={!routeTo || isLoading}
+                    className={`w-full py-4 px-6 rounded-xl font-semibold ${
+                      accessibilitySettings.reducedMotion
+                        ? ""
+                        : "transition-all duration-300"
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      accessibilitySettings.highContrast
+                        ? "focus:ring-offset-black"
+                        : "focus:ring-offset-slate-800"
+                    } ${
+                      routeTo && !isLoading
+                        ? `${
+                            accessibilitySettings.highContrast
+                              ? "bg-yellow-500 hover:bg-yellow-600 text-black"
+                              : "bg-blue-600 hover:bg-blue-700 text-white"
+                          } shadow-lg ${
+                            accessibilitySettings.reducedMotion
+                              ? ""
+                              : "hover:shadow-xl transform hover:scale-105"
+                          }`
+                        : "bg-slate-700 text-slate-400 cursor-not-allowed"
+                    }`}
+                    aria-disabled={!routeTo || isLoading}
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center justify-center">
+                        <svg
+                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Calculating...
+                      </span>
+                    ) : (
+                      "Calculate Accessible Route"
+                    )}
+                  </button>
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-slate-600">
+                  <h3
+                    className={`${
+                      accessibilitySettings.largeText ? "text-lg" : "text-base"
+                    } font-semibold mb-4`}
+                  >
+                    Accessible Locations
+                  </h3>
+                  <div
+                    className="space-y-3"
+                    role="list"
+                    aria-label="Recent accessible destinations"
+                  >
+                    {presetDestinations.map((dest) => (
+                      <button
+                        key={dest.name}
+                        onClick={() => {
+                          setRouteTo(dest.name);
+                          setAnnouncement(
+                            `Destination set to ${dest.name}, ${dest.type}`
+                          );
+                        }}
+                        className={`w-full text-left p-4 rounded-xl ${
+                          accessibilitySettings.highContrast
+                            ? "hover:bg-gray-800"
+                            : "hover:bg-slate-700"
+                        } ${
+                          accessibilitySettings.reducedMotion
+                            ? ""
+                            : "transition-all duration-300"
+                        } focus:outline-none focus:ring-2 focus:ring-blue-500 group`}
+                        role="listitem"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div
+                              className={`${
+                                accessibilitySettings.largeText
+                                  ? "text-lg"
+                                  : "text-base"
+                              } font-medium`}
+                            >
+                              {dest.name}
+                            </div>
+                            <div
+                              className={`${
+                                accessibilitySettings.largeText
+                                  ? "text-lg"
+                                  : "text-base"
+                              } ${
+                                accessibilitySettings.highContrast
+                                  ? "text-yellow-300"
+                                  : "text-slate-400"
+                              }`}
+                            >
+                              {dest.type}
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span
+                              className="text-green-400"
+                              aria-label="Wheelchair accessible"
+                            >
+                              ♿
+                            </span>
+                            <svg
+                              className={`w-4 h-4 ${
+                                accessibilitySettings.highContrast
+                                  ? "text-yellow-300"
+                                  : "text-slate-400"
+                              } opacity-0 group-hover:opacity-100 ${
+                                accessibilitySettings.reducedMotion
+                                    ? ""
+                                    : "transition-all duration-300"
+                              }`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </aside>
+          )}
+        </aside>
 
-      <main className="w-full h-full relative">
+        {/* Map Controls - Medium z-index (between sidebar and map) */}
         {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
@@ -959,6 +863,7 @@ export default function AccessibleMap() {
             } ${accessibilitySettings.reducedMotion ? "" : "hover:scale-105"}`}
             aria-label="Open accessible route planner"
             accessKey="1"
+            style={{ zIndex: 30 }}
           >
             <svg
               className="w-5 h-5"
@@ -977,31 +882,8 @@ export default function AccessibleMap() {
           </button>
         )}
 
-        <div
-          ref={mapContainerRef}
-          className="w-full h-full relative overflow-hidden"
-          style={{
-            pointerEvents: accessibilitySettings.visionImpaired
-              ? "none"
-              : "auto",
-            filter: accessibilitySettings.highContrast
-              ? "contrast(1.5) brightness(1.2)"
-              : "none",
-          }}
-          aria-label={`Interactive map view centered at current location. Zoom level ${zoom}. ${mapStyle} view.`}
-          role="application"
-        />
-
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
-          <div
-            className={`relative ${accessibilitySettings.reducedMotion ? "" : "animate-pulse"}`}
-          >
-            <div className="w-8 h-8 bg-blue-500 rounded-full border-4 border-white shadow-2xl"></div>
-            <div className="absolute inset-0 rounded-full border-2 border-blue-300 animate-ping"></div>
-          </div>
-        </div>
-
-        <div className="absolute top-20 right-4 z-40 flex flex-col gap-3">
+        {/* Zoom Controls */}
+        <div className="absolute top-20 right-4 z-30 flex flex-col gap-3">
           <button
             onClick={handleZoomIn}
             className={`${
@@ -1052,8 +934,9 @@ export default function AccessibleMap() {
           </button>
         </div>
 
+        {/* Zoom Level Display */}
         <div
-          className={`absolute bottom-4 right-4 z-40 ${
+          className={`absolute bottom-4 right-4 z-30 ${
             accessibilitySettings.highContrast
               ? "bg-gray-900 border-yellow-300"
               : "bg-slate-800 border-slate-600"
@@ -1063,7 +946,7 @@ export default function AccessibleMap() {
         >
           Zoom: {zoom}x
         </div>
-      </main>
+      </div>
 
       {isSettingsOpen && (
         <div
@@ -1226,23 +1109,19 @@ export default function AccessibleMap() {
                   Map Display
                 </h3>
                 <div
-                  className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
                   role="radiogroup"
                   aria-label="Map style options"
                 >
-                  {[
-                    { value: "roadmap", label: "Standard", icon: "🗺️" },
-                    { value: "satellite", label: "Satellite", icon: "🛰️" },
-                    { value: "terrain", label: "Terrain", icon: "⛰️" },
-                  ].map((style) => (
+                  {Object.entries(mapTypes).map(([key, mapTypeConfig]) => (
                     <label
-                      key={style.value}
+                      key={key}
                       className={`flex flex-col items-center p-4 rounded-2xl border-2 cursor-pointer ${
                         accessibilitySettings.reducedMotion
                           ? ""
                           : "transition-all duration-300"
                       } focus-within:ring-2 focus-within:ring-blue-500 ${
-                        mapStyle === style.value
+                        mapType === key
                           ? `${
                               accessibilitySettings.highContrast
                                 ? "border-yellow-300 bg-yellow-500 bg-opacity-20"
@@ -1256,19 +1135,21 @@ export default function AccessibleMap() {
                       }`}
                     >
                       <span className="text-3xl mb-3" aria-hidden="true">
-                        {style.icon}
+                        {key.includes('Satellite') ? '🛰️' : key.includes('Night') ? '🌙' : '🗺️'}
                       </span>
                       <input
                         type="radio"
-                        name="mapStyle"
-                        value={style.value}
-                        checked={mapStyle === style.value}
+                        name="mapType"
+                        value={key}
+                        checked={mapType === key}
                         onChange={(e) => {
-                          setMapStyle(e.target.value);
-                          setAnnouncement(`Map style changed to ${style.label}`);
+                          setMapType(e.target.value);
+                          setAnnouncement(
+                            `Map style changed to ${mapTypes[e.target.value].name}`,
+                          );
                         }}
                         className="sr-only"
-                        aria-checked={mapStyle === style.value}
+                        aria-checked={mapType === key}
                       />
                       <div className="text-center">
                         <div
@@ -1278,7 +1159,7 @@ export default function AccessibleMap() {
                               : "text-slate-100"
                           } mb-1`}
                         >
-                          {style.label}
+                          {mapTypeConfig.name}
                         </div>
                       </div>
                     </label>
@@ -1391,7 +1272,7 @@ export default function AccessibleMap() {
                       screenReader: false,
                       reducedMotion: false,
                     });
-                    setMapStyle("roadmap");
+                    setMapType("openstreetmap");
                     setZoom(13);
                     setAnnouncement("All settings reset to default");
                   }}
