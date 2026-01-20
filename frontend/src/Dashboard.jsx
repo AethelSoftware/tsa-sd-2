@@ -23,12 +23,86 @@ export default function AccessibleMap() {
   const [activeTransport, setActiveTransport] = useState("wheelchair");
   const [announcement, setAnnouncement] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [calculatedRoute, setCalculatedRoute] = useState(null);
+  const [map, setMap] = useState(null);
+  const [directionsService, setDirectionsService] = useState(null);
+  const [directionsRenderer, setDirectionsRenderer] = useState(null);
 
   const modalRef = useRef(null);
   const mapContainerRef = useRef(null);
   const settingsButtonRef = useRef(null);
   const announcementRef = useRef(null);
   const searchInputRef = useRef(null);
+
+  // Load Google Maps API
+  useEffect(() => {
+    if (!window.google) {
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+
+      script.onload = () => {
+        initializeMap();
+      };
+    } else {
+      initializeMap();
+    }
+
+    return () => {
+      if (directionsRenderer) {
+        directionsRenderer.setMap(null);
+      }
+    };
+  }, []);
+
+  const initializeMap = () => {
+    const mapOptions = {
+      center: { lat: currentLocation.lat, lng: currentLocation.lng },
+      zoom: zoom,
+      mapTypeId: mapStyle,
+      disableDefaultUI: false,
+      zoomControl: false,
+      styles: accessibilitySettings.highContrast ? highContrastMapStyle : [],
+    };
+
+    const newMap = new window.google.maps.Map(
+      mapContainerRef.current,
+      mapOptions
+    );
+
+    const newDirectionsService = new window.google.maps.DirectionsService();
+    const newDirectionsRenderer = new window.google.maps.DirectionsRenderer({
+      map: newMap,
+      suppressMarkers: false,
+      polylineOptions: {
+        strokeColor: activeTransport === "wheelchair" ? "#4285F4" : "#34A853",
+        strokeWeight: 6,
+        strokeOpacity: 0.8,
+      },
+    });
+
+    // Add current location marker
+    new window.google.maps.Marker({
+      position: { lat: currentLocation.lat, lng: currentLocation.lng },
+      map: newMap,
+      title: "Your Current Location",
+      icon: {
+        path: window.google.maps.SymbolPath.CIRCLE,
+        scale: 10,
+        fillColor: "#4285F4",
+        fillOpacity: 1,
+        strokeColor: "#ffffff",
+        strokeWeight: 2,
+      },
+    });
+
+    setMap(newMap);
+    setDirectionsService(newDirectionsService);
+    setDirectionsRenderer(newDirectionsRenderer);
+  };
 
   useEffect(() => {
     if (announcementRef.current && announcement) {
@@ -76,6 +150,9 @@ export default function AccessibleMap() {
       e.preventDefault();
       const delta = e.deltaY > 0 ? -1 : 1;
       setZoom((prev) => Math.min(Math.max(10, prev + delta), 18));
+      if (map) {
+        map.setZoom(zoom + delta);
+      }
     };
 
     mapContainer.addEventListener("wheel", handleWheel, { passive: false });
@@ -86,6 +163,8 @@ export default function AccessibleMap() {
   }, [
     accessibilitySettings.visionImpaired,
     accessibilitySettings.reducedMotion,
+    map,
+    zoom,
   ]);
 
   useEffect(() => {
@@ -103,7 +182,7 @@ export default function AccessibleMap() {
 
       if (isSettingsOpen && e.key === "Tab") {
         const focusableElements = modalRef.current?.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
         if (focusableElements && focusableElements.length > 0) {
           const firstElement = focusableElements[0];
@@ -148,6 +227,26 @@ export default function AccessibleMap() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isSettingsOpen, isSearchOpen]);
 
+  useEffect(() => {
+    if (map) {
+      map.setZoom(zoom);
+    }
+  }, [zoom, map]);
+
+  useEffect(() => {
+    if (map) {
+      map.setMapTypeId(mapStyle);
+    }
+  }, [mapStyle, map]);
+
+  useEffect(() => {
+    if (map && accessibilitySettings.highContrast) {
+      map.setOptions({ styles: highContrastMapStyle });
+    } else if (map) {
+      map.setOptions({ styles: [] });
+    }
+  }, [accessibilitySettings.highContrast, map]);
+
   const handleAccessibilityChange = (setting) => {
     const newValue = !accessibilitySettings[setting];
     setAccessibilitySettings((prev) => ({
@@ -155,33 +254,175 @@ export default function AccessibleMap() {
       [setting]: newValue,
     }));
     setAnnouncement(
-      `${setting.replace(/([A-Z])/g, " $1").toLowerCase()} ${newValue ? "enabled" : "disabled"}`,
+      `${setting.replace(/([A-Z])/g, " $1").toLowerCase()} ${
+        newValue ? "enabled" : "disabled"
+      }`
     );
   };
 
-  const calculateRoute = () => {
-    if (routeTo) {
-      const activeFeatures = Object.keys(accessibilitySettings)
-        .filter((key) => accessibilitySettings[key])
-        .map((key) => key.replace(/([A-Z])/g, " $1").toLowerCase())
-        .join(", ");
+  const calculateRoute = async () => {
+    if (!routeTo.trim()) {
+      setAnnouncement("Please enter a destination");
+      return;
+    }
 
-      setAnnouncement(
-        `Calculating accessible ${activeTransport} route from ${routeFrom} to ${routeTo}. Accessibility features: ${activeFeatures || "none"}`,
+    setIsLoading(true);
+    setAnnouncement("Calculating accessible route...");
+
+    try {
+      // First try to get coordinates from the address
+      const geocoder = new window.google.maps.Geocoder();
+      const geocodeResult = await geocoder.geocode({
+        address: routeTo,
+      });
+
+      if (!geocodeResult.results[0]) {
+        throw new Error("Destination not found");
+      }
+
+      const destination = geocodeResult.results[0].geometry.location;
+      const origin = new window.google.maps.LatLng(
+        currentLocation.lat,
+        currentLocation.lng
       );
 
-      setTimeout(() => {
-        setAnnouncement(
-          `Route calculated successfully. ${activeTransport === "wheelchair" ? "Wheelchair accessible route found with elevator access and ramp availability." : "Standard route calculated."}`,
+      // Call your backend AI model for route calculation
+      const response = await fetch("http://localhost:5000/api/calculate-route", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          origin: {
+            lat: currentLocation.lat,
+            lng: currentLocation.lng,
+            address: routeFrom === "Current Location" ? "Current Location" : routeFrom,
+          },
+          destination: {
+            lat: destination.lat(),
+            lng: destination.lng(),
+            address: routeTo,
+          },
+          mode: activeTransport,
+          accessibilityFeatures: Object.keys(accessibilitySettings)
+            .filter((key) => accessibilitySettings[key])
+            .map((key) => ({
+              feature: key,
+              enabled: accessibilitySettings[key],
+            })),
+          preferences: {
+            avoidStairs: true,
+            elevatorAccess: true,
+            wheelchairAccessible: activeTransport === "wheelchair",
+            wellLitAreas: accessibilitySettings.visionImpaired,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to calculate route");
+      }
+
+      const routeData = await response.json();
+
+      if (routeData.route && directionsService && directionsRenderer) {
+        // Use Google Directions Service to display the route
+        directionsService.route(
+          {
+            origin: origin,
+            destination: destination,
+            travelMode: window.google.maps.TravelMode.WALKING,
+            provideRouteAlternatives: false,
+          },
+          (result, status) => {
+            if (status === "OK") {
+              directionsRenderer.setDirections(result);
+              setCalculatedRoute(result);
+
+              // Zoom to fit the route
+              const bounds = new window.google.maps.LatLngBounds();
+              bounds.extend(origin);
+              bounds.extend(destination);
+              map.fitBounds(bounds);
+
+              const activeFeatures = Object.keys(accessibilitySettings)
+                .filter((key) => accessibilitySettings[key])
+                .map((key) => key.replace(/([A-Z])/g, " $1").toLowerCase())
+                .join(", ");
+
+              setAnnouncement(
+                `Route calculated successfully! ${
+                  activeTransport === "wheelchair"
+                    ? "Wheelchair accessible route found with optimized path. "
+                    : ""
+                }Accessibility features: ${activeFeatures || "none"}. Estimated time: ${
+                  result.routes[0].legs[0].duration?.text || "Unknown"
+                }`
+              );
+            } else {
+              setAnnouncement("Could not calculate route. Please try again.");
+            }
+            setIsLoading(false);
+          }
         );
-      }, 1500);
+      } else {
+        // Fallback to basic route calculation if AI model is not available
+        calculateBasicRoute(origin, destination);
+      }
+    } catch (error) {
+      console.error("Route calculation error:", error);
+      setAnnouncement(
+        "Error calculating route. Please check your destination and try again."
+      );
+      setIsLoading(false);
     }
+  };
+
+  const calculateBasicRoute = (origin, destination) => {
+    if (!directionsService || !directionsRenderer) return;
+
+    const travelMode =
+      activeTransport === "wheelchair" || activeTransport === "walk"
+        ? window.google.maps.TravelMode.WALKING
+        : window.google.maps.TravelMode.TRANSIT;
+
+    directionsService.route(
+      {
+        origin: origin,
+        destination: destination,
+        travelMode: travelMode,
+        provideRouteAlternatives: true,
+      },
+      (result, status) => {
+        if (status === "OK") {
+          directionsRenderer.setDirections(result);
+          setCalculatedRoute(result);
+
+          const bounds = new window.google.maps.LatLngBounds();
+          bounds.extend(origin);
+          bounds.extend(destination);
+          map.fitBounds(bounds);
+
+          setAnnouncement(
+            `Route calculated successfully! Estimated time: ${
+              result.routes[0].legs[0].duration?.text || "Unknown"
+            }`
+          );
+        } else {
+          setAnnouncement("Could not calculate route. Please try again.");
+        }
+        setIsLoading(false);
+      }
+    );
   };
 
   const handleZoomIn = () => {
     setZoom((prev) => {
       const newZoom = Math.min(prev + 1, 18);
       setAnnouncement(`Zoom level ${newZoom}`);
+      if (map) {
+        map.setZoom(newZoom);
+      }
       return newZoom;
     });
   };
@@ -190,6 +431,9 @@ export default function AccessibleMap() {
     setZoom((prev) => {
       const newZoom = Math.max(prev - 1, 10);
       setAnnouncement(`Zoom level ${newZoom}`);
+      if (map) {
+        map.setZoom(newZoom);
+      }
       return newZoom;
     });
   };
@@ -199,18 +443,37 @@ export default function AccessibleMap() {
       setAnnouncement("Getting your current location");
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setCurrentLocation({
+          const newLocation = {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
-          });
+          };
+          setCurrentLocation(newLocation);
           setRouteFrom("Current Location");
+          
+          if (map) {
+            map.setCenter(newLocation);
+            new window.google.maps.Marker({
+              position: newLocation,
+              map: map,
+              title: "Your Current Location",
+              icon: {
+                path: window.google.maps.SymbolPath.CIRCLE,
+                scale: 10,
+                fillColor: "#4285F4",
+                fillOpacity: 1,
+                strokeColor: "#ffffff",
+                strokeWeight: 2,
+              },
+            });
+          }
+          
           setAnnouncement("Current location updated successfully");
         },
         (error) => {
           setAnnouncement(
-            "Unable to get current location. Using default location.",
+            "Unable to get current location. Using default location."
           );
-        },
+        }
       );
     }
   };
@@ -223,7 +486,54 @@ export default function AccessibleMap() {
       wheelchair: "wheelchair accessible",
     };
     setAnnouncement(`Transportation mode set to ${modeNames[mode]}`);
+    
+    // Clear existing route when transport mode changes
+    if (directionsRenderer) {
+      directionsRenderer.setDirections({ routes: [] });
+      setCalculatedRoute(null);
+    }
   };
+
+  const highContrastMapStyle = [
+    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+    {
+      featureType: "administrative.locality",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#d59563" }],
+    },
+    {
+      featureType: "road",
+      elementType: "geometry",
+      stylers: [{ color: "#38414e" }],
+    },
+    {
+      featureType: "road",
+      elementType: "geometry.stroke",
+      stylers: [{ color: "#212a37" }],
+    },
+    {
+      featureType: "road",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#9ca5b3" }],
+    },
+    {
+      featureType: "road.highway",
+      elementType: "geometry",
+      stylers: [{ color: "#746855" }],
+    },
+    {
+      featureType: "road.highway",
+      elementType: "geometry.stroke",
+      stylers: [{ color: "#1f2835" }],
+    },
+    {
+      featureType: "road.highway",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#f3d19c" }],
+    },
+  ];
 
   return (
     <div
@@ -253,9 +563,6 @@ export default function AccessibleMap() {
         Press Alt + 1 to toggle sidebar, Alt + 2 for settings, Alt + 3 for
         search
       </div>
-
-
-
 
       <aside
         className={`absolute top-0 left-0 z-40 h-full ${
@@ -477,7 +784,7 @@ export default function AccessibleMap() {
               <div className="pt-6">
                 <button
                   onClick={calculateRoute}
-                  disabled={!routeTo}
+                  disabled={!routeTo || isLoading}
                   className={`w-full py-4 px-6 rounded-xl font-semibold ${
                     accessibilitySettings.reducedMotion
                       ? ""
@@ -487,7 +794,7 @@ export default function AccessibleMap() {
                       ? "focus:ring-offset-black"
                       : "focus:ring-offset-slate-800"
                   } ${
-                    routeTo
+                    routeTo && !isLoading
                       ? `${
                           accessibilitySettings.highContrast
                             ? "bg-yellow-500 hover:bg-yellow-600 text-black"
@@ -499,9 +806,35 @@ export default function AccessibleMap() {
                         }`
                       : "bg-slate-700 text-slate-400 cursor-not-allowed"
                   }`}
-                  aria-disabled={!routeTo}
+                  aria-disabled={!routeTo || isLoading}
                 >
-                  Calculate Accessible Route
+                  {isLoading ? (
+                    <span className="flex items-center justify-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Calculating...
+                    </span>
+                  ) : (
+                    "Calculate Accessible Route"
+                  )}
                 </button>
               </div>
 
@@ -529,7 +862,7 @@ export default function AccessibleMap() {
                       onClick={() => {
                         setRouteTo(destination.name);
                         setAnnouncement(
-                          `Destination set to ${destination.name}, ${destination.type}`,
+                          `Destination set to ${destination.name}, ${destination.type}`
                         );
                       }}
                       className={`w-full text-left p-4 rounded-xl ${
@@ -607,7 +940,7 @@ export default function AccessibleMap() {
         )}
       </aside>
 
-      <main className="w-full h-full relative" ref={mapContainerRef}>
+      <main className="w-full h-full relative">
         {!isSidebarOpen && (
           <button
             onClick={() => setIsSidebarOpen(true)}
@@ -644,33 +977,22 @@ export default function AccessibleMap() {
           </button>
         )}
 
-        <div className="w-full h-full relative overflow-hidden">
-          <iframe
-            width="100%"
-            height="100%"
-            frameBorder="0"
-            style={{
-              border: 0,
-              pointerEvents: accessibilitySettings.visionImpaired
-                ? "none"
-                : "auto",
-              filter: accessibilitySettings.highContrast
-                ? "contrast(1.5) brightness(1.2)"
-                : "none",
-            }}
-            src={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${currentLocation.lat},${currentLocation.lng}&zoom=${zoom}&maptype=${mapStyle}`}
-            allowFullScreen
-            aria-label={`Map view centered at current location. Zoom level ${zoom}. ${mapStyle} view.`}
-            title="Accessible Map View"
-            loading="lazy"
-            aria-hidden={accessibilitySettings.visionImpaired}
-          />
-        </div>
-
         <div
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
-          aria-hidden="true"
-        >
+          ref={mapContainerRef}
+          className="w-full h-full relative overflow-hidden"
+          style={{
+            pointerEvents: accessibilitySettings.visionImpaired
+              ? "none"
+              : "auto",
+            filter: accessibilitySettings.highContrast
+              ? "contrast(1.5) brightness(1.2)"
+              : "none",
+          }}
+          aria-label={`Interactive map view centered at current location. Zoom level ${zoom}. ${mapStyle} view.`}
+          role="application"
+        />
+
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
           <div
             className={`relative ${accessibilitySettings.reducedMotion ? "" : "animate-pulse"}`}
           >
@@ -943,9 +1265,7 @@ export default function AccessibleMap() {
                         checked={mapStyle === style.value}
                         onChange={(e) => {
                           setMapStyle(e.target.value);
-                          setAnnouncement(
-                            `Map style changed to ${style.label}`,
-                          );
+                          setAnnouncement(`Map style changed to ${style.label}`);
                         }}
                         className="sr-only"
                         aria-checked={mapStyle === style.value}
@@ -1098,7 +1418,7 @@ export default function AccessibleMap() {
                   onClick={() => {
                     setIsSettingsOpen(false);
                     setAnnouncement(
-                      "Accessibility settings applied successfully",
+                      "Accessibility settings applied successfully"
                     );
                   }}
                   aria-label="Apply accessibility settings and close dialog"

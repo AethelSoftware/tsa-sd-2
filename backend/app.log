@@ -110,3 +110,27 @@ KeyError: 'cv_mean'
 2026-01-05 09:27:08,937 - werkzeug - INFO - 127.0.0.1 - - [05/Jan/2026 09:27:08] "[33mOPTIONS /api/auth/email-login HTTP/1.1[0m" 404 -
 2026-01-05 09:27:10,351 - werkzeug - INFO - 127.0.0.1 - - [05/Jan/2026 09:27:10] "[33mOPTIONS /api/auth/email-login HTTP/1.1[0m" 404 -
 2026-01-05 09:27:11,430 - werkzeug - INFO - 127.0.0.1 - - [05/Jan/2026 09:27:11] "[33mOPTIONS /api/auth/email-login HTTP/1.1[0m" 404 -
+2026-01-20 16:14:37,877 - ai_safety_model - INFO - No model found or retraining requested, will train when needed
+2026-01-20 16:15:58,241 - ai_safety_model - INFO - No model found or retraining requested, will train when needed
+2026-01-20 16:15:58,261 - real_time_tracker - INFO - Background tasks started
+2026-01-20 16:16:03,706 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2026-01-20 16:16:03,706 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-01-20 16:16:03,707 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-01-20 16:16:03,707 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-01-20 16:16:06,179 - werkzeug - INFO - 127.0.0.1 - - [20/Jan/2026 16:16:06] "GET /api/hello HTTP/1.1" 200 -
+2026-01-20 16:16:06,274 - werkzeug - INFO - 127.0.0.1 - - [20/Jan/2026 16:16:06] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-01-20 16:16:31,317 - werkzeug - INFO - 127.0.0.1 - - [20/Jan/2026 16:16:31] "[33mGET /api/auth/login HTTP/1.1[0m" 404 -
+2026-01-20 16:16:31,397 - werkzeug - INFO - 127.0.0.1 - - [20/Jan/2026 16:16:31] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-01-20 16:16:33,615 - werkzeug - INFO - 127.0.0.1 - - [20/Jan/2026 16:16:33] "[33mOPTIONS /api/auth/email-login HTTP/1.1[0m" 404 -
+2026-01-20 16:47:52,065 - ai_safety_model - INFO - No model found or retraining requested, will train when needed
+2026-01-20 16:47:52,155 - real_time_tracker - INFO - Background tasks started
+2026-01-20 16:47:52,157 - ai_safety_model - INFO - No model found or retraining requested, will train when needed
+2026-01-20 16:47:53,484 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2026-01-20 16:47:53,485 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-01-20 16:47:53,485 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-01-20 16:47:53,485 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-01-20 16:47:55,960 - werkzeug - INFO - 127.0.0.1 - - [20/Jan/2026 16:47:55] "GET /api/hello HTTP/1.1" 200 -
