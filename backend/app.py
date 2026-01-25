@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from flask import Flask, jsonify, request, send_file, send_from_directory
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit
 import threading
 import webbrowser
 import json
@@ -31,15 +32,22 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Import safety model and tracking system
-try:
-    from ai_safety_model import safety_ai, get_safety_ai
-    from real_time_tracker import create_tracking_app, tracker, socketio
-    from hazard_monitor import HazardMonitor
-except ImportError as e:
-    logger.error(f"Import error: {e}")
-    print("⚠️  Some modules not found, running in limited mode")
-    safety_ai = None
+# Initialize safety_ai as None - will be set lazily
+safety_ai = None
+socketio = None
+
+def get_safety_ai_instance():
+    """Lazy load safety AI to avoid circular imports"""
+    global safety_ai
+    if safety_ai is None:
+        try:
+            from ai_safety_model import get_safety_ai
+            safety_ai = get_safety_ai()
+            logger.info("Safety AI loaded successfully")
+        except ImportError as e:
+            logger.error(f"Failed to load safety AI: {e}")
+            safety_ai = None
+    return safety_ai
 
 def format_metric(value, format_str='.4f'):
     """Safely format a metric value"""
@@ -57,17 +65,22 @@ def format_metric(value, format_str='.4f'):
 
 def check_model_status():
     """Check if model exists and prompt for training"""
-    model_path = os.environ.get('MODEL_PATH', 'models/safety_model.pkl')
+    safety_ai_instance = get_safety_ai_instance()
+    if safety_ai_instance is None:
+        print("\n⚠️  Safety AI not available, cannot check model status")
+        return False
+    
+    model_path = safety_ai_instance.model_path
     model_exists = os.path.exists(model_path)
     
     if model_exists:
         try:
-            if safety_ai.load_model(model_path):
+            if safety_ai_instance.load_model(model_path):
                 print("\n" + "="*60)
                 print("MODEL STATUS: Trained")
                 print("="*60)
                 
-                info = safety_ai.get_model_info()
+                info = safety_ai_instance.get_model_info()
                 if info['last_training_time']:
                     print(f"Last Training: {info['last_training_time']}")
                 
@@ -111,6 +124,11 @@ def check_model_status():
 
 def train_model_interactive():
     """Interactive model training"""
+    safety_ai_instance = get_safety_ai_instance()
+    if safety_ai_instance is None:
+        print("❌ Safety AI not available for training")
+        return False
+    
     print("\n" + "="*60)
     print("MODEL TRAINING CONFIGURATION")
     print("="*60)
@@ -157,7 +175,7 @@ def train_model_interactive():
     
     try:
         start_time = time.time()
-        result = safety_ai.train_model_advanced(
+        result = safety_ai_instance.train_model_advanced(
             n_loops=n_loops,
             n_epochs=n_epochs,
             force_retrain=True,
@@ -192,7 +210,7 @@ def train_model_interactive():
             else:
                 print("  ⚠️  Test score not available")
             
-            print(f"\nModel saved to: {safety_ai.model_path}")
+            print(f"\nModel saved to: {safety_ai_instance.model_path}")
             print(f"Next recommended training: In 1-7 days")
         else:
             print(f"Training status: {result['status']}")
@@ -227,7 +245,8 @@ def add_model_endpoints(app):
     def model_status():
         """Get current model status"""
         try:
-            info = safety_ai.get_model_info() if safety_ai else {'is_trained': False}
+            safety_ai_instance = get_safety_ai_instance()
+            info = safety_ai_instance.get_model_info() if safety_ai_instance else {'is_trained': False}
             return jsonify({
                 'success': True,
                 'model': info,
@@ -235,7 +254,7 @@ def add_model_endpoints(app):
                 'system': {
                     'python_version': sys.version,
                     'platform': sys.platform,
-                    'model_path': safety_ai.model_path if safety_ai else 'N/A'
+                    'model_path': safety_ai_instance.model_path if safety_ai_instance else 'N/A'
                 }
             })
         except Exception as e:
@@ -248,6 +267,10 @@ def add_model_endpoints(app):
     def train_model():
         """Train or retrain the model"""
         try:
+            safety_ai_instance = get_safety_ai_instance()
+            if safety_ai_instance is None:
+                return jsonify({'success': False, 'error': 'Safety AI not available'}), 500
+            
             data = request.json or {}
             n_loops = data.get('n_loops', 15)
             n_epochs = data.get('n_epochs', 5)
@@ -271,7 +294,7 @@ def add_model_endpoints(app):
                 
                 # Actual training
                 training_progress['status'] = 'training'
-                result = safety_ai.train_model_advanced(
+                result = safety_ai_instance.train_model_advanced(
                     n_loops=n_loops,
                     n_epochs=n_epochs,
                     force_retrain=force,
@@ -315,6 +338,7 @@ def add_model_endpoints(app):
     def predict_safety():
         """Predict safety for a location"""
         try:
+            safety_ai_instance = get_safety_ai_instance()
             data = request.json
             if not data or 'lat' not in data or 'lng' not in data:
                 return jsonify({
@@ -325,8 +349,8 @@ def add_model_endpoints(app):
             lat = float(data['lat'])
             lng = float(data['lng'])
             
-            if safety_ai and safety_ai.is_trained:
-                result = safety_ai.predict_safety_score(lat, lng)
+            if safety_ai_instance and safety_ai_instance.is_trained:
+                result = safety_ai_instance.predict_safety_score(lat, lng)
             else:
                 # Fallback to mock data
                 result = {
@@ -342,9 +366,9 @@ def add_model_endpoints(app):
                 'success': True,
                 'prediction': result,
                 'model_info': {
-                    'is_trained': safety_ai.is_trained if safety_ai else False,
-                    'last_trained': str(safety_ai.last_training_time) if safety_ai and safety_ai.last_training_time else None,
-                    'confidence': safety_ai.training_metrics.get('test_score', 0.8) if safety_ai else 0.5
+                    'is_trained': safety_ai_instance.is_trained if safety_ai_instance else False,
+                    'last_trained': str(safety_ai_instance.last_training_time) if safety_ai_instance and safety_ai_instance.last_training_time else None,
+                    'confidence': safety_ai_instance.training_metrics.get('test_score', 0.8) if safety_ai_instance else 0.5
                 }
             })
         except Exception as e:
@@ -357,6 +381,7 @@ def add_model_endpoints(app):
     def route_safety():
         """Calculate safety for an entire route"""
         try:
+            safety_ai_instance = get_safety_ai_instance()
             data = request.json
             if not data or 'route' not in data:
                 return jsonify({
@@ -371,12 +396,24 @@ def add_model_endpoints(app):
                     'error': 'Route must be a non-empty list of coordinates'
                 }), 400
             
-            if safety_ai and safety_ai.is_trained:
-                result = safety_ai.calculate_route_safety(route)
+            if safety_ai_instance and safety_ai_instance.is_trained:
+                result = safety_ai_instance.calculate_route_safety(route)
+                result_dict = {
+                    'overall_safety': result.overall_safety,
+                    'risk_level': result.risk_level,
+                    'safe_route_coords': result.safe_route_coords,
+                    'original_route_coords': result.original_route_coords,
+                    'risky_segments': result.risky_segments,
+                    'distance_meters': result.distance_meters,
+                    'duration_seconds': result.duration_seconds,
+                    'recommendations': result.recommendations,
+                    'confidence': result.confidence,
+                    'segment_details': result.segment_details
+                }
             else:
                 # Fallback mock analysis
                 import random
-                result = {
+                result_dict = {
                     'overall_safety': random.uniform(0.6, 0.9),
                     'risk_level': 'low',
                     'safe_route_coords': route,
@@ -391,8 +428,8 @@ def add_model_endpoints(app):
             
             return jsonify({
                 'success': True,
-                'analysis': result,
-                'model_info': safety_ai.get_model_info() if safety_ai else {'is_trained': False}
+                'analysis': result_dict,
+                'model_info': safety_ai_instance.get_model_info() if safety_ai_instance else {'is_trained': False}
             })
         except Exception as e:
             return jsonify({
@@ -404,9 +441,10 @@ def add_model_endpoints(app):
     def download_model():
         """Download the current model"""
         try:
-            if safety_ai and safety_ai.model_path and os.path.exists(safety_ai.model_path):
+            safety_ai_instance = get_safety_ai_instance()
+            if safety_ai_instance and safety_ai_instance.model_path and os.path.exists(safety_ai_instance.model_path):
                 return send_file(
-                    safety_ai.model_path,
+                    safety_ai_instance.model_path,
                     as_attachment=True,
                     download_name='tryver_safety_model.pkl'
                 )
@@ -438,8 +476,9 @@ def add_model_endpoints(app):
             file.save(model_path)
             
             # Load the model
-            if safety_ai:
-                safety_ai.load_model(model_path)
+            safety_ai_instance = get_safety_ai_instance()
+            if safety_ai_instance:
+                safety_ai_instance.load_model(model_path)
             
             return jsonify({
                 'success': True,
@@ -591,6 +630,67 @@ def add_model_endpoints(app):
                 'error': str(e)
             }), 500
     
+    # Authentication endpoints
+    @app.route("/api/auth/email-login", methods=['POST'])
+    def email_login():
+        """Email/password login"""
+        try:
+            data = request.json
+            email = data.get('email', '').strip()
+            password = data.get('password', '')
+
+            # For now, accept any non-empty credentials
+            if email and password:
+                # In production, validate against database
+                user_role = 'admin' if 'admin' in email.lower() else 'user'
+                
+                return jsonify({
+                    'success': True,
+                    'token': 'demo-token-' + str(int(time.time())),
+                    'user': {
+                        'email': email,
+                        'role': user_role,
+                        'name': email.split('@')[0].title()
+                    }
+                })
+            return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route("/api/auth/signup", methods=['POST'])
+    def signup():
+        """User registration"""
+        try:
+            data = request.json
+            name = data.get('name', '').strip()
+            email = data.get('email', '').strip()
+            password = data.get('password', '')
+
+            if name and email and password:
+                # In production, create user in database
+                return jsonify({
+                    'success': True,
+                    'token': 'demo-token-' + str(int(time.time())),
+                    'user': {
+                        'name': name,
+                        'email': email,
+                        'role': 'user'
+                    }
+                })
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route("/api/auth/login", methods=['GET'])
+    def google_login():
+        """Google OAuth login redirect"""
+        # Mock Google OAuth flow for now
+        return jsonify({
+            'success': True,
+            'message': 'Google OAuth endpoint',
+            'url': 'https://accounts.google.com/o/oauth2/auth'
+        })
+    
     return app
 
 def open_browser():
@@ -598,6 +698,97 @@ def open_browser():
     time.sleep(2)
     webbrowser.open('http://localhost:3000')
     webbrowser.open('http://localhost:5000/api/hello')
+
+def setup_socketio_handlers(socketio_instance, app):
+    """Setup SocketIO event handlers"""
+    
+    @socketio_instance.on('connect')
+    def handle_connect():
+        logger.info(f"Client connected: {request.sid}")
+        emit('connected', {'message': 'Connected to Tryver tracking server'})
+    
+    @socketio_instance.on('disconnect')
+    def handle_disconnect():
+        logger.info(f"Client disconnected: {request.sid}")
+    
+    @socketio_instance.on('track_position')
+    def handle_track_position(data):
+        """Handle position tracking updates"""
+        try:
+            user_id = data.get('user_id', request.sid)
+            lat = float(data['lat'])
+            lng = float(data['lng'])
+            
+            # Get safety prediction
+            safety_ai_instance = get_safety_ai_instance()
+            if safety_ai_instance:
+                safety_result = safety_ai_instance.predict_safety_score(lat, lng)
+                
+                # Broadcast to all clients
+                emit('position_update', {
+                    'user_id': user_id,
+                    'position': {'lat': lat, 'lng': lng},
+                    'safety': safety_result,
+                    'timestamp': datetime.now().isoformat()
+                }, broadcast=True)
+            else:
+                emit('position_update', {
+                    'user_id': user_id,
+                    'position': {'lat': lat, 'lng': lng},
+                    'safety': {'safety_score': 0.7, 'risk_level': 'medium'},
+                    'timestamp': datetime.now().isoformat()
+                }, broadcast=True)
+                
+        except Exception as e:
+            logger.error(f"Error handling position tracking: {e}")
+            emit('error', {'message': str(e)})
+    
+    @socketio_instance.on('request_route')
+    def handle_request_route(data):
+        """Handle route calculation requests"""
+        try:
+            start_lat = float(data['start_lat'])
+            start_lng = float(data['start_lng'])
+            dest_lat = float(data['dest_lat'])
+            dest_lng = float(data['dest_lng'])
+            
+            safety_ai_instance = get_safety_ai_instance()
+            if safety_ai_instance:
+                # Generate route coordinates (simplified)
+                route_coords = [
+                    {'lat': start_lat, 'lng': start_lng},
+                    {'lat': (start_lat + dest_lat) / 2, 'lng': (start_lng + dest_lng) / 2},
+                    {'lat': dest_lat, 'lng': dest_lng}
+                ]
+                
+                # Calculate route safety
+                safety_result = safety_ai_instance.calculate_route_safety(route_coords)
+                
+                emit('route_calculated', {
+                    'route': route_coords,
+                    'safety': {
+                        'overall_safety': safety_result.overall_safety,
+                        'risk_level': safety_result.risk_level,
+                        'recommendations': safety_result.recommendations
+                    },
+                    'timestamp': datetime.now().isoformat()
+                })
+            else:
+                emit('route_calculated', {
+                    'route': [
+                        {'lat': start_lat, 'lng': start_lng},
+                        {'lat': dest_lat, 'lng': dest_lng}
+                    ],
+                    'safety': {
+                        'overall_safety': 0.8,
+                        'risk_level': 'low',
+                        'recommendations': ['Route appears safe']
+                    }
+                })
+                
+        except Exception as e:
+            logger.error(f"Error handling route request: {e}")
+            emit('error', {'message': str(e)})
 
 def main():
     """Main entry point"""
@@ -608,7 +799,6 @@ def main():
     parser.add_argument('--host', default='127.0.0.1', help='Flask host address')
     parser.add_argument('--port', type=int, default=5000, help='Flask port')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode')
-    parser.add_argument('--tracking-port', type=int, default=5001, help='Tracking WebSocket port')
     
     args = parser.parse_args()
     
@@ -620,13 +810,8 @@ def main():
     print(f"Platform: {sys.platform}")
     print("="*60)
     
-    # Initialize safety AI
-    global safety_ai
-    try:
-        safety_ai = get_safety_ai()
-    except Exception as e:
-        logger.error(f"Failed to initialize safety AI: {e}")
-        safety_ai = None
+    # Initialize safety AI (lazily)
+    safety_ai_instance = get_safety_ai_instance()
     
     # Check model status and train if needed
     should_train = False
@@ -637,21 +822,32 @@ def main():
     elif args.no_train:
         should_train = False
         print("\n⏩ Skipping training as requested...")
-    elif safety_ai:
+    elif safety_ai_instance:
         should_train = check_model_status()
     
     # Train model if needed
-    if should_train and safety_ai:
+    if should_train and safety_ai_instance:
         success = train_model_interactive()
-        if not success and not safety_ai.is_trained:
+        if not success and not safety_ai_instance.is_trained:
             print("\n⚠️  Model not trained, some features may be limited")
     
-    # Create Flask app
+    # Create Flask app with SocketIO
     app = Flask(__name__, static_folder='../frontend/dist', static_url_path='/')
-    CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+    
+    # Initialize SocketIO
+    global socketio
+    socketio = SocketIO(app, 
+                       cors_allowed_origins="*",
+                       async_mode='threading',
+                       logger=True,
+                       engineio_logger=True)
     
     # Add model endpoints
     app = add_model_endpoints(app)
+    
+    # Setup SocketIO handlers
+    setup_socketio_handlers(socketio, app)
     
     # Serve frontend
     @app.route('/')
@@ -662,20 +858,6 @@ def main():
     def serve_static(path):
         return send_from_directory('../frontend/dist', path)
     
-    # Start tracking server in separate thread
-    def start_tracking_server():
-        try:
-            from real_time_tracker import socketio as tracking_socketio
-            from real_time_tracker import app as tracking_app
-            
-            print(f"\nStarting Tracking Server on port {args.tracking_port}...")
-            tracking_socketio.run(tracking_app, host=args.host, port=args.tracking_port, debug=args.debug)
-        except Exception as e:
-            print(f"Failed to start tracking server: {e}")
-    
-    tracking_thread = threading.Thread(target=start_tracking_server, daemon=True)
-    tracking_thread.start()
-    
     # Start browser in background
     if not args.no_browser:
         browser_thread = threading.Thread(target=open_browser, daemon=True)
@@ -684,33 +866,36 @@ def main():
     # Create models directory
     os.makedirs('models', exist_ok=True)
     
-    # Start Flask server
+    # Start combined server
     print("\n" + "="*60)
-    print("STARTING FLASK SERVERS")
+    print("STARTING TRYVER SERVER")
     print("="*60)
-    print(f"Main API Server: http://{args.host}:{args.port}")
-    print(f"Tracking WebSocket: http://{args.host}:{args.tracking_port}")
+    print(f"Server: http://{args.host}:{args.port}")
+    print(f"API Endpoints: http://{args.host}:{args.port}/api/*")
+    print(f"WebSocket: ws://{args.host}:{args.port}")
     print(f"Frontend: http://localhost:3000")
-    if safety_ai:
-        print(f"Model Status: {'✅ Trained' if safety_ai.is_trained else '⚠️ Not trained'}")
-        if safety_ai.is_trained and safety_ai.training_metrics:
-            score = safety_ai.training_metrics.get('test_score', 0)
+    
+    if safety_ai_instance:
+        print(f"Model Status: {'✅ Trained' if safety_ai_instance.is_trained else '⚠️ Not trained'}")
+        if safety_ai_instance.is_trained and safety_ai_instance.training_metrics:
+            score = safety_ai_instance.training_metrics.get('test_score', 0)
             if score is not None:
                 print(f"Model Accuracy: {score:.2%}")
+    
     print("="*60)
-    print("Press Ctrl+C to stop the servers")
+    print("Press Ctrl+C to stop the server")
     print("="*60 + "\n")
     
     try:
-        app.run(
-            host=args.host,
-            port=args.port,
-            debug=args.debug,
-            threaded=True,
-            use_reloader=False
-        )
+        # Run the server with SocketIO
+        socketio.run(app,
+                    host=args.host,
+                    port=args.port,
+                    debug=args.debug,
+                    use_reloader=False,
+                    allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
-        print("\n\nServers stopped by user")
+        print("\n\nServer stopped by user")
     except Exception as e:
         logger.error(f"Server error: {e}", exc_info=True)
         print(f"\n❌ Server error: {e}")

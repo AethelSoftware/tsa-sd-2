@@ -4,7 +4,7 @@ from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, S
 from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from sklearn.feature_selection import SelectFromModel
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.linear_model import Ridge, Lasso
 import requests
 import json
@@ -228,24 +228,43 @@ class AdvancedSafetyRoutingAI:
         
         logger.info("Training ensemble models...")
         
+        # Define base models with proper initialization
+        rf_model = RandomForestRegressor(
+            n_estimators=100,
+            max_depth=15,
+            min_samples_split=5,
+            min_samples_leaf=2,
+            random_state=42,
+            n_jobs=-1
+        )
+        
+        gb_model = GradientBoostingRegressor(
+            n_estimators=100,
+            max_depth=8,
+            learning_rate=0.1,
+            random_state=42
+        )
+        
+        ridge_model = Ridge(alpha=1.0, random_state=42)
+        
+        # Train base models first
+        logger.info("Training Random Forest...")
+        rf_model.fit(X_train, y_train)
+        
+        logger.info("Training Gradient Boosting...")
+        gb_model.fit(X_train, y_train)
+        
+        logger.info("Training Ridge Regression...")
+        ridge_model.fit(X_train, y_train)
+        
+        # Create properly trained base models list for stacking
         base_models = [
-            ('rf', RandomForestRegressor(
-                n_estimators=100,
-                max_depth=15,
-                min_samples_split=5,
-                min_samples_leaf=2,
-                random_state=42,
-                n_jobs=-1
-            )),
-            ('gb', GradientBoostingRegressor(
-                n_estimators=100,
-                max_depth=8,
-                learning_rate=0.1,
-                random_state=42
-            )),
-            ('ridge', Ridge(alpha=1.0, random_state=42))
+            ('rf', rf_model),
+            ('gb', gb_model),
+            ('ridge', ridge_model)
         ]
         
+        # Train neural network
         logger.info("Training neural network with multiple epochs...")
         neural_net = MLPRegressor(
             hidden_layer_sizes=(128, 64, 32),
@@ -264,20 +283,15 @@ class AdvancedSafetyRoutingAI:
             validation_fraction=0.2,
             n_iter_no_change=10
         )
-        
-        trained_base_models = []
-        for name, model in base_models:
-            logger.info(f"Training {name}...")
-            model.fit(X_train, y_train)
-            trained_base_models.append((name, model))
-        
         neural_net.fit(X_train, y_train)
         
+        # Create and train stacking ensemble
         self.model = StackingRegressor(
-            estimators=trained_base_models,
+            estimators=base_models,
             final_estimator=neural_net,
             cv=3,
-            n_jobs=-1
+            n_jobs=-1,
+            passthrough=False
         )
         
         logger.info("Training stacking ensemble...")
@@ -288,42 +302,28 @@ class AdvancedSafetyRoutingAI:
         train_score = self.model.score(X_train, y_train)
         test_score = self.model.score(X_test, y_test)
         
+        # Calculate cross-validation scores
+        cv_scores = cross_val_score(self.model, X_selected, y, cv=5, n_jobs=-1)
+        
         feature_importance = {}
         try:
-            if hasattr(self.model.estimators_[0][1], 'feature_importances_'):
-                feature_importance = dict(zip(
-                    self.feature_names[:len(self.model.estimators_[0][1].feature_importances_)],
-                    self.model.estimators_[0][1].feature_importances_
-                ))
-        except:
-            pass
+            # Get feature importance from Random Forest (first base model)
+            if hasattr(rf_model, 'feature_importances_'):
+                # Map feature importances to original feature names
+                selected_indices = self.feature_selector.get_support()
+                selected_features = np.array(self.feature_names)[selected_indices]
+                if len(selected_features) == len(rf_model.feature_importances_):
+                    feature_importance = dict(zip(
+                        selected_features,
+                        rf_model.feature_importances_
+                    ))
+        except Exception as e:
+            logger.warning(f"Could not calculate feature importance: {e}")
+            feature_importance = {}
         
         logger.info("Training final model on all data...")
         
-        final_base_models = []
-        for name, model_template in base_models:
-            if name == 'rf':
-                final_model = RandomForestRegressor(
-                    n_estimators=100,
-                    max_depth=15,
-                    min_samples_split=5,
-                    min_samples_leaf=2,
-                    random_state=42,
-                    n_jobs=-1
-                )
-            elif name == 'gb':
-                final_model = GradientBoostingRegressor(
-                    n_estimators=100,
-                    max_depth=8,
-                    learning_rate=0.1,
-                    random_state=42
-                )
-            elif name == 'ridge':
-                final_model = Ridge(alpha=1.0, random_state=42)
-            
-            final_model.fit(X_selected, y)
-            final_base_models.append((name, final_model))
-        
+        # Final training on all data
         final_neural_net = MLPRegressor(
             hidden_layer_sizes=(128, 64, 32),
             activation='relu',
@@ -341,13 +341,34 @@ class AdvancedSafetyRoutingAI:
             validation_fraction=0.2,
             n_iter_no_change=10
         )
+        
+        # Train final stacking model on all data
+        final_base_models = [
+            ('rf', RandomForestRegressor(
+                n_estimators=100,
+                max_depth=15,
+                min_samples_split=5,
+                min_samples_leaf=2,
+                random_state=42,
+                n_jobs=-1
+            ).fit(X_selected, y)),
+            ('gb', GradientBoostingRegressor(
+                n_estimators=100,
+                max_depth=8,
+                learning_rate=0.1,
+                random_state=42
+            ).fit(X_selected, y)),
+            ('ridge', Ridge(alpha=1.0, random_state=42).fit(X_selected, y))
+        ]
+        
         final_neural_net.fit(X_selected, y)
         
         self.model = StackingRegressor(
             estimators=final_base_models,
             final_estimator=final_neural_net,
             cv=3,
-            n_jobs=-1
+            n_jobs=-1,
+            passthrough=False
         )
         self.model.fit(X_selected, y)
         
@@ -355,8 +376,8 @@ class AdvancedSafetyRoutingAI:
         self.last_training_time = datetime.now()
         
         self.training_metrics = {
-            'cv_mean': float(test_score),
-            'cv_std': 0.0,
+            'cv_mean': float(np.mean(cv_scores)),
+            'cv_std': float(np.std(cv_scores)),
             'train_score': float(train_score),
             'test_score': float(test_score),
             'n_samples': len(X),
@@ -396,24 +417,33 @@ class AdvancedSafetyRoutingAI:
     
     def complex_safety_function(self, X):
         """Complex safety scoring with non-linear relationships and interactions"""
+        if X.shape[1] != len(self.feature_names):
+            raise ValueError(f"Expected {len(self.feature_names)} features, got {X.shape[1]}")
+        
+        # Extract features from input array
         time_of_day, day_of_week, pop_density, crime_index, lighting, business, \
         transit, sidewalk, incidents, weather, emergency, temp, visibility, \
         precip, wind, humidity, urban, economic, education, sunset, holiday, event = X.T
         
-        time_safety = 0.4 * (1 - time_of_day)
-        crime_safety = 0.25 * (1 - crime_index ** 1.5)
-        lighting_safety = 0.15 * lighting ** 0.8
+        # Calculate base safety components
+        time_safety = 0.4 * (1 - time_of_day)  # Safer during daylight
+        crime_safety = 0.25 * (1 - crime_index ** 1.5)  # Non-linear crime impact
+        lighting_safety = 0.15 * lighting ** 0.8  # Diminishing returns on lighting
         infrastructure_safety = 0.1 * (transit * 0.4 + sidewalk * 0.6)
         weather_safety = 0.1 * weather
         
+        # Interaction effects
         night_crime_interaction = 0.05 * (time_of_day * crime_index)
         weather_crime_interaction = 0.03 * ((1 - weather) * crime_index)
         density_lighting_interaction = 0.02 * (pop_density * (1 - lighting))
         
+        # Socio-economic factors
         socio_economic_safety = 0.08 * (economic * 0.6 + education * 0.4)
         
+        # Emergency services accessibility
         emergency_safety = 0.07 * emergency
         
+        # Combined safety score
         safety_score = (
             time_safety + crime_safety + lighting_safety + 
             infrastructure_safety + weather_safety - 
@@ -452,7 +482,7 @@ class AdvancedSafetyRoutingAI:
             data = response.json()
             
             weather_data = {
-                'temperature': data['main']['temp'] / 40.0,  # Normalize -20 to 20°C -> 0-1
+                'temperature': (data['main']['temp'] + 20) / 60.0,  # Normalize -20 to 40°C -> 0-1
                 'humidity': data['main']['humidity'] / 100.0,
                 'wind_speed': min(data['wind']['speed'] / 20.0, 1.0),  # Normalize 0-20 m/s
                 'precipitation': data.get('rain', {}).get('1h', 0) / 10.0,  # 0-10 mm/hr
@@ -510,19 +540,9 @@ class AdvancedSafetyRoutingAI:
     
     def _fetch_synthetic_crime_data(self, lat: float, lng: float) -> Dict:
         """Generate synthetic crime data based on location patterns"""
-        # In real implementation, use actual crime data APIs like:
-        # - FBI Crime Data API
-        # - Local police department APIs
-        # - AreaVibes API
-        # - SpotCrime API
-        
-        # For now, generate realistic patterns:
-        # Urban areas have higher crime, suburban lower, rural lowest
-        # Time of day affects crime rates
         current_hour = datetime.now().hour
         
         # Simulate urban density (cities have higher crime)
-        # In reality, use actual population density data
         base_crime = 0.3  # Base crime index
         
         # Increase crime in evening/night
@@ -542,11 +562,6 @@ class AdvancedSafetyRoutingAI:
     
     def fetch_socioeconomic_data(self, lat: float, lng: float) -> Dict:
         """Fetch socioeconomic data for location"""
-        # In real implementation, use:
-        # - US Census Bureau API
-        # - World Bank API
-        # - Local government APIs
-        
         return {
             'population_density': np.random.uniform(0.1, 0.9),
             'urbanization_index': np.random.uniform(0.2, 0.9),
@@ -686,9 +701,22 @@ class AdvancedSafetyRoutingAI:
         
         try:
             features = self.prepare_features(lat, lng)
-            features_poly = self.poly.transform(features)
-            features_scaled = self.scaler.transform(features_poly)
-            features_selected = self.feature_selector.transform(features_scaled)
+            
+            # Apply preprocessing pipeline
+            if hasattr(self.poly, 'transform'):
+                features_poly = self.poly.transform(features)
+            else:
+                features_poly = features
+            
+            if hasattr(self.scaler, 'transform'):
+                features_scaled = self.scaler.transform(features_poly)
+            else:
+                features_scaled = features_poly
+            
+            if self.feature_selector and hasattr(self.feature_selector, 'transform'):
+                features_selected = self.feature_selector.transform(features_scaled)
+            else:
+                features_selected = features_scaled
             
             safety_score = self.model.predict(features_selected)[0]
             safety_score = np.clip(safety_score, 0, 1)
@@ -1257,19 +1285,27 @@ class AdvancedSafetyRoutingAI:
         logger.info("Safety AI resources cleaned up")
 
 
-# Create singleton instance
-def get_safety_ai():
-    """Get or create the singleton AI instance"""
-    model_path = os.environ.get('MODEL_PATH', 'models/safety_model.pkl')
-    google_maps_api_key = os.environ.get('GOOGLE_MAPS_API_KEY')
-    
-    retrain_on_start = os.environ.get('RETRAIN_ON_START', 'false').lower() == 'true'
-    
-    return AdvancedSafetyRoutingAI(
-        model_path=model_path,
-        google_maps_api_key=google_maps_api_key,
-        retrain_on_start=retrain_on_start
-    )
+# Create singleton instance with lazy loading
+_safety_ai_instance = None
 
-# Global instance
-safety_ai = get_safety_ai()
+def get_safety_ai():
+    """Get or create the singleton AI instance with lazy loading"""
+    global _safety_ai_instance
+    
+    if _safety_ai_instance is None:
+        model_path = os.environ.get('MODEL_PATH', 'models/safety_model.pkl')
+        google_maps_api_key = os.environ.get('GOOGLE_MAPS_API_KEY')
+        
+        retrain_on_start = os.environ.get('RETRAIN_ON_START', 'false').lower() == 'true'
+        
+        _safety_ai_instance = AdvancedSafetyRoutingAI(
+            model_path=model_path,
+            google_maps_api_key=google_maps_api_key,
+            retrain_on_start=retrain_on_start
+        )
+        logger.info("Safety AI instance created")
+    
+    return _safety_ai_instance
+
+# Global instance (will be initialized when needed)
+safety_ai = None

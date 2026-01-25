@@ -1,9 +1,10 @@
-# FINAL WORKING VERSION FOR PYTHON 3.10
-
 # Core Framework
 Flask==3.1.2
 Flask-Cors==4.0.0
 Flask-SocketIO==5.5.1
+python-socketio==5.13.0
+python-engineio==4.12.2
+eventlet==0.37.1
 Flask-PyMongo==3.0.1
 Flask-SQLAlchemy==3.1.1
 Flask-Bcrypt==1.0.1
@@ -50,7 +51,7 @@ cffi==1.16.0
 pycparser==2.23
 cryptography==45.0.0
 
-# Machine Learning & AI - UPDATED TO COMPATIBLE VERSIONS
+# Machine Learning & AI
 numpy==1.26.4
 scipy==1.13.0
 scikit-learn==1.5.0
@@ -63,15 +64,15 @@ openai==1.102.0
 tiktoken==0.11.0
 tqdm==4.67.1
 
-# Audio Processing - REMOVED VERSION PINS FOR THESE (let pip resolve)
-librosa
-soundfile
-audioread
-numba
-llvmlite
-pooch
-lazy_loader
-soxr
+# Audio Processing
+librosa==0.10.2
+soundfile==0.12.1
+audioread==3.0.1
+numba==0.59.1
+llvmlite==0.43.0
+pooch==1.8.2
+lazy_loader==0.4
+soxr==0.3.7
 
 # Data Processing & Serialization
 pandas==2.2.2
@@ -108,11 +109,7 @@ sniffio==1.3.1
 zstandard==0.24.0
 distro==1.9.0
 
-# WebSocket
-python-socketio==5.13.0
-python-engineio==4.12.2
-simple-websocket==1.1.0
-wsproto==1.2.0
-
-# Maps & Geospatial APIs
+# Maps & Geospatial
 googlemaps==4.10.0
+geopy==2.4.1
+shapely==2.0.4

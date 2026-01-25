@@ -18,13 +18,6 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
 import heapq
 
-# Import safety model
-try:
-    from ai_safety_model import safety_ai, AdvancedSafetyRoutingAI
-except ImportError:
-    print("⚠️  AI Safety Model not found, running in simulation mode")
-    safety_ai = None
-
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -174,11 +167,28 @@ class RealTimeTracker:
         self.safety_check_lock = threading.Lock()
         self.hazard_check_interval = 30  # Check for new hazards every 30 seconds
         
+        # Lazy loading of safety AI
+        self._safety_ai = None
+        
         # Initialize WebSocket event handlers
         self._setup_socket_handlers()
         
         # Start background tasks
         self._start_background_tasks()
+    
+    @property
+    def safety_ai(self):
+        """Lazy load safety AI"""
+        if self._safety_ai is None:
+            try:
+                # Import safety AI module
+                from ai_safety_model import get_safety_ai
+                self._safety_ai = get_safety_ai()
+                logger.info("Safety AI loaded for tracker")
+            except ImportError as e:
+                logger.warning(f"Could not load safety AI: {e}")
+                self._safety_ai = None
+        return self._safety_ai
     
     def _setup_socket_handlers(self):
         """Setup WebSocket event handlers"""
@@ -485,13 +495,13 @@ class RealTimeTracker:
                                  accessibility_needs: Set[str]) -> float:
         """Calculate safety score for a route segment"""
         
-        if safety_ai and safety_ai.is_trained:
+        if self.safety_ai and self.safety_ai.is_trained:
             try:
                 # Use midpoint of segment for safety prediction
                 mid_lat = (start.lat + end.lat) / 2
                 mid_lng = (start.lng + end.lng) / 2
                 
-                result = safety_ai.predict_safety_score(mid_lat, mid_lng)
+                result = self.safety_ai.predict_safety_score(mid_lat, mid_lng)
                 base_score = result['safety_score']
             except Exception as e:
                 logger.error(f"Safety AI prediction failed: {e}")
@@ -923,9 +933,8 @@ def create_tracking_app():
     
     return app, socketio, tracker
 
-# Global instances
-app, socketio, tracker = create_tracking_app()
-
+# Global instances (only created when this module is run directly)
 if __name__ == '__main__':
     logger.info("Starting Real-time Tracking Server...")
+    app, socketio, tracker = create_tracking_app()
     socketio.run(app, host='127.0.0.1', port=5001, debug=True)
