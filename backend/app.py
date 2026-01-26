@@ -1,6 +1,6 @@
 """
 Main entry point for Tryver Safety Routing System
-Now includes real-time tracking and hazard monitoring.
+Combines old and new features with real API integration.
 """
 
 import os
@@ -20,6 +20,21 @@ from flask_socketio import SocketIO, emit
 import threading
 import webbrowser
 import json
+import numpy as np
+
+# Try to import new modules, fall back gracefully
+try:
+    from tomtom_router import TomTomRouter
+    from real_api_client import RealAPIClient
+    TOMTOM_AVAILABLE = True
+    REAL_API_AVAILABLE = True
+except ImportError as e:
+    logger = logging.getLogger(__name__)
+    logger.warning(f"New modules not available: {e}")
+    TOMTOM_AVAILABLE = False
+    REAL_API_AVAILABLE = False
+    TomTomRouter = None
+    RealAPIClient = None
 
 # Configure logging
 logging.basicConfig(
@@ -32,7 +47,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize safety_ai as None - will be set lazily
+# Initialize routers and API clients
+if TOMTOM_AVAILABLE:
+    tomtom_router = TomTomRouter()
+else:
+    tomtom_router = None
+    logger.warning("TomTom router not available - routing will use mock data")
+
+if REAL_API_AVAILABLE:
+    api_client = RealAPIClient()
+else:
+    api_client = None
+    logger.warning("Real API client not available - using mock data")
+
 safety_ai = None
 socketio = None
 
@@ -227,7 +254,7 @@ def train_model_interactive():
         return False
 
 def add_model_endpoints(app):
-    """Add model-related endpoints to Flask app"""
+    """Add model-related endpoints to Flask app with combined features"""
     
     # Store training progress for WebSocket updates
     training_progress = {
@@ -239,7 +266,7 @@ def add_model_endpoints(app):
     
     @app.route("/api/hello")
     def hello():
-        return jsonify({"message": "Tryver Safety Routing API"})
+        return jsonify({"message": "Tryver Safety Routing API v2.0 (Combined)"})
     
     @app.route("/api/model/status", methods=['GET'])
     def model_status():
@@ -247,6 +274,14 @@ def add_model_endpoints(app):
         try:
             safety_ai_instance = get_safety_ai_instance()
             info = safety_ai_instance.get_model_info() if safety_ai_instance else {'is_trained': False}
+            
+            # Check API availability
+            apis_available = {
+                'tomtom': tomtom_router.api_key is not None if tomtom_router else False,
+                'openweather': api_client.openweather_key is not None if api_client else False,
+                'census': api_client.census_key is not None if api_client else False
+            }
+            
             return jsonify({
                 'success': True,
                 'model': info,
@@ -254,7 +289,10 @@ def add_model_endpoints(app):
                 'system': {
                     'python_version': sys.version,
                     'platform': sys.platform,
-                    'model_path': safety_ai_instance.model_path if safety_ai_instance else 'N/A'
+                    'model_path': safety_ai_instance.model_path if safety_ai_instance else 'N/A',
+                    'apis_available': apis_available,
+                    'tomtom_available': TOMTOM_AVAILABLE,
+                    'real_api_available': REAL_API_AVAILABLE
                 }
             })
         except Exception as e:
@@ -336,7 +374,7 @@ def add_model_endpoints(app):
     
     @app.route("/api/model/predict", methods=['POST'])
     def predict_safety():
-        """Predict safety for a location"""
+        """Predict safety for a location (Old endpoint)"""
         try:
             safety_ai_instance = get_safety_ai_instance()
             data = request.json
@@ -377,9 +415,41 @@ def add_model_endpoints(app):
                 'error': str(e)
             }), 500
     
+    @app.route("/api/safety-prediction", methods=['POST'])
+    def safety_prediction():
+        """Get safety prediction for a location (New endpoint)"""
+        try:
+            data = request.json
+            lat = float(data.get('lat', 40.4406))
+            lng = float(data.get('lng', -79.9959))
+            
+            safety_ai_instance = get_safety_ai_instance()
+            if safety_ai_instance:
+                prediction = safety_ai_instance.predict_safety_score(lat, lng)
+            else:
+                prediction = {
+                    'safety_score': 0.7,
+                    'confidence': 0.5,
+                    'risk_level': 'medium',
+                    'recommendations': ['Model not trained, use caution'],
+                    'coordinates': {'lat': lat, 'lng': lng},
+                    'timestamp': datetime.now().isoformat()
+                }
+            
+            return jsonify({
+                'success': True,
+                'prediction': prediction
+            })
+        except Exception as e:
+            logger.error(f"Safety prediction error: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+    
     @app.route("/api/model/route", methods=['POST'])
     def route_safety():
-        """Calculate safety for an entire route"""
+        """Calculate safety for an entire route (Old endpoint)"""
         try:
             safety_ai_instance = get_safety_ai_instance()
             data = request.json
@@ -492,7 +562,7 @@ def add_model_endpoints(app):
     
     @app.route("/api/calculate-route", methods=['POST'])
     def calculate_route():
-        """Calculate accessible route between two points"""
+        """Calculate accessible route between two points (Enhanced endpoint)"""
         try:
             data = request.json
             if not data:
@@ -501,15 +571,110 @@ def add_model_endpoints(app):
                     'error': 'No data provided'
                 }), 400
             
-            # Extract data
-            start_location = data.get('start_location')
-            end_location = data.get('end_location')
-            accessibility_preferences = data.get('accessibility_preferences', {})
+            # Extract data - support both old and new formats
+            start_lat = data.get('start_lat') or (data.get('start_location', {}).get('lat') if isinstance(data.get('start_location'), dict) else None)
+            start_lng = data.get('start_lng') or (data.get('start_location', {}).get('lng') if isinstance(data.get('start_location'), dict) else None)
+            end_lat = data.get('end_lat') or (data.get('end_location', {}).get('lat') if isinstance(data.get('end_location'), dict) else None)
+            end_lng = data.get('end_lng') or (data.get('end_location', {}).get('lng') if isinstance(data.get('end_location'), dict) else None)
             
-            # Mock route calculation (in production, use actual routing service)
+            # Try old format if new format not found
+            if not all([start_lat, start_lng, end_lat, end_lng]):
+                start_location = data.get('start_location')
+                end_location = data.get('end_location')
+                
+                if isinstance(start_location, str):
+                    # Use default coordinates for demo
+                    start_lat, start_lng = 40.4406, -79.9959
+                if isinstance(end_location, str):
+                    end_lat, end_lng = 40.4440, -79.9545
+            
+            if not all([start_lat, start_lng, end_lat, end_lng]):
+                return jsonify({
+                    'success': False,
+                    'error': 'Missing coordinates'
+                }), 400
+            
+            accessibility_preferences = data.get('accessibility_preferences', {})
+            accessibility_needs = []
+            
+            if accessibility_preferences.get('wheelchair'):
+                accessibility_needs.append('wheelchair')
+            if accessibility_preferences.get('blind'):
+                accessibility_needs.append('blind')
+            if accessibility_preferences.get('deaf'):
+                accessibility_needs.append('deaf')
+            if accessibility_preferences.get('elevator_access'):
+                accessibility_needs.append('elevator')
+            
+            # Use real TomTom API if available
+            if tomtom_router and tomtom_router.api_key:
+                try:
+                    route_result = tomtom_router.calculate_route(
+                        float(start_lat), float(start_lng),
+                        float(end_lat), float(end_lng),
+                        travel_mode="pedestrian",
+                        avoid_hazards=True,
+                        accessibility_needs=accessibility_needs if accessibility_needs else None
+                    )
+                    
+                    if route_result:
+                        route_coords = [{'lat': p[0], 'lng': p[1]} for p in route_result['points']]
+                        
+                        # Get addresses
+                        start_address = tomtom_router.reverse_geocode(float(start_lat), float(start_lng))
+                        end_address = tomtom_router.reverse_geocode(float(end_lat), float(end_lng))
+                        
+                        # Calculate safety
+                        safety_ai_instance = get_safety_ai_instance()
+                        if safety_ai_instance and safety_ai_instance.is_trained:
+                            safety_result = safety_ai_instance.calculate_route_safety(route_coords)
+                            safety_dict = {
+                                'overall_safety': safety_result.overall_safety,
+                                'risk_level': safety_result.risk_level,
+                                'recommendations': safety_result.recommendations
+                            }
+                        else:
+                            safety_dict = {
+                                'overall_safety': 0.8,
+                                'risk_level': 'low',
+                                'recommendations': ['Route appears safe']
+                            }
+                        
+                        response = {
+                            'success': True,
+                            'route': {
+                                'distance': f"{route_result['distance_meters'] / 1000:.1f} km",
+                                'distance_meters': route_result['distance_meters'],
+                                'duration': f"{route_result['duration_seconds'] / 60:.0f} min",
+                                'duration_seconds': route_result['duration_seconds'],
+                                'steps': route_result['instructions'],
+                                'coordinates': route_coords,
+                                'points': route_result['points'],
+                                'segments': route_result.get('segments', []),
+                                'start_address': start_address,
+                                'end_address': end_address,
+                                'accessibility_score': 85 if not accessibility_needs else 90,
+                                'warnings': [],
+                                'elevator_access': 'wheelchair' in accessibility_needs,
+                                'ramp_access': 'wheelchair' in accessibility_needs,
+                                'safety': safety_dict,
+                                'arrival_time': route_result['arrival_time'],
+                                'bounds': route_result['bounds']
+                            },
+                            'model_used': safety_ai_instance.is_trained if safety_ai_instance else False,
+                            'real_api_used': True
+                        }
+                        
+                        return jsonify(response)
+                except Exception as e:
+                    logger.warning(f"TomTom API failed, falling back to mock: {e}")
+            
+            # Fallback to mock data
             mock_route = {
                 'distance': '1.2 km',
+                'distance_meters': 1200,
                 'duration': '15 minutes',
+                'duration_seconds': 900,
                 'steps': [
                     {'instruction': 'Head north on Main St', 'distance': '200 m', 'duration': '3 min'},
                     {'instruction': 'Turn right on 5th Ave', 'distance': '300 m', 'duration': '4 min'},
@@ -522,20 +687,28 @@ def add_model_endpoints(app):
                     {'lat': 40.4415, 'lng': -79.9970},
                     {'lat': 40.4418, 'lng': -79.9960}
                 ],
-                'start_address': start_location if isinstance(start_location, str) else 'Start Location',
-                'end_address': end_location if isinstance(end_location, str) else 'Destination',
+                'start_address': data.get('start_location', 'Start Location') if isinstance(data.get('start_location'), str) else 'Start Location',
+                'end_address': data.get('end_location', 'Destination') if isinstance(data.get('end_location'), str) else 'Destination',
                 'accessibility_score': 85,
                 'warnings': [],
                 'elevator_access': accessibility_preferences.get('elevator_access', False),
-                'ramp_access': accessibility_preferences.get('wheelchair', False)
+                'ramp_access': accessibility_preferences.get('wheelchair', False),
+                'safety': {
+                    'overall_safety': 0.8,
+                    'risk_level': 'low',
+                    'recommendations': ['Route appears safe']
+                }
             }
             
             return jsonify({
                 'success': True,
                 'route': mock_route,
-                'model_used': safety_ai.is_trained if safety_ai else False
+                'model_used': safety_ai.is_trained if safety_ai else False,
+                'real_api_used': False
             })
+            
         except Exception as e:
+            logger.error(f"Route calculation error: {e}")
             return jsonify({
                 'success': False,
                 'error': str(e)
@@ -544,13 +717,35 @@ def add_model_endpoints(app):
     @app.route("/api/locations", methods=['GET'])
     def get_locations():
         """Get saved locations"""
-        locations = [
-            {'id': 1, 'name': 'University of Pittsburgh', 'type': 'Education', 'lat': 40.4440, 'lng': -79.9545},
-            {'id': 2, 'name': 'Carnegie Museum of Art', 'type': 'Museum', 'lat': 40.4434, 'lng': -79.9498},
-            {'id': 3, 'name': 'UPMC Presbyterian', 'type': 'Medical', 'lat': 40.4419, 'lng': -79.9620},
-            {'id': 4, 'name': 'Pittsburgh City Hall', 'type': 'Government', 'lat': 40.4406, 'lng': -79.9959},
-            {'id': 5, 'name': 'Carnegie Library', 'type': 'Library', 'lat': 40.4434, 'lng': -79.9533}
-        ]
+        try:
+            # Try real search if available
+            if tomtom_router and tomtom_router.api_key:
+                locations = tomtom_router.search_places("Pittsburgh")
+                if locations:
+                    formatted_locations = []
+                    for i, loc in enumerate(locations[:5]):
+                        formatted_locations.append({
+                            'id': i + 1,
+                            'name': loc.get('name', 'Unknown'),
+                            'type': loc.get('type', 'Place'),
+                            'lat': loc.get('lat', 40.4406),
+                            'lng': loc.get('lng', -79.9959)
+                        })
+                    locations = formatted_locations
+                else:
+                    raise Exception("No locations found from API")
+            else:
+                raise Exception("TomTom not available")
+        except:
+            # Fallback to default locations
+            locations = [
+                {'id': 1, 'name': 'University of Pittsburgh', 'type': 'Education', 'lat': 40.4440, 'lng': -79.9545},
+                {'id': 2, 'name': 'Carnegie Museum of Art', 'type': 'Museum', 'lat': 40.4434, 'lng': -79.9498},
+                {'id': 3, 'name': 'UPMC Presbyterian', 'type': 'Medical', 'lat': 40.4419, 'lng': -79.9620},
+                {'id': 4, 'name': 'Pittsburgh City Hall', 'type': 'Government', 'lat': 40.4406, 'lng': -79.9959},
+                {'id': 5, 'name': 'Carnegie Library', 'type': 'Library', 'lat': 40.4434, 'lng': -79.9533}
+            ]
+        
         return jsonify({
             'success': True,
             'locations': locations
@@ -577,10 +772,21 @@ def add_model_endpoints(app):
         """Convert coordinates to address"""
         try:
             data = request.json
-            lat = data.get('lat')
-            lng = data.get('lng')
+            lat = float(data.get('lat', 40.4406))
+            lng = float(data.get('lng', -79.9959))
             
-            # Mock reverse geocoding
+            # Try real API first
+            if tomtom_router and tomtom_router.api_key:
+                address = tomtom_router.reverse_geocode(lat, lng)
+                return jsonify({
+                    'success': True,
+                    'address': address,
+                    'coordinates': {'lat': lat, 'lng': lng},
+                    'real_api_used': True
+                })
+            
+            # Fallback to mock
+            import random
             addresses = [
                 'University of Pittsburgh, Pittsburgh, PA',
                 'Carnegie Mellon University, Pittsburgh, PA',
@@ -589,12 +795,14 @@ def add_model_endpoints(app):
                 'Oakland, Pittsburgh, PA'
             ]
             
-            import random
             return jsonify({
                 'success': True,
-                'address': random.choice(addresses)
+                'address': random.choice(addresses),
+                'coordinates': {'lat': lat, 'lng': lng},
+                'real_api_used': False
             })
         except Exception as e:
+            logger.error(f"Reverse geocode error: {e}")
             return jsonify({
                 'success': False,
                 'error': str(e)
@@ -605,8 +813,27 @@ def add_model_endpoints(app):
         """Search for locations by name"""
         try:
             data = request.json
-            query = data.get('query', '').lower()
+            query = data.get('query', '').strip()
             
+            if not query or len(query) < 2:
+                return jsonify({
+                    'success': False,
+                    'error': 'Query too short'
+                }), 400
+            
+            # Try real API first
+            if tomtom_router and tomtom_router.api_key:
+                lat = data.get('lat')
+                lng = data.get('lng')
+                results = tomtom_router.search_places(query, lat, lng)
+                
+                return jsonify({
+                    'success': True,
+                    'results': results[:8],
+                    'real_api_used': True
+                })
+            
+            # Fallback to mock
             all_locations = [
                 {'name': 'University of Pittsburgh', 'type': 'Education'},
                 {'name': 'Carnegie Museum', 'type': 'Museum'},
@@ -622,9 +849,149 @@ def add_model_endpoints(app):
             
             return jsonify({
                 'success': True,
-                'results': results[:5]
+                'results': results[:5],
+                'real_api_used': False
             })
         except Exception as e:
+            logger.error(f"Location search error: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+    
+    # New API endpoints
+    @app.route("/api/weather", methods=['POST'])
+    def get_weather():
+        """Get real weather data"""
+        try:
+            data = request.json
+            lat = float(data.get('lat', 40.4406))
+            lng = float(data.get('lng', -79.9959))
+            
+            if api_client and api_client.openweather_key:
+                weather = api_client.get_weather_data(lat, lng)
+                return jsonify({
+                    'success': True,
+                    'weather': weather,
+                    'real_api_used': True
+                })
+            
+            # Mock weather data
+            import random
+            conditions = ['Clear', 'Cloudy', 'Rain', 'Snow']
+            return jsonify({
+                'success': True,
+                'weather': {
+                    'temperature': random.randint(50, 80),
+                    'condition': random.choice(conditions),
+                    'humidity': random.randint(30, 80),
+                    'wind_speed': random.randint(0, 20)
+                },
+                'real_api_used': False
+            })
+        except Exception as e:
+            logger.error(f"Weather API error: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+    
+    @app.route("/api/crime", methods=['POST'])
+    def get_crime():
+        """Get real crime data"""
+        try:
+            data = request.json
+            lat = float(data.get('lat', 40.4406))
+            lng = float(data.get('lng', -79.9959))
+            
+            if api_client and api_client.census_key:
+                crime = api_client.get_crime_data(lat, lng)
+                return jsonify({
+                    'success': True,
+                    'crime': crime,
+                    'real_api_used': True
+                })
+            
+            # Mock crime data
+            import random
+            return jsonify({
+                'success': True,
+                'crime': {
+                    'risk_level': random.choice(['low', 'medium', 'high']),
+                    'incidents': random.randint(0, 10),
+                    'safety_tips': ['Stay in well-lit areas', 'Be aware of surroundings']
+                },
+                'real_api_used': False
+            })
+        except Exception as e:
+            logger.error(f"Crime API error: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+    
+    @app.route("/api/fema", methods=['POST'])
+    def get_fema():
+        """Get FEMA disaster data"""
+        try:
+            data = request.json
+            lat = float(data.get('lat', 40.4406))
+            lng = float(data.get('lng', -79.9959))
+            
+            if api_client:
+                fema = api_client.get_fema_alerts(lat, lng)
+                return jsonify({
+                    'success': True,
+                    'fema': fema,
+                    'real_api_used': True
+                })
+            
+            # Mock FEMA data
+            return jsonify({
+                'success': True,
+                'fema': {
+                    'alerts': [],
+                    'disasters': [],
+                    'message': 'No active alerts in this area'
+                },
+                'real_api_used': False
+            })
+        except Exception as e:
+            logger.error(f"FEMA API error: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+    
+    @app.route("/api/traffic", methods=['POST'])
+    def get_traffic():
+        """Get real traffic data"""
+        try:
+            data = request.json
+            lat = float(data.get('lat', 40.4406))
+            lng = float(data.get('lng', -79.9959))
+            
+            if api_client:
+                traffic = api_client.get_traffic_data(lat, lng)
+                return jsonify({
+                    'success': True,
+                    'traffic': traffic,
+                    'real_api_used': True
+                })
+            
+            # Mock traffic data
+            import random
+            return jsonify({
+                'success': True,
+                'traffic': {
+                    'congestion': random.randint(0, 100),
+                    'level': random.choice(['light', 'moderate', 'heavy']),
+                    'message': 'Normal traffic conditions'
+                },
+                'real_api_used': False
+            })
+        except Exception as e:
+            logger.error(f"Traffic API error: {e}")
             return jsonify({
                 'success': False,
                 'error': str(e)
@@ -700,7 +1067,7 @@ def open_browser():
     webbrowser.open('http://localhost:5000/api/hello')
 
 def setup_socketio_handlers(socketio_instance, app):
-    """Setup SocketIO event handlers"""
+    """Setup SocketIO event handlers with combined features"""
     
     @socketio_instance.on('connect')
     def handle_connect():
@@ -724,11 +1091,23 @@ def setup_socketio_handlers(socketio_instance, app):
             if safety_ai_instance:
                 safety_result = safety_ai_instance.predict_safety_score(lat, lng)
                 
+                # Get additional real data if available
+                weather = None
+                crime = None
+                if api_client:
+                    try:
+                        weather = api_client.get_weather_data(lat, lng)
+                        crime = api_client.get_crime_data(lat, lng)
+                    except:
+                        pass
+                
                 # Broadcast to all clients
                 emit('position_update', {
                     'user_id': user_id,
                     'position': {'lat': lat, 'lng': lng},
                     'safety': safety_result,
+                    'weather': weather,
+                    'crime': crime,
                     'timestamp': datetime.now().isoformat()
                 }, broadcast=True)
             else:
@@ -752,39 +1131,75 @@ def setup_socketio_handlers(socketio_instance, app):
             dest_lat = float(data['dest_lat'])
             dest_lng = float(data['dest_lng'])
             
+            accessibility_needs = data.get('accessibility_needs', [])
+            
+            # Try real routing first
+            if tomtom_router and tomtom_router.api_key:
+                route_result = tomtom_router.calculate_route(
+                    start_lat, start_lng, dest_lat, dest_lng,
+                    accessibility_needs=accessibility_needs if accessibility_needs else None
+                )
+                
+                if route_result:
+                    route_coords = [{'lat': p[0], 'lng': p[1]} for p in route_result['points']]
+                    
+                    # Calculate route safety
+                    safety_ai_instance = get_safety_ai_instance()
+                    if safety_ai_instance:
+                        safety_result = safety_ai_instance.calculate_route_safety(route_coords)
+                        safety_dict = {
+                            'overall_safety': safety_result.overall_safety,
+                            'risk_level': safety_result.risk_level,
+                            'recommendations': safety_result.recommendations
+                        }
+                    else:
+                        safety_dict = {
+                            'overall_safety': 0.8,
+                            'risk_level': 'low',
+                            'recommendations': ['Route appears safe']
+                        }
+                    
+                    emit('route_calculated', {
+                        'route': route_coords,
+                        'route_details': route_result,
+                        'safety': safety_dict,
+                        'timestamp': datetime.now().isoformat(),
+                        'real_api_used': True
+                    })
+                    return
+            
+            # Fallback
             safety_ai_instance = get_safety_ai_instance()
             if safety_ai_instance:
-                # Generate route coordinates (simplified)
                 route_coords = [
                     {'lat': start_lat, 'lng': start_lng},
                     {'lat': (start_lat + dest_lat) / 2, 'lng': (start_lng + dest_lng) / 2},
                     {'lat': dest_lat, 'lng': dest_lng}
                 ]
                 
-                # Calculate route safety
                 safety_result = safety_ai_instance.calculate_route_safety(route_coords)
-                
-                emit('route_calculated', {
-                    'route': route_coords,
-                    'safety': {
-                        'overall_safety': safety_result.overall_safety,
-                        'risk_level': safety_result.risk_level,
-                        'recommendations': safety_result.recommendations
-                    },
-                    'timestamp': datetime.now().isoformat()
-                })
+                safety_dict = {
+                    'overall_safety': safety_result.overall_safety,
+                    'risk_level': safety_result.risk_level,
+                    'recommendations': safety_result.recommendations
+                }
             else:
-                emit('route_calculated', {
-                    'route': [
-                        {'lat': start_lat, 'lng': start_lng},
-                        {'lat': dest_lat, 'lng': dest_lng}
-                    ],
-                    'safety': {
-                        'overall_safety': 0.8,
-                        'risk_level': 'low',
-                        'recommendations': ['Route appears safe']
-                    }
-                })
+                safety_dict = {
+                    'overall_safety': 0.8,
+                    'risk_level': 'low',
+                    'recommendations': ['Route appears safe']
+                }
+                route_coords = [
+                    {'lat': start_lat, 'lng': start_lng},
+                    {'lat': dest_lat, 'lng': dest_lng}
+                ]
+            
+            emit('route_calculated', {
+                'route': route_coords,
+                'safety': safety_dict,
+                'timestamp': datetime.now().isoformat(),
+                'real_api_used': False
+            })
                 
         except Exception as e:
             logger.error(f"Error handling route request: {e}")
@@ -808,9 +1223,11 @@ def main():
     print(f"Start Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"Python: {sys.version.split()[0]}")
     print(f"Platform: {sys.platform}")
+    print(f"TomTom API: {'✅ Available' if tomtom_router and tomtom_router.api_key else '❌ Not Available'}")
+    print(f"Real API Client: {'✅ Available' if api_client else '❌ Not Available'}")
     print("="*60)
     
-    # Initialize safety AI (lazily)
+    # Initialize safety AI
     safety_ai_instance = get_safety_ai_instance()
     
     # Check model status and train if needed
@@ -841,7 +1258,7 @@ def main():
                        cors_allowed_origins="*",
                        async_mode='threading',
                        logger=True,
-                       engineio_logger=True)
+                       engineio_logger=args.debug)
     
     # Add model endpoints
     app = add_model_endpoints(app)
