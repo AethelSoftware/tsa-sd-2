@@ -4,6 +4,13 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import {
+  Bookmark, Clock, Settings, Crosshair, Search, ChevronDown, X,
+  ArrowRight, Accessibility, Bus, PersonStanding, Layers, Plus, Minus,
+  Eye, Ear, Contrast, ZoomIn, Zap, Wind, MapPin, Navigation,
+  TreePine, Building2, Stethoscope, GraduationCap, ShoppingBag,
+  Waves, Dumbbell, Coffee, ChevronRight, Route, LocateFixed,
+} from "lucide-react";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -26,10 +33,10 @@ const hazardIcon = new L.Icon({
 });
 
 const mapTypes = {
-  openstreetmap: { name: "Street",    icon: "🗺️", url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",                                                                  attribution: "© OpenStreetMap contributors" },
-  tomtom:        { name: "TomTom",    icon: "📍", url: `https://{s}.api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png?key=${TOMTOM_API_KEY}`,                              attribution: "© TomTom" },
-  satellite:     { name: "Satellite", icon: "🛰️", url: `https://{s}.api.tomtom.com/map/1/tile/sat/main/{z}/{x}/{y}.jpg?key=${TOMTOM_API_KEY}`,                              attribution: "© TomTom" },
-  night:         { name: "Night",     icon: "🌙", url: `https://{s}.api.tomtom.com/map/1/tile/night/main/{z}/{x}/{y}.png?key=${TOMTOM_API_KEY}`,                             attribution: "© TomTom" },
+  openstreetmap: { name: "Street",    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",                                                             attribution: "© OpenStreetMap contributors" },
+  tomtom:        { name: "TomTom",    url: `https://{s}.api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png?key=${TOMTOM_API_KEY}`,                         attribution: "© TomTom" },
+  satellite:     { name: "Satellite", url: `https://{s}.api.tomtom.com/map/1/tile/sat/main/{z}/{x}/{y}.jpg?key=${TOMTOM_API_KEY}`,                           attribution: "© TomTom" },
+  night:         { name: "Night",     url: `https://{s}.api.tomtom.com/map/1/tile/night/main/{z}/{x}/{y}.png?key=${TOMTOM_API_KEY}`,                         attribution: "© TomTom" },
 };
 
 function ChangeView({ center, zoom }) {
@@ -39,61 +46,72 @@ function ChangeView({ center, zoom }) {
 }
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --rail-w: 56px;
-    --surface: rgba(11,16,30,0.97);
-    --card: rgba(14,21,42,0.97);
-    --border: rgba(56,189,248,0.12);
-    --border2: rgba(56,189,248,0.3);
-    --cyan: #38bdf8;
-    --cyan-g: linear-gradient(135deg,#0ea5e9,#38bdf8);
-    --cyan-dim: rgba(56,189,248,0.1);
-    --cyan-glow: rgba(56,189,248,0.22);
-    --green: #34d399;
-    --amber: #fbbf24;
-    --red: #f87171;
-    --red-dim: rgba(248,113,113,0.1);
-    --txt: #e2f0ff;
-    --txt2: #5f85a8;
-    --txt3: #2d4a65;
-    --ff-d: 'Syne', sans-serif;
-    --ff-b: 'DM Sans', sans-serif;
-    --sh: 0 8px 32px rgba(0,0,0,0.6),0 2px 8px rgba(0,0,0,0.3);
-    --sh-lg: 0 20px 60px rgba(0,0,0,0.75),0 4px 20px rgba(0,0,0,0.4);
+    --rail-w: 64px;
+    --panel-w: 310px;
+
+    /* Wood palette - enhanced contrast */
+    --bg:       #110a04;
+    --surface:  rgba(28, 17, 8, 0.97);
+    --card:     rgba(42, 26, 12, 0.98);
+    --inset:    rgba(255,255,255,0.035);
+
+    --border:   rgba(180, 120, 60, 0.16);
+    --border2:  rgba(200, 140, 70, 0.38);
+
+    --wood:     #e8a870;  /* Lighter for better contrast */
+    --wood-lt:  #ffc89c;  /* Much lighter */
+    --wood-g:   linear-gradient(135deg, #c06c30, #e89c60);
+    --wood-dim: rgba(232, 168, 112, 0.18);
+    --wood-glow:rgba(232, 168, 112, 0.3);
+
+    --green:    #8cd69c;  /* Lighter green */
+    --green-dim:rgba(140,214,156,0.15);
+    --amber:    #ffb347;  /* Lighter amber */
+    --red:      #ff7b6b;  /* Lighter red */
+    --red-dim:  rgba(255,123,107,0.15);
+
+    --txt:  #ffffff;      /* Pure white for maximum contrast */
+    --txt2: #e0c8b0;      /* Very light beige */
+    --txt3: #b09878;      /* Medium-light brown */
+
+    --ff-d: 'Playfair Display', Georgia, serif;
+    --ff-b: 'DM Sans', system-ui, sans-serif;
+
+    --sh:    0 6px 28px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3);
+    --sh-lg: 0 18px 56px rgba(0,0,0,0.72), 0 4px 18px rgba(0,0,0,0.4);
+    --sh-w:  0 4px 20px rgba(232,168,112,0.25);
   }
 
   .root {
     font-family: var(--ff-b);
-    background: #080d18;
+    background: var(--bg);
     color: var(--txt);
     width: 100vw; height: 100vh;
     overflow: hidden;
     position: relative;
   }
-  .hc {
-    --surface: #000; --card: #0d0d0d;
-    --border: #ff0; --border2: #ff0;
-    --cyan: #ff0; --cyan-dim: rgba(255,255,0,.1); --cyan-glow: rgba(255,255,0,.25);
-    --txt: #ff0; --txt2: #ff0; --txt3: #cc0;
-  }
 
-  /* MAP */
+  /* ── MAP ─────────────────────────────────────────── */
   .map-wrap { position: absolute; inset: 0; z-index: 0; }
-  .leaflet-container { background: #07101c !important; }
-  .leaflet-tile-pane { filter: saturate(.72) brightness(.85); }
+  .leaflet-container { background: #0e0804 !important; }
+  .leaflet-tile-pane { filter: saturate(.7) brightness(.82) sepia(.08); }
   .leaflet-popup-content-wrapper {
-    background: var(--card) !important; border: 1px solid var(--border2) !important;
-    border-radius: 12px !important; color: var(--txt) !important;
-    box-shadow: var(--sh) !important; font-family: var(--ff-b) !important;
+    background: var(--card) !important;
+    border: 1px solid var(--border2) !important;
+    border-radius: 12px !important;
+    color: var(--txt) !important;
+    box-shadow: var(--sh) !important;
+    font-family: var(--ff-b) !important;
   }
-  .leaflet-popup-tip { background: rgba(14,21,42,.97) !important; }
+  .leaflet-popup-tip { background: rgba(42,26,12,.98) !important; }
   .leaflet-control-zoom { display: none !important; }
   .leaflet-control-attribution { display: none; }
 
-  /* RAIL */
+  /* ── RAIL ────────────────────────────────────────── */
   .rail {
     position: absolute; left: 0; top: 0; bottom: 0;
     width: var(--rail-w);
@@ -102,267 +120,314 @@ const CSS = `
     backdrop-filter: blur(28px);
     z-index: 60;
     display: flex; flex-direction: column; align-items: center;
-    padding: 12px 0 16px; gap: 2px;
+    padding: 14px 0 18px; gap: 3px;
   }
+
   .r-logo {
-    width: 34px; height: 34px;
-    background: var(--cyan-g); border-radius: 10px;
+    width: 38px; height: 38px;
+    background: var(--wood-g);
+    border-radius: 11px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px; box-shadow: 0 0 18px var(--cyan-glow);
-    margin-bottom: 12px; flex-shrink: 0;
+    margin-bottom: 14px; flex-shrink: 0;
+    box-shadow: var(--sh-w), 0 0 16px var(--wood-glow);
+    color: #fff8f0;
   }
+
   .r-btn {
-    width: 40px; height: 40px; border-radius: 10px;
+    width: 44px; height: 44px; border-radius: 11px;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 3px; background: transparent; border: 1px solid transparent;
-    cursor: pointer; color: var(--txt3); transition: all .17s; position: relative;
-    font-size: 17px;
+    cursor: pointer; color: var(--txt3); transition: all .18s; position: relative;
   }
-  .r-btn:hover { background: var(--cyan-dim); border-color: var(--border); color: var(--txt2); }
-  .r-btn.on  { background: var(--cyan-dim); border-color: var(--border2); color: var(--cyan); }
-  .r-lbl { font-size: 9px; font-weight: 600; letter-spacing: .3px; color: inherit; }
-  .r-sep { width: 22px; height: 1px; background: var(--border); margin: 5px 0; flex-shrink: 0; }
+  .r-btn:hover { background: var(--wood-dim); border-color: var(--border); color: var(--txt2); }
+  .r-btn.on    { background: var(--wood-dim); border-color: var(--border2); color: var(--wood); }
+  .r-lbl { font-size: 9px; font-weight: 600; letter-spacing: .3px; color: inherit; font-family: var(--ff-b); }
+
+  .r-sep   { width: 26px; height: 1px; background: var(--border); margin: 5px 0; flex-shrink: 0; }
   .r-space { flex: 1; }
+
+  /* Rail tooltip */
   .r-btn[data-tip]::after {
     content: attr(data-tip);
-    position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
+    position: absolute; left: calc(100% + 11px); top: 50%; transform: translateY(-50%);
     background: var(--card); border: 1px solid var(--border2); border-radius: 8px;
-    padding: 5px 11px; font-family: var(--ff-b); font-size: 12px; font-weight: 500;
+    padding: 5px 12px; font-family: var(--ff-b); font-size: 12px; font-weight: 500;
     color: var(--txt); white-space: nowrap; opacity: 0; pointer-events: none;
     transition: opacity .15s; z-index: 999; box-shadow: var(--sh);
   }
   .r-btn[data-tip]:hover::after { opacity: 1; }
 
-  /* SIDE PANEL */
+  /* ── SIDE PANEL ───────────────────────────────────── */
   .panel {
     position: absolute; left: var(--rail-w); top: 0; bottom: 0;
-    width: 276px; background: var(--surface); border-right: 1px solid var(--border);
+    width: var(--panel-w);
+    background: var(--surface); border-right: 1px solid var(--border);
     backdrop-filter: blur(28px); z-index: 55;
     display: flex; flex-direction: column;
     transform: translateX(-100%);
-    transition: transform .27s cubic-bezier(.4,0,.2,1);
+    transition: transform .28s cubic-bezier(.4,0,.2,1);
     box-shadow: var(--sh-lg);
   }
   .panel.open { transform: translateX(0); }
+
   .p-head {
-    padding: 18px 16px 14px;
+    padding: 20px 18px 16px;
     border-bottom: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
   }
-  .p-title { font-family: var(--ff-d); font-size: 15px; font-weight: 800; color: var(--txt); }
+  .p-title { font-family: var(--ff-d); font-size: 17px; font-weight: 700; color: var(--txt); letter-spacing: .2px; }
+
   .p-close {
-    background: rgba(255,255,255,.04); border: 1px solid var(--border);
-    border-radius: 7px; width: 28px; height: 28px;
+    background: var(--inset); border: 1px solid var(--border);
+    border-radius: 8px; width: 30px; height: 30px;
     display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: var(--txt3); font-size: 13px; transition: all .15s;
+    cursor: pointer; color: var(--txt2); transition: all .15s;
   }
-  .p-close:hover { color: var(--red); border-color: rgba(248,113,113,.3); background: var(--red-dim); }
+  .p-close:hover { color: var(--red); border-color: rgba(255,123,107,.3); background: var(--red-dim); }
+
   .p-body {
-    flex: 1; overflow-y: auto; padding: 14px 14px 20px;
-    display: flex; flex-direction: column; gap: 20px;
+    flex: 1; overflow-y: auto; padding: 16px 16px 24px;
+    display: flex; flex-direction: column; gap: 22px;
     scrollbar-width: thin; scrollbar-color: var(--border) transparent;
   }
-  .p-sec { font-size: 10px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; color: var(--txt3); margin-bottom: 8px; }
+  .p-body::-webkit-scrollbar { width: 4px; }
+  .p-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-  /* items in panel */
+  .p-sec {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.4px;
+    text-transform: uppercase; color: var(--txt2); margin-bottom: 9px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .p-sec::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
   .p-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 11px; background: rgba(255,255,255,.03);
-    border: 1px solid var(--border); border-radius: 11px;
-    cursor: pointer; transition: all .15s; width: 100%; text-align: left;
+    display: flex; align-items: center; gap: 11px;
+    padding: 10px 12px; background: var(--inset);
+    border: 1px solid var(--border); border-radius: 12px;
+    cursor: pointer; transition: all .16s; width: 100%; text-align: left;
   }
-  .p-item:hover { background: var(--cyan-dim); border-color: var(--border2); transform: translateX(2px); }
-  .p-item.sel { border-color: var(--cyan); background: var(--cyan-dim); }
+  .p-item:hover { background: var(--wood-dim); border-color: var(--border2); transform: translateX(3px); }
+  .p-item.sel   { border-color: var(--wood); background: var(--wood-dim); }
+
   .p-ico {
-    width: 30px; height: 30px; font-size: 16px;
-    background: rgba(255,255,255,.05); border: 1px solid var(--border);
-    border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 32px; height: 32px;
+    background: rgba(180,120,60,0.1); border: 1px solid var(--border);
+    border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: var(--wood);
   }
+  .p-ico.green { color: var(--green); background: var(--green-dim); }
+  .p-ico.amber { color: var(--amber); background: rgba(255,179,71,0.1); }
+
   .p-name { font-size: 13px; font-weight: 500; color: var(--txt); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .p-sub  { font-size: 11px; color: var(--txt3); margin-top: 1px; }
-  .p-arr  { margin-left: auto; color: var(--txt3); font-size: 12px; transition: all .15s; }
-  .p-item:hover .p-arr { color: var(--cyan); transform: translateX(2px); }
-  .p-empty { text-align: center; color: var(--txt3); font-size: 12px; line-height: 1.7; padding: 18px 0; }
+  .p-sub  { font-size: 11px; color: var(--txt2); margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+  .p-arr  { margin-left: auto; color: var(--txt2); flex-shrink: 0; transition: all .15s; }
+  .p-item:hover .p-arr { color: var(--wood); transform: translateX(2px); }
+
+  .p-empty { text-align: center; color: var(--txt2); font-size: 12.5px; line-height: 1.7; padding: 20px 0; }
 
   /* a11y grid */
-  .ag { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .ab {
-    background: rgba(255,255,255,.03); border: 1px solid var(--border);
-    border-radius: 10px; padding: 10px 9px;
-    display: flex; align-items: center; gap: 7px;
-    cursor: pointer; transition: all .15s; width: 100%; text-align: left;
+  .ag  { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .ab  {
+    background: var(--inset); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 10px; display: flex; align-items: center; gap: 8px;
+    cursor: pointer; transition: all .16s; width: 100%; text-align: left;
   }
   .ab:hover { border-color: var(--border2); }
-  .ab.on { border-color: var(--cyan); background: var(--cyan-dim); }
-  .ab-i { font-size: 15px; }
-  .ab-l { font-size: 11px; font-weight: 500; color: var(--txt3); flex: 1; line-height: 1.3; }
-  .ab.on .ab-l { color: var(--cyan); }
+  .ab.on    { border-color: var(--wood); background: var(--wood-dim); }
+  .ab-i { color: var(--txt2); flex-shrink: 0; transition: color .15s; }
+  .ab.on .ab-i { color: var(--wood); }
+  .ab-l { font-size: 11px; font-weight: 500; color: var(--txt2); flex: 1; line-height: 1.3; }
+  .ab.on .ab-l { color: var(--txt); }
   .ab-c {
-    width: 14px; height: 14px; border-radius: 4px;
-    border: 1.5px solid var(--border);
+    width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid var(--border);
     display: flex; align-items: center; justify-content: center;
-    font-size: 9px; flex-shrink: 0; transition: all .15s;
+    flex-shrink: 0; transition: all .15s; color: transparent;
   }
-  .ab.on .ab-c { background: var(--cyan); border-color: var(--cyan); color: #060f1e; }
+  .ab.on .ab-c { background: var(--wood); border-color: var(--wood); color: #1a0c04; }
 
-  /* SEARCH CARD */
+  /* ── SEARCH CARD ─────────────────────────────────── */
   .sc {
     position: absolute;
-    top: 12px; left: calc(var(--rail-w) + 12px);
-    z-index: 50; width: 332px;
+    top: 14px; left: calc(var(--rail-w) + 14px);
+    z-index: 50; width: 348px;
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 18px; backdrop-filter: blur(32px);
-    box-shadow: var(--sh-lg);
-    transition: border-color .2s, box-shadow .2s;
+    border-radius: 20px; backdrop-filter: blur(32px);
+    box-shadow: var(--sh-lg), var(--sh-w);
+    transition: border-color .2s;
   }
   .sc:focus-within { border-color: var(--border2); }
 
-  .sc-inputs { padding: 14px 14px 10px; display: flex; flex-direction: column; gap: 7px; }
+  .sc-head {
+    padding: 14px 16px 6px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sc-brand { font-family: var(--ff-d); font-size: 15px; font-weight: 700; color: var(--txt); letter-spacing: .2px; flex: 1; }
+  .sc-brand span { color: var(--wood); }
 
-  /* row */
+  .sc-inputs { padding: 12px 14px 8px; display: flex; flex-direction: column; gap: 6px; }
+
+  /* input rows */
   .rr { position: relative; }
   .rr-dot {
     position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
-    width: 9px; height: 9px; border-radius: 50%; pointer-events: none;
+    width: 8px; height: 8px; border-radius: 50%; pointer-events: none; z-index: 1;
   }
-  .rr-dot-g { background: var(--green); box-shadow: 0 0 7px var(--green); animation: blk 2.2s ease infinite; }
-  .rr-dot-r { background: var(--red);   box-shadow: 0 0 7px var(--red); }
-  @keyframes blk { 0%,100%{opacity:1;transform:translateY(-50%) scale(1)} 50%{opacity:.6;transform:translateY(-50%) scale(1.35)} }
+  .rr-dot-g { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blk 2.4s ease infinite; }
+  .rr-dot-r { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+  @keyframes blk { 0%,100%{opacity:1;transform:translateY(-50%) scale(1)} 50%{opacity:.55;transform:translateY(-50%) scale(1.4)} }
 
   .ri {
-    width: 100%; background: rgba(255,255,255,.04); border: 1px solid var(--border);
-    border-radius: 10px; padding: 10px 34px 10px 29px;
+    width: 100%; background: var(--inset); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 34px 10px 28px;
     color: var(--txt); font-family: var(--ff-b); font-size: 13.5px;
     outline: none; transition: border-color .18s, box-shadow .18s, background .18s;
   }
-  .ri::placeholder { color: var(--txt3); }
-  .ri:focus { border-color: var(--cyan); background: rgba(56,189,248,.05); box-shadow: 0 0 0 3px var(--cyan-dim); }
+  .ri::placeholder { color: var(--txt2); }
+  .ri:focus { border-color: var(--wood); background: rgba(232,168,112,.06); box-shadow: 0 0 0 3px var(--wood-dim); }
 
-  .ri-side-btn {
+  .ri-btn {
     position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
-    background: rgba(255,255,255,.05); border: 1px solid var(--border);
-    border-radius: 7px; width: 23px; height: 23px;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: var(--txt3); font-size: 11px; transition: all .15s;
+    background: var(--inset); border: 1px solid var(--border); border-radius: 7px;
+    width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--txt2); transition: all .15s;
   }
-  .ri-side-btn:hover { background: var(--cyan-dim); border-color: var(--border2); color: var(--cyan); }
+  .ri-btn:hover { background: var(--wood-dim); border-color: var(--border2); color: var(--wood); }
 
-  .ri-conn { display: flex; align-items: center; gap: 8px; padding: 0 13px; pointer-events: none; }
-  .ri-conn-line { width: 1px; height: 13px; flex-shrink: 0; background: linear-gradient(to bottom,var(--green),var(--red)); opacity: .3; }
-  .ri-conn-lbl  { font-size: 11px; color: var(--txt3); }
+  .ri-conn { display: flex; align-items: center; gap: 8px; padding: 0 12px; pointer-events: none; }
+  .ri-conn-line { width: 1px; height: 12px; flex-shrink: 0; background: linear-gradient(to bottom,var(--green),var(--red)); opacity: .3; }
+  .ri-conn-lbl  { font-size: 11px; color: var(--txt2); }
 
   /* autocomplete */
   .ac { position: relative; }
   .ac-drop {
-    position: absolute; top: calc(100% + 5px); left: 0; right: 0;
-    background: var(--card); border: 1px solid var(--border2);
-    border-radius: 13px; overflow: hidden; z-index: 300;
-    box-shadow: var(--sh-lg); animation: fd .14s ease;
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+    background: var(--card); border: 1px solid var(--border2); border-radius: 14px;
+    overflow: hidden; z-index: 300; box-shadow: var(--sh-lg); animation: fd .14s ease;
   }
   @keyframes fd { from{opacity:0;transform:translateY(-5px)} to{opacity:1;transform:translateY(0)} }
-  .ac-hd { padding: 7px 12px 5px; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--txt3); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 5px; }
+
+  .ac-hd {
+    padding: 8px 13px 6px; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--txt2);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 6px;
+  }
   .ac-row {
-    display: flex; align-items: center; gap: 9px; padding: 9px 12px;
+    display: flex; align-items: center; gap: 10px; padding: 9px 13px;
     background: transparent; border: none; width: 100%; text-align: left;
     cursor: pointer; transition: background .12s; color: var(--txt);
   }
-  .ac-row:hover,.ac-row.hi { background: var(--cyan-dim); }
-  .ac-row+.ac-row { border-top: 1px solid rgba(56,189,248,.05); }
-  .ac-ico { width: 26px; height: 26px; background: rgba(255,255,255,.05); border: 1px solid var(--border); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
-  .ac-name { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .ac-addr { font-size: 11px; color: var(--txt3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
-  .ac-tag { margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; color: var(--cyan); background: var(--cyan-dim); border: 1px solid rgba(56,189,248,.2); border-radius: 4px; padding: 2px 6px; white-space: nowrap; flex-shrink: 0; max-width: 70px; overflow: hidden; text-overflow: ellipsis; }
-  .ac-wait { display: flex; align-items: center; gap: 8px; padding: 13px; font-size: 12px; color: var(--txt3); }
+  .ac-row:hover, .ac-row.hi { background: var(--wood-dim); }
+  .ac-row + .ac-row { border-top: 1px solid rgba(232,168,112,.1); }
+
+  .ac-ico {
+    width: 28px; height: 28px; background: var(--inset); border: 1px solid var(--border);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: var(--wood);
+  }
+  .ac-name { font-size: 13px; font-weight: 500; color: var(--txt); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ac-addr { font-size: 11px; color: var(--txt2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+  .ac-tag  {
+    margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase;
+    color: var(--txt); background: var(--wood-dim); border: 1px solid rgba(232,168,112,.3);
+    border-radius: 4px; padding: 2px 7px; white-space: nowrap; flex-shrink: 0;
+    max-width: 72px; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ac-wait { display: flex; align-items: center; gap: 8px; padding: 14px; font-size: 12px; color: var(--txt2); }
 
   @keyframes spin { to{transform:rotate(360deg)} }
-  .spn  { width: 12px; height: 12px; border: 2px solid var(--border); border-top-color: var(--cyan); border-radius: 50%; animation: spin .6s linear infinite; flex-shrink: 0; }
-  .spn2 { width: 15px; height: 15px; border: 2px solid rgba(6,15,30,.3); border-top-color: #060f1e; border-radius: 50%; animation: spin .65s linear infinite; }
+  .spn  { width: 12px; height: 12px; border: 2px solid var(--border); border-top-color: var(--wood); border-radius: 50%; animation: spin .6s linear infinite; flex-shrink: 0; }
+  .spn2 { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.15); border-top-color: var(--wood); border-radius: 50%; animation: spin .65s linear infinite; }
 
-  /* modes */
+  /* mode pills */
   .sc-modes { display: flex; gap: 6px; padding: 2px 14px 4px; }
   .mp {
     flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
-    padding: 9px 4px; background: rgba(255,255,255,.04);
-    border: 1px solid var(--border); border-radius: 10px;
-    cursor: pointer; transition: all .17s; color: var(--txt3); font-family: var(--ff-b);
+    padding: 9px 4px; background: var(--inset); border: 1px solid var(--border);
+    border-radius: 11px; cursor: pointer; transition: all .17s; color: var(--txt2); font-family: var(--ff-b);
   }
-  .mp:hover { border-color: var(--border2); color: var(--txt2); background: var(--cyan-dim); }
-  .mp.on { border-color: var(--cyan); background: var(--cyan-dim); color: var(--cyan); box-shadow: 0 0 12px var(--cyan-glow); }
-  .mp-i { font-size: 18px; }
-  .mp-l { font-size: 10px; font-weight: 600; letter-spacing: .3px; text-transform: uppercase; }
+  .mp:hover { border-color: var(--border2); color: var(--txt); background: var(--wood-dim); }
+  .mp.on    { border-color: var(--wood); background: var(--wood-dim); color: var(--wood); box-shadow: 0 0 12px var(--wood-glow); }
+  .mp-i { flex-shrink: 0; }
+  .mp-l { font-size: 10px; font-weight: 600; letter-spacing: .3px; text-transform: uppercase; color: inherit; }
 
   /* find btn */
   .sc-find {
     margin: 6px 14px 12px; width: calc(100% - 28px); padding: 13px;
-    background: var(--cyan-g); border: none; border-radius: 12px;
-    color: #040d1a; font-family: var(--ff-d); font-size: 14px; font-weight: 800;
-    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px;
-    transition: all .2s; box-shadow: 0 4px 18px rgba(14,165,233,.32); letter-spacing: .15px;
+    background: var(--wood-g); border: none; border-radius: 13px;
+    color: #ffffff; font-family: var(--ff-d); font-size: 14px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all .2s; box-shadow: var(--sh-w); letter-spacing: .2px;
   }
-  .sc-find:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 7px 26px rgba(14,165,233,.48); }
-  .sc-find:disabled { background: rgba(255,255,255,.06); color: var(--txt3); box-shadow: none; cursor: not-allowed; }
+  .sc-find:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(232,168,112,.5); filter: brightness(1.1); }
+  .sc-find:disabled { background: var(--inset); color: var(--txt2); box-shadow: none; cursor: not-allowed; filter: none; }
 
   /* legend */
   .sc-leg-btn {
     display: flex; align-items: center; justify-content: space-between;
     padding: 9px 14px; border-top: 1px solid var(--border);
     background: transparent; border-left: none; border-right: none; border-bottom: none;
-    width: 100%; cursor: pointer; color: var(--txt3); font-family: var(--ff-b); transition: color .15s;
+    width: 100%; cursor: pointer; color: var(--txt2); font-family: var(--ff-b); transition: color .15s;
   }
-  .sc-leg-btn:hover { color: var(--txt2); }
-  .sc-leg-lbl { font-size: 10.5px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; }
-  .sc-leg-chv { font-size: 9px; transition: transform .2s; }
-  .sc-leg-chv.open { transform: rotate(180deg); }
-  .sc-leg-body { padding: 0 14px 12px; display: flex; flex-direction: column; gap: 7px; }
+  .sc-leg-btn:hover { color: var(--txt); }
+  .sc-leg-lbl { font-size: 10.5px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: inherit; }
+  .leg-chv { transition: transform .2s; }
+  .leg-chv.open { transform: rotate(180deg); }
+  .sc-leg-body { padding: 4px 14px 14px; display: flex; flex-direction: column; gap: 8px; }
   .leg-row { display: flex; align-items: center; gap: 10px; }
-  .leg-lbl { font-size: 11.5px; color: var(--txt2); }
+  .leg-lbl { font-size: 12px; color: var(--txt2); }
 
-  /* route info bar */
+  /* route bar */
   .rbar {
-    position: absolute; bottom: 20px; left: calc(var(--rail-w) + 12px); z-index: 50;
+    position: absolute; bottom: 22px; left: calc(var(--rail-w) + 14px); z-index: 50;
     background: var(--surface); border: 1px solid var(--border2);
     border-radius: 16px; backdrop-filter: blur(24px);
-    padding: 12px 16px; display: flex; align-items: center; gap: 13px;
-    box-shadow: var(--sh); animation: su .24s ease;
+    padding: 13px 18px; display: flex; align-items: center; gap: 14px;
+    box-shadow: var(--sh), var(--sh-w); animation: su .24s ease;
   }
-  @keyframes su { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
-  .rs  { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .rs-v { font-family: var(--ff-d); font-size: 15px; font-weight: 800; color: var(--cyan); }
-  .rs-l { font-size: 10px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--txt3); }
+  @keyframes su { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .rs   { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .rs-v { font-family: var(--ff-d); font-size: 15px; font-weight: 700; color: var(--wood); }
+  .rs-l { font-size: 10px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--txt2); }
   .rs-d { width: 1px; height: 24px; background: var(--border); }
-  .rs-cl { background: var(--red-dim); border: 1px solid rgba(248,113,113,.2); border-radius: 8px; padding: 5px 10px; color: var(--red); font-size: 11px; font-weight: 700; cursor: pointer; transition: all .15s; margin-left: 4px; }
-  .rs-cl:hover { background: rgba(248,113,113,.18); }
+  .rs-cl {
+    background: var(--red-dim); border: 1px solid rgba(255,123,107,.3);
+    border-radius: 8px; padding: 5px 10px; color: var(--red);
+    font-size: 11px; font-weight: 700; cursor: pointer; transition: all .15s; margin-left: 4px;
+  }
+  .rs-cl:hover { background: rgba(255,123,107,.25); color: #ff9b8b; }
 
   /* map type bar */
-  .mt-bar { position: absolute; top: 14px; right: 14px; z-index: 50; display: flex; gap: 5px; }
+  .mt-bar { position: absolute; top: 16px; right: 14px; z-index: 50; display: flex; gap: 5px; }
   .mt-btn {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 9px; backdrop-filter: blur(20px); padding: 7px 11px;
-    display: flex; align-items: center; gap: 5px;
-    cursor: pointer; color: var(--txt3); font-family: var(--ff-b); font-size: 12px; font-weight: 500;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 9px;
+    backdrop-filter: blur(20px); padding: 7px 12px;
+    display: flex; align-items: center; gap: 6px;
+    cursor: pointer; color: var(--txt2); font-family: var(--ff-b); font-size: 12px; font-weight: 500;
     transition: all .15s; white-space: nowrap;
   }
-  .mt-btn:hover { color: var(--txt2); border-color: var(--border2); }
-  .mt-btn.on { color: var(--cyan); border-color: var(--cyan); background: var(--cyan-dim); }
+  .mt-btn:hover { color: var(--txt); border-color: var(--border2); }
+  .mt-btn.on    { color: var(--wood); border-color: var(--wood); background: var(--wood-dim); }
 
-  /* map ctrl */
+  /* map controls */
   .mctrl { position: absolute; right: 14px; bottom: 80px; z-index: 50; display: flex; flex-direction: column; gap: 5px; }
   .mc {
-    width: 38px; height: 38px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 9px; backdrop-filter: blur(20px);
+    width: 40px; height: 40px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; backdrop-filter: blur(20px);
     display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: var(--txt2); font-size: 17px; font-weight: 300; transition: all .15s;
+    cursor: pointer; color: var(--txt2); transition: all .15s;
   }
-  .mc:hover { border-color: var(--border2); color: var(--cyan); background: var(--cyan-dim); }
-  .mc-z { font-size: 10px; font-weight: 700; letter-spacing: .3px; color: var(--txt3); text-align: center; padding: 3px 0; }
+  .mc:hover { border-color: var(--border2); color: var(--wood); background: var(--wood-dim); }
+  .mc-z { font-size: 10px; font-weight: 700; letter-spacing: .3px; color: var(--txt2); text-align: center; padding: 3px 0; }
 
   /* toast */
   .toast {
-    position: absolute; bottom: 22px; left: 50%; z-index: 200;
+    position: absolute; bottom: 24px; left: 50%; z-index: 200;
     transform: translateX(-50%) translateY(12px);
     background: var(--surface); border: 1px solid var(--border2); border-radius: 50px;
-    backdrop-filter: blur(20px); padding: 8px 20px;
-    font-size: 12.5px; font-weight: 500; color: var(--cyan);
+    backdrop-filter: blur(20px); padding: 9px 22px;
+    font-size: 12.5px; font-weight: 500; color: var(--txt);
     white-space: nowrap; opacity: 0; pointer-events: none;
     transition: all .24s; max-width: calc(100vw - 100px);
     text-align: center; overflow: hidden; text-overflow: ellipsis; box-shadow: var(--sh);
@@ -372,36 +437,61 @@ const CSS = `
   .sr { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0; }
 `;
 
+// ── DATA ────────────────────────────────────────────────────────────────────
+
 const A11Y_FEATS = [
-  { key: "visionImpaired",  icon: "👁️", label: "Vision Mode" },
-  { key: "hearingImpaired", icon: "👂", label: "Hearing Mode" },
-  { key: "highContrast",    icon: "◑",  label: "High Contrast" },
-  { key: "largeText",       icon: "🔍", label: "Large Text" },
-  { key: "reducedMotion",   icon: "⏸", label: "Reduce Motion" },
-  { key: "lowEnergy",       icon: "⚡", label: "Low Energy" },
+  { key: "visionImpaired",  Icon: Eye,       label: "Vision Mode" },
+  { key: "hearingImpaired", Icon: Ear,       label: "Hearing Mode" },
+  { key: "highContrast",    Icon: Contrast,  label: "High Contrast" },
+  { key: "largeText",       Icon: ZoomIn,    label: "Large Text" },
+  { key: "reducedMotion",   Icon: Wind,      label: "Reduce Motion" },
+  { key: "lowEnergy",       Icon: Zap,       label: "Low Energy" },
 ];
 
-const SAVED = [
-  { name: "University of Pittsburgh", sub: "Education",  icon: "🎓" },
-  { name: "Carnegie Museum",          sub: "Museum",     icon: "🏛️" },
-  { name: "Accessible Transit Hub",   sub: "Transport",  icon: "🚌" },
-  { name: "City Hospital",            sub: "Medical",    icon: "🏥" },
+const PREF_FEATS = [
+  { k: "avoidStairs",   Icon: Route,         l: "Avoid Stairs" },
+  { k: "elevator",      Icon: Building2,     l: "Elevator Access" },
+  { k: "noHighways",    Icon: Layers,        l: "No Highways" },
+  { k: "wellLit",       Icon: Zap,           l: "Well-lit Areas" },
+  { k: "quietRoads",    Icon: Wind,          l: "Quiet Roads" },
+  { k: "lowCrowds",     Icon: PersonStanding,l: "Avoid Crowds" },
 ];
 
-function getCatIco(cat) {
-  if (!cat) return "📍";
+const SAVED_PLACES = [
+  { name: "University of Pittsburgh",  sub: "Education",  Icon: GraduationCap, color: "amber" },
+  { name: "Carnegie Museum",           sub: "Museum",     Icon: Building2,     color: "" },
+  { name: "Accessible Transit Hub",    sub: "Transport",  Icon: Bus,           color: "green" },
+  { name: "City Hospital (UPMC)",      sub: "Medical",    Icon: Stethoscope,   color: "" },
+];
+
+const NEARBY_PITTSBURGH = [
+  { name: "Allegheny RiverTrail",      sub: "0.3 mi · Trail & Park",              Icon: TreePine,       color: "green" },
+  { name: "Waterworks Mall",           sub: "0.8 mi · Shopping Center",           Icon: ShoppingBag,    color: "" },
+  { name: "UPMC St. Margaret",         sub: "1.1 mi · Hospital",                  Icon: Stethoscope,    color: "" },
+  { name: "Pittsburgh Zoo & Aquarium", sub: "1.4 mi · Attraction",                Icon: TreePine,       color: "green" },
+  { name: "Fox Chapel Area HS",        sub: "2.0 mi · School",                    Icon: GraduationCap,  color: "amber" },
+  { name: "Aspinwall Borough Park",    sub: "0.5 mi · Park",                      Icon: TreePine,       color: "green" },
+  { name: "Waterworks Cold Stone",     sub: "0.9 mi · Food & Drink",              Icon: Coffee,         color: "amber" },
+  { name: "Blawnox Riverfront",        sub: "1.2 mi · Scenic Waterfront",         Icon: Waves,          color: "green" },
+];
+
+const MAP_TYPE_ICONS = { openstreetmap: Layers, tomtom: MapPin, satellite: Navigation, night: Layers };
+
+function getCatIcon(cat) {
+  if (!cat) return MapPin;
   const c = cat.toLowerCase();
-  if (c.includes("hospital")||c.includes("medical")||c.includes("health")) return "🏥";
-  if (c.includes("school")||c.includes("university")||c.includes("college")) return "🎓";
-  if (c.includes("restaurant")||c.includes("food")||c.includes("cafe")) return "🍽️";
-  if (c.includes("park")||c.includes("garden")) return "🌳";
-  if (c.includes("transit")||c.includes("bus")||c.includes("train")||c.includes("station")) return "🚌";
-  if (c.includes("museum")||c.includes("gallery")) return "🏛️";
-  if (c.includes("shop")||c.includes("store")||c.includes("mall")) return "🛍️";
-  if (c.includes("hotel")||c.includes("lodging")) return "🏨";
-  if (c.includes("pharmacy")) return "💊";
-  return "📍";
+  if (c.includes("hospital")||c.includes("medical")||c.includes("health")) return Stethoscope;
+  if (c.includes("school")||c.includes("university")||c.includes("college")) return GraduationCap;
+  if (c.includes("restaurant")||c.includes("food")||c.includes("cafe")) return Coffee;
+  if (c.includes("park")||c.includes("garden")) return TreePine;
+  if (c.includes("transit")||c.includes("bus")||c.includes("train")||c.includes("station")) return Bus;
+  if (c.includes("museum")||c.includes("gallery")) return Building2;
+  if (c.includes("shop")||c.includes("store")||c.includes("mall")) return ShoppingBag;
+  if (c.includes("pharmacy")) return Stethoscope;
+  return MapPin;
 }
+
+// ── COMPONENT ───────────────────────────────────────────────────────────────
 
 export default function AccessibleMap() {
   const [mapType, setMapType]     = useState("openstreetmap");
@@ -421,12 +511,16 @@ export default function AccessibleMap() {
   const [suggLoad, setSuggLoad]   = useState(false);
   const [hiIdx, setHiIdx]         = useState(-1);
 
-  const [panel, setPanel]         = useState(null); // 'saved'|'recents'|'a11y'
+  const [panel, setPanel]         = useState(null);
   const [legendOpen, setLegendOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast]         = useState("");
 
-  const [a11y, setA11y] = useState({ visionImpaired:false, hearingImpaired:false, lowEnergy:false, highContrast:false, largeText:false, screenReader:false, reducedMotion:false });
+  const [a11y, setA11y] = useState({
+    visionImpaired:false, hearingImpaired:false, lowEnergy:false,
+    highContrast:false, largeText:false, screenReader:false, reducedMotion:false,
+  });
+  const [prefs, setPrefs] = useState({});
 
   const [recents, setRecents] = useState(() => {
     try { return JSON.parse(localStorage.getItem("ar_recents") || "[]"); } catch { return []; }
@@ -457,7 +551,12 @@ export default function AccessibleMap() {
         const [lat, lng] = loc;
         const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(q)}.json?key=${TOMTOM_API_KEY}&limit=6&lat=${lat}&lon=${lng}&radius=50000&language=en-US`;
         const d = await (await fetch(url)).json();
-        const m = (d.results||[]).map(r=>({ id:r.id, name:r.poi?.name||r.address?.freeformAddress, address:r.address?.freeformAddress, category:r.poi?.categories?.[0]||null })).filter(r=>r.name);
+        const m = (d.results||[]).map(r=>({
+          id: r.id,
+          name: r.poi?.name || r.address?.freeformAddress,
+          address: r.address?.freeformAddress,
+          category: r.poi?.categories?.[0] || null,
+        })).filter(r=>r.name);
         setSugg(m); setSuggOpen(m.length > 0); setHiIdx(-1);
       } catch {/* noop */} finally { setSuggLoad(false); }
     }, 280);
@@ -467,7 +566,7 @@ export default function AccessibleMap() {
     setToVal(s.address || s.name);
     setSugg([]); setSuggOpen(false); setHiIdx(-1);
     destRef.current?.blur();
-    say(`Destination: ${s.name}`);
+    say(`Destination set — ${s.name}`);
   };
 
   const destKD = (e) => {
@@ -479,25 +578,33 @@ export default function AccessibleMap() {
   };
 
   const calcRoute = async () => {
-    if (!toVal.trim()) { say("Enter a destination first"); return; }
-    setIsLoading(true); say("Finding your safe route…");
+    if (!toVal.trim()) { say("Please enter a destination"); return; }
+    setIsLoading(true); say("Finding your safe, accessible route…");
     try {
       const res = await fetch("http://localhost:5000/api/calculate-route", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ start_location:fromVal, end_location:toVal, accessibility_preferences:{ elevator_access:true, wheelchair:mode==="wheelchair", wellLitAreas:a11y.visionImpaired, avoidStairs:true } }),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          start_location: fromVal, end_location: toVal,
+          accessibility_preferences: {
+            elevator_access: true,
+            wheelchair: mode === "wheelchair",
+            wellLitAreas: a11y.visionImpaired,
+            avoidStairs: true,
+          },
+        }),
       });
       if (!res.ok) throw new Error();
       const data = await res.json();
       if (data.success && data.route?.coordinates?.length >= 2) {
         const coords = data.route.coordinates.map(c => [c.lat, c.lng]);
-        setRoutePath(coords); setDest(coords[coords.length-1]);
-        setRouteInfo({ distance:data.route.distance, duration:data.route.duration });
-        const nr = [{ name:toVal }, ...recents.filter(r=>r.name!==toVal)].slice(0,6);
+        setRoutePath(coords); setDest(coords[coords.length - 1]);
+        setRouteInfo({ distance: data.route.distance, duration: data.route.duration });
+        const nr = [{ name: toVal }, ...recents.filter(r => r.name !== toVal)].slice(0, 6);
         setRecents(nr);
         try { localStorage.setItem("ar_recents", JSON.stringify(nr)); } catch {}
         say(`Route found · ${data.route.distance} · ${data.route.duration}`);
-      } else { say("Couldn't find a route. Try somewhere else."); }
-    } catch { say("Connection error. Is the backend running?"); }
+      } else { say("Couldn't find a route. Try a different destination."); }
+    } catch { say("Connection error — is the server running?"); }
     finally { setIsLoading(false); }
   };
 
@@ -510,110 +617,153 @@ export default function AccessibleMap() {
     );
   };
 
+  const togglePanel = (name) => setPanel(p => p === name ? null : name);
   const hc = a11y.highContrast;
   const lt = a11y.largeText;
-
-  const togglePanel = (name) => setPanel(p => p === name ? null : name);
 
   return (
     <>
       <style>{CSS}</style>
-      <div className={`root${hc?" hc":""}`} style={{fontSize: lt?"1.06rem":"1rem"}} role="application" aria-label="AccessRoute — Accessible Navigation">
+      <div
+        className={`root${hc ? " hc" : ""}`}
+        style={{ fontSize: lt ? "1.06rem" : "1rem" }}
+        role="application"
+        aria-label="AccessRoute — Accessible Navigation"
+      >
         <div aria-live="assertive" aria-atomic="true" className="sr" role="status">{toast}</div>
 
-        {/* MAP */}
+        {/* ── MAP ──────────────────────────────── */}
         <div className="map-wrap">
-          <MapContainer center={loc} zoom={zoom} className="w-full h-full" style={{filter:hc?"contrast(1.4)":"none"}} aria-label="Accessible route map">
+          <MapContainer center={loc} zoom={zoom} className="w-full h-full" style={{ filter: hc ? "contrast(1.35)" : "none" }} aria-label="Interactive accessible route map">
             <ChangeView center={loc} zoom={zoom} />
             <TileLayer attribution={mapTypes[mapType].attribution} url={mapTypes[mapType].url} />
-            <CircleMarker center={loc} radius={11} pathOptions={{color:"#38bdf8",fillColor:"#38bdf8",fillOpacity:.28,weight:2}}>
-              <Popup><strong>You are here</strong></Popup>
+            <CircleMarker center={loc} radius={11} pathOptions={{ color: "#e8a870", fillColor: "#e8a870", fillOpacity: .28, weight: 2 }}>
+              <Popup><strong style={{fontFamily:"DM Sans,sans-serif", color:"#ffffff"}}>You are here</strong></Popup>
             </CircleMarker>
             {dest && (
               <Marker position={dest} icon={destinationIcon}>
-                <Popup><strong>Destination</strong><br /><small style={{color:"#5f85a8"}}>{toVal}</small></Popup>
+                <Popup>
+                  <strong style={{fontFamily:"DM Sans,sans-serif", color:"#ffffff"}}>Destination</strong><br />
+                  <small style={{color:"#e0c8b0",fontFamily:"DM Sans,sans-serif"}}>{toVal}</small>
+                </Popup>
               </Marker>
             )}
             {routePath.length >= 2 && (
-              <Polyline positions={routePath} pathOptions={{color:mode==="wheelchair"?"#38bdf8":"#34d399", weight:5, opacity:.9, dashArray:mode==="wheelchair"?"12,8":undefined, lineCap:"round", lineJoin:"round"}} />
+              <Polyline positions={routePath} pathOptions={{
+                color: mode === "wheelchair" ? "#e8a870" : "#8cd69c",
+                weight: 5, opacity: .9,
+                dashArray: mode === "wheelchair" ? "12,8" : undefined,
+                lineCap: "round", lineJoin: "round",
+              }} />
             )}
-            {hazards.map((h,i) => (
+            {hazards.map((h, i) => (
               <Marker key={i} position={h.position} icon={hazardIcon}>
-                <Popup><strong style={{color:"#fbbf24"}}>⚠ {h.type}</strong><br /><small>{h.description}</small></Popup>
+                <Popup>
+                  <strong style={{color:"#ffb347",fontFamily:"DM Sans,sans-serif"}}>⚠ {h.type}</strong><br />
+                  <small style={{fontFamily:"DM Sans,sans-serif", color:"#ffffff"}}>{h.description}</small>
+                </Popup>
               </Marker>
             ))}
           </MapContainer>
         </div>
 
-        {/* RAIL */}
+        {/* ── RAIL ─────────────────────────────── */}
         <nav className="rail" role="navigation" aria-label="Main navigation">
-          <div className="r-logo" aria-hidden="true">♿</div>
+          <div className="r-logo" aria-hidden="true">
+            <Accessibility size={20} />
+          </div>
 
-          <button className={`r-btn${panel==="saved"?" on":""}`} onClick={()=>togglePanel("saved")} data-tip="Saved Places" aria-label="Saved places" aria-pressed={panel==="saved"}>
-            <span>🔖</span><span className="r-lbl">Saved</span>
+          <button className={`r-btn${panel === "saved" ? " on" : ""}`} onClick={() => togglePanel("saved")} data-tip="Saved Places" aria-label="Saved places" aria-pressed={panel === "saved"}>
+            <Bookmark size={18} /><span className="r-lbl">Saved</span>
           </button>
-          <button className={`r-btn${panel==="recents"?" on":""}`} onClick={()=>togglePanel("recents")} data-tip="Recent Routes" aria-label="Recent routes" aria-pressed={panel==="recents"}>
-            <span>🕐</span><span className="r-lbl">Recent</span>
+          <button className={`r-btn${panel === "recents" ? " on" : ""}`} onClick={() => togglePanel("recents")} data-tip="Recent Routes" aria-label="Recent routes" aria-pressed={panel === "recents"}>
+            <Clock size={18} /><span className="r-lbl">Recent</span>
           </button>
 
           <div className="r-sep" aria-hidden="true" />
 
-          <button className={`r-btn${panel==="a11y"?" on":""}`} onClick={()=>togglePanel("a11y")} data-tip="Accessibility" aria-label="Accessibility settings" aria-pressed={panel==="a11y"}>
-            <span>⚙</span><span className="r-lbl">Access</span>
+          <button className={`r-btn${panel === "a11y" ? " on" : ""}`} onClick={() => togglePanel("a11y")} data-tip="Accessibility" aria-label="Accessibility settings" aria-pressed={panel === "a11y"}>
+            <Settings size={18} /><span className="r-lbl">Access</span>
           </button>
 
           <div className="r-space" aria-hidden="true" />
 
-          <button className="r-btn" onClick={getGPS} data-tip="My Location" aria-label="Go to my location">
-            <span>⊙</span>
+          <button className="r-btn" onClick={getGPS} data-tip="My Location" aria-label="Center on my location">
+            <LocateFixed size={18} />
           </button>
         </nav>
 
-        {/* SIDE PANEL */}
-        <aside ref={panelRef} className={`panel${panel?" open":""}`} role="complementary"
-          aria-label={panel==="a11y"?"Accessibility":panel==="saved"?"Saved places":"Recent routes"}>
+        {/* ── SIDE PANEL ───────────────────────── */}
+        <aside
+          ref={panelRef}
+          className={`panel${panel ? " open" : ""}`}
+          role="complementary"
+          aria-label={panel === "a11y" ? "Accessibility settings" : panel === "saved" ? "Saved places" : "Recent routes"}
+        >
           <div className="p-head">
             <div className="p-title">
-              {panel==="saved"?"Saved Places":panel==="recents"?"Recent Routes":"Accessibility"}
+              {panel === "saved" ? "Saved Places" : panel === "recents" ? "Recent Routes" : "Accessibility"}
             </div>
-            <button className="p-close" onClick={()=>setPanel(null)} aria-label="Close panel">✕</button>
+            <button className="p-close" onClick={() => setPanel(null)} aria-label="Close panel">
+              <X size={14} />
+            </button>
           </div>
 
           <div className="p-body">
+
             {/* SAVED */}
-            {panel==="saved" && (
+            {panel === "saved" && (<>
               <div>
-                <div className="p-sec">Accessible Nearby</div>
+                <div className="p-sec">Pinned</div>
                 <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-                  {SAVED.map(d => (
-                    <button key={d.name} className="p-item" onClick={()=>{setToVal(d.name);say(`Destination: ${d.name}`);setPanel(null);}} aria-label={`Go to ${d.name}`}>
-                      <div className="p-ico">{d.icon}</div>
+                  {SAVED_PLACES.map(d => (
+                    <button key={d.name} className="p-item" onClick={() => { setToVal(d.name); say(`Destination: ${d.name}`); setPanel(null); }} aria-label={`Go to ${d.name}`}>
+                      <div className={`p-ico ${d.color}`}><d.Icon size={15} /></div>
                       <div style={{flex:1,minWidth:0}}>
                         <div className="p-name">{d.name}</div>
-                        <div className="p-sub"><span style={{color:"var(--green)",marginRight:"3px"}}>♿</span>{d.sub}</div>
+                        <div className="p-sub">
+                          <Accessibility size={10} style={{color:"var(--green)",flexShrink:0}} />
+                          {d.sub}
+                        </div>
                       </div>
-                      <span className="p-arr">›</span>
+                      <span className="p-arr"><ChevronRight size={14} /></span>
                     </button>
                   ))}
                 </div>
               </div>
-            )}
+
+              <div>
+                <div className="p-sec">Nearby in Pittsburgh</div>
+                <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+                  {NEARBY_PITTSBURGH.map(d => (
+                    <button key={d.name} className="p-item" onClick={() => { setToVal(d.name); say(`Destination: ${d.name}`); setPanel(null); }} aria-label={`Navigate to ${d.name}`}>
+                      <div className={`p-ico ${d.color}`}><d.Icon size={15} /></div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div className="p-name">{d.name}</div>
+                        <div className="p-sub">{d.sub}</div>
+                      </div>
+                      <span className="p-arr"><ChevronRight size={14} /></span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>)}
 
             {/* RECENTS */}
-            {panel==="recents" && (
+            {panel === "recents" && (
               <div>
                 <div className="p-sec">Recent</div>
                 {recents.length === 0
-                  ? <div className="p-empty">No recent routes yet.<br />Routes you calculate appear here.</div>
+                  ? <div className="p-empty">No recent routes yet.<br />Routes you calculate will appear here.</div>
                   : <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-                      {recents.map((r,i) => (
-                        <button key={i} className="p-item" onClick={()=>{setToVal(r.name);say(`Destination: ${r.name}`);setPanel(null);}} aria-label={`Recent: ${r.name}`}>
-                          <div className="p-ico">🕐</div>
+                      {recents.map((r, i) => (
+                        <button key={i} className="p-item" onClick={() => { setToVal(r.name); say(`Destination: ${r.name}`); setPanel(null); }} aria-label={`Recent: ${r.name}`}>
+                          <div className="p-ico"><Clock size={15} /></div>
                           <div style={{flex:1,minWidth:0}}>
                             <div className="p-name">{r.name}</div>
                             <div className="p-sub">Recent destination</div>
                           </div>
-                          <span className="p-arr">›</span>
+                          <span className="p-arr"><ChevronRight size={14} /></span>
                         </button>
                       ))}
                     </div>
@@ -622,57 +772,79 @@ export default function AccessibleMap() {
             )}
 
             {/* A11Y */}
-            {panel==="a11y" && (<>
+            {panel === "a11y" && (<>
               <div>
-                <div className="p-sec">Navigation Modes</div>
+                <div className="p-sec">Accessibility Modes</div>
                 <div className="ag">
                   {A11Y_FEATS.map(f => (
-                    <button key={f.key} className={`ab${a11y[f.key]?" on":""}`} onClick={()=>setA11y(p=>({...p,[f.key]:!p[f.key]}))} aria-pressed={a11y[f.key]} aria-label={f.label}>
-                      <span className="ab-i">{f.icon}</span>
+                    <button key={f.key} className={`ab${a11y[f.key] ? " on" : ""}`}
+                      onClick={() => setA11y(p => ({ ...p, [f.key]: !p[f.key] }))}
+                      aria-pressed={a11y[f.key]} aria-label={f.label}
+                    >
+                      <span className="ab-i"><f.Icon size={14} /></span>
                       <span className="ab-l">{f.label}</span>
-                      <span className="ab-c" aria-hidden="true">{a11y[f.key]?"✓":""}</span>
+                      <span className="ab-c" aria-hidden="true">{a11y[f.key] ? "✓" : ""}</span>
                     </button>
                   ))}
                 </div>
               </div>
+
               <div>
                 <div className="p-sec">Map Style</div>
                 <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-                  {Object.entries(mapTypes).map(([k,v]) => (
-                    <button key={k} className={`p-item${mapType===k?" sel":""}`} onClick={()=>{setMapType(k);say(`${v.name} map`);}} aria-pressed={mapType===k}>
-                      <div className="p-ico">{v.icon}</div>
-                      <div className="p-name">{v.name}</div>
-                      {mapType===k && <span style={{marginLeft:"auto",color:"var(--cyan)",fontSize:"12px"}}>✓</span>}
-                    </button>
-                  ))}
+                  {Object.entries(mapTypes).map(([k, v]) => {
+                    const MIcon = MAP_TYPE_ICONS[k] || Layers;
+                    return (
+                      <button key={k} className={`p-item${mapType === k ? " sel" : ""}`} onClick={() => { setMapType(k); say(`${v.name} map`); }} aria-pressed={mapType === k}>
+                        <div className="p-ico"><MIcon size={15} /></div>
+                        <div className="p-name">{v.name}</div>
+                        {mapType === k && <span style={{marginLeft:"auto",color:"var(--wood)"}}><ChevronRight size={14} /></span>}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+
               <div>
                 <div className="p-sec">Route Preferences</div>
                 <div className="ag">
-                  {[
-                    {k:"avoidStairs",i:"🪜",l:"Avoid Stairs"},{k:"elevatorAccess",i:"🛗",l:"Elevator"},
-                    {k:"avoidHighways",i:"🛣️",l:"No Highways"},{k:"wellLit",i:"💡",l:"Well-lit"},
-                    {k:"quietRoads",i:"🤫",l:"Quiet Roads"},{k:"avoidCrowds",i:"👥",l:"Low Crowds"},
-                  ].map(f => (
-                    <button key={f.k} className="ab" aria-label={f.l}>
-                      <span className="ab-i">{f.i}</span><span className="ab-l">{f.l}</span><span className="ab-c" aria-hidden="true"></span>
+                  {PREF_FEATS.map(f => (
+                    <button key={f.k} className={`ab${prefs[f.k] ? " on" : ""}`}
+                      onClick={() => setPrefs(p => ({ ...p, [f.k]: !p[f.k] }))}
+                      aria-pressed={!!prefs[f.k]} aria-label={f.l}
+                    >
+                      <span className="ab-i"><f.Icon size={14} /></span>
+                      <span className="ab-l">{f.l}</span>
+                      <span className="ab-c" aria-hidden="true">{prefs[f.k] ? "✓" : ""}</span>
                     </button>
                   ))}
                 </div>
               </div>
             </>)}
+
           </div>
         </aside>
 
-        {/* SEARCH CARD */}
+        {/* ── SEARCH CARD ──────────────────────── */}
         <div className="sc" role="search" aria-label="Route planner">
+          <div className="sc-head">
+            <Route size={16} style={{color:"var(--wood)",flexShrink:0}} />
+            <div className="sc-brand">Access<span>Route</span></div>
+          </div>
+
           <div className="sc-inputs">
             {/* FROM */}
             <div className="rr">
               <span className="rr-dot rr-dot-g" aria-hidden="true" />
-              <input type="text" value={fromVal} onChange={e=>setFromVal(e.target.value)} className="ri" placeholder="Your starting point" aria-label="Starting location" autoComplete="off" />
-              <button className="ri-side-btn" onClick={getGPS} aria-label="Use my GPS location" title="Use GPS">📍</button>
+              <input
+                type="text" value={fromVal}
+                onChange={e => setFromVal(e.target.value)}
+                className="ri" placeholder="Your starting point"
+                aria-label="Starting location" autoComplete="off"
+              />
+              <button className="ri-btn" onClick={getGPS} aria-label="Use GPS location" title="Use my location">
+                <Crosshair size={12} />
+              </button>
             </div>
 
             <div className="ri-conn" aria-hidden="true">
@@ -686,42 +858,52 @@ export default function AccessibleMap() {
                 <span className="rr-dot rr-dot-r" aria-hidden="true" />
                 <input
                   ref={destRef} type="text" value={toVal}
-                  onChange={e=>{setToVal(e.target.value);searchPlaces(e.target.value);}}
+                  onChange={e => { setToVal(e.target.value); searchPlaces(e.target.value); }}
                   className="ri" placeholder="Address, place or business…"
                   aria-label="Destination" aria-autocomplete="list"
                   aria-controls="ac-list" aria-expanded={suggOpen}
-                  onKeyDown={destKD} onFocus={()=>sugg.length>0&&setSuggOpen(true)}
+                  onKeyDown={destKD}
+                  onFocus={() => sugg.length > 0 && setSuggOpen(true)}
                   autoComplete="off"
                 />
-                {suggLoad && <div style={{position:"absolute",right:"10px",top:"50%",transform:"translateY(-50%)"}}>
-                  <div className="spn" aria-hidden="true"/>
-                </div>}
+                {suggLoad && (
+                  <div style={{position:"absolute",right:"9px",top:"50%",transform:"translateY(-50%)"}}>
+                    <div className="spn" aria-hidden="true" />
+                  </div>
+                )}
                 {toVal && !suggLoad && (
-                  <button className="ri-side-btn" tabIndex={-1}
-                    onClick={()=>{setToVal("");setSugg([]);setSuggOpen(false);destRef.current?.focus();}}
-                    aria-label="Clear destination">✕</button>
+                  <button className="ri-btn" tabIndex={-1}
+                    onClick={() => { setToVal(""); setSugg([]); setSuggOpen(false); destRef.current?.focus(); }}
+                    aria-label="Clear destination"
+                  >
+                    <X size={11} />
+                  </button>
                 )}
               </div>
 
               {suggOpen && (
                 <div ref={suggRef} className="ac-drop" id="ac-list" role="listbox" aria-label="Location suggestions">
-                  <div className="ac-hd">📍 Suggestions</div>
-                  {suggLoad && sugg.length===0
-                    ? <div className="ac-wait"><div className="spn" aria-hidden="true"/>Searching…</div>
-                    : sugg.map((s,i) => (
-                        <button key={s.id||i} className={`ac-row${hiIdx===i?" hi":""}`}
-                          role="option" aria-selected={hiIdx===i}
-                          onMouseDown={e=>{e.preventDefault();pickSugg(s);}}
-                          onMouseEnter={()=>setHiIdx(i)}
-                        >
-                          <div className="ac-ico" aria-hidden="true">{getCatIco(s.category)}</div>
-                          <div style={{flex:1,minWidth:0}}>
-                            <div className="ac-name">{s.name}</div>
-                            {s.address && s.address!==s.name && <div className="ac-addr">{s.address}</div>}
-                          </div>
-                          {s.category && <div className="ac-tag">{s.category.split(" ")[0]}</div>}
-                        </button>
-                      ))
+                  <div className="ac-hd"><MapPin size={10} /> Suggestions</div>
+                  {suggLoad && sugg.length === 0
+                    ? <div className="ac-wait"><div className="spn" aria-hidden="true" />Searching…</div>
+                    : sugg.map((s, i) => {
+                        const CIcon = getCatIcon(s.category);
+                        return (
+                          <button key={s.id || i}
+                            className={`ac-row${hiIdx === i ? " hi" : ""}`}
+                            role="option" aria-selected={hiIdx === i}
+                            onMouseDown={e => { e.preventDefault(); pickSugg(s); }}
+                            onMouseEnter={() => setHiIdx(i)}
+                          >
+                            <div className="ac-ico"><CIcon size={13} /></div>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div className="ac-name">{s.name}</div>
+                              {s.address && s.address !== s.name && <div className="ac-addr">{s.address}</div>}
+                            </div>
+                            {s.category && <div className="ac-tag">{s.category.split(" ")[0]}</div>}
+                          </button>
+                        );
+                      })
                   }
                 </div>
               )}
@@ -730,39 +912,52 @@ export default function AccessibleMap() {
 
           {/* TRAVEL MODES */}
           <div className="sc-modes" role="radiogroup" aria-label="Travel mode">
-            {[{id:"walk",i:"🚶",l:"Walk"},{id:"transit",i:"🚌",l:"Transit"},{id:"wheelchair",i:"♿",l:"Access"}].map(t=>(
-              <button key={t.id} className={`mp${mode===t.id?" on":""}`}
-                onClick={()=>{setMode(t.id);setRoutePath([]);setDest(null);setRouteInfo(null);say(`${t.l} mode`);}}
-                aria-pressed={mode===t.id} aria-label={`${t.l} mode`}
+            {[
+              { id: "walk",        Icon: PersonStanding, l: "Walk" },
+              { id: "transit",     Icon: Bus,            l: "Transit" },
+              { id: "wheelchair",  Icon: Accessibility,  l: "Access" },
+            ].map(t => (
+              <button key={t.id}
+                className={`mp${mode === t.id ? " on" : ""}`}
+                onClick={() => { setMode(t.id); setRoutePath([]); setDest(null); setRouteInfo(null); say(`${t.l} mode`); }}
+                aria-pressed={mode === t.id} aria-label={`${t.l} mode`}
               >
-                <span className="mp-i">{t.i}</span>
+                <span className="mp-i"><t.Icon size={18} /></span>
                 <span className="mp-l">{t.l}</span>
               </button>
             ))}
           </div>
 
-          {/* FIND ROUTE */}
-          <button className="sc-find" onClick={calcRoute} disabled={!toVal.trim()||isLoading} aria-label="Find accessible route">
-            {isLoading ? <><div className="spn2" aria-hidden="true"/>Calculating…</> : <><span>🔍</span>Find Safe Route</>}
+          {/* FIND ROUTE BUTTON */}
+          <button
+            className="sc-find"
+            onClick={calcRoute}
+            disabled={!toVal.trim() || isLoading}
+            aria-label="Find accessible route"
+          >
+            {isLoading
+              ? <><div className="spn2" aria-hidden="true" /> Calculating…</>
+              : <><Search size={15} /> Find Safe Route</>
+            }
           </button>
 
           {/* LEGEND */}
-          <button className="sc-leg-btn" onClick={()=>setLegendOpen(o=>!o)} aria-expanded={legendOpen}>
+          <button className="sc-leg-btn" onClick={() => setLegendOpen(o => !o)} aria-expanded={legendOpen}>
             <span className="sc-leg-lbl">Map Legend</span>
-            <span className={`sc-leg-chv${legendOpen?" open":""}`} aria-hidden="true">▼</span>
+            <ChevronDown size={13} className={`leg-chv${legendOpen ? " open" : ""}`} aria-hidden="true" />
           </button>
           {legendOpen && (
             <div className="sc-leg-body" role="list">
               {[
-                {color:"#38bdf8",label:"Accessible Route",dash:true},
-                {color:"#34d399",label:"Walking Route",dash:false},
-                {color:"#fbbf24",label:"Hazard / Construction",dot:true},
-                {color:"#f87171",label:"Avoid Zone",dot:true},
-              ].map(item=>(
+                { color: "#e8a870", label: "Accessible Route", dash: true },
+                { color: "#8cd69c", label: "Walking Route",    dash: false },
+                { color: "#ffb347", label: "Hazard / Construction", dot: true },
+                { color: "#ff7b6b", label: "Avoid Zone",       dot: true },
+              ].map(item => (
                 <div key={item.label} className="leg-row" role="listitem">
                   {item.dot
-                    ? <div style={{width:"9px",height:"9px",borderRadius:"50%",background:item.color,flexShrink:0,boxShadow:`0 0 5px ${item.color}`}} aria-hidden="true"/>
-                    : <div style={{width:"28px",height:"3px",borderRadius:"2px",flexShrink:0,background:item.dash?`repeating-linear-gradient(90deg,${item.color} 0,${item.color} 6px,transparent 6px,transparent 10px)`:item.color}} aria-hidden="true"/>
+                    ? <div style={{width:"9px",height:"9px",borderRadius:"50%",background:item.color,flexShrink:0,boxShadow:`0 0 5px ${item.color}`}} aria-hidden="true" />
+                    : <div style={{width:"28px",height:"3px",borderRadius:"2px",flexShrink:0,background:item.dash?`repeating-linear-gradient(90deg,${item.color} 0,${item.color} 6px,transparent 6px,transparent 10px)`:item.color}} aria-hidden="true" />
                   }
                   <span className="leg-lbl">{item.label}</span>
                 </div>
@@ -771,36 +966,66 @@ export default function AccessibleMap() {
           )}
         </div>
 
-        {/* MAP TYPE BAR */}
+        {/* ── MAP TYPE BAR ─────────────────────── */}
         <div className="mt-bar" role="radiogroup" aria-label="Map style">
-          {Object.entries(mapTypes).map(([k,v])=>(
-            <button key={k} className={`mt-btn${mapType===k?" on":""}`} onClick={()=>{setMapType(k);say(`${v.name} map`);}} aria-pressed={mapType===k} title={v.name}>
-              {v.icon} {v.name}
-            </button>
-          ))}
+          {Object.entries(mapTypes).map(([k, v]) => {
+            const MIcon = MAP_TYPE_ICONS[k] || Layers;
+            return (
+              <button key={k}
+                className={`mt-btn${mapType === k ? " on" : ""}`}
+                onClick={() => { setMapType(k); say(`${v.name} map`); }}
+                aria-pressed={mapType === k} title={v.name}
+              >
+                <MIcon size={12} /> {v.name}
+              </button>
+            );
+          })}
         </div>
 
-        {/* MAP CONTROLS */}
+        {/* ── MAP CONTROLS ─────────────────────── */}
         <div className="mctrl">
-          <button className="mc" onClick={()=>setZoom(z=>{const n=Math.min(z+1,18);say(`Zoom ${n}`);return n;})} aria-label="Zoom in">+</button>
-          <div className="mc-z" aria-label={`Zoom ${zoom}`}>{zoom}×</div>
-          <button className="mc" onClick={()=>setZoom(z=>{const n=Math.max(z-1,10);say(`Zoom ${n}`);return n;})} aria-label="Zoom out">−</button>
+          <button className="mc" onClick={() => setZoom(z => { const n = Math.min(z+1,18); say(`Zoom ${n}`); return n; })} aria-label="Zoom in">
+            <Plus size={16} />
+          </button>
+          <div className="mc-z" aria-label={`Zoom level ${zoom}`}>{zoom}×</div>
+          <button className="mc" onClick={() => setZoom(z => { const n = Math.max(z-1,10); say(`Zoom ${n}`); return n; })} aria-label="Zoom out">
+            <Minus size={16} />
+          </button>
         </div>
 
-        {/* ROUTE INFO */}
+        {/* ── ROUTE INFO BAR ───────────────────── */}
         {routeInfo && (
           <div className="rbar" role="region" aria-label="Route information">
-            <div className="rs"><div className="rs-v">{routeInfo.distance}</div><div className="rs-l">Distance</div></div>
-            <div className="rs-d" aria-hidden="true"/>
-            <div className="rs"><div className="rs-v">{routeInfo.duration}</div><div className="rs-l">Est. Time</div></div>
-            <div className="rs-d" aria-hidden="true"/>
-            <div className="rs"><div className="rs-v" style={{color:"var(--green)"}}>♿</div><div className="rs-l">Accessible</div></div>
-            <button className="rs-cl" onClick={()=>{setRoutePath([]);setDest(null);setRouteInfo(null);}} aria-label="Clear route">Clear</button>
+            <div className="rs">
+              <div className="rs-v">{routeInfo.distance}</div>
+              <div className="rs-l">Distance</div>
+            </div>
+            <div className="rs-d" aria-hidden="true" />
+            <div className="rs">
+              <div className="rs-v">{routeInfo.duration}</div>
+              <div className="rs-l">Est. Time</div>
+            </div>
+            <div className="rs-d" aria-hidden="true" />
+            <div className="rs">
+              <div className="rs-v" style={{color:"var(--green)"}}>
+                <Accessibility size={16} />
+              </div>
+              <div className="rs-l">Accessible</div>
+            </div>
+            <button
+              className="rs-cl"
+              onClick={() => { setRoutePath([]); setDest(null); setRouteInfo(null); }}
+              aria-label="Clear route"
+            >
+              Clear
+            </button>
           </div>
         )}
 
-        {/* TOAST */}
-        <div className={`toast${toast?" vis":""}`} role="status" aria-live="polite" aria-atomic="true">{toast}</div>
+        {/* ── TOAST ────────────────────────────── */}
+        <div className={`toast${toast ? " vis" : ""}`} role="status" aria-live="polite" aria-atomic="true">
+          {toast}
+        </div>
       </div>
     </>
   );
