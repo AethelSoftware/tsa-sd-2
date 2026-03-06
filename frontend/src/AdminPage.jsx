@@ -167,480 +167,1496 @@ const AdminPage = () => {
     alert('Model imported successfully!');
   };
 
+  const styles = {
+    container: {
+      minHeight: '100vh',
+      background: '#110a04',
+      padding: '1rem',
+      fontFamily: "'DM Sans', sans-serif"
+    },
+    wrapper: {
+      maxWidth: '1280px',
+      margin: '0 auto'
+    },
+    header: {
+      display: 'flex',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '2rem'
+    },
+    headerTitle: {
+      fontSize: '2rem',
+      fontWeight: 'bold',
+      color: '#ffffff',
+      fontFamily: "'Playfair Display', serif",
+      margin: 0
+    },
+    headerSubtitle: {
+      color: '#e0c8b0',
+      marginTop: '0.5rem',
+      fontSize: '1rem'
+    },
+    statusBadge: {
+      background: 'rgba(28,17,8,0.97)',
+      border: '1px solid rgba(180,120,60,0.16)',
+      borderRadius: '12px',
+      padding: '0.5rem 1rem',
+      backdropFilter: 'blur(28px)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.5rem'
+    },
+    statusDot: (isActive) => ({
+      width: '8px',
+      height: '8px',
+      borderRadius: '50%',
+      background: isActive ? '#8cd69c' : '#ffb347',
+      animation: isActive ? 'pulse 2s infinite' : 'none'
+    }),
+    statusText: {
+      color: '#e0c8b0',
+      fontSize: '0.875rem',
+      fontWeight: 500
+    },
+    refreshButton: {
+      padding: '0.5rem',
+      background: 'rgba(28,17,8,0.97)',
+      border: '1px solid rgba(180,120,60,0.16)',
+      borderRadius: '12px',
+      cursor: 'pointer',
+      color: '#e0c8b0',
+      transition: 'all 0.2s'
+    },
+    statsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gap: '1rem',
+      marginBottom: '2rem'
+    },
+    statCard: {
+      background: 'rgba(28,17,8,0.97)',
+      border: '1px solid rgba(180,120,60,0.16)',
+      borderRadius: '16px',
+      padding: '1.5rem',
+      backdropFilter: 'blur(28px)'
+    },
+    statHeader: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: '1rem'
+    },
+    statIcon: (bg) => ({
+      padding: '0.5rem',
+      background: bg,
+      borderRadius: '8px'
+    }),
+    statValue: {
+      fontSize: '1.5rem',
+      fontWeight: 'bold',
+      color: '#ffffff',
+      fontFamily: "'Playfair Display', serif",
+      margin: 0
+    },
+    statLabel: {
+      color: '#e0c8b0',
+      fontSize: '0.875rem',
+      marginTop: '0.25rem'
+    },
+    mainGrid: {
+      display: 'grid',
+      gridTemplateColumns: '2fr 1fr',
+      gap: '2rem'
+    },
+    card: {
+      background: 'rgba(28,17,8,0.97)',
+      border: '1px solid rgba(180,120,60,0.16)',
+      borderRadius: '16px',
+      backdropFilter: 'blur(28px)',
+      overflow: 'hidden'
+    },
+    tabs: {
+      display: 'flex',
+      borderBottom: '1px solid rgba(180,120,60,0.16)'
+    },
+    tab: (isActive) => ({
+      padding: '1rem 1.5rem',
+      fontSize: '0.875rem',
+      fontWeight: 500,
+      background: 'transparent',
+      border: 'none',
+      cursor: 'pointer',
+      color: isActive ? '#e8a870' : '#e0c8b0',
+      borderBottom: isActive ? '2px solid #e8a870' : 'none',
+      transition: 'color 0.2s'
+    }),
+    cardContent: {
+      padding: '1.5rem'
+    },
+    sectionTitle: {
+      fontSize: '1.125rem',
+      fontWeight: 600,
+      color: '#ffffff',
+      fontFamily: "'Playfair Display', serif",
+      marginBottom: '1rem'
+    },
+    infoRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginBottom: '1rem'
+    },
+    infoLabel: {
+      color: '#e0c8b0'
+    },
+    infoValue: {
+      color: '#ffffff',
+      fontWeight: 500
+    },
+    actionGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gap: '1rem'
+    },
+    actionButton: (isTraining, type) => ({
+      padding: '1rem',
+      borderRadius: '12px',
+      border: '1px solid',
+      background: isTraining 
+        ? 'rgba(232,168,112,0.18)' 
+        : type === 'train' 
+          ? 'rgba(140,214,156,0.15)' 
+          : type === 'incremental'
+            ? 'rgba(232,168,112,0.18)'
+            : type === 'export'
+              ? 'rgba(255,179,71,0.1)'
+              : 'rgba(255,123,107,0.15)',
+      borderColor: isTraining
+        ? '#e8a870'
+        : type === 'train'
+          ? 'rgba(140,214,156,0.3)'
+          : type === 'incremental'
+            ? 'rgba(232,168,112,0.3)'
+            : type === 'export'
+              ? 'rgba(255,179,71,0.3)'
+              : 'rgba(255,123,107,0.3)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '0.5rem',
+      cursor: 'pointer',
+      transition: 'all 0.2s'
+    }),
+    actionIcon: (type) => ({
+      color: type === 'train' 
+        ? '#8cd69c' 
+        : type === 'incremental' 
+          ? '#e8a870' 
+          : type === 'export' 
+            ? '#ffb347' 
+            : '#ff7b6b'
+    }),
+    actionText: (type) => ({
+      fontSize: '0.875rem',
+      fontWeight: 500,
+      color: type === 'train' 
+        ? '#8cd69c' 
+        : type === 'incremental' 
+          ? '#e8a870' 
+          : type === 'export' 
+            ? '#ffb347' 
+            : '#ff7b6b'
+    }),
+    rangeInput: {
+      width: '100%',
+      height: '8px',
+      background: 'rgba(180,120,60,0.16)',
+      borderRadius: '8px',
+      accentColor: '#e8a870'
+    },
+    rangeLabels: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginTop: '0.25rem',
+      fontSize: '0.875rem',
+      color: '#e0c8b0'
+    },
+    select: {
+      width: '100%',
+      background: 'rgba(255,255,255,0.035)',
+      border: '1px solid rgba(180,120,60,0.16)',
+      borderRadius: '8px',
+      padding: '0.5rem 1rem',
+      color: '#ffffff',
+      outline: 'none'
+    },
+    checkbox: {
+      marginRight: '0.5rem',
+      accentColor: '#e8a870'
+    },
+    startButton: (isTraining) => ({
+      width: '100%',
+      padding: '0.75rem 1rem',
+      borderRadius: '8px',
+      border: 'none',
+      fontWeight: 600,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '0.5rem',
+      cursor: isTraining ? 'not-allowed' : 'pointer',
+      background: isTraining 
+        ? 'rgba(232,168,112,0.18)' 
+        : 'linear-gradient(135deg, #c06c30, #e89c60)',
+      color: isTraining ? '#e8a870' : '#ffffff',
+      transition: 'all 0.2s'
+    }),
+    metricsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gap: '1rem',
+      marginBottom: '1rem'
+    },
+    metricCard: (bg, border) => ({
+      background: bg,
+      padding: '1rem',
+      borderRadius: '12px',
+      border: `1px solid ${border}`
+    }),
+    metricValue: {
+      fontSize: '1.5rem',
+      fontWeight: 'bold',
+      fontFamily: "'Playfair Display', serif"
+    },
+    progressBar: {
+      height: '8px',
+      background: 'rgba(180,120,60,0.16)',
+      borderRadius: '4px',
+      overflow: 'hidden',
+      marginTop: '0.5rem'
+    },
+    progressFill: (width) => ({
+      height: '100%',
+      background: 'linear-gradient(90deg, #e8a870, #ffb347)',
+      width: width,
+      transition: 'width 0.3s'
+    }),
+    historyList: {
+      maxHeight: '384px',
+      overflowY: 'auto'
+    },
+    historyItem: {
+      padding: '0.75rem',
+      border: '1px solid rgba(180,120,60,0.16)',
+      borderRadius: '8px',
+      marginBottom: '0.75rem',
+      transition: 'background 0.2s'
+    },
+    historyHeader: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: '0.5rem'
+    },
+    historyStatus: (status) => ({
+      width: '8px',
+      height: '8px',
+      borderRadius: '50%',
+      background: status === 'completed' ? '#8cd69c' : status === 'failed' ? '#ff7b6b' : '#ffb347'
+    }),
+    historyDate: {
+      fontSize: '0.875rem',
+      fontWeight: 500,
+      color: '#ffffff'
+    },
+    historyDuration: {
+      fontSize: '0.75rem',
+      fontWeight: 600,
+      padding: '0.25rem 0.5rem',
+      borderRadius: '9999px',
+      background: 'rgba(232,168,112,0.18)',
+      color: '#e8a870'
+    },
+    historyDetails: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      fontSize: '0.875rem'
+    },
+    footer: {
+      marginTop: '2rem',
+      paddingTop: '2rem',
+      borderTop: '1px solid rgba(180,120,60,0.16)',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      color: '#e0c8b0',
+      fontSize: '0.875rem'
+    },
+    footerLinks: {
+      display: 'flex',
+      gap: '1rem'
+    },
+    footerLink: {
+      background: 'none',
+      border: 'none',
+      color: '#e0c8b0',
+      cursor: 'pointer',
+      transition: 'color 0.2s'
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">AI Model Management</h1>
-            <p className="text-slate-600 mt-2">Monitor, train, and optimize your safety prediction model</p>
-          </div>
-          <div className="flex items-center space-x-4 mt-4 md:mt-0">
-            <div className="bg-white rounded-xl px-4 py-2 border border-slate-200 shadow-sm">
-              <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${modelStatus?.is_trained ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}></div>
-                <span className="text-sm font-medium">
+    <>
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap');
+          
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+          }
+
+          .admin-container {
+            min-height: 100vh;
+            background: #110a04;
+            padding: 1rem;
+            font-family: 'DM Sans', sans-serif;
+          }
+
+          @media (min-width: 768px) {
+            .admin-container {
+              padding: 2rem;
+            }
+          }
+
+          .admin-wrapper {
+            max-width: 1280px;
+            margin: 0 auto;
+          }
+
+          .admin-header {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+          }
+
+          @media (min-width: 768px) {
+            .admin-header {
+              flex-direction: row;
+              align-items: center;
+            }
+          }
+
+          .admin-title {
+            font-size: 1.875rem;
+            font-weight: bold;
+            color: #ffffff;
+            font-family: 'Playfair Display', serif;
+          }
+
+          .admin-subtitle {
+            color: #e0c8b0;
+            margin-top: 0.5rem;
+          }
+
+          .admin-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+          }
+
+          @media (min-width: 768px) {
+            .admin-header-actions {
+              margin-top: 0;
+            }
+          }
+
+          .status-badge {
+            background: rgba(28,17,8,0.97);
+            border: 1px solid rgba(180,120,60,0.16);
+            border-radius: 12px;
+            padding: 0.5rem 1rem;
+            backdrop-filter: blur(28px);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+          }
+
+          .status-dot-active {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #8cd69c;
+            animation: pulse 2s infinite;
+          }
+
+          .status-dot-inactive {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ffb347;
+          }
+
+          .status-text {
+            color: #e0c8b0;
+            font-size: 0.875rem;
+            font-weight: 500;
+          }
+
+          .refresh-button {
+            padding: 0.5rem;
+            background: rgba(28,17,8,0.97);
+            border: 1px solid rgba(180,120,60,0.16);
+            border-radius: 12px;
+            cursor: pointer;
+            color: #e0c8b0;
+            transition: all 0.2s;
+          }
+
+          .refresh-button:hover {
+            background: rgba(232,168,112,0.18);
+          }
+
+          .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+          }
+
+          @media (min-width: 640px) {
+            .stats-grid {
+              grid-template-columns: repeat(2, 1fr);
+            }
+          }
+
+          @media (min-width: 1024px) {
+            .stats-grid {
+              grid-template-columns: repeat(4, 1fr);
+            }
+          }
+
+          .stat-card {
+            background: rgba(28,17,8,0.97);
+            border: 1px solid rgba(180,120,60,0.16);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(28px);
+          }
+
+          .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+          }
+
+          .stat-icon-blue {
+            padding: 0.5rem;
+            background: rgba(232,168,112,0.18);
+            border-radius: 8px;
+            color: #e8a870;
+          }
+
+          .stat-icon-green {
+            padding: 0.5rem;
+            background: rgba(140,214,156,0.15);
+            border-radius: 8px;
+            color: #8cd69c;
+          }
+
+          .stat-icon-red {
+            padding: 0.5rem;
+            background: rgba(255,123,107,0.15);
+            border-radius: 8px;
+            color: #ff7b6b;
+          }
+
+          .stat-icon-amber {
+            padding: 0.5rem;
+            background: rgba(255,179,71,0.1);
+            border-radius: 8px;
+            color: #ffb347;
+          }
+
+          .stat-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+          }
+
+          .stat-badge-active {
+            background: rgba(140,214,156,0.15);
+            color: #8cd69c;
+          }
+
+          .stat-badge-inactive {
+            background: rgba(255,179,71,0.1);
+            color: #ffb347;
+          }
+
+          .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffffff;
+            font-family: 'Playfair Display', serif;
+          }
+
+          .stat-label {
+            color: #e0c8b0;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+          }
+
+          .main-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+          }
+
+          @media (min-width: 1024px) {
+            .main-grid {
+              grid-template-columns: 2fr 1fr;
+            }
+          }
+
+          .card {
+            background: rgba(28,17,8,0.97);
+            border: 1px solid rgba(180,120,60,0.16);
+            border-radius: 16px;
+            backdrop-filter: blur(28px);
+            overflow: hidden;
+          }
+
+          .tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(180,120,60,0.16);
+          }
+
+          .tab {
+            padding: 1rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #e0c8b0;
+            transition: color 0.2s;
+          }
+
+          .tab:hover {
+            color: #ffffff;
+          }
+
+          .tab.active {
+            color: #e8a870;
+            border-bottom: 2px solid #e8a870;
+          }
+
+          .card-content {
+            padding: 1.5rem;
+          }
+
+          .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #ffffff;
+            font-family: 'Playfair Display', serif;
+            margin-bottom: 1rem;
+          }
+
+          .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+          }
+
+          .info-label {
+            color: #e0c8b0;
+          }
+
+          .info-value {
+            color: #ffffff;
+            font-weight: 500;
+          }
+
+          .action-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+          }
+
+          .action-button {
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .action-button.train {
+            background: rgba(140,214,156,0.15);
+            border-color: rgba(140,214,156,0.3);
+          }
+
+          .action-button.train:hover {
+            background: rgba(140,214,156,0.25);
+          }
+
+          .action-button.incremental {
+            background: rgba(232,168,112,0.18);
+            border-color: rgba(232,168,112,0.3);
+          }
+
+          .action-button.incremental:hover {
+            background: rgba(232,168,112,0.25);
+          }
+
+          .action-button.export {
+            background: rgba(255,179,71,0.1);
+            border-color: rgba(255,179,71,0.3);
+          }
+
+          .action-button.export:hover {
+            background: rgba(255,179,71,0.18);
+          }
+
+          .action-button.import {
+            background: rgba(255,123,107,0.15);
+            border-color: rgba(255,123,107,0.3);
+          }
+
+          .action-button.import:hover {
+            background: rgba(255,123,107,0.25);
+          }
+
+          .action-button.training {
+            background: rgba(232,168,112,0.18);
+            border-color: #e8a870;
+          }
+
+          .action-icon-train { color: #8cd69c; }
+          .action-icon-incremental { color: #e8a870; }
+          .action-icon-export { color: #ffb347; }
+          .action-icon-import { color: #ff7b6b; }
+
+          .action-text-train { color: #8cd69c; }
+          .action-text-incremental { color: #e8a870; }
+          .action-text-export { color: #ffb347; }
+          .action-text-import { color: #ff7b6b; }
+
+          .training-config {
+            margin-bottom: 1rem;
+          }
+
+          .config-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #e0c8b0;
+            margin-bottom: 0.5rem;
+          }
+
+          .range-input {
+            width: 100%;
+            height: 8px;
+            background: rgba(180,120,60,0.16);
+            border-radius: 8px;
+            accent-color: #e8a870;
+          }
+
+          .range-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: #e0c8b0;
+          }
+
+          .range-value {
+            color: #ffffff;
+            font-weight: 500;
+          }
+
+          .select-input {
+            width: 100%;
+            background: rgba(255,255,255,0.035);
+            border: 1px solid rgba(180,120,60,0.16);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            color: #ffffff;
+            outline: none;
+          }
+
+          .select-input:focus {
+            ring: 2px solid #e8a870;
+          }
+
+          .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+          }
+
+          .checkbox-input {
+            accent-color: #e8a870;
+          }
+
+          .checkbox-label {
+            font-size: 0.875rem;
+            color: #e0c8b0;
+          }
+
+          .start-button {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .start-button.idle {
+            background: linear-gradient(135deg, #c06c30, #e89c60);
+            color: #ffffff;
+          }
+
+          .start-button.idle:hover {
+            box-shadow: 0 4px 20px rgba(232,168,112,0.25);
+            filter: brightness(1.1);
+          }
+
+          .start-button.training {
+            background: rgba(232,168,112,0.18);
+            color: #e8a870;
+            cursor: not-allowed;
+          }
+
+          .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+          }
+
+          .metric-card-amber {
+            background: rgba(232,168,112,0.18);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(232,168,112,0.3);
+          }
+
+          .metric-card-green {
+            background: rgba(140,214,156,0.15);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(140,214,156,0.3);
+          }
+
+          .metric-card-yellow {
+            background: rgba(255,179,71,0.1);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255,179,71,0.3);
+          }
+
+          .metric-value-amber { color: #e8a870; }
+          .metric-value-green { color: #8cd69c; }
+          .metric-value-yellow { color: #ffb347; }
+
+          .metric-title {
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+          }
+
+          .metric-title-amber { color: #e8a870; }
+          .metric-title-green { color: #8cd69c; }
+          .metric-title-yellow { color: #ffb347; }
+
+          .metric-subtitle {
+            font-size: 0.75rem;
+            color: #e0c8b0;
+            margin-top: 0.25rem;
+          }
+
+          .performance-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+          }
+
+          .performance-label {
+            color: #e0c8b0;
+          }
+
+          .performance-value {
+            color: #ffffff;
+            font-weight: 500;
+          }
+
+          .progress-bar {
+            height: 8px;
+            background: rgba(180,120,60,0.16);
+            border-radius: 4px;
+            overflow: hidden;
+          }
+
+          .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e8a870, #ffb347);
+            transition: width 0.3s;
+          }
+
+          .empty-state {
+            text-align: center;
+            padding: 2rem 0;
+            color: #e0c8b0;
+          }
+
+          .history-list {
+            max-height: 384px;
+            overflow-y: auto;
+          }
+
+          .history-item {
+            padding: 0.75rem;
+            border: 1px solid rgba(180,120,60,0.16);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            transition: background 0.2s;
+          }
+
+          .history-item:hover {
+            background: rgba(232,168,112,0.18);
+          }
+
+          .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+          }
+
+          .history-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+          }
+
+          .status-dot-completed {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #8cd69c;
+          }
+
+          .status-dot-failed {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff7b6b;
+          }
+
+          .status-dot-pending {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ffb347;
+          }
+
+          .history-date {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #ffffff;
+          }
+
+          .history-duration {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            background: rgba(232,168,112,0.18);
+            color: #e8a870;
+          }
+
+          .history-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+          }
+
+          .history-params {
+            color: #e0c8b0;
+          }
+
+          .history-accuracy {
+            color: #ffffff;
+            font-weight: 500;
+          }
+
+          .model-actions {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(180,120,60,0.16);
+          }
+
+          .model-actions-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #ffffff;
+            margin-bottom: 0.75rem;
+          }
+
+          .model-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+          }
+
+          .model-action-button {
+            padding: 0.5rem;
+            font-size: 0.875rem;
+            border: 1px solid rgba(180,120,60,0.16);
+            border-radius: 8px;
+            background: transparent;
+            color: #e0c8b0;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+          }
+
+          .model-action-button:hover {
+            background: rgba(232,168,112,0.18);
+          }
+
+          .model-action-button.restart {
+            background: linear-gradient(135deg, #c06c30, #e89c60);
+            color: #ffffff;
+            border: none;
+          }
+
+          .model-action-button.restart:hover {
+            box-shadow: 0 4px 20px rgba(232,168,112,0.25);
+          }
+
+          .footer {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(180,120,60,0.16);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            color: #e0c8b0;
+            font-size: 0.875rem;
+          }
+
+          @media (min-width: 768px) {
+            .footer {
+              flex-direction: row;
+            }
+          }
+
+          .footer-info p {
+            margin: 0;
+          }
+
+          .footer-info p:first-child {
+            margin-bottom: 0.25rem;
+          }
+
+          .footer-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+          }
+
+          @media (min-width: 768px) {
+            .footer-links {
+              margin-top: 0;
+            }
+          }
+
+          .footer-link {
+            background: none;
+            border: none;
+            color: #e0c8b0;
+            cursor: pointer;
+            transition: color 0.2s;
+          }
+
+          .footer-link:hover {
+            color: #ffffff;
+          }
+        `}
+      </style>
+
+      <div className="admin-container">
+        <div className="admin-wrapper">
+          {/* Header */}
+          <div className="admin-header">
+            <div>
+              <h1 className="admin-title">AI Model Management</h1>
+              <p className="admin-subtitle">Monitor, train, and optimize your safety prediction model</p>
+            </div>
+            <div className="admin-header-actions">
+              <div className="status-badge">
+                <div className={modelStatus?.is_trained ? 'status-dot-active' : 'status-dot-inactive'}></div>
+                <span className="status-text">
                   {modelStatus?.is_trained ? 'Model Active' : 'Model Inactive'}
                 </span>
               </div>
+              <button
+                onClick={fetchModelStatus}
+                className="refresh-button"
+                title="Refresh status"
+              >
+                <RefreshCw size={20} />
+              </button>
             </div>
-            <button
-              onClick={fetchModelStatus}
-              className="p-2 bg-white rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors"
-              title="Refresh status"
-            >
-              <RefreshCw className="h-5 w-5 text-slate-600" />
-            </button>
           </div>
-        </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Brain className="h-6 w-6 text-blue-600" />
+          {/* Stats Overview */}
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-header">
+                <div className="stat-icon-blue">
+                  <Brain size={24} />
+                </div>
+                <span className={`stat-badge ${modelStatus?.is_trained ? 'stat-badge-active' : 'stat-badge-inactive'}`}>
+                  {modelStatus?.is_trained ? 'Active' : 'Inactive'}
+                </span>
               </div>
-              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                modelStatus?.is_trained ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-              }`}>
-                {modelStatus?.is_trained ? 'Active' : 'Inactive'}
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-slate-900">
-              {modelMetrics ? `${(modelMetrics.test_score * 100).toFixed(1)}%` : 'N/A'}
-            </h3>
-            <p className="text-sm text-slate-600">Model Accuracy</p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-emerald-100 rounded-lg">
-                <Database className="h-6 w-6 text-emerald-600" />
+              <div className="stat-value">
+                {modelMetrics ? `${(modelMetrics.test_score * 100).toFixed(1)}%` : 'N/A'}
               </div>
+              <div className="stat-label">Model Accuracy</div>
             </div>
-            <h3 className="text-2xl font-bold text-slate-900">
-              {modelMetrics?.n_samples?.toLocaleString() || '0'}
-            </h3>
-            <p className="text-sm text-slate-600">Training Samples</p>
-          </div>
 
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Cpu className="h-6 w-6 text-purple-600" />
+            <div className="stat-card">
+              <div className="stat-header">
+                <div className="stat-icon-green">
+                  <Database size={24} />
+                </div>
               </div>
-            </div>
-            <h3 className="text-2xl font-bold text-slate-900">
-              {modelMetrics?.n_features || '0'}
-            </h3>
-            <p className="text-sm text-slate-600">Features Used</p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-amber-100 rounded-lg">
-                <Clock className="h-6 w-6 text-amber-600" />
+              <div className="stat-value">
+                {modelMetrics?.n_samples?.toLocaleString() || '0'}
               </div>
+              <div className="stat-label">Training Samples</div>
             </div>
-            <h3 className="text-2xl font-bold text-slate-900">
-              {trainingHistory.length}
-            </h3>
-            <p className="text-sm text-slate-600">Training Sessions</p>
-          </div>
-        </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Training Control */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              {/* Tabs */}
-              <div className="border-b border-slate-200">
-                <div className="flex">
+            <div className="stat-card">
+              <div className="stat-header">
+                <div className="stat-icon-red">
+                  <Cpu size={24} />
+                </div>
+              </div>
+              <div className="stat-value">
+                {modelMetrics?.n_features || '0'}
+              </div>
+              <div className="stat-label">Features Used</div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-header">
+                <div className="stat-icon-amber">
+                  <Clock size={24} />
+                </div>
+              </div>
+              <div className="stat-value">
+                {trainingHistory.length}
+              </div>
+              <div className="stat-label">Training Sessions</div>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="main-grid">
+            {/* Left Column - Training Control */}
+            <div className="lg:col-span-2">
+              <div className="card">
+                {/* Tabs */}
+                <div className="tabs">
                   {['overview', 'training', 'analytics'].map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
-                      className={`px-6 py-4 font-medium text-sm transition-colors ${
-                        activeTab === tab
-                          ? 'text-emerald-600 border-b-2 border-emerald-600'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
+                      className={`tab ${activeTab === tab ? 'active' : ''}`}
                     >
                       {tab.charAt(0).toUpperCase() + tab.slice(1)}
                     </button>
                   ))}
                 </div>
-              </div>
 
-              {/* Tab Content */}
-              <div className="p-6">
-                {activeTab === 'overview' && (
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-semibold text-slate-900 mb-4">Model Overview</h3>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-700">Model Type</span>
-                          <span className="font-medium">Stacking Ensemble</span>
+                {/* Tab Content */}
+                <div className="card-content">
+                  {activeTab === 'overview' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                      <div>
+                        <h3 className="section-title">Model Overview</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          <div className="info-row">
+                            <span className="info-label">Model Type</span>
+                            <span className="info-value">Stacking Ensemble</span>
+                          </div>
+                          <div className="info-row">
+                            <span className="info-label">Base Models</span>
+                            <span className="info-value">Random Forest, Gradient Boosting, Ridge</span>
+                          </div>
+                          <div className="info-row">
+                            <span className="info-label">Final Estimator</span>
+                            <span className="info-value">Neural Network (MLP)</span>
+                          </div>
+                          <div className="info-row">
+                            <span className="info-label">Last Training</span>
+                            <span className="info-value">
+                              {modelMetrics?.training_time 
+                                ? new Date(modelMetrics.training_time).toLocaleDateString()
+                                : 'N/A'}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-700">Base Models</span>
-                          <span className="font-medium">Random Forest, Gradient Boosting, Ridge</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-700">Final Estimator</span>
-                          <span className="font-medium">Neural Network (MLP)</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-700">Last Training</span>
-                          <span className="font-medium">
-                            {modelMetrics?.training_time 
-                              ? new Date(modelMetrics.training_time).toLocaleDateString()
-                              : 'N/A'}
-                          </span>
+                      </div>
+
+                      <div>
+                        <h3 className="section-title">Quick Actions</h3>
+                        <div className="action-grid">
+                          <button
+                            onClick={trainModel}
+                            disabled={isTraining}
+                            className={`action-button ${isTraining ? 'training' : 'train'}`}
+                          >
+                            {isTraining ? (
+                              <>
+                                <RefreshCw size={24} style={{ color: '#e8a870', animation: 'spin 1s linear infinite' }} />
+                                <span style={{ color: '#e8a870', fontSize: '0.875rem', fontWeight: 500 }}>
+                                  Training {trainingProgress}%
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <Zap size={24} style={{ color: '#8cd69c' }} />
+                                <span style={{ color: '#8cd69c', fontSize: '0.875rem', fontWeight: 500 }}>Train Model</span>
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={incrementalTrain}
+                            className="action-button incremental"
+                          >
+                            <TrendingUp size={24} style={{ color: '#e8a870' }} />
+                            <span style={{ color: '#e8a870', fontSize: '0.875rem', fontWeight: 500 }}>Incremental Train</span>
+                          </button>
+                          <button
+                            onClick={exportModel}
+                            className="action-button export"
+                          >
+                            <Download size={24} style={{ color: '#ffb347' }} />
+                            <span style={{ color: '#ffb347', fontSize: '0.875rem', fontWeight: 500 }}>Export Model</span>
+                          </button>
+                          <button
+                            onClick={importModel}
+                            className="action-button import"
+                          >
+                            <Upload size={24} style={{ color: '#ff7b6b' }} />
+                            <span style={{ color: '#ff7b6b', fontSize: '0.875rem', fontWeight: 500 }}>Import Model</span>
+                          </button>
                         </div>
                       </div>
                     </div>
+                  )}
 
-                    <div>
-                      <h3 className="text-lg font-semibold text-slate-900 mb-4">Quick Actions</h3>
-                      <div className="grid grid-cols-2 gap-4">
+                  {activeTab === 'training' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                      <div>
+                        <h3 className="section-title">Training Configuration</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          <div className="training-config">
+                            <label className="config-label">Number of Loops</label>
+                            <input
+                              type="range"
+                              min="5"
+                              max="30"
+                              step="5"
+                              value={trainingParams.n_loops}
+                              onChange={(e) => setTrainingParams(prev => ({ ...prev, n_loops: parseInt(e.target.value) }))}
+                              className="range-input"
+                            />
+                            <div className="range-labels">
+                              <span>5 (Quick)</span>
+                              <span className="range-value">{trainingParams.n_loops}</span>
+                              <span>30 (Thorough)</span>
+                            </div>
+                          </div>
+
+                          <div className="training-config">
+                            <label className="config-label">Epochs per Loop</label>
+                            <input
+                              type="range"
+                              min="1"
+                              max="10"
+                              value={trainingParams.n_epochs}
+                              onChange={(e) => setTrainingParams(prev => ({ ...prev, n_epochs: parseInt(e.target.value) }))}
+                              className="range-input"
+                            />
+                            <div className="range-labels">
+                              <span>1 (Fast)</span>
+                              <span className="range-value">{trainingParams.n_epochs}</span>
+                              <span>10 (Deep)</span>
+                            </div>
+                          </div>
+
+                          <div className="training-config">
+                            <label className="config-label">Training Samples per Loop</label>
+                            <select
+                              value={trainingParams.n_samples}
+                              onChange={(e) => setTrainingParams(prev => ({ ...prev, n_samples: parseInt(e.target.value) }))}
+                              className="select-input"
+                            >
+                              <option value={1000}>1,000 samples (Light)</option>
+                              <option value={5000}>5,000 samples (Standard)</option>
+                              <option value={10000}>10,000 samples (Heavy)</option>
+                            </select>
+                          </div>
+
+                          <div className="checkbox-wrapper">
+                            <input
+                              type="checkbox"
+                              id="force-retrain"
+                              checked={trainingParams.force_retrain}
+                              onChange={(e) => setTrainingParams(prev => ({ ...prev, force_retrain: e.target.checked }))}
+                              className="checkbox-input"
+                            />
+                            <label htmlFor="force-retrain" className="checkbox-label">
+                              Force retrain even if model exists
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
                         <button
                           onClick={trainModel}
                           disabled={isTraining}
-                          className={`p-4 rounded-xl border transition-all duration-200 flex flex-col items-center justify-center space-y-2 ${
-                            isTraining
-                              ? 'bg-blue-50 border-blue-200'
-                              : 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100'
-                          }`}
+                          className={`start-button ${isTraining ? 'training' : 'idle'}`}
                         >
                           {isTraining ? (
                             <>
-                              <RefreshCw className="h-6 w-6 text-blue-600 animate-spin" />
-                              <span className="text-sm font-medium text-blue-700">
-                                Training {trainingProgress}%
-                              </span>
+                              <RefreshCw size={20} style={{ animation: 'spin 1s linear infinite' }} />
+                              <span>Training {trainingProgress}%</span>
                             </>
                           ) : (
                             <>
-                              <Zap className="h-6 w-6 text-emerald-600" />
-                              <span className="text-sm font-medium text-emerald-700">Train Model</span>
+                              <Play size={20} />
+                              <span>Start Training</span>
                             </>
                           )}
                         </button>
-                        <button
-                          onClick={incrementalTrain}
-                          className="p-4 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors duration-200 flex flex-col items-center justify-center space-y-2"
-                        >
-                          <TrendingUp className="h-6 w-6 text-blue-600" />
-                          <span className="text-sm font-medium text-blue-700">Incremental Train</span>
-                        </button>
-                        <button
-                          onClick={exportModel}
-                          className="p-4 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 transition-colors duration-200 flex flex-col items-center justify-center space-y-2"
-                        >
-                          <Download className="h-6 w-6 text-amber-600" />
-                          <span className="text-sm font-medium text-amber-700">Export Model</span>
-                        </button>
-                        <button
-                          onClick={importModel}
-                          className="p-4 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 transition-colors duration-200 flex flex-col items-center justify-center space-y-2"
-                        >
-                          <Upload className="h-6 w-6 text-purple-600" />
-                          <span className="text-sm font-medium text-purple-700">Import Model</span>
-                        </button>
                       </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'analytics' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                      <div>
+                        <h3 className="section-title">Model Performance</h3>
+                        {modelMetrics ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div className="metrics-grid">
+                              <div className="metric-card-amber">
+                                <div className="stat-value metric-value-amber">
+                                  {(modelMetrics.cv_mean * 100).toFixed(1)}%
+                                </div>
+                                <div className="metric-title-amber">Cross-Validation Score</div>
+                                <div className="metric-subtitle">
+                                  ± {(modelMetrics.cv_std * 100).toFixed(2)}%
+                                </div>
+                              </div>
+                              <div className="metric-card-green">
+                                <div className="stat-value metric-value-green">
+                                  {(modelMetrics.train_score * 100).toFixed(1)}%
+                                </div>
+                                <div className="metric-title-green">Training Score</div>
+                              </div>
+                            </div>
+                            
+                            <div className="metric-card-yellow">
+                              <div className="stat-value metric-value-yellow">
+                                {(modelMetrics.test_score * 100).toFixed(1)}%
+                              </div>
+                              <div className="metric-title-yellow">Test Score (Accuracy)</div>
+                              <div style={{ marginTop: '0.5rem' }}>
+                                <div className="performance-row">
+                                  <span className="performance-label">Model Performance</span>
+                                  <span className="performance-value">
+                                    {modelMetrics.test_score >= 0.8 ? 'Excellent' :
+                                     modelMetrics.test_score >= 0.7 ? 'Good' :
+                                     modelMetrics.test_score >= 0.6 ? 'Acceptable' : 'Needs Improvement'}
+                                  </span>
+                                </div>
+                                <div className="progress-bar">
+                                  <div 
+                                    className="progress-fill"
+                                    style={{ width: `${modelMetrics.test_score * 100}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="empty-state">
+                            No performance metrics available. Train the model first.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - History and Info */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              {/* Training History */}
+              <div className="card">
+                <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(180,120,60,0.16)' }}>
+                  <h3 className="section-title" style={{ marginBottom: 0, display: 'flex', alignItems: 'center' }}>
+                    <Clock size={20} style={{ color: '#ffb347', marginRight: '0.5rem' }} />
+                    Training History
+                  </h3>
+                </div>
+                <div style={{ padding: '1rem', maxHeight: '384px', overflowY: 'auto' }}>
+                  {trainingHistory.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {trainingHistory.map((session) => (
+                        <div key={session.id} className="history-item">
+                          <div className="history-header">
+                            <div className="history-status">
+                              <div className={`status-dot-${session.status === 'completed' ? 'completed' : session.status === 'failed' ? 'failed' : 'pending'}`}></div>
+                              <span className="history-date">
+                                {new Date(session.timestamp).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <span className="history-duration">
+                              {session.duration}
+                            </span>
+                          </div>
+                          <div className="history-details">
+                            <span className="history-params">
+                              {session.n_loops} loops × {session.n_epochs} epochs
+                            </span>
+                            <span className="history-accuracy">
+                              {(session.accuracy * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="empty-state">
+                      No training history available
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Model Information */}
+              <div className="card">
+                <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(180,120,60,0.16)' }}>
+                  <h3 className="section-title" style={{ marginBottom: 0, display: 'flex', alignItems: 'center' }}>
+                    <Settings size={20} style={{ color: '#e0c8b0', marginRight: '0.5rem' }} />
+                    Model Information
+                  </h3>
+                </div>
+                <div style={{ padding: '1rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div className="info-row">
+                      <span className="info-label">Status</span>
+                      <span className={`info-value ${modelStatus?.is_trained ? 'metric-value-green' : 'metric-value-yellow'}`}>
+                        {modelStatus?.is_trained ? 'Ready' : 'Not Trained'}
+                      </span>
+                    </div>
+                    <div className="info-row">
+                      <span className="info-label">Version</span>
+                      <span className="info-value">2.1.0</span>
+                    </div>
+                    <div className="info-row">
+                      <span className="info-label">Storage</span>
+                      <span className="info-value">12.4 MB</span>
+                    </div>
+                    <div className="info-row">
+                      <span className="info-label">Last Updated</span>
+                      <span className="info-value">
+                        {modelMetrics?.training_time 
+                          ? new Date(modelMetrics.training_time).toLocaleDateString()
+                          : 'N/A'}
+                      </span>
                     </div>
                   </div>
-                )}
 
-                {activeTab === 'training' && (
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-semibold text-slate-900 mb-4">Training Configuration</h3>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Number of Loops
-                          </label>
-                          <input
-                            type="range"
-                            min="5"
-                            max="30"
-                            step="5"
-                            value={trainingParams.n_loops}
-                            onChange={(e) => setTrainingParams(prev => ({ ...prev, n_loops: parseInt(e.target.value) }))}
-                            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                          />
-                          <div className="flex justify-between text-sm text-slate-600 mt-1">
-                            <span>5 (Quick)</span>
-                            <span className="font-medium">{trainingParams.n_loops}</span>
-                            <span>30 (Thorough)</span>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Epochs per Loop
-                          </label>
-                          <input
-                            type="range"
-                            min="1"
-                            max="10"
-                            value={trainingParams.n_epochs}
-                            onChange={(e) => setTrainingParams(prev => ({ ...prev, n_epochs: parseInt(e.target.value) }))}
-                            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                          />
-                          <div className="flex justify-between text-sm text-slate-600 mt-1">
-                            <span>1 (Fast)</span>
-                            <span className="font-medium">{trainingParams.n_epochs}</span>
-                            <span>10 (Deep)</span>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Training Samples per Loop
-                          </label>
-                          <select
-                            value={trainingParams.n_samples}
-                            onChange={(e) => setTrainingParams(prev => ({ ...prev, n_samples: parseInt(e.target.value) }))}
-                            className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                          >
-                            <option value={1000}>1,000 samples (Light)</option>
-                            <option value={5000}>5,000 samples (Standard)</option>
-                            <option value={10000}>10,000 samples (Heavy)</option>
-                          </select>
-                        </div>
-
-                        <div className="flex items-center space-x-3">
-                          <input
-                            type="checkbox"
-                            id="force-retrain"
-                            checked={trainingParams.force_retrain}
-                            onChange={(e) => setTrainingParams(prev => ({ ...prev, force_retrain: e.target.checked }))}
-                            className="rounded text-emerald-500 focus:ring-emerald-500"
-                          />
-                          <label htmlFor="force-retrain" className="text-sm text-slate-700">
-                            Force retrain even if model exists
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
+                  <div className="model-actions">
+                    <h4 className="model-actions-title">Model Actions</h4>
+                    <div className="model-actions-grid">
                       <button
-                        onClick={trainModel}
-                        disabled={isTraining}
-                        className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-2 ${
-                          isTraining
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
-                        }`}
+                        onClick={fetchModelStatus}
+                        className="model-action-button"
                       >
-                        {isTraining ? (
-                          <>
-                            <RefreshCw className="h-5 w-5 animate-spin" />
-                            <span>Training {trainingProgress}%</span>
-                          </>
-                        ) : (
-                          <>
-                            <Play className="h-5 w-5" />
-                            <span>Start Training</span>
-                          </>
-                        )}
+                        <RefreshCw size={16} />
+                        <span>Refresh</span>
+                      </button>
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="model-action-button restart"
+                      >
+                        <Activity size={16} />
+                        <span>Restart</span>
                       </button>
                     </div>
                   </div>
-                )}
-
-                {activeTab === 'analytics' && (
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-semibold text-slate-900 mb-4">Model Performance</h3>
-                      {modelMetrics ? (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
-                              <div className="text-2xl font-bold text-blue-700">
-                                {(modelMetrics.cv_mean * 100).toFixed(1)}%
-                              </div>
-                              <div className="text-sm text-blue-600">Cross-Validation Score</div>
-                              <div className="text-xs text-slate-500 mt-1">
-                                ± {(modelMetrics.cv_std * 100).toFixed(2)}%
-                              </div>
-                            </div>
-                            <div className="bg-gradient-to-br from-emerald-50 to-green-50 p-4 rounded-xl border border-emerald-200">
-                              <div className="text-2xl font-bold text-emerald-700">
-                                {(modelMetrics.train_score * 100).toFixed(1)}%
-                              </div>
-                              <div className="text-sm text-emerald-600">Training Score</div>
-                            </div>
-                          </div>
-                          
-                          <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-200">
-                            <div className="text-2xl font-bold text-amber-700">
-                              {(modelMetrics.test_score * 100).toFixed(1)}%
-                            </div>
-                            <div className="text-sm text-amber-600">Test Score (Accuracy)</div>
-                            <div className="mt-2">
-                              <div className="flex items-center justify-between text-sm mb-1">
-                                <span className="text-slate-700">Model Performance</span>
-                                <span className="font-medium">
-                                  {modelMetrics.test_score >= 0.8 ? 'Excellent' :
-                                   modelMetrics.test_score >= 0.7 ? 'Good' :
-                                   modelMetrics.test_score >= 0.6 ? 'Acceptable' : 'Needs Improvement'}
-                                </span>
-                              </div>
-                              <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-gradient-to-r from-emerald-500 to-green-500"
-                                  style={{ width: `${modelMetrics.test_score * 100}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8 text-slate-500">
-                          No performance metrics available. Train the model first.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column - History and Info */}
-          <div className="space-y-8">
-            {/* Training History */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-200">
-                <h3 className="font-semibold text-slate-900 flex items-center">
-                  <Clock className="h-5 w-5 text-amber-600 mr-2" />
-                  Training History
-                </h3>
-              </div>
-              <div className="p-4 max-h-96 overflow-y-auto">
-                {trainingHistory.length > 0 ? (
-                  <div className="space-y-3">
-                    {trainingHistory.map((session) => (
-                      <div key={session.id} className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-2">
-                            <div className={`w-2 h-2 rounded-full ${
-                              session.status === 'completed' ? 'bg-green-500' :
-                              session.status === 'failed' ? 'bg-red-500' :
-                              'bg-yellow-500'
-                            }`}></div>
-                            <span className="text-sm font-medium text-slate-900">
-                              {new Date(session.timestamp).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <span className="text-xs font-semibold px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                            {session.duration}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-slate-600">
-                            {session.n_loops} loops × {session.n_epochs} epochs
-                          </span>
-                          <span className="font-medium text-slate-900">
-                            {(session.accuracy * 100).toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-slate-500">
-                    No training history available
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Model Information */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-200">
-                <h3 className="font-semibold text-slate-900 flex items-center">
-                  <Settings className="h-5 w-5 text-slate-600 mr-2" />
-                  Model Information
-                </h3>
-              </div>
-              <div className="p-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">Status</span>
-                    <span className={`text-sm font-medium ${
-                      modelStatus?.is_trained ? 'text-green-600' : 'text-yellow-600'
-                    }`}>
-                      {modelStatus?.is_trained ? 'Ready' : 'Not Trained'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">Version</span>
-                    <span className="text-sm font-medium text-slate-900">2.1.0</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">Storage</span>
-                    <span className="text-sm font-medium text-slate-900">12.4 MB</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">Last Updated</span>
-                    <span className="text-sm font-medium text-slate-900">
-                      {modelMetrics?.training_time 
-                        ? new Date(modelMetrics.training_time).toLocaleDateString()
-                        : 'N/A'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-6 pt-6 border-t border-slate-200">
-                  <h4 className="text-sm font-medium text-slate-900 mb-3">Model Actions</h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={fetchModelStatus}
-                      className="py-2 text-sm border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center space-x-2"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                      <span>Refresh</span>
-                    </button>
-                    <button
-                      onClick={() => window.location.reload()}
-                      className="py-2 text-sm bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2"
-                    >
-                      <Activity className="h-4 w-4" />
-                      <span>Restart</span>
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="mt-8 pt-8 border-t border-slate-200">
-          <div className="flex flex-col md:flex-row justify-between items-center text-sm text-slate-600">
-            <div>
+          {/* Footer */}
+          <div className="footer">
+            <div className="footer-info">
               <p>Tryver AI Safety Model Management System</p>
-              <p className="mt-1">Version 2.1.0 • Last updated: {new Date().toLocaleDateString()}</p>
+              <p>Version 2.1.0 • Last updated: {new Date().toLocaleDateString()}</p>
             </div>
-            <div className="flex items-center space-x-4 mt-4 md:mt-0">
-              <button className="hover:text-slate-900 transition-colors">Documentation</button>
-              <button className="hover:text-slate-900 transition-colors">Support</button>
-              <button className="hover:text-slate-900 transition-colors">Settings</button>
+            <div className="footer-links">
+              <button className="footer-link">Documentation</button>
+              <button className="footer-link">Support</button>
+              <button className="footer-link">Settings</button>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
