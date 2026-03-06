@@ -1193,13 +1193,6 @@ export default function AccessibleMap() {
           {/* Header */}
           <div className="sidebar-header">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div className="logo">
-                <div className="logo-icon">♿</div>
-                <div>
-                  <div>AccessRoute</div>
-                  <div className="logo-sub">Safe · Accessible Navigation</div>
-                </div>
-              </div>
               <button
                 onClick={() => setIsSidebarOpen(false)}
                 className="modal-close"
