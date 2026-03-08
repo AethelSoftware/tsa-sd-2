@@ -1,1376 +1,1033 @@
-import { useState, useRef, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, CircleMarker } from 'react-leaflet';
-import {io} from "socket.io-client"
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  MapContainer, TileLayer, Marker, Popup, Polyline, useMap, CircleMarker,
+} from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import {
+  Bookmark, Clock, Settings, Crosshair, Search, ChevronDown, X,
+  ArrowRight, Accessibility, Bus, PersonStanding, Layers, Plus, Minus,
+  Eye, Ear, Contrast, ZoomIn, Zap, Wind, MapPin, Navigation,
+  TreePine, Building2, Stethoscope, GraduationCap, ShoppingBag,
+  Waves, Dumbbell, Coffee, ChevronRight, Route, LocateFixed,
+} from "lucide-react";
 
-// Fix Leaflet default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-const TOMTOM_API_KEY = 'pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM';
-
-// Custom icons
-const currentLocationIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-const wheelchairIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
+const TOMTOM_API_KEY = "pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM";
 
 const destinationIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41],
 });
-
 const hazardIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41],
 });
 
-// Map type definitions
 const mapTypes = {
-  openstreetmap: {
-    name: 'OpenStreetMap',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors'
-  },
-  tomtom: {
-    name: 'TomTom',
-    url: `https://{s}.api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png?key=${TOMTOM_API_KEY}`,
-    attribution: '© TomTom'
-  },
-  tomtomSatellite: {
-    name: 'TomTom Satellite',
-    url: `https://{s}.api.tomtom.com/map/1/tile/sat/main/{z}/{x}/{y}.jpg?key=${TOMTOM_API_KEY}`,
-    attribution: '© TomTom'
-  },
-  tomtomNight: {
-    name: 'TomTom Night',
-    url: `https://{s}.api.tomtom.com/map/1/tile/night/main/{z}/{x}/{y}.png?key=${TOMTOM_API_KEY}`,
-    attribution: '© TomTom'
-  }
+  openstreetmap: { name: "Street",    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",                                                             attribution: "© OpenStreetMap contributors" },
+  tomtom:        { name: "TomTom",    url: `https://{s}.api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png?key=${TOMTOM_API_KEY}`,                         attribution: "© TomTom" },
+  satellite:     { name: "Satellite", url: `https://{s}.api.tomtom.com/map/1/tile/sat/main/{z}/{x}/{y}.jpg?key=${TOMTOM_API_KEY}`,                           attribution: "© TomTom" },
+  night:         { name: "Night",     url: `https://{s}.api.tomtom.com/map/1/tile/night/main/{z}/{x}/{y}.png?key=${TOMTOM_API_KEY}`,                         attribution: "© TomTom" },
 };
 
 function ChangeView({ center, zoom }) {
   const map = useMap();
-  useEffect(() => {
-    map.setView(center, zoom);
-  }, [center, zoom, map]);
+  useEffect(() => { map.setView(center, zoom); }, [center, zoom, map]);
   return null;
 }
 
+const CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --rail-w: 64px;
+    --panel-w: 310px;
+
+    /* Wood palette - enhanced contrast */
+    --bg:       #110a04;
+    --surface:  rgba(28, 17, 8, 0.97);
+    --card:     rgba(42, 26, 12, 0.98);
+    --inset:    rgba(255,255,255,0.035);
+
+    --border:   rgba(180, 120, 60, 0.16);
+    --border2:  rgba(200, 140, 70, 0.38);
+
+    --wood:     #e8a870;  /* Lighter for better contrast */
+    --wood-lt:  #ffc89c;  /* Much lighter */
+    --wood-g:   linear-gradient(135deg, #c06c30, #e89c60);
+    --wood-dim: rgba(232, 168, 112, 0.18);
+    --wood-glow:rgba(232, 168, 112, 0.3);
+
+    --green:    #8cd69c;  /* Lighter green */
+    --green-dim:rgba(140,214,156,0.15);
+    --amber:    #ffb347;  /* Lighter amber */
+    --red:      #ff7b6b;  /* Lighter red */
+    --red-dim:  rgba(255,123,107,0.15);
+
+    --txt:  #ffffff;      /* Pure white for maximum contrast */
+    --txt2: #e0c8b0;      /* Very light beige */
+    --txt3: #b09878;      /* Medium-light brown */
+
+    --ff-d: 'Playfair Display', Georgia, serif;
+    --ff-b: 'DM Sans', system-ui, sans-serif;
+
+    --sh:    0 6px 28px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3);
+    --sh-lg: 0 18px 56px rgba(0,0,0,0.72), 0 4px 18px rgba(0,0,0,0.4);
+    --sh-w:  0 4px 20px rgba(232,168,112,0.25);
+  }
+
+  .root {
+    font-family: var(--ff-b);
+    background: var(--bg);
+    color: var(--txt);
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── MAP ─────────────────────────────────────────── */
+  .map-wrap { position: absolute; inset: 0; z-index: 0; }
+  .leaflet-container { background: #0e0804 !important; }
+  .leaflet-tile-pane { filter: saturate(.7) brightness(.82) sepia(.08); }
+  .leaflet-popup-content-wrapper {
+    background: var(--card) !important;
+    border: 1px solid var(--border2) !important;
+    border-radius: 12px !important;
+    color: var(--txt) !important;
+    box-shadow: var(--sh) !important;
+    font-family: var(--ff-b) !important;
+  }
+  .leaflet-popup-tip { background: rgba(42,26,12,.98) !important; }
+  .leaflet-control-zoom { display: none !important; }
+  .leaflet-control-attribution { display: none; }
+
+  /* ── RAIL ────────────────────────────────────────── */
+  .rail {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: var(--rail-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    backdrop-filter: blur(28px);
+    z-index: 60;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 14px 0 18px; gap: 3px;
+  }
+
+  .r-logo {
+    width: 38px; height: 38px;
+    background: var(--wood-g);
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 14px; flex-shrink: 0;
+    box-shadow: var(--sh-w), 0 0 16px var(--wood-glow);
+    color: #fff8f0;
+  }
+
+  .r-btn {
+    width: 44px; height: 44px; border-radius: 11px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; background: transparent; border: 1px solid transparent;
+    cursor: pointer; color: var(--txt3); transition: all .18s; position: relative;
+  }
+  .r-btn:hover { background: var(--wood-dim); border-color: var(--border); color: var(--txt2); }
+  .r-btn.on    { background: var(--wood-dim); border-color: var(--border2); color: var(--wood); }
+  .r-lbl { font-size: 9px; font-weight: 600; letter-spacing: .3px; color: inherit; font-family: var(--ff-b); }
+
+  .r-sep   { width: 26px; height: 1px; background: var(--border); margin: 5px 0; flex-shrink: 0; }
+  .r-space { flex: 1; }
+
+  /* Rail tooltip */
+  .r-btn[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute; left: calc(100% + 11px); top: 50%; transform: translateY(-50%);
+    background: var(--card); border: 1px solid var(--border2); border-radius: 8px;
+    padding: 5px 12px; font-family: var(--ff-b); font-size: 12px; font-weight: 500;
+    color: var(--txt); white-space: nowrap; opacity: 0; pointer-events: none;
+    transition: opacity .15s; z-index: 999; box-shadow: var(--sh);
+  }
+  .r-btn[data-tip]:hover::after { opacity: 1; }
+
+  /* ── SIDE PANEL ───────────────────────────────────── */
+  .panel {
+    position: absolute; left: var(--rail-w); top: 0; bottom: 0;
+    width: var(--panel-w);
+    background: var(--surface); border-right: 1px solid var(--border);
+    backdrop-filter: blur(28px); z-index: 55;
+    display: flex; flex-direction: column;
+    transform: translateX(-100%);
+    transition: transform .28s cubic-bezier(.4,0,.2,1);
+    box-shadow: var(--sh-lg);
+  }
+  .panel.open { transform: translateX(0); }
+
+  .p-head {
+    padding: 20px 18px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+  }
+  .p-title { font-family: var(--ff-d); font-size: 17px; font-weight: 700; color: var(--txt); letter-spacing: .2px; }
+
+  .p-close {
+    background: var(--inset); border: 1px solid var(--border);
+    border-radius: 8px; width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--txt2); transition: all .15s;
+  }
+  .p-close:hover { color: var(--red); border-color: rgba(255,123,107,.3); background: var(--red-dim); }
+
+  .p-body {
+    flex: 1; overflow-y: auto; padding: 16px 16px 24px;
+    display: flex; flex-direction: column; gap: 22px;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  }
+  .p-body::-webkit-scrollbar { width: 4px; }
+  .p-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .p-sec {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.4px;
+    text-transform: uppercase; color: var(--txt2); margin-bottom: 9px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .p-sec::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .p-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 10px 12px; background: var(--inset);
+    border: 1px solid var(--border); border-radius: 12px;
+    cursor: pointer; transition: all .16s; width: 100%; text-align: left;
+  }
+  .p-item:hover { background: var(--wood-dim); border-color: var(--border2); transform: translateX(3px); }
+  .p-item.sel   { border-color: var(--wood); background: var(--wood-dim); }
+
+  .p-ico {
+    width: 32px; height: 32px;
+    background: rgba(180,120,60,0.1); border: 1px solid var(--border);
+    border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: var(--wood);
+  }
+  .p-ico.green { color: var(--green); background: var(--green-dim); }
+  .p-ico.amber { color: var(--amber); background: rgba(255,179,71,0.1); }
+
+  .p-name { font-size: 13px; font-weight: 500; color: var(--txt); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .p-sub  { font-size: 11px; color: var(--txt2); margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+  .p-arr  { margin-left: auto; color: var(--txt2); flex-shrink: 0; transition: all .15s; }
+  .p-item:hover .p-arr { color: var(--wood); transform: translateX(2px); }
+
+  .p-empty { text-align: center; color: var(--txt2); font-size: 12.5px; line-height: 1.7; padding: 20px 0; }
+
+  /* a11y grid */
+  .ag  { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .ab  {
+    background: var(--inset); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 10px; display: flex; align-items: center; gap: 8px;
+    cursor: pointer; transition: all .16s; width: 100%; text-align: left;
+  }
+  .ab:hover { border-color: var(--border2); }
+  .ab.on    { border-color: var(--wood); background: var(--wood-dim); }
+  .ab-i { color: var(--txt2); flex-shrink: 0; transition: color .15s; }
+  .ab.on .ab-i { color: var(--wood); }
+  .ab-l { font-size: 11px; font-weight: 500; color: var(--txt2); flex: 1; line-height: 1.3; }
+  .ab.on .ab-l { color: var(--txt); }
+  .ab-c {
+    width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all .15s; color: transparent;
+  }
+  .ab.on .ab-c { background: var(--wood); border-color: var(--wood); color: #1a0c04; }
+
+  /* ── SEARCH CARD ─────────────────────────────────── */
+  .sc {
+    position: absolute;
+    top: 14px; left: calc(var(--rail-w) + 14px);
+    z-index: 50; width: 348px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; backdrop-filter: blur(32px);
+    box-shadow: var(--sh-lg), var(--sh-w);
+    transition: border-color .2s;
+  }
+  .sc:focus-within { border-color: var(--border2); }
+
+  .sc-head {
+    padding: 14px 16px 6px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sc-brand { font-family: var(--ff-d); font-size: 15px; font-weight: 700; color: var(--txt); letter-spacing: .2px; flex: 1; }
+  .sc-brand span { color: var(--wood); }
+
+  .sc-inputs { padding: 12px 14px 8px; display: flex; flex-direction: column; gap: 6px; }
+
+  /* input rows */
+  .rr { position: relative; }
+  .rr-dot {
+    position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+    width: 8px; height: 8px; border-radius: 50%; pointer-events: none; z-index: 1;
+  }
+  .rr-dot-g { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blk 2.4s ease infinite; }
+  .rr-dot-r { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+  @keyframes blk { 0%,100%{opacity:1;transform:translateY(-50%) scale(1)} 50%{opacity:.55;transform:translateY(-50%) scale(1.4)} }
+
+  .ri {
+    width: 100%; background: var(--inset); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 34px 10px 28px;
+    color: var(--txt); font-family: var(--ff-b); font-size: 13.5px;
+    outline: none; transition: border-color .18s, box-shadow .18s, background .18s;
+  }
+  .ri::placeholder { color: var(--txt2); }
+  .ri:focus { border-color: var(--wood); background: rgba(232,168,112,.06); box-shadow: 0 0 0 3px var(--wood-dim); }
+
+  .ri-btn {
+    position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
+    background: var(--inset); border: 1px solid var(--border); border-radius: 7px;
+    width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--txt2); transition: all .15s;
+  }
+  .ri-btn:hover { background: var(--wood-dim); border-color: var(--border2); color: var(--wood); }
+
+  .ri-conn { display: flex; align-items: center; gap: 8px; padding: 0 12px; pointer-events: none; }
+  .ri-conn-line { width: 1px; height: 12px; flex-shrink: 0; background: linear-gradient(to bottom,var(--green),var(--red)); opacity: .3; }
+  .ri-conn-lbl  { font-size: 11px; color: var(--txt2); }
+
+  /* autocomplete */
+  .ac { position: relative; }
+  .ac-drop {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+    background: var(--card); border: 1px solid var(--border2); border-radius: 14px;
+    overflow: hidden; z-index: 300; box-shadow: var(--sh-lg); animation: fd .14s ease;
+  }
+  @keyframes fd { from{opacity:0;transform:translateY(-5px)} to{opacity:1;transform:translateY(0)} }
+
+  .ac-hd {
+    padding: 8px 13px 6px; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--txt2);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .ac-row {
+    display: flex; align-items: center; gap: 10px; padding: 9px 13px;
+    background: transparent; border: none; width: 100%; text-align: left;
+    cursor: pointer; transition: background .12s; color: var(--txt);
+  }
+  .ac-row:hover, .ac-row.hi { background: var(--wood-dim); }
+  .ac-row + .ac-row { border-top: 1px solid rgba(232,168,112,.1); }
+
+  .ac-ico {
+    width: 28px; height: 28px; background: var(--inset); border: 1px solid var(--border);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: var(--wood);
+  }
+  .ac-name { font-size: 13px; font-weight: 500; color: var(--txt); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ac-addr { font-size: 11px; color: var(--txt2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+  .ac-tag  {
+    margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase;
+    color: var(--txt); background: var(--wood-dim); border: 1px solid rgba(232,168,112,.3);
+    border-radius: 4px; padding: 2px 7px; white-space: nowrap; flex-shrink: 0;
+    max-width: 72px; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ac-wait { display: flex; align-items: center; gap: 8px; padding: 14px; font-size: 12px; color: var(--txt2); }
+
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .spn  { width: 12px; height: 12px; border: 2px solid var(--border); border-top-color: var(--wood); border-radius: 50%; animation: spin .6s linear infinite; flex-shrink: 0; }
+  .spn2 { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.15); border-top-color: var(--wood); border-radius: 50%; animation: spin .65s linear infinite; }
+
+  /* mode pills */
+  .sc-modes { display: flex; gap: 6px; padding: 2px 14px 4px; }
+  .mp {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 9px 4px; background: var(--inset); border: 1px solid var(--border);
+    border-radius: 11px; cursor: pointer; transition: all .17s; color: var(--txt2); font-family: var(--ff-b);
+  }
+  .mp:hover { border-color: var(--border2); color: var(--txt); background: var(--wood-dim); }
+  .mp.on    { border-color: var(--wood); background: var(--wood-dim); color: var(--wood); box-shadow: 0 0 12px var(--wood-glow); }
+  .mp-i { flex-shrink: 0; }
+  .mp-l { font-size: 10px; font-weight: 600; letter-spacing: .3px; text-transform: uppercase; color: inherit; }
+
+  /* find btn */
+  .sc-find {
+    margin: 6px 14px 12px; width: calc(100% - 28px); padding: 13px;
+    background: var(--wood-g); border: none; border-radius: 13px;
+    color: #ffffff; font-family: var(--ff-d); font-size: 14px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all .2s; box-shadow: var(--sh-w); letter-spacing: .2px;
+  }
+  .sc-find:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(232,168,112,.5); filter: brightness(1.1); }
+  .sc-find:disabled { background: var(--inset); color: var(--txt2); box-shadow: none; cursor: not-allowed; filter: none; }
+
+  /* legend */
+  .sc-leg-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 14px; border-top: 1px solid var(--border);
+    background: transparent; border-left: none; border-right: none; border-bottom: none;
+    width: 100%; cursor: pointer; color: var(--txt2); font-family: var(--ff-b); transition: color .15s;
+  }
+  .sc-leg-btn:hover { color: var(--txt); }
+  .sc-leg-lbl { font-size: 10.5px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: inherit; }
+  .leg-chv { transition: transform .2s; }
+  .leg-chv.open { transform: rotate(180deg); }
+  .sc-leg-body { padding: 4px 14px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .leg-row { display: flex; align-items: center; gap: 10px; }
+  .leg-lbl { font-size: 12px; color: var(--txt2); }
+
+  /* route bar */
+  .rbar {
+    position: absolute; bottom: 22px; left: calc(var(--rail-w) + 14px); z-index: 50;
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 16px; backdrop-filter: blur(24px);
+    padding: 13px 18px; display: flex; align-items: center; gap: 14px;
+    box-shadow: var(--sh), var(--sh-w); animation: su .24s ease;
+  }
+  @keyframes su { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .rs   { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .rs-v { font-family: var(--ff-d); font-size: 15px; font-weight: 700; color: var(--wood); }
+  .rs-l { font-size: 10px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--txt2); }
+  .rs-d { width: 1px; height: 24px; background: var(--border); }
+  .rs-cl {
+    background: var(--red-dim); border: 1px solid rgba(255,123,107,.3);
+    border-radius: 8px; padding: 5px 10px; color: var(--red);
+    font-size: 11px; font-weight: 700; cursor: pointer; transition: all .15s; margin-left: 4px;
+  }
+  .rs-cl:hover { background: rgba(255,123,107,.25); color: #ff9b8b; }
+
+  /* map type bar */
+  .mt-bar { position: absolute; top: 16px; right: 14px; z-index: 50; display: flex; gap: 5px; }
+  .mt-btn {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 9px;
+    backdrop-filter: blur(20px); padding: 7px 12px;
+    display: flex; align-items: center; gap: 6px;
+    cursor: pointer; color: var(--txt2); font-family: var(--ff-b); font-size: 12px; font-weight: 500;
+    transition: all .15s; white-space: nowrap;
+  }
+  .mt-btn:hover { color: var(--txt); border-color: var(--border2); }
+  .mt-btn.on    { color: var(--wood); border-color: var(--wood); background: var(--wood-dim); }
+
+  /* map controls */
+  .mctrl { position: absolute; right: 14px; bottom: 80px; z-index: 50; display: flex; flex-direction: column; gap: 5px; }
+  .mc {
+    width: 40px; height: 40px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; backdrop-filter: blur(20px);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--txt2); transition: all .15s;
+  }
+  .mc:hover { border-color: var(--border2); color: var(--wood); background: var(--wood-dim); }
+  .mc-z { font-size: 10px; font-weight: 700; letter-spacing: .3px; color: var(--txt2); text-align: center; padding: 3px 0; }
+
+  /* toast */
+  .toast {
+    position: absolute; bottom: 24px; left: 50%; z-index: 200;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--surface); border: 1px solid var(--border2); border-radius: 50px;
+    backdrop-filter: blur(20px); padding: 9px 22px;
+    font-size: 12.5px; font-weight: 500; color: var(--txt);
+    white-space: nowrap; opacity: 0; pointer-events: none;
+    transition: all .24s; max-width: calc(100vw - 100px);
+    text-align: center; overflow: hidden; text-overflow: ellipsis; box-shadow: var(--sh);
+  }
+  .toast.vis { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .sr { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0; }
+`;
+
+// ── DATA ────────────────────────────────────────────────────────────────────
+
+const A11Y_FEATS = [
+  { key: "visionImpaired",  Icon: Eye,       label: "Vision Mode" },
+  { key: "hearingImpaired", Icon: Ear,       label: "Hearing Mode" },
+  { key: "highContrast",    Icon: Contrast,  label: "High Contrast" },
+  { key: "largeText",       Icon: ZoomIn,    label: "Large Text" },
+  { key: "reducedMotion",   Icon: Wind,      label: "Reduce Motion" },
+  { key: "lowEnergy",       Icon: Zap,       label: "Low Energy" },
+];
+
+const PREF_FEATS = [
+  { k: "avoidStairs",   Icon: Route,         l: "Avoid Stairs" },
+  { k: "elevator",      Icon: Building2,     l: "Elevator Access" },
+  { k: "noHighways",    Icon: Layers,        l: "No Highways" },
+  { k: "wellLit",       Icon: Zap,           l: "Well-lit Areas" },
+  { k: "quietRoads",    Icon: Wind,          l: "Quiet Roads" },
+  { k: "lowCrowds",     Icon: PersonStanding,l: "Avoid Crowds" },
+];
+
+const SAVED_PLACES = [
+  { name: "University of Pittsburgh",  sub: "Education",  Icon: GraduationCap, color: "amber" },
+  { name: "Carnegie Museum",           sub: "Museum",     Icon: Building2,     color: "" },
+  { name: "Accessible Transit Hub",    sub: "Transport",  Icon: Bus,           color: "green" },
+  { name: "City Hospital (UPMC)",      sub: "Medical",    Icon: Stethoscope,   color: "" },
+];
+
+const NEARBY_PITTSBURGH = [
+  { name: "Allegheny RiverTrail",      sub: "0.3 mi · Trail & Park",              Icon: TreePine,       color: "green" },
+  { name: "Waterworks Mall",           sub: "0.8 mi · Shopping Center",           Icon: ShoppingBag,    color: "" },
+  { name: "UPMC St. Margaret",         sub: "1.1 mi · Hospital",                  Icon: Stethoscope,    color: "" },
+  { name: "Pittsburgh Zoo & Aquarium", sub: "1.4 mi · Attraction",                Icon: TreePine,       color: "green" },
+  { name: "Fox Chapel Area HS",        sub: "2.0 mi · School",                    Icon: GraduationCap,  color: "amber" },
+  { name: "Aspinwall Borough Park",    sub: "0.5 mi · Park",                      Icon: TreePine,       color: "green" },
+  { name: "Waterworks Cold Stone",     sub: "0.9 mi · Food & Drink",              Icon: Coffee,         color: "amber" },
+  { name: "Blawnox Riverfront",        sub: "1.2 mi · Scenic Waterfront",         Icon: Waves,          color: "green" },
+];
+
+const MAP_TYPE_ICONS = { openstreetmap: Layers, tomtom: MapPin, satellite: Navigation, night: Layers };
+
+function getCatIcon(cat) {
+  if (!cat) return MapPin;
+  const c = cat.toLowerCase();
+  if (c.includes("hospital")||c.includes("medical")||c.includes("health")) return Stethoscope;
+  if (c.includes("school")||c.includes("university")||c.includes("college")) return GraduationCap;
+  if (c.includes("restaurant")||c.includes("food")||c.includes("cafe")) return Coffee;
+  if (c.includes("park")||c.includes("garden")) return TreePine;
+  if (c.includes("transit")||c.includes("bus")||c.includes("train")||c.includes("station")) return Bus;
+  if (c.includes("museum")||c.includes("gallery")) return Building2;
+  if (c.includes("shop")||c.includes("store")||c.includes("mall")) return ShoppingBag;
+  if (c.includes("pharmacy")) return Stethoscope;
+  return MapPin;
+}
+
+// ── COMPONENT ───────────────────────────────────────────────────────────────
+
 export default function AccessibleMap() {
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [mapType, setMapType] = useState("openstreetmap");
-  const [routeFrom, setRouteFrom] = useState("Current Location");
-  const [routeTo, setRouteTo] = useState("");
-  const [accessibilitySettings, setAccessibilitySettings] = useState({
-    visionImpaired: false,
-    hearingImpaired: false,
-    lowEnergy: false,
-    highContrast: false,
-    largeText: false,
-    screenReader: false,
-    reducedMotion: false,
-  });
-  const [zoom, setZoom] = useState(13);
-  const [currentLocation, setCurrentLocation] = useState([40.472, -79.94]);
-  const [activeTransport, setActiveTransport] = useState("wheelchair");
-  const [announcement, setAnnouncement] = useState("");
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [mapType, setMapType]     = useState("openstreetmap");
+  const [zoom, setZoom]           = useState(13);
+  const [loc, setLoc]             = useState([40.472, -79.94]);
   const [routePath, setRoutePath] = useState([]);
-  const [destination, setDestination] = useState(null);
-  const [hazards, setHazards] = useState([]);
+  const [dest, setDest]           = useState(null);
+  const [hazards]                 = useState([]);
+  const [routeInfo, setRouteInfo] = useState(null);
 
-  const modalRef = useRef(null);
-  const mapRef = useRef(null);
-  const settingsButtonRef = useRef(null);
-  const announcementRef = useRef(null);
-  const searchInputRef = useRef(null);
-  const socketRef = useRef(null); 
+  const [fromVal, setFromVal]     = useState("Current Location");
+  const [toVal, setToVal]         = useState("");
+  const [mode, setMode]           = useState("wheelchair");
 
-  const wsRef = useRef(null); 
-  // useEffect(() => { 
-  //   const sessionId = localStorage.getItem("session_id"); 
-  //   const ws = new WebSocket(`ws://localhost:3000/ws?session_id=${sessionId}`); 
-    
-  //   wsRef.current = ws; 
-  //   ws.onopen = () => console.log("WebSocket connected"); 
-    
-  //   ws.onmessage = (event) => console.log("Received:", event.data); 
-    
-  //   ws.onerror = (err) => console.error("WebSocket error:", err); 
-    
-  //   return () => { 
-  //     ws.close(); 
-  //     console.log("WebSocket closed"); 
-  // };
-  // }, []); 
+  const [sugg, setSugg]           = useState([]);
+  const [suggOpen, setSuggOpen]   = useState(false);
+  const [suggLoad, setSuggLoad]   = useState(false);
+  const [hiIdx, setHiIdx]         = useState(-1);
 
-  useEffect(() =>{
-    socketRef.current = io("https://localhost:3000", {
-      transports:["websocket"],
-      query:{session_id: localStorage.getItem("session_id")}
-    });
+  const [panel, setPanel]         = useState(null);
+  const [legendOpen, setLegendOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [toast, setToast]         = useState("");
 
-    socketRef.current.on("connect", () =>{
-      console.log("Socket.io connected: ", socketRef.current.id);
-    });
+  const [a11y, setA11y] = useState({
+    visionImpaired:false, hearingImpaired:false, lowEnergy:false,
+    highContrast:false, largeText:false, screenReader:false, reducedMotion:false,
+  });
+  const [prefs, setPrefs] = useState({});
 
-    socketRef.current.on("disconnect", ()=>{
-      console.log("Socket io disconnected: ", socketRef.current.id);
-    });
-
-    return () =>{
-      socketRef.current.disconnect();
-    };
-  }, []); 
-
-//Create a useEffect to get continuous/live geolocation sharing
-useEffect(() =>{
-  const watchId = navigator.geolocation.watchPosition((pos) =>{
-    const {latitude, longitude} = pos.coords; 
-
-    socketRef.current.emit("location_update", {
-      lat:latitude,
-      lng: longitude
-    });
+  const [recents, setRecents] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("ar_recents") || "[]"); } catch { return []; }
   });
 
-  return () => navigator.geolocation.clearWatch(watchId); 
-}, []);
+  const debRef   = useRef(null);
+  const destRef  = useRef(null);
+  const suggRef  = useRef(null);
+  const panelRef = useRef(null);
 
-
-
-  useEffect(() => {
-    if (announcementRef.current && announcement) {
-      announcementRef.current.textContent = announcement;
-      const timer = setTimeout(() => setAnnouncement(""), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [announcement]);
+  const say = useCallback((msg) => { setToast(msg); setTimeout(() => setToast(""), 3200); }, []);
 
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (modalRef.current && !modalRef.current.contains(event.target)) {
-        setIsSettingsOpen(false);
-      }
-      if (
-        isSearchOpen &&
-        searchInputRef.current &&
-        !searchInputRef.current.contains(event.target)
-      ) {
-        setIsSearchOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
+    const h = (e) => {
+      if (suggRef.current && !suggRef.current.contains(e.target) && e.target !== destRef.current) setSuggOpen(false);
+      if (panelRef.current && !panelRef.current.contains(e.target) && !e.target.closest(".rail")) setPanel(null);
     };
-  }, [isSettingsOpen, isSearchOpen]);
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
 
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
-        if (isSettingsOpen) {
-          setIsSettingsOpen(false);
-          settingsButtonRef.current?.focus();
-          setAnnouncement("Settings dialog closed");
-        }
-        if (isSearchOpen) {
-          setIsSearchOpen(false);
-        }
-      }
+  const searchPlaces = (q) => {
+    if (debRef.current) clearTimeout(debRef.current);
+    if (!q || q.length < 2) { setSugg([]); setSuggOpen(false); return; }
+    debRef.current = setTimeout(async () => {
+      setSuggLoad(true);
+      try {
+        const [lat, lng] = loc;
+        const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(q)}.json?key=${TOMTOM_API_KEY}&limit=6&lat=${lat}&lon=${lng}&radius=50000&language=en-US`;
+        const d = await (await fetch(url)).json();
+        const m = (d.results||[]).map(r=>({
+          id: r.id,
+          name: r.poi?.name || r.address?.freeformAddress,
+          address: r.address?.freeformAddress,
+          category: r.poi?.categories?.[0] || null,
+        })).filter(r=>r.name);
+        setSugg(m); setSuggOpen(m.length > 0); setHiIdx(-1);
+      } catch {/* noop */} finally { setSuggLoad(false); }
+    }, 280);
+  };
 
-      if (isSettingsOpen && e.key === "Tab") {
-        const focusableElements = modalRef.current?.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        if (focusableElements && focusableElements.length > 0) {
-          const firstElement = focusableElements[0];
-          const lastElement = focusableElements[focusableElements.length - 1];
+  const pickSugg = (s) => {
+    setToVal(s.address || s.name);
+    setSugg([]); setSuggOpen(false); setHiIdx(-1);
+    destRef.current?.blur();
+    say(`Destination set — ${s.name}`);
+  };
 
-          if (e.shiftKey) {
-            if (document.activeElement === firstElement) {
-              lastElement.focus();
-              e.preventDefault();
-            }
-          } else {
-            if (document.activeElement === lastElement) {
-              firstElement.focus();
-              e.preventDefault();
-            }
-          }
-        }
-      }
+  const destKD = (e) => {
+    if (!suggOpen) { if (e.key === "Enter") calcRoute(); return; }
+    if (e.key === "ArrowDown") { e.preventDefault(); setHiIdx(p => Math.min(p+1, sugg.length-1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setHiIdx(p => Math.max(p-1, -1)); }
+    else if (e.key === "Enter") { e.preventDefault(); if (hiIdx >= 0) pickSugg(sugg[hiIdx]); else calcRoute(); }
+    else if (e.key === "Escape") { setSuggOpen(false); setHiIdx(-1); }
+  };
 
-      if (e.altKey) {
-        switch (e.key) {
-          case "1":
-            e.preventDefault();
-            setIsSidebarOpen((prev) => !prev);
-            setAnnouncement("Route planner sidebar toggled");
-            break;
-          case "2":
-            e.preventDefault();
-            setIsSettingsOpen(true);
-            setAnnouncement("Accessibility settings opened");
-            break;
-          case "3":
-            e.preventDefault();
-            setIsSearchOpen(true);
-            searchInputRef.current?.focus();
-            break;
-        }
-      }
-    };
+  const calcRoute = async () => {
+    if (!toVal.trim()) { say("Please enter a destination"); return; }
+    setIsLoading(true); say("Finding your safe, accessible route…");
+    try {
+      const res = await fetch("http://localhost:5000/api/calculate-route", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          start_location: fromVal, end_location: toVal,
+          accessibility_preferences: {
+            elevator_access: true,
+            wheelchair: mode === "wheelchair",
+            wellLitAreas: a11y.visionImpaired,
+            avoidStairs: true,
+          },
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (data.success && data.route?.coordinates?.length >= 2) {
+        const coords = data.route.coordinates.map(c => [c.lat, c.lng]);
+        setRoutePath(coords); setDest(coords[coords.length - 1]);
+        setRouteInfo({ distance: data.route.distance, duration: data.route.duration });
+        const nr = [{ name: toVal }, ...recents.filter(r => r.name !== toVal)].slice(0, 6);
+        setRecents(nr);
+        try { localStorage.setItem("ar_recents", JSON.stringify(nr)); } catch {}
+        say(`Route found · ${data.route.distance} · ${data.route.duration}`);
+      } else { say("Couldn't find a route. Try a different destination."); }
+    } catch { say("Connection error — is the server running?"); }
+    finally { setIsLoading(false); }
+  };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isSettingsOpen, isSearchOpen]);
-
-  const handleAccessibilityChange = (setting) => {
-    const newValue = !accessibilitySettings[setting];
-    setAccessibilitySettings((prev) => ({
-      ...prev,
-      [setting]: newValue,
-    }));
-    setAnnouncement(
-      `${setting.replace(/([A-Z])/g, " $1").toLowerCase()} ${newValue ? "enabled" : "disabled"}`,
+  const getGPS = () => {
+    if (!navigator.geolocation) return;
+    say("Getting your location…");
+    navigator.geolocation.getCurrentPosition(
+      p => { setLoc([p.coords.latitude, p.coords.longitude]); setFromVal("Current Location"); say("Location updated ✓"); },
+      () => say("Couldn't get location. Using default.")
     );
   };
 
-  const calculateRoute = async () => {
-    if (!routeTo.trim()) {
-      setAnnouncement("Please enter a destination");
-      return;
-    }
-
-    setIsLoading(true);
-    setAnnouncement("Calculating accessible route...");
-
-    try {
-      // Updated to match backend API endpoint
-
-      const sessionId = localStorage.getItem("session_id");
- 
-      const response = await fetch("http://localhost:5000/api/calculate-route", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Session-ID":sessionId
-        },
-        body: JSON.stringify({
-          start_location: routeFrom === "Current Location" ? "Current Location" : routeFrom,
-          end_location: routeTo,
-          accessibility_preferences: {
-            elevator_access: true,
-            wheelchair: activeTransport === "wheelchair",
-            wellLitAreas: accessibilitySettings.visionImpaired,
-            avoidStairs: true
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to calculate route");
-      }
-
-      const routeData = await response.json();
-
-      console.log("ROUTE DATA:", routeData); // Debug log
-
-      if (routeData.success && routeData.route && routeData.route.coordinates) {
-        // Extract coordinates from the response
-        const coordinates = routeData.route.coordinates;
-        
-        // Validate we have at least 2 coordinates
-        if (coordinates.length >= 2) {
-          // Convert {lat, lng} objects to [lat, lng] arrays for Leaflet
-          const routeCoords = coordinates.map(coord => [coord.lat, coord.lng]);
-          setRoutePath(routeCoords);
-          
-          // Set destination marker from the last coordinate
-          if (routeCoords.length > 0) {
-            setDestination(routeCoords[routeCoords.length - 1]);
-          }
-
-          const activeFeatures = Object.keys(accessibilitySettings)
-            .filter((key) => accessibilitySettings[key])
-            .map((key) => key.replace(/([A-Z])/g, " $1").toLowerCase())
-            .join(", ");
-
-          setAnnouncement(
-            `Route calculated successfully! ${
-              activeTransport === "wheelchair"
-                ? "Wheelchair accessible route found with optimized path. "
-                : ""
-            }Accessibility features: ${activeFeatures || "none"}. Distance: ${routeData.route.distance}, Duration: ${routeData.route.duration}`
-          );
-        } else {
-          setAnnouncement("Route calculated but needs more points to display. Try a different destination.");
-        }
-      } else {
-        setAnnouncement("Could not calculate route. Please try again.");
-      }
-    } catch (error) {
-      console.error("Route calculation error:", error);
-      setAnnouncement(
-        "Error calculating route. Please check your destination and try again."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleZoomIn = () => {
-    setZoom((prev) => {
-      const newZoom = Math.min(prev + 1, 18);
-      setAnnouncement(`Zoom level ${newZoom}`);
-      return newZoom;
-    });
-  };
-
-  const handleZoomOut = () => {
-    setZoom((prev) => {
-      const newZoom = Math.max(prev - 1, 10);
-      setAnnouncement(`Zoom level ${newZoom}`);
-      return newZoom;
-    });
-  };
-
-  const getLocation = () => {
-    if (navigator.geolocation) {
-      setAnnouncement("Getting your current location");
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const newLocation = [position.coords.latitude, position.coords.longitude];
-          setCurrentLocation(newLocation);
-          setRouteFrom("Current Location");
-          setAnnouncement("Current location updated successfully");
-        },
-        (error) => {
-          setAnnouncement(
-            "Unable to get current location. Using default location."
-          );
-        },
-      );
-    }
-  };
-
-  const handleTransportChange = (mode) => {
-    setActiveTransport(mode);
-    const modeNames = {
-      walk: "walking",
-      transit: "public transit",
-      wheelchair: "wheelchair accessible",
-    };
-    setAnnouncement(`Transportation mode set to ${modeNames[mode]}`);
-    
-    setRoutePath([]);
-    setDestination(null);
-  };
-
-  const presetDestinations = [
-    { name: "University of Pittsburgh", coords: [40.4440, -79.9532], type: "Education" },
-    { name: "Carnegie Museum", coords: [40.4434, -79.9501], type: "Museum" },
-    { name: "Accessible Transit Center", coords: [40.4416, -79.9924], type: "Transport" },
-    { name: "City Hospital", coords: [40.4379, -79.9683], type: "Medical" },
-  ];
+  const togglePanel = (name) => setPanel(p => p === name ? null : name);
+  const hc = a11y.highContrast;
+  const lt = a11y.largeText;
 
   return (
-    <div
-      className={`relative w-full h-screen ${
-        accessibilitySettings.highContrast
-          ? "bg-black text-yellow-300"
-          : "bg-slate-900 text-slate-100"
-      } overflow-hidden font-sans antialiased`}
-      role="application"
-      aria-label="Accessible Map Application"
-      style={{
-        fontSize: accessibilitySettings.largeText ? "1.125rem" : "1rem",
-        lineHeight: accessibilitySettings.largeText ? "1.75" : "1.5",
-      }}
-    >
+    <>
+      <style>{CSS}</style>
       <div
-        ref={announcementRef}
-        aria-live="assertive"
-        aria-atomic="true"
-        className="sr-only"
-        role="status"
+        className={`root${hc ? " hc" : ""}`}
+        style={{ fontSize: lt ? "1.06rem" : "1rem" }}
+        role="application"
+        aria-label="AccessRoute — Accessible Navigation"
       >
-        {announcement}
-      </div>
+        <div aria-live="assertive" aria-atomic="true" className="sr" role="status">{toast}</div>
 
-      <div className="sr-only" aria-label="Keyboard shortcuts">
-        Press Alt + 1 to toggle sidebar, Alt + 2 for settings, Alt + 3 for
-        search
-      </div>
-
-      {/* Main container with proper z-index stacking */}
-      <div className="relative w-full h-full">
-        {/* Map Container - Lower z-index */}
-        <div className="absolute inset-0 z-0">
-          <MapContainer
-            center={currentLocation}
-            zoom={zoom}
-            ref={mapRef}
-            className="w-full h-full"
-            style={{
-              pointerEvents: accessibilitySettings.visionImpaired
-                ? "none"
-                : "auto",
-              filter: accessibilitySettings.highContrast
-                ? "contrast(1.5) brightness(1.2)"
-                : "none",
-            }}
-            aria-label={`Interactive map view centered at current location. Zoom level ${zoom}.`}
-            role="application"
-          >
-            <ChangeView center={currentLocation} zoom={zoom} />
-            
-            <TileLayer
-              attribution={mapTypes[mapType].attribution}
-              url={mapTypes[mapType].url}
-            />
-            
-            {/* Current Location CircleMarker (replaces the absolute positioned div) */}
-            <CircleMarker
-              center={currentLocation}
-              radius={15}
-              pathOptions={{
-                color: '#3b82f6',
-                fillColor: '#3b82f6',
-                fillOpacity: 0.5,
-                weight: 2
-              }}
-            >
-              <Popup>
-                <div className="p-2">
-                  <div className="font-bold">You are here</div>
-                  <div className="text-sm text-slate-600">
-                    Current location
-                  </div>
-                </div>
-              </Popup>
+        {/* ── MAP ──────────────────────────────── */}
+        <div className="map-wrap">
+          <MapContainer center={loc} zoom={zoom} className="w-full h-full" style={{ filter: hc ? "contrast(1.35)" : "none" }} aria-label="Interactive accessible route map">
+            <ChangeView center={loc} zoom={zoom} />
+            <TileLayer attribution={mapTypes[mapType].attribution} url={mapTypes[mapType].url} />
+            <CircleMarker center={loc} radius={11} pathOptions={{ color: "#e8a870", fillColor: "#e8a870", fillOpacity: .28, weight: 2 }}>
+              <Popup><strong style={{fontFamily:"DM Sans,sans-serif", color:"#ffffff"}}>You are here</strong></Popup>
             </CircleMarker>
-            
-            {/* Destination Marker */}
-            {destination && (
-              <Marker position={destination} icon={destinationIcon}>
+            {dest && (
+              <Marker position={dest} icon={destinationIcon}>
                 <Popup>
-                  <div className="p-2">
-                    <div className="font-bold">Destination</div>
-                    <div className="text-sm text-slate-600">
-                      {routeTo}
-                    </div>
-                  </div>
+                  <strong style={{fontFamily:"DM Sans,sans-serif", color:"#ffffff"}}>Destination</strong><br />
+                  <small style={{color:"#e0c8b0",fontFamily:"DM Sans,sans-serif"}}>{toVal}</small>
                 </Popup>
               </Marker>
             )}
-            
-            {/* Route Path - Only show if we have at least 2 points */}
             {routePath.length >= 2 && (
-              <Polyline
-                positions={routePath}
-                pathOptions={{
-                  color: activeTransport === "wheelchair" ? "#3b82f6" : "#10b981",
-                  weight: 4,
-                  opacity: 0.8,
-                  dashArray: activeTransport === "wheelchair" ? "10, 10" : undefined
-                }}
-              />
+              <Polyline positions={routePath} pathOptions={{
+                color: mode === "wheelchair" ? "#e8a870" : "#8cd69c",
+                weight: 5, opacity: .9,
+                dashArray: mode === "wheelchair" ? "12,8" : undefined,
+                lineCap: "round", lineJoin: "round",
+              }} />
             )}
-            
-            {/* Hazard Markers */}
-            {hazards.map((hazard, index) => (
-              <Marker key={index} position={hazard.position} icon={hazardIcon}>
+            {hazards.map((h, i) => (
+              <Marker key={i} position={h.position} icon={hazardIcon}>
                 <Popup>
-                  <div className="p-2">
-                    <div className="font-bold text-red-600 capitalize">
-                      {hazard.type}
-                    </div>
-                    <div className="text-sm text-slate-600">
-                      {hazard.description}
-                    </div>
-                  </div>
+                  <strong style={{color:"#ffb347",fontFamily:"DM Sans,sans-serif"}}>⚠ {h.type}</strong><br />
+                  <small style={{fontFamily:"DM Sans,sans-serif", color:"#ffffff"}}>{h.description}</small>
                 </Popup>
               </Marker>
             ))}
           </MapContainer>
         </div>
 
-        {/* Sidebar - Higher z-index */}
+        {/* ── RAIL ─────────────────────────────── */}
+        <nav className="rail" role="navigation" aria-label="Main navigation">
+          <div className="r-logo" aria-hidden="true">
+            <Accessibility size={20} />
+          </div>
+
+          <button className={`r-btn${panel === "saved" ? " on" : ""}`} onClick={() => togglePanel("saved")} data-tip="Saved Places" aria-label="Saved places" aria-pressed={panel === "saved"}>
+            <Bookmark size={18} /><span className="r-lbl">Saved</span>
+          </button>
+          <button className={`r-btn${panel === "recents" ? " on" : ""}`} onClick={() => togglePanel("recents")} data-tip="Recent Routes" aria-label="Recent routes" aria-pressed={panel === "recents"}>
+            <Clock size={18} /><span className="r-lbl">Recent</span>
+          </button>
+
+          <div className="r-sep" aria-hidden="true" />
+
+          <button className={`r-btn${panel === "a11y" ? " on" : ""}`} onClick={() => togglePanel("a11y")} data-tip="Accessibility" aria-label="Accessibility settings" aria-pressed={panel === "a11y"}>
+            <Settings size={18} /><span className="r-lbl">Access</span>
+          </button>
+
+          <div className="r-space" aria-hidden="true" />
+
+          <button className="r-btn" onClick={getGPS} data-tip="My Location" aria-label="Center on my location">
+            <LocateFixed size={18} />
+          </button>
+        </nav>
+
+        {/* ── SIDE PANEL ───────────────────────── */}
         <aside
-          className={`absolute top-0 left-0 z-40 h-full ${
-            accessibilitySettings.highContrast ? "bg-gray-900" : "bg-slate-800"
-          } shadow-2xl ${
-            accessibilitySettings.reducedMotion
-              ? ""
-              : "transition-all duration-300"
-          } ${isSidebarOpen ? "w-80 translate-x-0" : "w-0 -translate-x-full"}`}
+          ref={panelRef}
+          className={`panel${panel ? " open" : ""}`}
           role="complementary"
-          aria-label="Route planner"
-          style={{ zIndex: 50 }} // Ensure sidebar is above map
+          aria-label={panel === "a11y" ? "Accessibility settings" : panel === "saved" ? "Saved places" : "Recent routes"}
         >
-          {isSidebarOpen && (
-            <div className="p-6 h-full flex flex-col overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                <button
-                  onClick={() => setIsSidebarOpen(false)}
-                  className={`p-2 ${
-                    accessibilitySettings.highContrast
-                      ? "hover:bg-gray-800"
-                      : "hover:bg-slate-700"
-                  } rounded-lg ${
-                    accessibilitySettings.reducedMotion
-                      ? ""
-                      : "transition-all duration-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  aria-label="Close route planner sidebar"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="space-y-6 flex-1">
-                <div className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="from-input"
-                      className={`block ${
-                        accessibilitySettings.largeText ? "text-lg" : "text-base"
-                      } font-semibold mb-3`}
-                    >
-                      Start Location
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="from-input"
-                        type="text"
-                        value={routeFrom}
-                        onChange={(e) => setRouteFrom(e.target.value)}
-                        className={`w-full ${
-                          accessibilitySettings.highContrast
-                            ? "bg-black text-yellow-300 border-yellow-300"
-                            : "bg-slate-900 text-slate-100 border-slate-600"
-                        } rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-blue-500 border ${
-                          accessibilitySettings.reducedMotion
-                            ? ""
-                            : "transition-all duration-300"
-                        }`}
-                        placeholder="Current location"
-                      />
-                      <div
-                        className="absolute left-4 top-1/2 transform -translate-y-1/2"
-                        aria-hidden="true"
-                      >
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      </div>
-                      <button
-                        onClick={getLocation}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-slate-700 rounded"
-                        aria-label="Use current location"
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="to-input"
-                      className={`block ${
-                        accessibilitySettings.largeText ? "text-lg" : "text-base"
-                      } font-semibold mb-3`}
-                    >
-                      Destination
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="to-input"
-                        type="text"
-                        value={routeTo}
-                        onChange={(e) => setRouteTo(e.target.value)}
-                        className={`w-full ${
-                          accessibilitySettings.highContrast
-                            ? "bg-black text-yellow-300 border-yellow-300"
-                            : "bg-slate-900 text-slate-100 border-slate-600"
-                        } rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-blue-500 border ${
-                          accessibilitySettings.reducedMotion
-                            ? ""
-                            : "transition-all duration-300"
-                        }`}
-                        placeholder="Where do you want to go?"
-                      />
-                      <div
-                        className="absolute left-4 top-1/2 transform -translate-y-1/2"
-                        aria-hidden="true"
-                      >
-                        <svg
-                          className="w-4 h-4 text-slate-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <h3
-                    className={`${
-                      accessibilitySettings.largeText ? "text-lg" : "text-base"
-                    } font-semibold mb-4`}
-                  >
-                    Accessibility Mode
-                  </h3>
-                  <div
-                    className="grid grid-cols-3 gap-3"
-                    role="radiogroup"
-                    aria-label="Transportation options"
-                  >
-                    {[
-                      { mode: "walk", icon: "🚶", label: "Walk" },
-                      { mode: "transit", icon: "🚌", label: "Transit" },
-                      { mode: "wheelchair", icon: "♿", label: "Wheelchair" },
-                    ].map((transport) => (
-                      <button
-                        key={transport.mode}
-                        onClick={() => handleTransportChange(transport.mode)}
-                        className={`flex flex-col items-center p-4 rounded-xl border-2 ${
-                          accessibilitySettings.reducedMotion
-                            ? ""
-                            : "transition-all duration-300"
-                        } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          activeTransport === transport.mode
-                            ? `${
-                                accessibilitySettings.highContrast
-                                  ? "border-yellow-300 bg-yellow-500 bg-opacity-20"
-                                  : "border-slate-600 bg-blue-500 bg-opacity-20"
-                              }`
-                            : `${
-                                accessibilitySettings.highContrast
-                                  ? "border-yellow-300 border-opacity-30 hover:border-opacity-100"
-                                  : "border-slate-600 border-opacity-30 hover:border-opacity-100"
-                              }`
-                        }`}
-                        aria-label={`Select ${transport.label} mode`}
-                        aria-pressed={activeTransport === transport.mode}
-                      >
-                        <span className="text-2xl mb-2" aria-hidden="true">
-                          {transport.icon}
-                        </span>
-                        <span
-                          className={`${
-                            accessibilitySettings.largeText
-                              ? "text-lg"
-                              : "text-base"
-                          } font-medium`}
-                        >
-                          {transport.label}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-6">
-                  <button
-                    onClick={calculateRoute}
-                    disabled={!routeTo || isLoading}
-                    className={`w-full py-4 px-6 rounded-xl font-semibold ${
-                      accessibilitySettings.reducedMotion
-                        ? ""
-                        : "transition-all duration-300"
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                      accessibilitySettings.highContrast
-                        ? "focus:ring-offset-black"
-                        : "focus:ring-offset-slate-800"
-                    } ${
-                      routeTo && !isLoading
-                        ? `${
-                            accessibilitySettings.highContrast
-                              ? "bg-yellow-500 hover:bg-yellow-600 text-black"
-                              : "bg-blue-600 hover:bg-blue-700 text-white"
-                          } shadow-lg ${
-                            accessibilitySettings.reducedMotion
-                              ? ""
-                              : "hover:shadow-xl transform hover:scale-105"
-                          }`
-                        : "bg-slate-700 text-slate-400 cursor-not-allowed"
-                    }`}
-                    aria-disabled={!routeTo || isLoading}
-                  >
-                    {isLoading ? (
-                      <span className="flex items-center justify-center">
-                        <svg
-                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Calculating...
-                      </span>
-                    ) : (
-                      "Calculate Accessible Route"
-                    )}
-                  </button>
-                </div>
-
-                <div className="mt-6 pt-6 border-t border-slate-600">
-                  <h3
-                    className={`${
-                      accessibilitySettings.largeText ? "text-lg" : "text-base"
-                    } font-semibold mb-4`}
-                  >
-                    Accessible Locations
-                  </h3>
-                  <div
-                    className="space-y-3"
-                    role="list"
-                    aria-label="Recent accessible destinations"
-                  >
-                    {presetDestinations.map((dest) => (
-                      <button
-                        key={dest.name}
-                        onClick={() => {
-                          setRouteTo(dest.name);
-                          setAnnouncement(
-                            `Destination set to ${dest.name}, ${dest.type}`
-                          );
-                        }}
-                        className={`w-full text-left p-4 rounded-xl ${
-                          accessibilitySettings.highContrast
-                            ? "hover:bg-gray-800"
-                            : "hover:bg-slate-700"
-                        } ${
-                          accessibilitySettings.reducedMotion
-                            ? ""
-                            : "transition-all duration-300"
-                        } focus:outline-none focus:ring-2 focus:ring-blue-500 group`}
-                        role="listitem"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div
-                              className={`${
-                                accessibilitySettings.largeText
-                                  ? "text-lg"
-                                  : "text-base"
-                              } font-medium`}
-                            >
-                              {dest.name}
-                            </div>
-                            <div
-                              className={`${
-                                accessibilitySettings.largeText
-                                  ? "text-lg"
-                                  : "text-base"
-                              } ${
-                                accessibilitySettings.highContrast
-                                  ? "text-yellow-300"
-                                  : "text-slate-400"
-                              }`}
-                            >
-                              {dest.type}
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span
-                              className="text-green-400"
-                              aria-label="Wheelchair accessible"
-                            >
-                              ♿
-                            </span>
-                            <svg
-                              className={`w-4 h-4 ${
-                                accessibilitySettings.highContrast
-                                  ? "text-yellow-300"
-                                  : "text-slate-400"
-                              } opacity-0 group-hover:opacity-100 ${
-                                accessibilitySettings.reducedMotion
-                                    ? ""
-                                    : "transition-all duration-300"
-                              }`}
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 5l7 7-7 7"
-                              />
-                            </svg>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+          <div className="p-head">
+            <div className="p-title">
+              {panel === "saved" ? "Saved Places" : panel === "recents" ? "Recent Routes" : "Accessibility"}
             </div>
-          )}
+            <button className="p-close" onClick={() => setPanel(null)} aria-label="Close panel">
+              <X size={14} />
+            </button>
+          </div>
+
+          <div className="p-body">
+
+            {/* SAVED */}
+            {panel === "saved" && (<>
+              <div>
+                <div className="p-sec">Pinned</div>
+                <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+                  {SAVED_PLACES.map(d => (
+                    <button key={d.name} className="p-item" onClick={() => { setToVal(d.name); say(`Destination: ${d.name}`); setPanel(null); }} aria-label={`Go to ${d.name}`}>
+                      <div className={`p-ico ${d.color}`}><d.Icon size={15} /></div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div className="p-name">{d.name}</div>
+                        <div className="p-sub">
+                          <Accessibility size={10} style={{color:"var(--green)",flexShrink:0}} />
+                          {d.sub}
+                        </div>
+                      </div>
+                      <span className="p-arr"><ChevronRight size={14} /></span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="p-sec">Nearby in Pittsburgh</div>
+                <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+                  {NEARBY_PITTSBURGH.map(d => (
+                    <button key={d.name} className="p-item" onClick={() => { setToVal(d.name); say(`Destination: ${d.name}`); setPanel(null); }} aria-label={`Navigate to ${d.name}`}>
+                      <div className={`p-ico ${d.color}`}><d.Icon size={15} /></div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div className="p-name">{d.name}</div>
+                        <div className="p-sub">{d.sub}</div>
+                      </div>
+                      <span className="p-arr"><ChevronRight size={14} /></span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>)}
+
+            {/* RECENTS */}
+            {panel === "recents" && (
+              <div>
+                <div className="p-sec">Recent</div>
+                {recents.length === 0
+                  ? <div className="p-empty">No recent routes yet.<br />Routes you calculate will appear here.</div>
+                  : <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+                      {recents.map((r, i) => (
+                        <button key={i} className="p-item" onClick={() => { setToVal(r.name); say(`Destination: ${r.name}`); setPanel(null); }} aria-label={`Recent: ${r.name}`}>
+                          <div className="p-ico"><Clock size={15} /></div>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div className="p-name">{r.name}</div>
+                            <div className="p-sub">Recent destination</div>
+                          </div>
+                          <span className="p-arr"><ChevronRight size={14} /></span>
+                        </button>
+                      ))}
+                    </div>
+                }
+              </div>
+            )}
+
+            {/* A11Y */}
+            {panel === "a11y" && (<>
+              <div>
+                <div className="p-sec">Accessibility Modes</div>
+                <div className="ag">
+                  {A11Y_FEATS.map(f => (
+                    <button key={f.key} className={`ab${a11y[f.key] ? " on" : ""}`}
+                      onClick={() => setA11y(p => ({ ...p, [f.key]: !p[f.key] }))}
+                      aria-pressed={a11y[f.key]} aria-label={f.label}
+                    >
+                      <span className="ab-i"><f.Icon size={14} /></span>
+                      <span className="ab-l">{f.label}</span>
+                      <span className="ab-c" aria-hidden="true">{a11y[f.key] ? "✓" : ""}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="p-sec">Map Style</div>
+                <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+                  {Object.entries(mapTypes).map(([k, v]) => {
+                    const MIcon = MAP_TYPE_ICONS[k] || Layers;
+                    return (
+                      <button key={k} className={`p-item${mapType === k ? " sel" : ""}`} onClick={() => { setMapType(k); say(`${v.name} map`); }} aria-pressed={mapType === k}>
+                        <div className="p-ico"><MIcon size={15} /></div>
+                        <div className="p-name">{v.name}</div>
+                        {mapType === k && <span style={{marginLeft:"auto",color:"var(--wood)"}}><ChevronRight size={14} /></span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <div className="p-sec">Route Preferences</div>
+                <div className="ag">
+                  {PREF_FEATS.map(f => (
+                    <button key={f.k} className={`ab${prefs[f.k] ? " on" : ""}`}
+                      onClick={() => setPrefs(p => ({ ...p, [f.k]: !p[f.k] }))}
+                      aria-pressed={!!prefs[f.k]} aria-label={f.l}
+                    >
+                      <span className="ab-i"><f.Icon size={14} /></span>
+                      <span className="ab-l">{f.l}</span>
+                      <span className="ab-c" aria-hidden="true">{prefs[f.k] ? "✓" : ""}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>)}
+
+          </div>
         </aside>
 
-        {/* Map Controls - Medium z-index (between sidebar and map) */}
-        {!isSidebarOpen && (
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className={`absolute top-20 left-4 z-30 ${
-              accessibilitySettings.highContrast
-                ? "bg-yellow-500 hover:bg-yellow-600 text-black"
-                : "bg-blue-600 hover:bg-blue-700 text-white"
-            } rounded-xl px-4 py-3 shadow-2xl ${
-              accessibilitySettings.reducedMotion
-                ? ""
-                : "transition-all duration-300"
-            } flex items-center space-x-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-              accessibilitySettings.highContrast
-                ? "focus:ring-offset-black"
-                : "focus:ring-offset-slate-900"
-            } ${accessibilitySettings.reducedMotion ? "" : "hover:scale-105"}`}
-            aria-label="Open accessible route planner"
-            accessKey="1"
-            style={{ zIndex: 30 }}
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
+        {/* ── SEARCH CARD ──────────────────────── */}
+        <div className="sc" role="search" aria-label="Route planner">
+          <div className="sc-head">
+            <Route size={16} style={{color:"var(--wood)",flexShrink:0}} />
+            <div className="sc-brand">Access<span>Route</span></div>
+          </div>
+
+          <div className="sc-inputs">
+            {/* FROM */}
+            <div className="rr">
+              <span className="rr-dot rr-dot-g" aria-hidden="true" />
+              <input
+                type="text" value={fromVal}
+                onChange={e => setFromVal(e.target.value)}
+                className="ri" placeholder="Your starting point"
+                aria-label="Starting location" autoComplete="off"
               />
-            </svg>
-            <span className="font-medium">Show Route Planner</span>
-          </button>
-        )}
-
-        {/* Zoom Controls */}
-        <div className="absolute top-20 right-4 z-30 flex flex-col gap-3">
-          <button
-            onClick={handleZoomIn}
-            className={`${
-              accessibilitySettings.highContrast
-                ? "bg-gray-900 hover:bg-gray-800 border-yellow-300"
-                : "bg-slate-800 hover:bg-slate-700 border-slate-600"
-            } rounded-xl w-12 h-12 flex items-center justify-center shadow-2xl border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              accessibilitySettings.reducedMotion
-                ? ""
-                : "transition-all duration-300"
-            }`}
-            aria-label="Zoom in"
-            disabled={accessibilitySettings.visionImpaired}
-          >
-            <span
-              className={`text-xl font-bold ${
-                accessibilitySettings.highContrast
-                  ? "text-yellow-300"
-                  : "text-slate-100"
-              }`}
-            >
-              +
-            </span>
-          </button>
-          <button
-            onClick={handleZoomOut}
-            className={`${
-              accessibilitySettings.highContrast
-                ? "bg-gray-900 hover:bg-gray-800 border-yellow-300"
-                : "bg-slate-800 hover:bg-slate-700 border-slate-600"
-            } rounded-xl w-12 h-12 flex items-center justify-center shadow-2xl border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              accessibilitySettings.reducedMotion
-                ? ""
-                : "transition-all duration-300"
-            }`}
-            aria-label="Zoom out"
-            disabled={accessibilitySettings.visionImpaired}
-          >
-            <span
-              className={`text-xl font-bold ${
-                accessibilitySettings.highContrast
-                  ? "text-yellow-300"
-                  : "text-slate-100"
-              }`}
-            >
-              -
-            </span>
-          </button>
-        </div>
-
-        {/* Zoom Level Display */}
-        <div
-          className={`absolute bottom-4 right-4 z-30 ${
-            accessibilitySettings.highContrast
-              ? "bg-gray-900 border-yellow-300"
-              : "bg-slate-800 border-slate-600"
-          } rounded-2xl px-4 py-3 shadow-2xl border ${
-            accessibilitySettings.largeText ? "text-lg" : "text-base"
-          } font-bold backdrop-blur-sm bg-opacity-90`}
-        >
-          Zoom: {zoom}x
-        </div>
-      </div>
-
-      {isSettingsOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="settings-title"
-        >
-          <div
-            ref={modalRef}
-            className={`${
-              accessibilitySettings.highContrast
-                ? "bg-gray-900 border-yellow-300"
-                : "bg-slate-800 border-slate-600"
-            } rounded-3xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden border`}
-            tabIndex={-1}
-          >
-            <div
-              className={`flex items-center justify-between p-8 border-b ${
-                accessibilitySettings.highContrast
-                  ? "border-yellow-300"
-                  : "border-slate-600"
-              }`}
-            >
-              <div>
-                <h2
-                  id="settings-title"
-                  className={`${
-                    accessibilitySettings.largeText ? "text-2xl" : "text-xl"
-                  } font-bold`}
-                >
-                  Accessibility Center
-                </h2>
-                <p
-                  className={`${
-                    accessibilitySettings.largeText ? "text-lg" : "text-base"
-                  } mt-2 ${
-                    accessibilitySettings.highContrast
-                      ? "text-yellow-300"
-                      : "text-slate-300"
-                  }`}
-                >
-                  Customize your experience for vision, hearing, mobility, and
-                  cognitive needs
-                </p>
-              </div>
-              <button
-                className={`p-2 ${
-                  accessibilitySettings.highContrast
-                    ? "hover:bg-gray-800"
-                    : "hover:bg-slate-700"
-                } rounded-xl ${
-                  accessibilitySettings.reducedMotion
-                    ? ""
-                    : "transition-all duration-300"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                onClick={() => {
-                  setIsSettingsOpen(false);
-                  setAnnouncement("Settings dialog closed");
-                }}
-                aria-label="Close accessibility settings"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+              <button className="ri-btn" onClick={getGPS} aria-label="Use GPS location" title="Use my location">
+                <Crosshair size={12} />
               </button>
             </div>
 
-            <div className="p-8 space-y-8 max-h-96 overflow-y-auto">
-              <section>
-                <h3
-                  className={`${
-                    accessibilitySettings.largeText ? "text-xl" : "text-lg"
-                  } font-bold mb-6`}
-                >
-                  Accessibility Features
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    {
-                      key: "visionImpaired",
-                      icon: "👁️",
-                      title: "Vision Impaired Mode",
-                    },
-                    {
-                      key: "hearingImpaired",
-                      icon: "👂",
-                      title: "Hearing Impaired Mode",
-                    },
-                    { key: "highContrast", icon: "⚫", title: "High Contrast" },
-                    { key: "largeText", icon: "🔍", title: "Large Text" },
-                    {
-                      key: "reducedMotion",
-                      icon: "🎬",
-                      title: "Reduced Motion",
-                    },
-                    { key: "lowEnergy", icon: "⚡", title: "Low Energy Mode" },
-                  ].map((feature) => (
-                    <label
-                      key={feature.key}
-                      className={`flex items-start space-x-4 cursor-pointer p-4 rounded-2xl border ${
-                        accessibilitySettings.highContrast
-                          ? "border-yellow-300 hover:bg-gray-800"
-                          : "border-slate-600 hover:bg-slate-700"
-                      } ${
-                        accessibilitySettings.reducedMotion
-                          ? ""
-                          : "transition-all duration-300"
-                      } focus-within:ring-2 focus-within:ring-blue-500`}
-                    >
-                      <div
-                        className="w-12 h-12 bg-blue-500 bg-opacity-20 rounded-xl flex items-center justify-center flex-shrink-0"
-                        aria-hidden="true"
-                      >
-                        <span className="text-2xl">{feature.icon}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <div
-                            className={`font-semibold ${
-                              accessibilitySettings.highContrast
-                                ? "text-yellow-300"
-                                : "text-slate-100"
-                            } pr-2`}
-                          >
-                            {feature.title}
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={accessibilitySettings[feature.key]}
-                            onChange={() =>
-                              handleAccessibilityChange(feature.key)
-                            }
-                            className="rounded-lg w-5 h-5 text-blue-500 focus:ring-blue-500 focus:ring-2"
-                          />
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </section>
-
-              <section>
-                <h3
-                  className={`${
-                    accessibilitySettings.largeText ? "text-xl" : "text-lg"
-                  } font-bold mb-6`}
-                >
-                  Map Display
-                </h3>
-                <div
-                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                  role="radiogroup"
-                  aria-label="Map style options"
-                >
-                  {Object.entries(mapTypes).map(([key, mapTypeConfig]) => (
-                    <label
-                      key={key}
-                      className={`flex flex-col items-center p-4 rounded-2xl border-2 cursor-pointer ${
-                        accessibilitySettings.reducedMotion
-                          ? ""
-                          : "transition-all duration-300"
-                      } focus-within:ring-2 focus-within:ring-blue-500 ${
-                        mapType === key
-                          ? `${
-                              accessibilitySettings.highContrast
-                                ? "border-yellow-300 bg-yellow-500 bg-opacity-20"
-                                : "border-slate-600 bg-blue-500 bg-opacity-20"
-                            }`
-                          : `${
-                              accessibilitySettings.highContrast
-                                ? "border-yellow-300 border-opacity-30 hover:border-opacity-100"
-                                : "border-slate-600 border-opacity-30 hover:border-opacity-100"
-                            }`
-                      }`}
-                    >
-                      <span className="text-3xl mb-3" aria-hidden="true">
-                        {key.includes('Satellite') ? '🛰️' : key.includes('Night') ? '🌙' : '🗺️'}
-                      </span>
-                      <input
-                        type="radio"
-                        name="mapType"
-                        value={key}
-                        checked={mapType === key}
-                        onChange={(e) => {
-                          setMapType(e.target.value);
-                          setAnnouncement(
-                            `Map style changed to ${mapTypes[e.target.value].name}`,
-                          );
-                        }}
-                        className="sr-only"
-                        aria-checked={mapType === key}
-                      />
-                      <div className="text-center">
-                        <div
-                          className={`font-semibold ${
-                            accessibilitySettings.highContrast
-                              ? "text-yellow-300"
-                              : "text-slate-100"
-                          } mb-1`}
-                        >
-                          {mapTypeConfig.name}
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </section>
-
-              <section>
-                <h3
-                  className={`${
-                    accessibilitySettings.largeText ? "text-xl" : "text-lg"
-                  } font-bold mb-6`}
-                >
-                  Route Preferences
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    { id: "avoid-stairs", label: "Avoid Stairs" },
-                    { id: "elevator-access", label: "Elevator Access" },
-                    {
-                      id: "wheelchair-accessible",
-                      label: "Wheelchair Accessible",
-                    },
-                    { id: "avoid-highways", label: "Avoid Highways" },
-                    { id: "well-lit-areas", label: "Well-lit Areas" },
-                    { id: "quiet-roads", label: "Quiet Roads" },
-                  ].map((preference) => (
-                    <label
-                      key={preference.id}
-                      className={`flex items-start space-x-3 cursor-pointer p-3 rounded-xl ${
-                        accessibilitySettings.highContrast
-                          ? "hover:bg-gray-800"
-                          : "hover:bg-slate-700"
-                      } ${
-                        accessibilitySettings.reducedMotion
-                          ? ""
-                          : "transition-all duration-300"
-                      } focus-within:ring-2 focus-within:ring-blue-500`}
-                    >
-                      <input
-                        type="checkbox"
-                        id={preference.id}
-                        className="rounded-lg w-5 h-5 text-blue-500 focus:ring-blue-500 focus:ring-2 mt-1 flex-shrink-0"
-                      />
-                      <div>
-                        <div
-                          className={`font-semibold ${
-                            accessibilitySettings.highContrast
-                              ? "text-yellow-300"
-                              : "text-slate-100"
-                          }`}
-                        >
-                          {preference.label}
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </section>
+            <div className="ri-conn" aria-hidden="true">
+              <div className="ri-conn-line" />
+              <span className="ri-conn-lbl">to</span>
             </div>
 
-            <div
-              className={`flex justify-between items-center p-8 border-t ${
-                accessibilitySettings.highContrast
-                  ? "border-yellow-300 bg-gray-800"
-                  : "border-slate-600 bg-slate-700"
-              } backdrop-blur-sm`}
-            >
-              <div className="flex items-center space-x-2 text-slate-400">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <span
-                  className={
-                    accessibilitySettings.largeText ? "text-lg" : "text-base"
-                  }
-                >
-                  Changes apply immediately
-                </span>
+            {/* TO + AUTOCOMPLETE */}
+            <div className="ac">
+              <div className="rr">
+                <span className="rr-dot rr-dot-r" aria-hidden="true" />
+                <input
+                  ref={destRef} type="text" value={toVal}
+                  onChange={e => { setToVal(e.target.value); searchPlaces(e.target.value); }}
+                  className="ri" placeholder="Address, place or business…"
+                  aria-label="Destination" aria-autocomplete="list"
+                  aria-controls="ac-list" aria-expanded={suggOpen}
+                  onKeyDown={destKD}
+                  onFocus={() => sugg.length > 0 && setSuggOpen(true)}
+                  autoComplete="off"
+                />
+                {suggLoad && (
+                  <div style={{position:"absolute",right:"9px",top:"50%",transform:"translateY(-50%)"}}>
+                    <div className="spn" aria-hidden="true" />
+                  </div>
+                )}
+                {toVal && !suggLoad && (
+                  <button className="ri-btn" tabIndex={-1}
+                    onClick={() => { setToVal(""); setSugg([]); setSuggOpen(false); destRef.current?.focus(); }}
+                    aria-label="Clear destination"
+                  >
+                    <X size={11} />
+                  </button>
+                )}
               </div>
 
-              <div className="flex space-x-4">
-                <button
-                  className={`px-6 py-3 ${
-                    accessibilitySettings.highContrast
-                      ? "text-yellow-300 hover:text-yellow-400"
-                      : "text-slate-100 hover:text-blue-400"
-                  } ${
-                    accessibilitySettings.reducedMotion
-                      ? ""
-                      : "transition-all duration-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl font-semibold`}
-                  onClick={() => {
-                    setAccessibilitySettings({
-                      visionImpaired: false,
-                      hearingImpaired: false,
-                      lowEnergy: false,
-                      highContrast: false,
-                      largeText: false,
-                      screenReader: false,
-                      reducedMotion: false,
-                    });
-                    setMapType("openstreetmap");
-                    setZoom(13);
-                    setAnnouncement("All settings reset to default");
-                  }}
-                  aria-label="Reset all accessibility settings to default"
-                >
-                  Reset Defaults
-                </button>
-                <button
-                  className={`px-8 py-3 ${
-                    accessibilitySettings.highContrast
-                      ? "bg-yellow-500 hover:bg-yellow-600 text-black"
-                      : "bg-blue-600 hover:bg-blue-700 text-white"
-                  } rounded-xl font-semibold shadow-lg ${
-                    accessibilitySettings.reducedMotion
-                      ? ""
-                      : "transition-all duration-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                    accessibilitySettings.highContrast
-                      ? "focus:ring-offset-black"
-                      : "focus:ring-offset-slate-800"
-                  } ${
-                    accessibilitySettings.reducedMotion ? "" : "hover:scale-105"
-                  }`}
-                  onClick={() => {
-                    setIsSettingsOpen(false);
-                    setAnnouncement(
-                      "Accessibility settings applied successfully"
-                    );
-                  }}
-                  aria-label="Apply accessibility settings and close dialog"
-                >
-                  Apply Settings
-                </button>
-              </div>
+              {suggOpen && (
+                <div ref={suggRef} className="ac-drop" id="ac-list" role="listbox" aria-label="Location suggestions">
+                  <div className="ac-hd"><MapPin size={10} /> Suggestions</div>
+                  {suggLoad && sugg.length === 0
+                    ? <div className="ac-wait"><div className="spn" aria-hidden="true" />Searching…</div>
+                    : sugg.map((s, i) => {
+                        const CIcon = getCatIcon(s.category);
+                        return (
+                          <button key={s.id || i}
+                            className={`ac-row${hiIdx === i ? " hi" : ""}`}
+                            role="option" aria-selected={hiIdx === i}
+                            onMouseDown={e => { e.preventDefault(); pickSugg(s); }}
+                            onMouseEnter={() => setHiIdx(i)}
+                          >
+                            <div className="ac-ico"><CIcon size={13} /></div>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div className="ac-name">{s.name}</div>
+                              {s.address && s.address !== s.name && <div className="ac-addr">{s.address}</div>}
+                            </div>
+                            {s.category && <div className="ac-tag">{s.category.split(" ")[0]}</div>}
+                          </button>
+                        );
+                      })
+                  }
+                </div>
+              )}
             </div>
           </div>
+
+          {/* TRAVEL MODES */}
+          <div className="sc-modes" role="radiogroup" aria-label="Travel mode">
+            {[
+              { id: "walk",        Icon: PersonStanding, l: "Walk" },
+              { id: "transit",     Icon: Bus,            l: "Transit" },
+              { id: "wheelchair",  Icon: Accessibility,  l: "Access" },
+            ].map(t => (
+              <button key={t.id}
+                className={`mp${mode === t.id ? " on" : ""}`}
+                onClick={() => { setMode(t.id); setRoutePath([]); setDest(null); setRouteInfo(null); say(`${t.l} mode`); }}
+                aria-pressed={mode === t.id} aria-label={`${t.l} mode`}
+              >
+                <span className="mp-i"><t.Icon size={18} /></span>
+                <span className="mp-l">{t.l}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* FIND ROUTE BUTTON */}
+          <button
+            className="sc-find"
+            onClick={calcRoute}
+            disabled={!toVal.trim() || isLoading}
+            aria-label="Find accessible route"
+          >
+            {isLoading
+              ? <><div className="spn2" aria-hidden="true" /> Calculating…</>
+              : <><Search size={15} /> Find Safe Route</>
+            }
+          </button>
+
+          {/* LEGEND */}
+          <button className="sc-leg-btn" onClick={() => setLegendOpen(o => !o)} aria-expanded={legendOpen}>
+            <span className="sc-leg-lbl">Map Legend</span>
+            <ChevronDown size={13} className={`leg-chv${legendOpen ? " open" : ""}`} aria-hidden="true" />
+          </button>
+          {legendOpen && (
+            <div className="sc-leg-body" role="list">
+              {[
+                { color: "#e8a870", label: "Accessible Route", dash: true },
+                { color: "#8cd69c", label: "Walking Route",    dash: false },
+                { color: "#ffb347", label: "Hazard / Construction", dot: true },
+                { color: "#ff7b6b", label: "Avoid Zone",       dot: true },
+              ].map(item => (
+                <div key={item.label} className="leg-row" role="listitem">
+                  {item.dot
+                    ? <div style={{width:"9px",height:"9px",borderRadius:"50%",background:item.color,flexShrink:0,boxShadow:`0 0 5px ${item.color}`}} aria-hidden="true" />
+                    : <div style={{width:"28px",height:"3px",borderRadius:"2px",flexShrink:0,background:item.dash?`repeating-linear-gradient(90deg,${item.color} 0,${item.color} 6px,transparent 6px,transparent 10px)`:item.color}} aria-hidden="true" />
+                  }
+                  <span className="leg-lbl">{item.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
-    </div>
+
+        {/* ── MAP TYPE BAR ─────────────────────── */}
+        <div className="mt-bar" role="radiogroup" aria-label="Map style">
+          {Object.entries(mapTypes).map(([k, v]) => {
+            const MIcon = MAP_TYPE_ICONS[k] || Layers;
+            return (
+              <button key={k}
+                className={`mt-btn${mapType === k ? " on" : ""}`}
+                onClick={() => { setMapType(k); say(`${v.name} map`); }}
+                aria-pressed={mapType === k} title={v.name}
+              >
+                <MIcon size={12} /> {v.name}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── MAP CONTROLS ─────────────────────── */}
+        <div className="mctrl">
+          <button className="mc" onClick={() => setZoom(z => { const n = Math.min(z+1,18); say(`Zoom ${n}`); return n; })} aria-label="Zoom in">
+            <Plus size={16} />
+          </button>
+          <div className="mc-z" aria-label={`Zoom level ${zoom}`}>{zoom}×</div>
+          <button className="mc" onClick={() => setZoom(z => { const n = Math.max(z-1,10); say(`Zoom ${n}`); return n; })} aria-label="Zoom out">
+            <Minus size={16} />
+          </button>
+        </div>
+
+        {/* ── ROUTE INFO BAR ───────────────────── */}
+        {routeInfo && (
+          <div className="rbar" role="region" aria-label="Route information">
+            <div className="rs">
+              <div className="rs-v">{routeInfo.distance}</div>
+              <div className="rs-l">Distance</div>
+            </div>
+            <div className="rs-d" aria-hidden="true" />
+            <div className="rs">
+              <div className="rs-v">{routeInfo.duration}</div>
+              <div className="rs-l">Est. Time</div>
+            </div>
+            <div className="rs-d" aria-hidden="true" />
+            <div className="rs">
+              <div className="rs-v" style={{color:"var(--green)"}}>
+                <Accessibility size={16} />
+              </div>
+              <div className="rs-l">Accessible</div>
+            </div>
+            <button
+              className="rs-cl"
+              onClick={() => { setRoutePath([]); setDest(null); setRouteInfo(null); }}
+              aria-label="Clear route"
+            >
+              Clear
+            </button>
+          </div>
+        )}
+
+        {/* ── TOAST ────────────────────────────── */}
+        <div className={`toast${toast ? " vis" : ""}`} role="status" aria-live="polite" aria-atomic="true">
+          {toast}
+        </div>
+      </div>
+    </>
   );
 };
 
