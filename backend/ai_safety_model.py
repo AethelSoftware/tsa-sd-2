@@ -28,6 +28,7 @@ from pathlib import Path
 import googlemaps
 import logging
 from typing import Dict, List, Tuple, Optional, Any
+from enum import Enum
 
 warnings.filterwarnings('ignore')
 logging.basicConfig(level=logging.INFO)
@@ -39,6 +40,13 @@ THRESHOLD = 0.25
 from real_api_client import RealAPIClient
 
 logger = logging.getLogger(__name__)
+
+class SafetyClassifications(Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
 
 class SafetyAIModel:
     """Enhanced AI model for safety prediction with real API data"""
@@ -512,13 +520,13 @@ class SafetyAIModel:
         safety_score = max(0.1, min(1.0, base_safety + crime_adjustment))
         
         if safety_score >= 0.7:
-            risk_level = 'low'
+            risk_level = SafetyClassifications.LOW
             recommendations = ['Heuristic: Generally safe']
         elif safety_score >= 0.5:
-            risk_level = 'medium'
+            risk_level = SafetyClassifications.MEDIUM
             recommendations = ['Heuristic: Use caution']
         else:
-            risk_level = 'high'
+            risk_level = SafetyClassifications.HIGH
             recommendations = ['Heuristic: Consider alternatives']
         
         return {

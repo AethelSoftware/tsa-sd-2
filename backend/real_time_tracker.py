@@ -877,7 +877,7 @@ def create_tracking_app():
     @app.route('/api/tracking/status', methods=['GET'])
     def tracking_status():
         """Get tracking system status"""
-        return jsonify({
+        return json.dumps({
             'active_pedestrians': len(tracker.pedestrians),
             'active_hazards': len(tracker.active_hazards),
             'update_interval': UPDATE_INTERVAL,
@@ -888,14 +888,14 @@ def create_tracking_app():
     @app.route('/api/tracking/pedestrians', methods=['GET'])
     def get_pedestrians():
         """Get all tracked pedestrians"""
-        return jsonify({
+        return json.dumps({
             'pedestrians': {pid: ped.to_dict() for pid, ped in tracker.pedestrians.items()}
         })
     
     @app.route('/api/tracking/hazards', methods=['GET'])
     def get_hazards():
         """Get all active hazards"""
-        return jsonify({
+        return json.dumps({
             'hazards': [tracker._hazard_to_dict(h) for h in tracker.active_hazards]
         })
     
@@ -917,7 +917,7 @@ def create_tracking_app():
             
             route = tracker.generate_route(start, destination, accessibility_needs)
             
-            return jsonify({
+            return json.dumps({
                 'success': True,
                 'route': [tracker._segment_to_dict(seg) for seg in route],
                 'total_distance': sum(seg.distance for seg in route),
@@ -926,7 +926,7 @@ def create_tracking_app():
             })
             
         except Exception as e:
-            return jsonify({
+            return json.dumps({
                 'success': False,
                 'error': str(e)
             }), 400
