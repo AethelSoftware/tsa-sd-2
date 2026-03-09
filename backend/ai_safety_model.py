@@ -417,6 +417,8 @@ class SafetyAIModel:
             
             safety_scores = []
             segment_details = []
+            weighted_sum = 0
+            total_distance = 0
             
             # Calculate safety for each segment
             for i in range(len(route_coords) - 1):
@@ -426,8 +428,13 @@ class SafetyAIModel:
                 # Use midpoint for segment safety
                 mid_lat = (start['lat'] + end['lat']) / 2
                 mid_lng = (start['lng'] + end['lng']) / 2
+
+                # Use haversine distance to calculate the length of the segment (for weights)
+                h_distance = self._haversine_distance(start['lat'], start['lng'], end['lat'], end['lng'])
                 
-                safety_result = self.predict_safety_score(mid_lat, mid_lng)
+                safety_result = self.predict_safety_score(mid_lat, mid_lng) * h_distance
+                weighted_sum += safety_result
+                total_distance += h_distance
                 segment_safety = safety_result['safety_score']
                 safety_scores.append(segment_safety)
                 
@@ -435,12 +442,15 @@ class SafetyAIModel:
                     'start': start,
                     'end': end,
                     'safety_score': segment_safety,
+                    'segment_length':h_distance,
                     'risk_level': safety_result['risk_level'],
                     'recommendations': safety_result['recommendations'][:2]
                 })
             
             # Calculate weighted safety (by segment length)
-            overall_safety = np.mean(safety_scores)
+            if not weighted_sum or not total_distance:
+                overall_safety = np.median(safety_scores)
+            overall_safety = weighted_sum/total_distance
             
             # Determine overall risk level
             if overall_safety >= 0.8:
