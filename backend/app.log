@@ -590,3 +590,114 @@ KeyError: 'cv_mean'
 2026-02-28 18:45:24,467 - werkzeug - INFO - 127.0.0.1 - - [28/Feb/2026 18:45:24] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
 2026-02-28 18:45:32,031 - werkzeug - INFO - 127.0.0.1 - - [28/Feb/2026 18:45:32] "[33mGET / HTTP/1.1[0m" 404 -
 2026-02-28 18:46:06,314 - __main__ - INFO - Safety AI loaded successfully
+2026-03-10 11:45:43,875 - __main__ - WARNING - TomTom router not available - routing will use mock data
+2026-03-10 11:45:43,875 - __main__ - WARNING - Real API client not available - using mock data
+2026-03-10 11:46:31,797 - __main__ - WARNING - TomTom router not available - routing will use mock data
+2026-03-10 11:46:31,797 - __main__ - WARNING - Real API client not available - using mock data
+2026-03-10 11:49:21,578 - __main__ - INFO - Safety AI loaded successfully
+2026-03-11 07:51:32,522 - __main__ - INFO - Safety AI loaded successfully
+2026-03-11 07:53:04,856 - __main__ - INFO - Safety AI loaded successfully
+2026-03-11 07:53:06,554 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-11 07:53:06,554 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-11 07:53:09,558 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 07:53:09] "GET /api/hello HTTP/1.1" 200 -
+2026-03-11 07:53:09,669 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 07:53:09] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-03-11 07:54:31,700 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 07:54:31] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 07:54:31,705 - tomtom_router - INFO - Calculating TomTom route from 40.4406,-79.9959 to 40.444,-79.9545
+2026-03-11 07:54:32,212 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/40.4406,-79.9959:40.444,-79.9545/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=true&maxAlternatives=3&instructionsType=text&language=en-US&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=all&vehicleHeading=0&report=effectiveSettings&sectionType=travelMode&sectionType=pedestrian&avoid=unpavedRoads%2Cferries
+2026-03-11 07:54:33,106 - __main__ - WARNING - TomTom API failed, falling back to mock: 0
+2026-03-11 07:54:33,109 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 07:54:33] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 07:54:37,502 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 07:54:37] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 07:54:37,507 - tomtom_router - INFO - Calculating TomTom route from 40.4406,-79.9959 to 40.444,-79.9545
+2026-03-11 07:54:37,928 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/40.4406,-79.9959:40.444,-79.9545/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=true&maxAlternatives=3&instructionsType=text&language=en-US&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=all&vehicleHeading=0&report=effectiveSettings&sectionType=travelMode&sectionType=pedestrian&avoid=unpavedRoads%2Cferries
+2026-03-11 07:54:38,699 - __main__ - WARNING - TomTom API failed, falling back to mock: 0
+2026-03-11 07:54:38,702 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 07:54:38] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 08:27:04,645 - __main__ - INFO - Safety AI loaded successfully
+2026-03-11 08:27:06,170 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-11 08:27:06,170 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-11 08:27:09,042 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 08:27:09] "GET /api/hello HTTP/1.1" 200 -
+2026-03-11 08:30:29,744 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 08:30:29] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 08:30:29,750 - tomtom_router - INFO - Calculating TomTom route from 40.4406,-79.9959 to 40.444,-79.9545
+2026-03-11 08:30:29,873 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/40.4406,-79.9959:40.444,-79.9545/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=true&maxAlternatives=3&instructionsType=text&language=en-US&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=all&vehicleHeading=0&report=effectiveSettings&sectionType=travelMode&sectionType=pedestrian&avoid=unpavedRoads%2Cferries
+2026-03-11 08:30:30,263 - __main__ - WARNING - TomTom API failed, falling back to mock: 0
+2026-03-11 08:30:30,267 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 08:30:30] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 08:36:25,974 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 08:36:25] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 08:36:25,979 - tomtom_router - INFO - Calculating TomTom route from 51.158705666202806,8.426503468985983 to 51.158705666202806,8.426503468985983
+2026-03-11 08:36:26,101 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/51.158705666202806,8.426503468985983:51.158705666202806,8.426503468985983/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=true&maxAlternatives=3&instructionsType=text&language=en-US&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=all&vehicleHeading=0&report=effectiveSettings&sectionType=travelMode&sectionType=pedestrian&avoid=unpavedRoads%2Cferries
+2026-03-11 08:36:26,510 - __main__ - WARNING - TomTom API failed, falling back to mock: 0
+2026-03-11 08:36:26,516 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 08:36:26] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 08:36:50,431 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 08:36:50] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 08:36:50,435 - tomtom_router - INFO - Calculating TomTom route from 51.158705666202806,8.426503468985983 to 51.158705666202806,8.426503468985983
+2026-03-11 08:36:50,580 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/51.158705666202806,8.426503468985983:51.158705666202806,8.426503468985983/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=true&maxAlternatives=3&instructionsType=text&language=en-US&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=all&vehicleHeading=0&report=effectiveSettings&sectionType=travelMode&sectionType=pedestrian&avoid=unpavedRoads%2Cferries
+2026-03-11 08:36:50,917 - __main__ - WARNING - TomTom API failed, falling back to mock: 0
+2026-03-11 08:36:50,921 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 08:36:50] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 08:52:53,574 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 08:52:53] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 08:52:53,584 - tomtom_router - INFO - Calculating TomTom route from 40.51803788853569,-79.86897206179393 to 40.488521,-79.898154
+2026-03-11 08:52:53,734 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/40.51803788853569,-79.86897206179393:40.488521,-79.898154/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=true&maxAlternatives=3&instructionsType=text&language=en-US&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=all&vehicleHeading=0&report=effectiveSettings&sectionType=travelMode&sectionType=pedestrian&avoid=unpavedRoads%2Cferries
+2026-03-11 08:52:54,158 - __main__ - WARNING - TomTom API failed, falling back to mock: 0
+2026-03-11 08:52:54,162 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 08:52:54] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 08:53:29,156 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 08:53:29] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 08:53:29,160 - tomtom_router - INFO - Calculating TomTom route from 40.51803788853569,-79.86897206179393 to 40.488521,-79.898154
+2026-03-11 08:53:29,317 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/40.51803788853569,-79.86897206179393:40.488521,-79.898154/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=true&maxAlternatives=3&instructionsType=text&language=en-US&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=all&vehicleHeading=0&report=effectiveSettings&sectionType=travelMode&sectionType=pedestrian&avoid=unpavedRoads%2Cferries
+2026-03-11 08:53:29,676 - __main__ - WARNING - TomTom API failed, falling back to mock: 0
+2026-03-11 08:53:29,681 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 08:53:29] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 09:18:16,936 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 09:18:16] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 09:18:16,943 - tomtom_router - INFO - Calculating TomTom route from 40.51803788853569,-79.86897206179393 to 40.488521,-79.898154
+2026-03-11 09:18:17,107 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/40.51803788853569,-79.86897206179393:40.488521,-79.898154/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=true&maxAlternatives=3&instructionsType=text&language=en-US&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=all&vehicleHeading=0&report=effectiveSettings&sectionType=travelMode&sectionType=pedestrian&avoid=unpavedRoads%2Cferries
+2026-03-11 09:18:17,537 - __main__ - WARNING - TomTom API failed, falling back to mock: 0
+2026-03-11 09:18:17,541 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 09:18:17] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 09:21:00,587 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 09:21:00] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 09:21:00,592 - tomtom_router - INFO - Calculating TomTom route from 32.0534424,-81.1205783 to 40.488521,-79.898154
+2026-03-11 09:21:00,715 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/32.0534424,-81.1205783:40.488521,-79.898154/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=true&maxAlternatives=3&instructionsType=text&language=en-US&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=all&vehicleHeading=0&report=effectiveSettings&sectionType=travelMode&sectionType=pedestrian&avoid=unpavedRoads%2Cferries
+2026-03-11 09:21:01,127 - __main__ - WARNING - TomTom API failed, falling back to mock: 0
+2026-03-11 09:21:01,131 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 09:21:01] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 10:05:43,447 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 10:05:43] "[33mGET / HTTP/1.1[0m" 404 -
+2026-03-11 10:26:19,078 - __main__ - INFO - Safety AI loaded successfully
+2026-03-11 10:26:20,618 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-11 10:26:20,618 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-11 10:26:23,367 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 10:26:23] "GET /api/hello HTTP/1.1" 200 -
+2026-03-11 10:26:42,491 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 10:26:42] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 10:26:42,494 - __main__ - INFO - Attempting TomTom route from 40.518457627731564,-79.86834906915857 to 40.488521,-79.898154
+2026-03-11 10:26:42,494 - tomtom_router - INFO - Calculating TomTom route from 40.518457627731564,-79.86834906915857 to 40.488521,-79.898154
+2026-03-11 10:26:42,642 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/40.518457627731564,-79.86834906915857:40.488521,-79.898154/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=true&maxAlternatives=3&instructionsType=text&language=en-US&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=all&vehicleHeading=0&report=effectiveSettings&sectionType=travelMode&sectionType=pedestrian&avoid=unpavedRoads%2Cferries
+2026-03-11 10:26:42,645 - __main__ - INFO - TomTom route successful
+2026-03-11 10:26:43,069 - __main__ - ERROR - Route calculation error: 0
+Traceback (most recent call last):
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 845, in calculate_route
+    query_vector = embed(query_text)
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 140, in embed
+    return np.array(response.json()[0]) # Return embedded vector to perform similarity with other vectors
+KeyError: 0
+2026-03-11 10:26:43,078 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 10:26:43] "[35m[1mPOST /api/calculate-route HTTP/1.1[0m" 500 -
+2026-03-11 10:27:09,231 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 10:27:09] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 10:27:09,234 - __main__ - INFO - Attempting TomTom route from 40.518457627731564,-79.86834906915857 to 40.488521,-79.898154
+2026-03-11 10:27:09,234 - tomtom_router - INFO - Calculating TomTom route from 40.518457627731564,-79.86834906915857 to 40.488521,-79.898154
+2026-03-11 10:27:09,381 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/40.518457627731564,-79.86834906915857:40.488521,-79.898154/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=true&maxAlternatives=3&instructionsType=text&language=en-US&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=all&vehicleHeading=0&report=effectiveSettings&sectionType=travelMode&sectionType=pedestrian&avoid=unpavedRoads%2Cferries
+2026-03-11 10:27:09,385 - __main__ - INFO - TomTom route successful
+2026-03-11 10:27:09,739 - __main__ - ERROR - Route calculation error: 0
+Traceback (most recent call last):
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 845, in calculate_route
+    query_vector = embed(query_text)
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 140, in embed
+    return np.array(response.json()[0]) # Return embedded vector to perform similarity with other vectors
+KeyError: 0
+2026-03-11 10:27:09,743 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 10:27:09] "[35m[1mPOST /api/calculate-route HTTP/1.1[0m" 500 -
+2026-03-11 10:31:17,128 - __main__ - INFO - Safety AI loaded successfully
+2026-03-11 10:31:29,246 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-11 10:31:29,246 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-11 10:31:32,043 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 10:31:32] "GET /api/hello HTTP/1.1" 200 -
+2026-03-11 10:31:37,016 - __main__ - INFO - Attempting TomTom route from 40.4406,-79.9959 to 40.444,-79.9545
+2026-03-11 10:31:37,017 - tomtom_router - INFO - Calculating TomTom route from 40.4406,-79.9959 to 40.444,-79.9545
+2026-03-11 10:31:37,297 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/40.4406,-79.9959:40.444,-79.9545/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=true&maxAlternatives=3&instructionsType=text&language=en-US&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=all&vehicleHeading=0&report=effectiveSettings&sectionType=travelMode&sectionType=pedestrian&avoid=unpavedRoads%2Cferries
+2026-03-11 10:31:37,301 - __main__ - INFO - TomTom route successful
+2026-03-11 10:31:38,061 - __main__ - ERROR - Route calculation error: 0
+Traceback (most recent call last):
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 845, in calculate_route
+    query_vector = embed(query_text)
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 140, in embed
+    return np.array(response.json()[0]) # Return embedded vector to perform similarity with other vectors
+KeyError: 0
+2026-03-11 10:31:38,065 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 10:31:38] "[35m[1mPOST /api/calculate-route HTTP/1.1[0m" 500 -

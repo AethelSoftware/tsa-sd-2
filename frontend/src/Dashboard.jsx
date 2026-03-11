@@ -502,7 +502,8 @@ export default function AccessibleMap() {
   const [hazards]                 = useState([]);
   const [routeInfo, setRouteInfo] = useState(null);
 
-  const [fromVal, setFromVal]     = useState("Current Location");
+  const [fromVal, setFromVal] = useState("Current Location");
+  const [fromCoords, setFromCoords] = useState(null);
   const [toVal, setToVal]         = useState("");
   const [mode, setMode]           = useState("wheelchair");
 
@@ -580,11 +581,51 @@ export default function AccessibleMap() {
   const calcRoute = async () => {
     if (!toVal.trim()) { say("Please enter a destination"); return; }
     setIsLoading(true); say("Finding your safe, accessible route…");
+    
     try {
-      const res = await fetch("http://localhost:5000/api/calculate-route", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+      // Geocode the destination to get coordinates
+      const geoRes = await fetch(
+        `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(toVal)}.json?key=${TOMTOM_API_KEY}&limit=1`
+      );
+      const geoData = await geoRes.json();
+      
+      if (!geoData.results || geoData.results.length === 0) {
+        say("Couldn't find that location"); 
+        setIsLoading(false);
+        return;
+      }
+      
+      const destPos = geoData.results[0].position;
+      const destCoords = { lat: destPos.lat, lng: destPos.lon };
+      
+      // Use current location or geocode "Current Location"
+      let startCoords;
+      if (fromVal === "Current Location") {
+        // Use the current GPS position from state
+        startCoords = { lat: loc[0], lng: loc[1] };
+      } else {
+        // Geocode the custom start location
+        const startGeoRes = await fetch(
+          `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(fromVal)}.json?key=${TOMTOM_API_KEY}&limit=1`
+        );
+        const startGeoData = await startGeoRes.json();
+        if (startGeoData.results && startGeoData.results.length > 0) {
+          const startPos = startGeoData.results[0].position;
+          startCoords = { lat: startPos.lat, lng: startPos.lon };
+        } else {
+          startCoords = { lat: loc[0], lng: loc[1] }; // Fallback to current location
+        }
+      }
+      
+      // Now calculate the route with actual coordinates
+      const routeRes = await fetch("http://localhost:5000/api/calculate-route", {
+        method: "POST", 
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          start_location: fromVal, end_location: toVal,
+          start_lat: startCoords.lat,
+          start_lng: startCoords.lng,
+          end_lat: destCoords.lat,
+          end_lng: destCoords.lng,
           accessibility_preferences: {
             elevator_access: true,
             wheelchair: mode === "wheelchair",
@@ -593,26 +634,42 @@ export default function AccessibleMap() {
           },
         }),
       });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
+      
+      if (!routeRes.ok) throw new Error();
+      const data = await routeRes.json();
+      
       if (data.success && data.route?.coordinates?.length >= 2) {
         const coords = data.route.coordinates.map(c => [c.lat, c.lng]);
-        setRoutePath(coords); setDest(coords[coords.length - 1]);
+        setRoutePath(coords); 
+        setDest(coords[coords.length - 1]);
         setRouteInfo({ distance: data.route.distance, duration: data.route.duration });
-        const nr = [{ name: toVal }, ...recents.filter(r => r.name !== toVal)].slice(0, 6);
+        
+        const nr = [{ name: toVal, address: geoData.results[0].address?.freeformAddress || toVal }, ...recents.filter(r => r.name !== toVal)].slice(0, 6);
         setRecents(nr);
         try { localStorage.setItem("ar_recents", JSON.stringify(nr)); } catch {}
+        
         say(`Route found · ${data.route.distance} · ${data.route.duration}`);
-      } else { say("Couldn't find a route. Try a different destination."); }
-    } catch { say("Connection error — is the server running?"); }
-    finally { setIsLoading(false); }
+      } else { 
+        say("Couldn't find a route. Try a different destination."); 
+      }
+    } catch (error) {
+      console.error("Route calculation error:", error);
+      say("Connection error — is the server running?");
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
   const getGPS = () => {
     if (!navigator.geolocation) return;
     say("Getting your location…");
     navigator.geolocation.getCurrentPosition(
-      p => { setLoc([p.coords.latitude, p.coords.longitude]); setFromVal("Current Location"); say("Location updated ✓"); },
+      p => { 
+        setLoc([p.coords.latitude, p.coords.longitude]); 
+        setFromVal("Current Location");
+        setFromCoords({ lat: p.coords.latitude, lng: p.coords.longitude });
+        say("Location updated ✓"); 
+      },
       () => say("Couldn't get location. Using default.")
     );
   };

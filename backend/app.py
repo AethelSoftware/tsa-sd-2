@@ -11,7 +11,9 @@ import logging
 from datetime import datetime
 from pathlib import Path
 import uuid
-
+import math
+from math import radians, sin, cos, sqrt, atan2
+import googlemaps
 
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -74,6 +76,20 @@ else:
 
 safety_ai = None
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+def haversine_distance(lat1, lon1, lat2, lon2):
+    """Calculate distance between two points in meters using Haversine formula"""
+    R = 6371000  # Earth radius in meters
+    
+    lat1_rad = radians(float(lat1))
+    lat2_rad = radians(float(lat2))
+    delta_lat = radians(float(lat2) - float(lat1))
+    delta_lon = radians(float(lon2) - float(lon1))
+    
+    a = sin(delta_lat/2)**2 + cos(lat1_rad) * cos(lat2_rad) * sin(delta_lon/2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1-a))
+    
+    return R * c
 
 @socketio.on("connect")
 def handle_connect():
@@ -642,25 +658,14 @@ def add_model_endpoints(app):
             if not session:
                 sesh_manager.create_session(session_id)
 
-            session.touch()
+            if session:
+                session.touch()
             
-            
-            # Extract data - support both old and new formats
+            # Extract coordinates
             start_lat = data.get('start_lat') or (data.get('start_location', {}).get('lat') if isinstance(data.get('start_location'), dict) else None)
             start_lng = data.get('start_lng') or (data.get('start_location', {}).get('lng') if isinstance(data.get('start_location'), dict) else None)
             end_lat = data.get('end_lat') or (data.get('end_location', {}).get('lat') if isinstance(data.get('end_location'), dict) else None)
             end_lng = data.get('end_lng') or (data.get('end_location', {}).get('lng') if isinstance(data.get('end_location'), dict) else None)
-            
-            # Try old format if new format not found
-            if not all([start_lat, start_lng, end_lat, end_lng]):
-                start_location = data.get('start_location')
-                end_location = data.get('end_location')
-                
-                if isinstance(start_location, str):
-                    # Use default coordinates for demo
-                    start_lat, start_lng = 40.4406, -79.9959
-                if isinstance(end_location, str):
-                    end_lat, end_lng = 40.4440, -79.9545
             
             if not all([start_lat, start_lng, end_lat, end_lng]):
                 return jsonify({
@@ -680,9 +685,14 @@ def add_model_endpoints(app):
             if accessibility_preferences.get('elevator_access'):
                 accessibility_needs.append('elevator')
             
-            # Use real TomTom API if available
+            route_result = None
+            provider_used = None
+            error_messages = []
+            
+            # TRY 1: TomTom API
             if tomtom_router and tomtom_router.api_key:
                 try:
+                    logger.info(f"Attempting TomTom route from {start_lat},{start_lng} to {end_lat},{end_lng}")
                     route_result = tomtom_router.calculate_route(
                         float(start_lat), float(start_lng),
                         float(end_lat), float(end_lng),
@@ -690,126 +700,277 @@ def add_model_endpoints(app):
                         avoid_hazards=True,
                         accessibility_needs=accessibility_needs if accessibility_needs else None
                     )
-                    
                     if route_result:
-                        route_coords = [{'lat': p[0], 'lng': p[1]} for p in route_result['points']]
-                        
-                        # Get addresses
+                        provider_used = "TomTom"
+                        logger.info("TomTom route successful")
+                except Exception as e:
+                    logger.warning(f"TomTom API failed: {e}")
+                    error_messages.append(f"TomTom: {str(e)}")
+            
+            # TRY 2: OSRM (OpenStreetMap)
+            if not route_result:
+                try:
+                    logger.info(f"Attempting OSRM route from {start_lat},{start_lng} to {end_lat},{end_lng}")
+                    route_result = calculate_route_osrm(
+                        float(start_lat), float(start_lng),
+                        float(end_lat), float(end_lng)
+                    )
+                    if route_result:
+                        provider_used = "OSRM"
+                        logger.info("OSRM route successful")
+                except Exception as e:
+                    logger.warning(f"OSRM API failed: {e}")
+                    error_messages.append(f"OSRM: {str(e)}")
+            
+            # TRY 3: Google Maps
+            if not route_result and GOOGLE_MAPS_AVAILABLE:
+                try:
+                    logger.info(f"Attempting Google Maps route from {start_lat},{start_lng} to {end_lat},{end_lng}")
+                    route_result = calculate_route_google(
+                        float(start_lat), float(start_lng),
+                        float(end_lat), float(end_lng)
+                    )
+                    if route_result:
+                        provider_used = "Google Maps"
+                        logger.info("Google Maps route successful")
+                except Exception as e:
+                    logger.warning(f"Google Maps API failed: {e}")
+                    error_messages.append(f"Google Maps: {str(e)}")
+            
+            # If any provider succeeded, process and return the route
+            if route_result:
+                # Convert points to coordinate objects
+                route_coords = [{'lat': p[0], 'lng': p[1]} for p in route_result['points']]
+                
+                # Get addresses (try TomTom first, then fallback to coordinates)
+                start_address = f"{float(start_lat):.4f}, {float(start_lng):.4f}"
+                end_address = f"{float(end_lat):.4f}, {float(end_lng):.4f}"
+                
+                if tomtom_router and tomtom_router.api_key:
+                    try:
                         start_address = tomtom_router.reverse_geocode(float(start_lat), float(start_lng))
                         end_address = tomtom_router.reverse_geocode(float(end_lat), float(end_lng))
-                        
-                        # Calculate safety
-                        safety_ai_instance = get_safety_ai_instance()
-                        if safety_ai_instance and safety_ai_instance.is_trained:
-                            safety_result = safety_ai_instance.calculate_route_safety(route_coords)
-                            safety_dict = {
-                                'overall_safety': safety_result.overall_safety,
-                                'risk_level': safety_result.risk_level,
-                                'recommendations': safety_result.recommendations
-                            }
-                        else:
-                            safety_dict = {
-                                'overall_safety': 0.8,
-                                'risk_level': 'low',
-                                'recommendations': ['Route appears safe']
-                            }
-                        
-                        response = {
-                            'success': True,
-                            'route': {
-                                'distance': f"{route_result['distance_meters'] / 1000:.1f} km",
-                                'distance_meters': route_result['distance_meters'],
-                                'duration': f"{route_result['duration_seconds'] / 60:.0f} min",
-                                'duration_seconds': route_result['duration_seconds'],
-                                'steps': route_result['instructions'],
-                                'coordinates': route_coords,
-                                'points': route_result['points'],
-                                'segments': route_result.get('segments', []),
-                                'start_address': start_address,
-                                'end_address': end_address,
-                                'accessibility_score': 85 if not accessibility_needs else 90,
-                                'warnings': [],
-                                'elevator_access': 'wheelchair' in accessibility_needs,
-                                'ramp_access': 'wheelchair' in accessibility_needs,
-                                'safety': safety_dict,
-                                'arrival_time': route_result['arrival_time'],
-                                'bounds': route_result['bounds']
-                            },
-                            'model_used': safety_ai_instance.is_trained if safety_ai_instance else False,
-                            'real_api_used': True
+                    except:
+                        pass
+                
+                # Calculate safety
+                safety_ai_instance = get_safety_ai_instance()
+                if safety_ai_instance and safety_ai_instance.is_trained:
+                    try:
+                        safety_result = safety_ai_instance.calculate_route_safety(route_coords)
+                        safety_dict = {
+                            'overall_safety': safety_result['overall_safety'],
+                            'risk_level': safety_result['risk_level'],
+                            'recommendations': safety_result['recommendations']
                         }
-                        sesh_manager.update_session(session_id, route=route_result, score=route_safety, prefs=accessibility_preferences)
-                        # Canonical query string
-                        query_text = (
-                            f"route from {response["start_address"]} to {response["end_address"]}"
-                            f"the estimated distance was {response["distance"]}"
-                            f"the duration was {response["duration"]}"
-                            f"the coordinates for the route were {response["coordinates"]}"
-                            f"accessibility needs are {json.dumps(accessibility_preferences, sort_keys=True)}, with score being {response["accessibility_score"]}"
-                            f"safety features include {response["safety"]}"
-                        )
-                        query_vector = embed(query_text)
-                        query_value = jsonify(response)
-                        if(vdb.compare(query_vector) is None):
-                            vdb.insert(query_vector, query_value)
-                        return query_value
-                except Exception as e:
-                    logger.warning(f"TomTom API failed, falling back to mock: {e}")
-            
-            # Fallback to mock data
-            mock_route = {
-                'distance': '1.2 km',
-                'distance_meters': 1200,
-                'duration': '15 minutes',
-                'duration_seconds': 900,
-                'steps': [
-                    {'instruction': 'Head north on Main St', 'distance': '200 m', 'duration': '3 min'},
-                    {'instruction': 'Turn right on 5th Ave', 'distance': '300 m', 'duration': '4 min'},
-                    {'instruction': 'Continue straight', 'distance': '400 m', 'duration': '5 min'},
-                    {'instruction': 'Turn left on Broadway', 'distance': '300 m', 'duration': '3 min'}
-                ],
-                'coordinates': [
-                    {'lat': 40.4406, 'lng': -79.9959},
-                    {'lat': 40.4410, 'lng': -79.9965},
-                    {'lat': 40.4415, 'lng': -79.9970},
-                    {'lat': 40.4418, 'lng': -79.9960}
-                ],
-                'start_address': data.get('start_location', 'Start Location') if isinstance(data.get('start_location'), str) else 'Start Location',
-                'end_address': data.get('end_location', 'Destination') if isinstance(data.get('end_location'), str) else 'Destination',
-                'accessibility_score': 85,
-                'warnings': [],
-                'elevator_access': accessibility_preferences.get('elevator_access', False),
-                'ramp_access': accessibility_preferences.get('wheelchair', False),
-                'safety': {
-                    'overall_safety': 0.8,
-                    'risk_level': 'low',
-                    'recommendations': ['Route appears safe']
+                    except:
+                        safety_dict = {
+                            'overall_safety': 0.8,
+                            'risk_level': 'low',
+                            'recommendations': ['Route appears safe']
+                        }
+                else:
+                    safety_dict = {
+                        'overall_safety': 0.8,
+                        'risk_level': 'low',
+                        'recommendations': ['Route appears safe']
+                    }
+                
+                # Format distance and duration nicely
+                distance_val = route_result['distance_meters']
+                duration_val = route_result['duration_seconds']
+                
+                if distance_val < 1000:
+                    distance_str = f"{distance_val:.0f} m"
+                else:
+                    distance_str = f"{distance_val/1000:.1f} km"
+                
+                if duration_val < 60:
+                    duration_str = f"{duration_val:.0f} sec"
+                elif duration_val < 3600:
+                    duration_str = f"{duration_val/60:.0f} min"
+                else:
+                    hours = int(duration_val / 3600)
+                    minutes = int((duration_val % 3600) / 60)
+                    duration_str = f"{hours}h {minutes}m"
+                
+                response_data = {
+                    'success': True,
+                    'route': {
+                        'distance': distance_str,
+                        'distance_meters': distance_val,
+                        'duration': duration_str,
+                        'duration_seconds': duration_val,
+                        'steps': route_result.get('instructions', []),
+                        'coordinates': route_coords,
+                        'points': route_result['points'],
+                        'segments': [],
+                        'start_address': start_address,
+                        'end_address': end_address,
+                        'accessibility_score': 85 if not accessibility_needs else 90,
+                        'warnings': [],
+                        'elevator_access': 'wheelchair' in accessibility_needs,
+                        'ramp_access': 'wheelchair' in accessibility_needs,
+                        'safety': safety_dict,
+                        'arrival_time': (datetime.now().timestamp() + duration_val),
+                        'bounds': {
+                            'north': max(float(start_lat), float(end_lat)),
+                            'south': min(float(start_lat), float(end_lat)),
+                            'east': max(float(start_lng), float(end_lng)),
+                            'west': min(float(start_lng), float(end_lng))
+                        }
+                    },
+                    'provider': provider_used,
+                    'model_used': safety_ai_instance.is_trained if safety_ai_instance else False,
+                    'real_api_used': provider_used is not None
                 }
+                
+                # Update session with route data
+                if session_id:
+                    sesh_manager.update_session(
+                        session_id, 
+                        route=route_result, 
+                        score=safety_dict.get('overall_safety', 0.8), 
+                        prefs=accessibility_preferences
+                    )
+                
+                # Cache the response
+                query_text = (
+                    f"route from {start_address} to {end_address} "
+                    f"the estimated distance was {distance_str} "
+                    f"the duration was {duration_str} "
+                    f"accessibility needs are {json.dumps(accessibility_preferences, sort_keys=True)} "
+                    f"safety features include {json.dumps(safety_dict)}"
+                )
+                query_vector = embed(query_text)
+                cached_result = vdb.compare(query_vector)
+                
+                if cached_result is None:
+                    vdb.insert(query_vector, response_data)
+                    return jsonify(response_data)
+                else:
+                    return jsonify(cached_result['value'])
+            
+            # If ALL providers failed, use calculated fallback (straight line + curves)
+            logger.warning(f"All routing providers failed: {error_messages}. Using calculated fallback.")
+            
+            # Calculate approximate straight-line distance
+            straight_distance = haversine_distance(
+                float(start_lat), float(start_lng),
+                float(end_lat), float(end_lng)
+            )
+            
+            # Approximate road distance (1.3x straight line to account for roads)
+            approx_distance = straight_distance * 1.3
+            walking_speed = 1.4  # m/s (5 km/h)
+            approx_duration = approx_distance / walking_speed
+            
+            # Generate a simple route with intermediate points for visualization
+            num_points = 20
+            route_coords = []
+            for i in range(num_points + 1):
+                t = i / num_points
+                # Add slight curve to make it look natural
+                lat = float(start_lat) + (float(end_lat) - float(start_lat)) * t + math.sin(t * math.pi) * 0.0005
+                lng = float(start_lng) + (float(end_lng) - float(start_lng)) * t + math.cos(t * math.pi) * 0.0005
+                route_coords.append({'lat': lat, 'lng': lng})
+            
+            points = [[c['lat'], c['lng']] for c in route_coords]
+            
+            # Format distance and duration
+            if approx_distance < 1000:
+                distance_str = f"{approx_distance:.0f} m"
+            else:
+                distance_str = f"{approx_distance/1000:.1f} km"
+            
+            if approx_duration < 60:
+                duration_str = f"{approx_duration:.0f} sec"
+            elif approx_duration < 3600:
+                duration_str = f"{approx_duration/60:.0f} min"
+            else:
+                hours = int(approx_duration / 3600)
+                minutes = int((approx_duration % 3600) / 60)
+                duration_str = f"{hours}h {minutes}m"
+            
+            # Determine cardinal direction for instruction
+            delta_lat = float(end_lat) - float(start_lat)
+            delta_lng = float(end_lng) - float(start_lng)
+            bearing = math.degrees(math.atan2(delta_lng, delta_lat))
+            if bearing < 0:
+                bearing += 360
+            
+            if 45 <= bearing < 135:
+                direction = "east"
+            elif 135 <= bearing < 225:
+                direction = "south"
+            elif 225 <= bearing < 315:
+                direction = "west"
+            else:
+                direction = "north"
+            
+            fallback_route = {
+                'points': points,
+                'distance_meters': approx_distance,
+                'duration_seconds': approx_duration,
+                'instructions': [
+                    {
+                        'instruction': f"Head {direction} towards your destination",
+                        'distance': approx_distance / 2,
+                        'duration': approx_duration / 2,
+                        'type': 'depart'
+                    },
+                    {
+                        'instruction': "Continue straight",
+                        'distance': approx_distance / 2,
+                        'duration': approx_duration / 2,
+                        'type': 'continue'
+                    }
+                ]
             }
-        except Exception as e:
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 500
-    
-    @app.route("/api/model/train", methods=['POST'])
-    def train_model():
-        """Train or retrain the model"""
-        try:
-            data = request.json or {}
-            n_loops = data.get('n_loops', 15)
-            n_epochs = data.get('n_epochs', 5)
-            force = data.get('force', False)
             
-            return jsonify({
+            # Build response with fallback
+            safety_dict = {
+                'overall_safety': 0.7,
+                'risk_level': 'medium',
+                'recommendations': ['Estimated route - use caution', 'Check local conditions']
+            }
+            
+            response_data = {
                 'success': True,
-                'route': mock_route,
-                'model_used': safety_ai.is_trained if safety_ai else False,
-                'real_api_used': False
-            })
+                'route': {
+                    'distance': distance_str,
+                    'distance_meters': approx_distance,
+                    'duration': duration_str,
+                    'duration_seconds': approx_duration,
+                    'steps': fallback_route['instructions'],
+                    'coordinates': route_coords,
+                    'points': points,
+                    'segments': [],
+                    'start_address': f"{float(start_lat):.4f}, {float(start_lng):.4f}",
+                    'end_address': f"{float(end_lat):.4f}, {float(end_lng):.4f}",
+                    'accessibility_score': 70,
+                    'warnings': ['Using estimated route due to API unavailability'],
+                    'elevator_access': 'wheelchair' in accessibility_needs,
+                    'ramp_access': 'wheelchair' in accessibility_needs,
+                    'safety': safety_dict,
+                    'arrival_time': (datetime.now().timestamp() + approx_duration),
+                    'bounds': {
+                        'north': max(float(start_lat), float(end_lat)),
+                        'south': min(float(start_lat), float(end_lat)),
+                        'east': max(float(start_lng), float(end_lng)),
+                        'west': min(float(start_lng), float(end_lng))
+                    }
+                },
+                'provider': 'fallback-calculation',
+                'model_used': False,
+                'real_api_used': False,
+                'note': 'All routing APIs failed; using calculated straight-line approximation.'
+            }
+            
+            return jsonify(response_data)
             
         except Exception as e:
-            logger.error(f"Route calculation error: {e}")
+            logger.error(f"Route calculation error: {e}", exc_info=True)
             return jsonify({
                 'success': False,
                 'error': str(e)
@@ -1431,6 +1592,7 @@ def main():
         print(f"\n❌ Server error: {e}")
         sys.exit(1)
 
+
+
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=3000)
     main()

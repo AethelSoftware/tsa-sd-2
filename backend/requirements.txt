@@ -113,3 +113,4 @@ distro==1.9.0
 googlemaps==4.10.0
 geopy==2.4.1
 shapely==2.0.4
+polyline
