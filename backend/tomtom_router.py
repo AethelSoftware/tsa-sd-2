@@ -5,7 +5,6 @@ Real route calculation using TomTom API with proper turn-by-turn navigation.
 import os
 import requests
 import logging
-import polyline
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime, timedelta
 import math
@@ -27,6 +26,15 @@ class TomTomRouter:
                        accessibility_needs: List[str] = None) -> Optional[Dict]:
         """Calculate route between two points using TomTom API"""
         try:
+            # Validate coordinates are within reasonable range
+            if not (-90 <= start_lat <= 90) or not (-180 <= start_lng <= 180):
+                logger.error(f"Invalid start coordinates: {start_lat}, {start_lng}")
+                return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
+            
+            if not (-90 <= dest_lat <= 90) or not (-180 <= dest_lng <= 180):
+                logger.error(f"Invalid destination coordinates: {dest_lat}, {dest_lng}")
+                return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
+            
             # Format coordinates for TomTom API
             origin = f"{start_lat},{start_lng}"
             destination = f"{dest_lat},{dest_lng}"
@@ -34,36 +42,34 @@ class TomTomRouter:
             # Construct URL
             url = f"{self.base_url}/calculateRoute/{origin}:{destination}/json"
             
-            # Build parameters
+            # Build parameters - simplified to avoid 400 errors
             params = {
                 'key': self.api_key,
                 'travelMode': travel_mode,
                 'routeType': 'fastest',
-                'traffic': 'true',
-                'maxAlternatives': 3,
+                'traffic': 'false',  # Disable traffic to avoid extra validation
                 'instructionsType': 'text',
                 'language': 'en-US',
-                'computeBestOrder': 'false',
                 'routeRepresentation': 'polyline',
-                'computeTravelTimeFor': 'all',
-                'vehicleHeading': 0,
-                'report': 'effectiveSettings',
-                'sectionType': ['travelMode', 'pedestrian'],
-                'avoid': 'unpavedRoads,ferries'
+                'computeTravelTimeFor': 'none',  # Simplify request
+                'avoid': 'unpavedRoads'
             }
             
             # Add accessibility considerations
             if accessibility_needs:
                 if 'wheelchair' in accessibility_needs:
                     params['hilliness'] = 'normal'  # Avoid steep hills
-                    params['windingness'] = 'normal'  # Avoid sharp turns
                 if 'blind' in accessibility_needs:
-                    params['avoid'] = 'unpavedRoads,tollRoads,ferries,motorways'
+                    params['avoid'] = params.get('avoid', '') + ',tollRoads,motorways'
             
             logger.info(f"Calculating TomTom route from {origin} to {destination}")
             
-            # Make request
-            response = requests.get(url, params=params, timeout=15)
+            # Make request with timeout
+            response = requests.get(url, params=params, timeout=10)
+            
+            # Log the full URL for debugging
+            logger.debug(f"TomTom URL: {response.url}")
+            
             response.raise_for_status()
             data = response.json()
             
@@ -81,6 +87,30 @@ class TomTomRouter:
             
             return processed
             
+        except requests.exceptions.HTTPError as e:
+            if hasattr(e, 'response') and e.response and e.response.status_code == 400:
+                logger.warning(f"TomTom 400 error - trying simplified request: {e}")
+                # Try with minimal parameters
+                try:
+                    simplified_params = {
+                        'key': self.api_key,
+                        'travelMode': 'pedestrian',
+                        'routeType': 'shortest',
+                        'instructionsType': 'text',
+                        'language': 'en-US',
+                    }
+                    response = requests.get(url, params=simplified_params, timeout=10)
+                    response.raise_for_status()
+                    data = response.json()
+                    if 'routes' in data and data['routes']:
+                        route = data['routes'][0]
+                        processed = self._process_route(route, start_lat, start_lng, dest_lat, dest_lng)
+                        return processed
+                except Exception as e2:
+                    logger.warning(f"Simplified TomTom request also failed: {e2}")
+            else:
+                logger.error(f"TomTom API request failed: {e}")
+            return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
         except requests.exceptions.RequestException as e:
             logger.error(f"TomTom API request failed: {e}")
             return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
@@ -111,7 +141,8 @@ class TomTomRouter:
             try:
                 # TomTom uses a custom polyline format, try to decode it
                 route_points = self._decode_tomtom_polyline(encoded)
-            except:
+            except Exception as e:
+                logger.warning(f"Failed to decode polyline: {e}")
                 # Fallback to start and end points
                 route_points = [(start_lat, start_lng), (dest_lat, dest_lng)]
         else:
@@ -120,23 +151,32 @@ class TomTomRouter:
                 if 'latitude' in point and 'longitude' in point:
                     route_points.append((point['latitude'], point['longitude']))
         
+        # If we still don't have points, create a simple line
+        if not route_points or len(route_points) < 2:
+            route_points = self._generate_intermediate_points(start_lat, start_lng, dest_lat, dest_lng)
+        
         # Extract guidance instructions
         instructions = []
         guidance = leg.get('guidance', {}).get('instructions', [])
         
         for instr in guidance:
-            if 'message' in instr and 'point' in instr:
-                instructions.append({
+            if 'message' in instr:
+                instruction = {
                     'instruction': instr['message'],
-                    'distance': instr.get('roadLength', 0),
-                    'duration': instr.get('travelTime', 0),
+                    'distance': instr.get('routeOffsetInMeters', 0),
+                    'duration': instr.get('travelTimeInSeconds', 0),
                     'type': instr.get('maneuver', 'continue'),
-                    'point_index': instr.get('pointIndex', 0),
-                    'point': {
-                        'lat': route_points[instr.get('pointIndex', 0)][0] if route_points else start_lat,
-                        'lng': route_points[instr.get('pointIndex', 0)][1] if route_points else start_lng
+                    'point_index': instr.get('pointIndex', 0)
+                }
+                
+                # Add point if available
+                if instr.get('point') and 'latitude' in instr['point'] and 'longitude' in instr['point']:
+                    instruction['point'] = {
+                        'lat': instr['point']['latitude'],
+                        'lng': instr['point']['longitude']
                     }
-                })
+                
+                instructions.append(instruction)
         
         # Calculate segments for safety analysis
         segments = []
@@ -175,16 +215,29 @@ class TomTomRouter:
                 'west': min(start_lng, dest_lng)
             }
         
+        # Get distance and duration
+        distance_meters = summary.get('lengthInMeters', 0)
+        if distance_meters == 0 and route_points:
+            # Calculate approximate distance
+            distance_meters = 0
+            for i in range(len(route_points) - 1):
+                distance_meters += self._haversine_distance(
+                    route_points[i][0], route_points[i][1],
+                    route_points[i+1][0], route_points[i+1][1]
+                )
+        
+        duration_seconds = summary.get('travelTimeInSeconds', distance_meters / 1.4)
+        
         return {
             'points': route_points,
             'segments': segments,
-            'distance_meters': summary.get('lengthInMeters', 0),
-            'duration_seconds': summary.get('travelTimeInSeconds', 0),
+            'distance_meters': distance_meters,
+            'duration_seconds': duration_seconds,
             'instructions': instructions,
             'summary': summary,
             'bounds': bounds,
             'travel_mode': route.get('travelMode', 'pedestrian'),
-            'arrival_time': (datetime.now() + timedelta(seconds=summary.get('travelTimeInSeconds', 0))).isoformat(),
+            'arrival_time': (datetime.now() + timedelta(seconds=duration_seconds)).isoformat(),
             'start_point': {'lat': start_lat, 'lng': start_lng},
             'end_point': {'lat': dest_lat, 'lng': dest_lng}
         }
@@ -291,21 +344,26 @@ class TomTomRouter:
         
         return R * c
     
+    def _generate_intermediate_points(self, start_lat: float, start_lng: float,
+                                     dest_lat: float, dest_lng: float, 
+                                     num_points: int = 10) -> List[Tuple[float, float]]:
+        """Generate intermediate points for a simple straight line route"""
+        points = []
+        for i in range(num_points + 1):
+            t = i / num_points
+            # Add slight curve to make it look natural
+            lat = start_lat + (dest_lat - start_lat) * t + math.sin(t * math.pi) * 0.0005
+            lng = start_lng + (dest_lng - start_lng) * t + math.cos(t * math.pi) * 0.0005
+            points.append((lat, lng))
+        return points
+    
     def _generate_fallback_route(self, start_lat: float, start_lng: float,
                                 dest_lat: float, dest_lng: float) -> Dict:
         """Generate a fallback route when API fails"""
         distance = self._haversine_distance(start_lat, start_lng, dest_lat, dest_lng)
         
         # Create intermediate points for a more natural route
-        points = []
-        steps = 10
-        
-        for i in range(steps + 1):
-            t = i / steps
-            # Add some curve to make it look natural
-            lat = start_lat + (dest_lat - start_lat) * t + math.sin(t * math.pi) * 0.0005
-            lng = start_lng + (dest_lng - start_lng) * t + math.cos(t * math.pi) * 0.0005
-            points.append((lat, lng))
+        points = self._generate_intermediate_points(start_lat, start_lng, dest_lat, dest_lng, steps=20)
         
         segments = []
         for i in range(len(points) - 1):
@@ -319,6 +377,22 @@ class TomTomRouter:
                 'index': i
             })
         
+        # Determine cardinal direction for instruction
+        delta_lat = dest_lat - start_lat
+        delta_lng = dest_lng - start_lng
+        bearing = math.degrees(math.atan2(delta_lng, delta_lat))
+        if bearing < 0:
+            bearing += 360
+        
+        if 45 <= bearing < 135:
+            direction = "east"
+        elif 135 <= bearing < 225:
+            direction = "south"
+        elif 225 <= bearing < 315:
+            direction = "west"
+        else:
+            direction = "north"
+        
         return {
             'points': points,
             'segments': segments,
@@ -326,17 +400,17 @@ class TomTomRouter:
             'duration_seconds': distance / 1.4,
             'instructions': [
                 {
-                    'instruction': 'Start walking towards destination',
+                    'instruction': f"Head {direction} towards your destination",
                     'distance': distance / 2,
                     'duration': distance / 2.8,
                     'type': 'depart',
                     'point_index': 0
                 },
                 {
-                    'instruction': 'Continue straight',
+                    'instruction': "Continue straight",
                     'distance': distance / 2,
                     'duration': distance / 2.8,
-                    'type': 'arrive',
+                    'type': 'continue',
                     'point_index': len(points) - 1
                 }
             ],
@@ -367,6 +441,7 @@ class TomTomRouter:
             }
             
             response = requests.get(url, params=params, timeout=5)
+            response.raise_for_status()
             data = response.json()
             
             if 'addresses' in data and data['addresses']:
@@ -404,6 +479,7 @@ class TomTomRouter:
                 params['radius'] = radius
             
             response = requests.get(url, params=params, timeout=5)
+            response.raise_for_status()
             data = response.json()
             
             results = []

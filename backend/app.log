@@ -701,3 +701,58 @@ Traceback (most recent call last):
     return np.array(response.json()[0]) # Return embedded vector to perform similarity with other vectors
 KeyError: 0
 2026-03-11 10:31:38,065 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 10:31:38] "[35m[1mPOST /api/calculate-route HTTP/1.1[0m" 500 -
+2026-03-11 12:25:46,382 - __main__ - INFO - Safety AI loaded successfully
+2026-03-11 12:25:52,792 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-11 12:25:52,792 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-11 12:25:55,491 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 12:25:55] "GET /api/hello HTTP/1.1" 200 -
+2026-03-11 12:26:34,517 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 12:26:34] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 12:26:34,521 - __main__ - INFO - Attempting TomTom route from 40.51846312420336,-79.87040709166166 to 40.488521,-79.898154
+2026-03-11 12:26:34,521 - tomtom_router - INFO - Calculating TomTom route from 40.51846312420336,-79.87040709166166 to 40.488521,-79.898154
+2026-03-11 12:26:34,717 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/40.51846312420336,-79.87040709166166:40.488521,-79.898154/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=true&maxAlternatives=3&instructionsType=text&language=en-US&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=all&vehicleHeading=0&report=effectiveSettings&sectionType=travelMode&sectionType=pedestrian&avoid=unpavedRoads%2Cferries
+2026-03-11 12:26:34,720 - __main__ - INFO - TomTom route successful
+2026-03-11 12:26:35,145 - __main__ - ERROR - Route calculation error: 0
+Traceback (most recent call last):
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 845, in calculate_route
+    query_vector = embed(query_text)
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 140, in embed
+    return np.array(response.json()[0]) # Return embedded vector to perform similarity with other vectors
+KeyError: 0
+2026-03-11 12:26:35,155 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 12:26:35] "[35m[1mPOST /api/calculate-route HTTP/1.1[0m" 500 -
+2026-03-11 12:47:45,032 - __main__ - INFO - Safety AI loaded successfully
+2026-03-11 12:47:46,924 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-11 12:47:46,924 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-11 12:47:49,632 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 12:47:49] "GET /api/hello HTTP/1.1" 200 -
+2026-03-11 12:48:01,922 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 12:48:01] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-11 12:48:01,926 - __main__ - INFO - Attempting TomTom route from 40.518463130895135,-79.87041037631586 to 40.488521,-79.898154
+2026-03-11 12:48:01,926 - tomtom_router - INFO - Calculating TomTom route from 40.518463130895135,-79.87041037631586 to 40.488521,-79.898154
+2026-03-11 12:48:02,086 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/40.518463130895135,-79.87041037631586:40.488521,-79.898154/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=true&maxAlternatives=3&instructionsType=text&language=en-US&computeBestOrder=false&routeRepresentation=polyline&computeTravelTimeFor=all&vehicleHeading=0&report=effectiveSettings&sectionType=travelMode&sectionType=pedestrian&avoid=unpavedRoads%2Cferries
+2026-03-11 12:48:02,090 - __main__ - INFO - TomTom route successful
+2026-03-11 12:48:02,494 - __main__ - ERROR - Route calculation error: 0
+Traceback (most recent call last):
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 847, in calculate_route
+    query_vector = embed(query_text)
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 141, in embed
+    return np.array(response.json()[0]) # Return embedded vector to perform similarity with other vectors
+KeyError: 0
+2026-03-11 12:48:02,502 - werkzeug - INFO - 127.0.0.1 - - [11/Mar/2026 12:48:02] "[35m[1mPOST /api/calculate-route HTTP/1.1[0m" 500 -
+2026-03-13 15:40:48,951 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-13 15:40:49,272 - __main__ - INFO - Safety AI loaded successfully
+2026-03-13 15:40:51,290 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-13 15:40:51,290 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-13 15:40:53,929 - werkzeug - INFO - 127.0.0.1 - - [13/Mar/2026 15:40:53] "GET /api/hello HTTP/1.1" 200 -
+2026-03-13 15:41:14,539 - werkzeug - INFO - 127.0.0.1 - - [13/Mar/2026 15:41:14] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-13 15:41:14,542 - __main__ - INFO - Attempting TomTom route from 40.51876933893632,-79.87022409886993 to 40.488521,-79.898154
+2026-03-13 15:41:14,542 - tomtom_router - INFO - Calculating TomTom route from 40.51876933893632,-79.87022409886993 to 40.488521,-79.898154
+2026-03-13 15:41:14,729 - __main__ - INFO - TomTom route successful
+2026-03-13 15:41:14,996 - __main__ - WARNING - HF_TOKEN not set, using fallback zero vector
+2026-03-13 15:41:14,998 - werkzeug - INFO - 127.0.0.1 - - [13/Mar/2026 15:41:14] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-13 15:41:37,413 - werkzeug - INFO - 127.0.0.1 - - [13/Mar/2026 15:41:37] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-13 15:41:37,416 - __main__ - INFO - Attempting TomTom route from 40.51876933893632,-79.87022409886993 to 40.488521,-79.898154
+2026-03-13 15:41:37,416 - tomtom_router - INFO - Calculating TomTom route from 40.51876933893632,-79.87022409886993 to 40.488521,-79.898154
+2026-03-13 15:41:37,585 - __main__ - INFO - TomTom route successful
+2026-03-13 15:41:37,847 - __main__ - WARNING - HF_TOKEN not set, using fallback zero vector
+2026-03-13 15:41:37,856 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-13 15:41:37,859 - werkzeug - INFO - 127.0.0.1 - - [13/Mar/2026 15:41:37] "POST /api/calculate-route HTTP/1.1" 200 -
