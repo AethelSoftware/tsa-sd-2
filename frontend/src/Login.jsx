@@ -26,9 +26,9 @@ const Login = () => {
     setError('');
 
     try {
-      const endpoint = isLogin ? '/api/auth/email-login' : '/api/auth/signup';
+      const endpoint = isLogin ? '/login' : '/signup';
       
-      const response = await fetch(`http://127.0.0.1:5000${endpoint}`, {
+      const response = await fetch(`http://localhost:5000/api/auth/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -54,7 +54,7 @@ const Login = () => {
 
   const handleGoogleLogin = () => {
     // Redirect to Flask OAuth endpoint
-    window.location.href = 'http://127.0.0.1:5000/api/auth/login';
+    window.location.href = "http://localhost:5000/api/auth/login";
   };
 
   return (
