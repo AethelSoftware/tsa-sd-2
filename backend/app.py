@@ -14,11 +14,13 @@ import uuid
 import math
 from math import radians, sin, cos, sqrt, atan2
 import googlemaps
+from authlib.integrations.flask_client import OAuth
+import secrets
 
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from flask import Flask, jsonify, request, send_file, send_from_directory
+from flask import Flask, jsonify, request, send_file, send_from_directory, url_for, session, redirect
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 import threading
@@ -38,8 +40,56 @@ vdb = VectorDB(0.90)
 sesh_manager = SessionManager()
 GOOGLE_MAPS_AVAILABLE = False  # Set to True if you have Google Maps API key
 
-app = Flask(__name__)
-CORS(app)
+
+# app = Flask(__name__)
+# CORS(app)
+
+
+
+# oauth = OAuth(app)
+
+# google = oauth.register(
+#      name='google',
+#     client_id=os.environ.get("GOOGLE_CLIENT_ID"),
+#     client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
+#     access_token_url='https://oauth2.googleapis.com/token',
+#     authorize_url='https://accounts.google.com/o/oauth2/auth',
+#     client_kwargs={
+#         'scope': 'openid email profile'
+#     },
+# )
+
+
+# @app.route('/login', methods=['GET'])
+# def login():
+#     print("HANDLING LOGIN")
+#     return google.authorize_redirect(
+#         redirect_uri=url_for('callback', _external=True)
+#     )
+
+# @app.route('/callback')
+# def callback():
+#     print("IN THE CALLBACK")
+#     token = google.authorize_access_token()
+#     user_info = google.parse_id_token(token)
+
+#     session['user'] = user_info
+
+#     return redirect('/')
+
+# @app.route('/')
+# def home():
+#     user = session.get('user')
+#     if user:
+#         return f"Hello {user['name']}"
+#     return "You are not logged in"
+
+# @app.route('/logout')
+# def logout():
+#     session.clear()
+#     return redirect('/')
+
+# print("AVAILABLE ROUTES: ", app.url_map)
 
 # Try to import new modules, fall back gracefully
 try:
@@ -96,7 +146,7 @@ else:
     logger.warning("Geoapify client not available - search will use fallback")
 
 safety_ai = None
-socketio = SocketIO(app, cors_allowed_origins="*")
+# socketio = SocketIO(app, cors_allowed_origins="*")
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -193,44 +243,44 @@ def format_metric(value, format_str='.4f'):
     except Exception:
         return str(value)
 
-# ============================================================================
-# SOCKETIO HANDLERS
-# ============================================================================
+# # ============================================================================
+# # SOCKETIO HANDLERS
+# # ============================================================================
 
-@socketio.on("connect")
-def handle_connect():
-    logger.info(f"Websocket connected: {request.sid}")
+# @socketio.on("connect")
+# def handle_connect():
+#     logger.info(f"Websocket connected: {request.sid}")
 
-@socketio.on("location-update")
-def update_location(data):
-    """Handle location updates from clients"""
-    # Check to see if we have a valid session id
-    session_id = request.args.get("session_id")
-    if not session_id:
-        return
+# @socketio.on("location-update")
+# def update_location(data):
+#     """Handle location updates from clients"""
+#     # Check to see if we have a valid session id
+#     session_id = request.args.get("session_id")
+#     if not session_id:
+#         return
     
-    # Get the session; if there is no session, create one with the id
-    session_state = sesh_manager.get_session_state(session_id)
-    if not session_state:
-        sesh_manager.create_session(session_id)
-        session_state = sesh_manager.get_session_state(session_id)
+#     # Get the session; if there is no session, create one with the id
+#     session_state = sesh_manager.get_session_state(session_id)
+#     if not session_state:
+#         sesh_manager.create_session(session_id)
+#         session_state = sesh_manager.get_session_state(session_id)
 
-    # Extract the location
-    new_lat = data["lat"]
-    new_lng = data["lng"]
+#     # Extract the location
+#     new_lat = data["lat"]
+#     new_lng = data["lng"]
 
-    updated_coords = np.array([new_lat, new_lng])
+#     updated_coords = np.array([new_lat, new_lng])
 
-    # Update the location if there is no location
-    if session_state.lng is None or session_state.lat is None:
-        session_state.update_location(new_lat, new_lng)
-        return
+#     # Update the location if there is no location
+#     if session_state.lng is None or session_state.lat is None:
+#         session_state.update_location(new_lat, new_lng)
+#         return
     
-    # Compute the distance from last stored location
-    old_coords = np.array([session_state.lat, session_state.lng])
+#     # Compute the distance from last stored location
+#     old_coords = np.array([session_state.lat, session_state.lng])
 
-    if np.linalg.norm(updated_coords - old_coords) > 5:
-        session_state.update_location(new_lat, new_lng)
+#     if np.linalg.norm(updated_coords - old_coords) > 5:
+#         session_state.update_location(new_lat, new_lng)
 
 # ============================================================================
 # MODEL MANAGEMENT FUNCTIONS
@@ -405,7 +455,7 @@ def train_model_interactive():
 
 def add_model_endpoints(app):
     """Add model-related endpoints to Flask app with combined features"""
-    
+
     # Store training progress for WebSocket updates
     training_progress = {
         'status': 'idle',
@@ -1391,31 +1441,31 @@ def add_model_endpoints(app):
             }), 500
     
     # Authentication endpoints
-    @app.route("/api/auth/email-login", methods=['POST'])
-    def email_login():
-        """Email/password login"""
-        try:
-            data = request.json
-            email = data.get('email', '').strip()
-            password = data.get('password', '')
+    # @app.route("/api/auth/email-login", methods=['POST'])
+    # def email_login():
+    #     """Email/password login"""
+    #     try:
+    #         data = request.json
+    #         email = data.get('email', '').strip()
+    #         password = data.get('password', '')
 
-            # For now, accept any non-empty credentials
-            if email and password:
-                # In production, validate against database
-                user_role = 'admin' if 'admin' in email.lower() else 'user'
+    #         # For now, accept any non-empty credentials
+    #         if email and password:
+    #             # In production, validate against database
+    #             user_role = 'admin' if 'admin' in email.lower() else 'user'
                 
-                return jsonify({
-                    'success': True,
-                    'token': 'demo-token-' + str(int(time.time())),
-                    'user': {
-                        'email': email,
-                        'role': user_role,
-                        'name': email.split('@')[0].title()
-                    }
-                })
-            return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
-        except Exception as e:
-            return jsonify({'success': False, 'error': str(e)}), 500
+    #             return jsonify({
+    #                 'success': True,
+    #                 'token': 'demo-token-' + str(int(time.time())),
+    #                 'user': {
+    #                     'email': email,
+    #                     'role': user_role,
+    #                     'name': email.split('@')[0].title()
+    #                 }
+    #             })
+    #         return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
+    #     except Exception as e:
+    #         return jsonify({'success': False, 'error': str(e)}), 500
     
     # For backend generated session ids
     @app.route("/api/session/create", methods=['GET'])
@@ -1451,15 +1501,44 @@ def add_model_endpoints(app):
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)}), 500
 
-    @app.route("/api/auth/login", methods=['GET'])
-    def google_login():
-        """Google OAuth login redirect"""
-        # Mock Google OAuth flow for now
-        return jsonify({
-            'success': True,
-            'message': 'Google OAuth endpoint',
-            'url': 'https://accounts.google.com/o/oauth2/auth'
-        })
+    # @app.route("/api/auth/login", methods=['GET'])
+    # def google_login():
+    #     """Google OAuth login redirect"""
+    #     # Mock Google OAuth flow for now
+    #     return jsonify({
+    #         'success': True,
+    #         'message': 'Google OAuth endpoint',
+    #         'url': 'https://accounts.google.com/o/oauth2/auth'
+    #     })
+    app.secret_key = os.environ.get("SECRET_KEY")
+    oauth = OAuth(app)
+
+    google = oauth.register(
+        name='google',
+        client_id=os.environ.get("GOOGLE_CLIENT_ID"),
+        client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
+        server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+        client_kwargs={
+            'scope': 'openid email profile'
+        }
+    )
+
+
+    @app.route('/api/auth/login', methods=['GET'])
+    def login():
+        return google.authorize_redirect(
+            redirect_uri=url_for('callback', _external=True)
+        )
+
+    @app.route('/api/callback')
+    def callback():
+
+        token = google.authorize_access_token()
+        user_info = token.get("userinfo")
+
+        # session['user'] = user_info
+
+        return redirect("http://localhost:3000/dashboard")
     
     return app
 
@@ -1677,15 +1756,101 @@ def main():
     
     # Setup SocketIO handlers
     setup_socketio_handlers(socketio, app)
+
+    # ============================================================================
+    # SOCKETIO HANDLERS
+    # ============================================================================
+
+    @socketio.on("connect")
+    def handle_connect():
+        logger.info(f"Websocket connected: {request.sid}")
+
+    @socketio.on("location-update")
+    def update_location(data):
+        """Handle location updates from clients"""
+        # Check to see if we have a valid session id
+        session_id = request.args.get("session_id")
+        if not session_id:
+            return
+        
+        # Get the session; if there is no session, create one with the id
+        session_state = sesh_manager.get_session_state(session_id)
+        if not session_state:
+            sesh_manager.create_session(session_id)
+            session_state = sesh_manager.get_session_state(session_id)
+
+        # Extract the location
+        new_lat = data["lat"]
+        new_lng = data["lng"]
+
+        updated_coords = np.array([new_lat, new_lng])
+
+        # Update the location if there is no location
+        if session_state.lng is None or session_state.lat is None:
+            session_state.update_location(new_lat, new_lng)
+            return
+        
+        # Compute the distance from last stored location
+        old_coords = np.array([session_state.lat, session_state.lng])
+
+        if np.linalg.norm(updated_coords - old_coords) > 5:
+            session_state.update_location(new_lat, new_lng)
+
+    # oauth = OAuth(app)
+
+    # google = oauth.register(
+    #     name='google',
+    #     client_id=os.environ.get("GOOGLE_CLIENT_ID"),
+    #     client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
+    #     access_token_url='https://oauth2.googleapis.com/token',
+    #     authorize_url='https://accounts.google.com/o/oauth2/auth',
+    #     client_kwargs={
+    #         'scope': 'openid email profile'
+    #     },
+    # )
+
+
+    # @app.route('/login', methods=['GET'])
+    # def login():
+    #     print("HANDLING LOGIN")
+    #     return google.authorize_redirect(
+    #         redirect_uri=url_for('callback', _external=True)
+    #     )
+
+    # @app.route('/callback')
+    # def callback():
+    #     print("IN THE CALLBACK")
+    #     token = google.authorize_access_token()
+    #     user_info = google.parse_id_token(token)
+
+    #     session['user'] = user_info
+
+    #     return redirect('/')
+
+    # # @app.route('/')
+    # # def home():
+    # #     user = session.get('user')
+    # #     if user:
+    # #         return f"Hello {user['name']}"
+    # #     return "You are not logged in"
+
+    # @app.route('/logout')
+    # def logout():
+    #     session.clear()
+    #     return redirect('/')
+
+    # print("AVAILABLE ROUTES: ", app.url_map)
     
     # Serve frontend
-    @app.route('/')
-    def serve_frontend():
-        return send_from_directory('../frontend/dist', 'index.html')
-    
+    @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
-    def serve_static(path):
-        return send_from_directory('../frontend/dist', path)
+    def serve(path):
+        if path != "" and os.path.exists(f'../frontend/dist/{path}'):
+            return send_from_directory('../frontend/dist', path)
+        else:
+            return send_from_directory('../frontend/dist', 'index.html')
+    
+    
     
     # Start browser in background
     if not args.no_browser:

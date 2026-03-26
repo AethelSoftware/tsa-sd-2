@@ -756,3 +756,495 @@ KeyError: 0
 2026-03-13 15:41:37,847 - __main__ - WARNING - HF_TOKEN not set, using fallback zero vector
 2026-03-13 15:41:37,856 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
 2026-03-13 15:41:37,859 - werkzeug - INFO - 127.0.0.1 - - [13/Mar/2026 15:41:37] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-21 21:12:32,793 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-21 21:12:32,881 - __main__ - INFO - Safety AI loaded successfully
+2026-03-21 21:12:36,875 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-21 21:12:36,877 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-21 21:12:39,995 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:12:39] "GET /api/hello HTTP/1.1" 200 -
+2026-03-21 21:12:40,186 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:12:40] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-03-21 21:28:05,487 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-21 21:28:05,554 - __main__ - INFO - Safety AI loaded successfully
+2026-03-21 21:28:08,024 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-21 21:28:08,024 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-21 21:28:10,742 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:28:10] "GET /api/hello HTTP/1.1" 200 -
+2026-03-21 21:28:17,208 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:28:17] "GET /api/auth/login HTTP/1.1" 200 -
+2026-03-21 21:30:06,239 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:30:06] "GET /api/auth/login HTTP/1.1" 200 -
+2026-03-21 21:30:16,221 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:30:16] "GET /api/auth/login HTTP/1.1" 200 -
+2026-03-21 21:30:31,549 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-21 21:30:31,606 - __main__ - INFO - Safety AI loaded successfully
+2026-03-21 21:30:35,261 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-21 21:30:35,261 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-21 21:30:37,972 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:30:37] "GET /api/hello HTTP/1.1" 200 -
+2026-03-21 21:30:45,633 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:30:45] "[33mGET /api/auth/login HTTP/1.1[0m" 404 -
+2026-03-21 21:32:48,175 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-21 21:32:48,226 - __main__ - INFO - Safety AI loaded successfully
+2026-03-21 21:32:50,791 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-21 21:32:50,793 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-21 21:32:53,529 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:32:53] "GET /api/hello HTTP/1.1" 200 -
+2026-03-21 21:32:59,993 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:32:59] "[33mGET /api/auth/login HTTP/1.1[0m" 404 -
+2026-03-21 21:33:24,251 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:33:24] "[33mGET /api/auth/login HTTP/1.1[0m" 404 -
+2026-03-21 21:35:06,846 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:35:06] "[33mGET /api/auth/login HTTP/1.1[0m" 404 -
+2026-03-21 21:36:50,279 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:36:50] "[33mGET /api/auth/login HTTP/1.1[0m" 404 -
+2026-03-21 21:36:59,484 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:36:59] "[33mGET /api/auth/login HTTP/1.1[0m" 404 -
+2026-03-21 21:37:20,753 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:37:20] "[33mGET /api/auth/login HTTP/1.1[0m" 404 -
+2026-03-21 21:37:54,905 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:37:54] "[33mGET /api/auth/login HTTP/1.1[0m" 404 -
+2026-03-21 21:38:11,627 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:38:11] "[33mGET /login HTTP/1.1[0m" 404 -
+2026-03-21 21:39:28,549 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:39:28] "[33mGET /login HTTP/1.1[0m" 404 -
+2026-03-21 21:40:15,317 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:40:15] "[33mGET /login HTTP/1.1[0m" 404 -
+2026-03-21 21:55:05,202 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:55:05] "[33mGET /api/auth HTTP/1.1[0m" 404 -
+2026-03-21 21:55:29,105 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:55:29] "[33mGET /api/auth HTTP/1.1[0m" 404 -
+2026-03-21 21:55:32,359 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:55:32] "[33mGET /api/auth HTTP/1.1[0m" 404 -
+2026-03-21 21:55:45,337 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:55:45] "[33mGET /api/auth HTTP/1.1[0m" 404 -
+2026-03-21 21:55:53,785 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:55:53] "[33mGET /api/auth HTTP/1.1[0m" 404 -
+2026-03-21 21:56:18,385 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:56:18] "[33mGET /api/auth HTTP/1.1[0m" 404 -
+2026-03-21 21:56:22,959 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:56:22] "[33mGET /api/auth HTTP/1.1[0m" 404 -
+2026-03-21 21:58:51,372 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-21 21:58:51,434 - __main__ - INFO - Safety AI loaded successfully
+2026-03-21 21:58:54,673 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-21 21:58:54,673 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-21 21:58:57,367 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 21:58:57] "GET /api/hello HTTP/1.1" 200 -
+2026-03-21 22:12:16,031 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-21 22:12:16,078 - __main__ - INFO - Safety AI loaded successfully
+2026-03-21 22:12:47,966 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-21 22:12:47,968 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-21 22:12:50,959 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:12:50] "GET /api/hello HTTP/1.1" 200 -
+2026-03-21 22:13:00,621 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:13:00] "[33mGET /auth/login HTTP/1.1[0m" 404 -
+2026-03-21 22:13:45,616 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-21 22:13:45,719 - __main__ - INFO - Safety AI loaded successfully
+2026-03-21 22:13:48,713 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-21 22:13:48,713 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-21 22:13:51,367 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:13:51] "GET /api/hello HTTP/1.1" 200 -
+2026-03-21 22:13:59,382 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:13:59] "[33mGET /auth/login HTTP/1.1[0m" 404 -
+2026-03-21 22:14:03,705 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:14:03] "[33mGET / HTTP/1.1[0m" 404 -
+2026-03-21 22:14:08,900 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:14:08] "[33mGET /auth/login HTTP/1.1[0m" 404 -
+2026-03-21 22:14:55,707 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:14:55] "[33mGET /auth/login HTTP/1.1[0m" 404 -
+2026-03-21 22:15:00,150 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:15:00] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2026-03-21 22:17:06,017 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:17:06] "[33mGET /auth/login HTTP/1.1[0m" 404 -
+2026-03-21 22:17:06,122 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:17:06] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2026-03-21 22:27:33,286 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-21 22:27:33,331 - __main__ - INFO - Safety AI loaded successfully
+2026-03-21 22:27:34,178 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-21 22:27:34,179 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-21 22:27:37,077 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:27:37] "GET /api/hello HTTP/1.1" 200 -
+2026-03-21 22:27:43,025 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:27:43] "[33mGET /auth/login HTTP/1.1[0m" 404 -
+2026-03-21 22:32:06,747 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:32:06] "[33mGET /auth/ HTTP/1.1[0m" 404 -
+2026-03-21 22:32:06,840 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:32:06] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2026-03-21 22:32:08,968 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:32:08] "[33mGET /auth/ HTTP/1.1[0m" 404 -
+2026-03-21 22:32:09,284 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:32:09] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2026-03-21 22:32:40,381 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:32:40] "[33mGET /auth HTTP/1.1[0m" 404 -
+2026-03-21 22:35:03,003 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:35:03] "[33mGET /login HTTP/1.1[0m" 404 -
+2026-03-21 22:35:03,159 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:35:03] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2026-03-21 22:38:04,184 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-21 22:38:04,249 - __main__ - INFO - Safety AI loaded successfully
+2026-03-21 22:38:05,599 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-21 22:38:05,599 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-21 22:38:08,261 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:38:08] "GET /api/hello HTTP/1.1" 200 -
+2026-03-21 22:39:17,723 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-21 22:39:17,792 - __main__ - INFO - Safety AI loaded successfully
+2026-03-21 22:39:19,750 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-21 22:39:19,750 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-21 22:39:22,401 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:39:22] "GET /api/hello HTTP/1.1" 200 -
+2026-03-21 22:47:36,638 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-21 22:47:36,698 - __main__ - INFO - Safety AI loaded successfully
+2026-03-21 22:53:32,754 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-21 22:53:32,754 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-21 22:53:35,418 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:53:35] "GET /api/hello HTTP/1.1" 200 -
+2026-03-21 22:53:46,236 - werkzeug - INFO - 127.0.0.1 - - [21/Mar/2026 22:53:46] "[33mGET /login HTTP/1.1[0m" 404 -
+2026-03-22 22:20:22,747 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-22 22:20:22,831 - __main__ - INFO - Safety AI loaded successfully
+2026-03-22 22:20:24,295 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-22 22:20:24,298 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-22 22:20:27,274 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:20:27] "GET /api/hello HTTP/1.1" 200 -
+2026-03-22 22:21:29,650 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:21:29] "[33mGET /test HTTP/1.1[0m" 404 -
+2026-03-22 22:21:52,294 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:21:52] "[33mGET /api/test HTTP/1.1[0m" 404 -
+2026-03-22 22:22:34,359 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:22:34] "[33mGET / HTTP/1.1[0m" 404 -
+2026-03-22 22:22:36,491 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:22:36] "[33mGET / HTTP/1.1[0m" 404 -
+2026-03-22 22:25:32,376 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:25:32] "[33mGET / HTTP/1.1[0m" 404 -
+2026-03-22 22:25:40,110 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:25:40] "[33mGET /test HTTP/1.1[0m" 404 -
+2026-03-22 22:25:56,037 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:25:56] "[33mGET / HTTP/1.1[0m" 404 -
+2026-03-22 22:31:50,258 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-22 22:31:50,339 - __main__ - INFO - Safety AI loaded successfully
+2026-03-22 22:34:47,533 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-22 22:36:23,699 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-22 22:36:23,706 - __main__ - INFO - Safety AI loaded successfully
+2026-03-22 22:36:25,570 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-22 22:36:25,572 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-22 22:36:29,029 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:36:29] "GET /api/hello HTTP/1.1" 200 -
+2026-03-22 22:36:34,425 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:36:34] "[33mGET /test HTTP/1.1[0m" 404 -
+2026-03-22 22:36:40,930 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:36:40] "[33mGET / HTTP/1.1[0m" 404 -
+2026-03-22 22:36:43,896 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:36:43] "[33mGET /test HTTP/1.1[0m" 404 -
+2026-03-22 22:47:08,856 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-22 22:47:08,862 - __main__ - INFO - Safety AI loaded successfully
+2026-03-22 22:47:10,354 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-22 22:47:10,356 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-22 22:47:13,092 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:47:13] "GET /api/hello HTTP/1.1" 200 -
+2026-03-22 22:47:19,718 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:47:19] "[33mGET / HTTP/1.1[0m" 404 -
+2026-03-22 22:47:24,046 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:47:24] "[33mGET /test HTTP/1.1[0m" 404 -
+2026-03-22 22:47:39,112 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:47:39] "[33mGET / HTTP/1.1[0m" 404 -
+2026-03-22 22:47:43,253 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:47:43] "GET /api/hello HTTP/1.1" 200 -
+2026-03-22 22:47:46,182 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:47:46] "[33mGET /tes HTTP/1.1[0m" 404 -
+2026-03-22 22:47:48,486 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:47:48] "[33mGET /test HTTP/1.1[0m" 404 -
+2026-03-22 22:48:05,148 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 22:48:05] "[33mGET /api/test HTTP/1.1[0m" 404 -
+2026-03-23 10:29:56,952 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-23 10:29:56,962 - __main__ - INFO - Safety AI loaded successfully
+2026-03-23 10:29:58,980 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-23 10:29:58,980 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-23 10:30:01,874 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 10:30:01] "GET /api/hello HTTP/1.1" 200 -
+2026-03-23 10:30:01,994 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 10:30:01] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-03-23 10:31:05,765 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 10:31:05] "GET /api/model/status HTTP/1.1" 200 -
+2026-03-23 10:33:48,730 - __main__ - INFO - Created session: 4e2ee543-26c5-11f1-838a-e02e0b2bdd00
+2026-03-23 10:33:48,734 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 10:33:48] "GET /api/session/create HTTP/1.1" 200 -
+2026-03-23 10:37:26,798 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-23 10:37:26,805 - __main__ - INFO - Safety AI loaded successfully
+2026-03-23 10:37:58,369 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-23 10:37:58,383 - __main__ - INFO - Safety AI loaded successfully
+2026-03-23 10:37:59,741 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-23 10:37:59,741 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-23 10:38:02,425 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 10:38:02] "GET /api/hello HTTP/1.1" 200 -
+2026-03-23 10:38:17,950 - app - ERROR - Exception on /api/auth/login [GET]
+Traceback (most recent call last):
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\OneDrive\Desktop\Triver\tsa-sd-2\backend\app.py", line 1529, in login
+    return google.authorize_redirect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\integrations\flask_client\apps.py", line 50, in authorize_redirect
+    self.save_authorize_data(redirect_uri=redirect_uri, **rv)
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\integrations\flask_client\apps.py", line 38, in save_authorize_data
+    self.framework.set_state_data(session, state, kwargs)
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\integrations\base_client\framework_integration.py", line 49, in set_state_data
+    session[key] = {"data": data, "exp": now + self.expires_in}
+    ~~~~~~~^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\sessions.py", line 104, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+2026-03-23 10:38:18,131 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 10:38:18] "[35m[1mGET /api/auth/login HTTP/1.1[0m" 500 -
+2026-03-23 10:42:43,149 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-23 10:42:43,152 - __main__ - INFO - Safety AI loaded successfully
+2026-03-23 10:45:45,907 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-23 10:45:45,909 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-23 10:45:48,871 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 10:45:48] "GET /api/hello HTTP/1.1" 200 -
+2026-03-23 10:46:21,203 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-23 10:46:21,213 - __main__ - INFO - Safety AI loaded successfully
+2026-03-23 10:47:21,795 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-23 10:47:21,795 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-23 10:47:24,849 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 10:47:24] "GET /api/hello HTTP/1.1" 200 -
+2026-03-23 10:47:29,358 - app - ERROR - Exception on /api/auth/login [GET]
+Traceback (most recent call last):
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\OneDrive\Desktop\Triver\tsa-sd-2\backend\app.py", line 1531, in login
+    return google.authorize_redirect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\integrations\flask_client\apps.py", line 50, in authorize_redirect
+    self.save_authorize_data(redirect_uri=redirect_uri, **rv)
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\integrations\flask_client\apps.py", line 38, in save_authorize_data
+    self.framework.set_state_data(session, state, kwargs)
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\integrations\base_client\framework_integration.py", line 49, in set_state_data
+    session[key] = {"data": data, "exp": now + self.expires_in}
+    ~~~~~~~^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\sessions.py", line 104, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+2026-03-23 10:47:29,498 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 10:47:29] "[35m[1mGET /api/auth/login HTTP/1.1[0m" 500 -
+2026-03-23 10:52:05,722 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-23 10:52:05,722 - __main__ - INFO - Safety AI loaded successfully
+2026-03-23 10:52:07,429 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-23 10:52:07,429 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-23 10:52:10,158 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 10:52:10] "GET /api/hello HTTP/1.1" 200 -
+2026-03-23 10:52:20,699 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 10:52:20] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-23 11:36:09,736 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-23 11:36:09,743 - __main__ - INFO - Safety AI loaded successfully
+2026-03-23 11:36:12,017 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-23 11:36:12,017 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-23 11:36:14,687 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:36:14] "GET /api/hello HTTP/1.1" 200 -
+2026-03-23 11:36:19,705 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:36:19] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-23 11:36:29,942 - app - ERROR - Exception on /api/callback [GET]
+Traceback (most recent call last):
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\OneDrive\Desktop\Triver\tsa-sd-2\backend\app.py", line 1537, in callback
+    token = google.authorize_access_token()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\integrations\flask_client\apps.py", line 114, in authorize_access_token
+    userinfo = self.parse_id_token(
+               ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\integrations\base_client\sync_openid.py", line 67, in parse_id_token
+    claims = _jwt.decode(
+             ^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\jose\rfc7519\jwt.py", line 104, in decode
+    data = self._jws.deserialize_compact(s, load_key, decode_payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\jose\rfc7515\jws.py", line 114, in deserialize_compact
+    algorithm, key = self._prepare_algorithm_key(jws_header, payload, key)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\jose\rfc7515\jws.py", line 271, in _prepare_algorithm_key
+    key = key(header, payload)
+          ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\integrations\base_client\sync_openid.py", line 83, in load_key
+    jwk_set = JsonWebKey.import_key_set(self.fetch_jwk_set())
+                                        ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\integrations\base_client\sync_openid.py", line 18, in fetch_jwk_set
+    raise RuntimeError('Missing "jwks_uri" in metadata')
+RuntimeError: Missing "jwks_uri" in metadata
+2026-03-23 11:36:30,154 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:36:30] "[35m[1mGET /api/callback?state=MWPRUVGpo89tOlkuyYYw9PlFZ63mTx&iss=https://accounts.google.com&code=4/0Aci98E-p259cV4nwfGBOXCDQWd0fBMqlZgwwP1tTWEwd6OBOHDNPkjlWEjY6LZ8maP8kaQ&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=0&prompt=consent HTTP/1.1[0m" 500 -
+2026-03-23 11:39:22,899 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-23 11:39:22,899 - __main__ - INFO - Safety AI loaded successfully
+2026-03-23 11:40:21,410 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-23 11:40:21,410 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-23 11:40:24,051 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:40:24] "GET /api/hello HTTP/1.1" 200 -
+2026-03-23 11:40:29,237 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:40:29] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-23 11:40:34,723 - app - ERROR - Exception on /api/callback [GET]
+Traceback (most recent call last):
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\OneDrive\Desktop\Triver\tsa-sd-2\backend\app.py", line 1537, in callback
+    user_info = google.parse_id_token(token)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: OpenIDMixin.parse_id_token() missing 1 required positional argument: 'nonce'
+2026-03-23 11:40:34,733 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:40:34] "[35m[1mGET /api/callback?state=E3mh6jwuTQ82JhejOmygWNpGh9oC7q&iss=https://accounts.google.com&code=4/0Aci98E8oh4wrcoCaxe9St2dQnI4G4ak7_0XYi5NY-LpVfbKXG3_9v7Z-THUGH0DJuJb1Vg&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+openid&authuser=0&prompt=none HTTP/1.1[0m" 500 -
+2026-03-23 11:40:36,440 - app - ERROR - Exception on /api/callback [GET]
+Traceback (most recent call last):
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\OneDrive\Desktop\Triver\tsa-sd-2\backend\app.py", line 1537, in callback
+    user_info = google.parse_id_token(token)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: OpenIDMixin.parse_id_token() missing 1 required positional argument: 'nonce'
+2026-03-23 11:40:36,440 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:40:36] "[35m[1mGET /api/callback?state=E3mh6jwuTQ82JhejOmygWNpGh9oC7q&iss=https://accounts.google.com&code=4/0Aci98E8WFoNnyGxODLBPdlgSvCYRoJ0aWviADhz0tl550iNTOwJbd0UwwtOVMLVbYk4p3g&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+openid+https://www.googleapis.com/auth/userinfo.email&authuser=0&prompt=none HTTP/1.1[0m" 500 -
+2026-03-23 11:44:28,934 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-23 11:44:28,959 - __main__ - INFO - Safety AI loaded successfully
+2026-03-23 11:46:27,143 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-23 11:46:27,153 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-23 11:46:29,993 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:46:29] "GET /api/hello HTTP/1.1" 200 -
+2026-03-23 11:46:34,352 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:46:34] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-23 11:46:39,082 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:46:39] "[32mGET /api/callback?state=DAxGFvWiyf1cGNgnqupSVierwRDz1A&iss=https://accounts.google.com&code=4/0Aci98E95BMcTqV856_-5R2sTUM4qU3gM0ojdcw3oq9msMydq72TB2KgQwfE-TdgX-Jhs9Q&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+openid&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-23 11:46:39,524 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:46:39] "[33mGET / HTTP/1.1[0m" 404 -
+2026-03-23 11:47:03,080 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:47:03] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-23 11:47:07,716 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:47:07] "[32mGET /api/callback?state=IIwJlqXUr1Ta4sgwXRQWpUPwE5uyIw&iss=https://accounts.google.com&code=4/0Aci98E8hgfIFCUaB6qKFLqw7WGumpXS7BAROBzrfOKSK4f8cbhr75yrdhdw3NjkbkGZNBQ&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-23 11:47:08,194 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:47:08] "[33mGET / HTTP/1.1[0m" 404 -
+2026-03-23 11:56:29,308 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-23 11:56:29,321 - __main__ - INFO - Safety AI loaded successfully
+2026-03-23 11:56:37,331 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-23 11:56:37,342 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-23 11:56:40,052 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:56:40] "GET /api/hello HTTP/1.1" 200 -
+2026-03-23 11:56:51,945 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:56:51] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-23 11:57:02,921 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:57:02] "[32mGET /api/callback?state=nzMoZIJpcl3bBVpW02dxiqVl4TxHZd&iss=https://accounts.google.com&code=4/0Aci98E8XEEcrYLDj4YyTLEixLUspiiIg0awLXG9Yb5FtL5gWBITJIiPcf6zTC6kbY20Ebw&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+openid+https://www.googleapis.com/auth/userinfo.email&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-23 11:57:03,820 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:57:03] "[32mGET /api/callback?state=nzMoZIJpcl3bBVpW02dxiqVl4TxHZd&iss=https://accounts.google.com&code=4/0AfrIepBhRrfcDa4YI0LsOpxBjtPFl4rWeokA1FOMQXXGGf7CDrMKGQCwziSHVIL2haQqNw&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+openid&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-23 11:57:43,942 - app - ERROR - Exception on /api/callback [GET]
+Traceback (most recent call last):
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\OneDrive\Desktop\Triver\tsa-sd-2\backend\app.py", line 1536, in callback
+    token = google.authorize_access_token()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\integrations\flask_client\apps.py", line 105, in authorize_access_token
+    params = self._format_state_params(state_data, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\integrations\base_client\sync_app.py", line 260, in _format_state_params
+    raise MismatchingStateError()
+authlib.integrations.base_client.errors.MismatchingStateError: mismatching_state: CSRF Warning! State not equal in request and response.
+2026-03-23 11:57:44,071 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:57:44] "[35m[1mGET /api/callback?state=nzMoZIJpcl3bBVpW02dxiqVl4TxHZd&iss=https://accounts.google.com&code=4/0Aci98E8yKCR5e_4Oe0VPTT5sa4ZpG0NiKBeSmo-9aEAUs_rSxDmw5uFnCmyFT3W0457SHg&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+openid+https://www.googleapis.com/auth/userinfo.profile&authuser=0&prompt=none HTTP/1.1[0m" 500 -
+2026-03-23 11:57:44,792 - app - ERROR - Exception on /api/callback [GET]
+Traceback (most recent call last):
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\OneDrive\Desktop\Triver\tsa-sd-2\backend\app.py", line 1536, in callback
+    token = google.authorize_access_token()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\integrations\flask_client\apps.py", line 105, in authorize_access_token
+    params = self._format_state_params(state_data, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\authlib\integrations\base_client\sync_app.py", line 260, in _format_state_params
+    raise MismatchingStateError()
+authlib.integrations.base_client.errors.MismatchingStateError: mismatching_state: CSRF Warning! State not equal in request and response.
+2026-03-23 11:57:44,797 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:57:44] "[35m[1mGET /api/callback?state=nzMoZIJpcl3bBVpW02dxiqVl4TxHZd&iss=https://accounts.google.com&code=4/0Aci98E9LUg3rsOHGsM3AZXjnLChquioZ7KpLynj4bdgAvYcEkN4WOV_Xasjovz11MwoLDA&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+openid+https://www.googleapis.com/auth/userinfo.email&authuser=0&prompt=none HTTP/1.1[0m" 500 -
+2026-03-23 11:58:02,636 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-23 11:58:02,640 - __main__ - INFO - Safety AI loaded successfully
+2026-03-23 11:58:04,262 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-23 11:58:04,262 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-23 11:58:07,100 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:58:07] "GET /api/hello HTTP/1.1" 200 -
+2026-03-23 11:58:11,873 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:58:11] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-23 11:58:17,245 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:58:17] "[32mGET /api/callback?state=4bhXnLxLuW036W4VyWhSJjstTl1OCb&iss=https://accounts.google.com&code=4/0Aci98E8KU7ALglIs-dcwRjCcOLCT6qVXc_mpX2_RGAv05VPfF8IN6jk1plaBEV6wgAjT3g&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+openid&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-23 11:58:29,329 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:58:29] "[33mGET /login HTTP/1.1[0m" 404 -
+2026-03-23 11:59:00,019 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:59:00] "[33mGET /login HTTP/1.1[0m" 404 -
+2026-03-23 11:59:13,217 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:59:13] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-23 11:59:19,233 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 11:59:19] "[32mGET /api/callback?state=qfpdCynDOcdLWR5kDjtxy9kwigGqTD&iss=https://accounts.google.com&code=4/0Aci98E-fUCMNHxnFd-_8tq_pJQDNteHA5Tv7XOp6pWzoAh2XLpyJemQr6wpxXX27aDYhNQ&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+openid&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-26 12:17:38,668 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-26 12:17:38,678 - __main__ - INFO - Safety AI loaded successfully
+2026-03-26 12:17:41,830 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-26 12:17:41,830 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-26 12:17:44,755 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:17:44] "GET /api/hello HTTP/1.1" 200 -
+2026-03-26 12:17:52,653 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:17:52] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-26 12:17:59,244 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:17:59] "[32mGET /api/callback?state=awXACRW6P9LutSeVM8EodTAe8GZssL&iss=https://accounts.google.com&code=4/0Aci98E-vLQulkq72sX18OCqNTz0JEw1rMotCCM7hsiOmq0dro23Ax9wtJKdv_IUFjYS2xw&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+openid+https://www.googleapis.com/auth/userinfo.profile&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-26 12:18:27,687 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:18:27] "[33mGET / HTTP/1.1[0m" 404 -
+2026-03-26 12:18:28,099 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:18:28] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-03-26 12:18:33,198 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:18:33] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-26 12:18:41,770 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:18:41] "[32mGET /api/callback?state=zHe8ttyZZqPgpxwGgNqbcgRAEMYv3W&iss=https://accounts.google.com&code=4/0Aci98E9GnXntWI2efxdSzN63g6Lci2d3_rkS5JFPeEA6Yt-2e64f7oVk9PvTHT3q0JB5kw&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=0&prompt=consent HTTP/1.1[0m" 302 -
+2026-03-26 12:19:39,402 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-26 12:19:39,402 - __main__ - INFO - Safety AI loaded successfully
+2026-03-26 12:19:42,648 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-26 12:19:42,672 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-26 12:19:45,354 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:19:45] "GET /api/hello HTTP/1.1" 200 -
+2026-03-26 12:19:52,466 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:19:52] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-26 12:19:58,857 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:19:58] "[32mGET /api/callback?state=OnmjlHUE0jqaFX3oaDhPGFxR7otHbH&iss=https://accounts.google.com&code=4/0Aci98E8M5xq0G1UYlL9W4Yb3T2Pr9gcjxDys_d5yo2PDwWxC024fJ2aTjO78CFOCOmcmmg&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-26 12:21:41,017 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:21:41] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-26 12:21:53,764 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:21:53] "[32mGET /api/callback?state=OVMc4HyWKZqTvFEfA9Eb2m1TJLCJdB&iss=https://accounts.google.com&code=4/0Aci98E_mztauU2_-ClyC8Q0LmDOjSCB6Ir62qBihAKIIq8abTa0TlB_q3RnqFoZ0K06ADg&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+openid+https://www.googleapis.com/auth/userinfo.profile&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-26 12:21:54,114 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:21:54] "GET /api/hello HTTP/1.1" 200 -
+2026-03-26 12:24:57,493 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:24:57] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-26 12:25:02,093 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:25:02] "[32mGET /api/callback?state=S5CfP4zAdGnmZ3v0rNOWaHe0x7ywKY&iss=https://accounts.google.com&code=4/0Aci98E_wPS8UE0FzEcGuQzEx6e9HkfqHD7mA0UIWEU7YXe8XLUAY4aY4Qg7AeAxEmR9kMg&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+openid+https://www.googleapis.com/auth/userinfo.profile&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-26 12:25:02,122 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:25:02] "GET /api/hello HTTP/1.1" 200 -
+2026-03-26 12:25:20,113 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-26 12:25:20,130 - __main__ - INFO - Safety AI loaded successfully
+2026-03-26 12:25:46,688 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-26 12:25:46,688 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-26 12:25:48,110 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:25:48] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-26 12:25:49,607 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:25:49] "GET /api/hello HTTP/1.1" 200 -
+2026-03-26 12:25:56,833 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:25:56] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-26 12:26:04,516 - app - ERROR - Exception on /api/callback [GET]
+Traceback (most recent call last):
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 920, in full_dispatch_request
+    return self.finalize_request(rv)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 939, in finalize_request
+    response = self.make_response(rv)
+               ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\flask\app.py", line 1212, in make_response
+    raise TypeError(
+TypeError: The view function for 'callback' did not return a valid response. The function either returned None or ended without a return statement.
+2026-03-26 12:26:04,534 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:26:04] "[35m[1mGET /api/callback?state=TqP7fvcb29akMy5V0tGSlFpuQA9iNB&iss=https://accounts.google.com&code=4/0Aci98E-jBqjppvs2NgmoxDIfdXTDaXCH1e70oMJFXGQY3zaXLI4Xc-fpsTS6aJuayj8UUA&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+openid+https://www.googleapis.com/auth/userinfo.email&authuser=0&prompt=none HTTP/1.1[0m" 500 -
+2026-03-26 12:28:17,041 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-26 12:28:17,057 - __main__ - INFO - Safety AI loaded successfully
+2026-03-26 12:28:22,742 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-26 12:28:22,742 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-26 12:28:26,042 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:28:26] "GET /api/hello HTTP/1.1" 200 -
+2026-03-26 12:28:36,237 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:28:36] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-26 12:28:42,550 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:28:42] "[32mGET /api/callback?state=nV5fnpf8PhOYRiw7uOGR8pXDskaRgM&iss=https://accounts.google.com&code=4/0Aci98E9tBt2BISmLF-7hIfv21NUFu2tFi-TYA0rkCeRQN3ax4jPb-5FzMZWmYxxAq0xWKg&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+openid+https://www.googleapis.com/auth/userinfo.email&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-26 12:29:10,336 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:29:10] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-26 12:29:11,709 - __main__ - INFO - Attempting TomTom route from 40.518615536272655,-79.86860737750368 to 40.5091784,-79.8695477
+2026-03-26 12:29:11,722 - tomtom_router - INFO - Calculating TomTom route from 40.518615536272655,-79.86860737750368 to 40.5091784,-79.8695477
+2026-03-26 12:29:15,724 - __main__ - INFO - TomTom route successful
+2026-03-26 12:29:28,295 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-26 12:29:28,309 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:29:28] "POST /api/calculate-route HTTP/1.1" 200 -
