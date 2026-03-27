@@ -1248,3 +1248,82 @@ TypeError: The view function for 'callback' did not return a valid response. The
 2026-03-26 12:29:15,724 - __main__ - INFO - TomTom route successful
 2026-03-26 12:29:28,295 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
 2026-03-26 12:29:28,309 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 12:29:28] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-26 20:40:24,760 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-26 20:40:24,761 - __main__ - INFO - Safety AI loaded successfully
+2026-03-26 20:40:51,651 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-26 20:40:51,651 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-26 20:40:54,105 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 20:40:54] "GET /api/hello HTTP/1.1" 200 -
+2026-03-26 20:40:54,316 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 20:40:54] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-03-26 20:40:58,652 - app - ERROR - Exception on /api/auth/login [GET]
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/lib/python3.10/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 1529, in login
+    return google.authorize_redirect(
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/flask_client/apps.py", line 50, in authorize_redirect
+    self.save_authorize_data(redirect_uri=redirect_uri, **rv)
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/flask_client/apps.py", line 38, in save_authorize_data
+    self.framework.set_state_data(session, state, kwargs)
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/base_client/framework_integration.py", line 49, in set_state_data
+    session[key] = {"data": data, "exp": now + self.expires_in}
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/sessions.py", line 104, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+2026-03-26 20:40:58,655 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 20:40:58] "[35m[1mGET /api/auth/login HTTP/1.1[0m" 500 -
+2026-03-26 20:41:41,751 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-26 20:41:41,752 - __main__ - INFO - Safety AI loaded successfully
+2026-03-26 20:41:43,166 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-26 20:41:43,166 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-26 20:41:45,510 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 20:41:45] "GET /api/hello HTTP/1.1" 200 -
+2026-03-26 20:41:47,983 - app - ERROR - Exception on /api/auth/login [GET]
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/lib/python3.10/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 1529, in login
+    return google.authorize_redirect(
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/flask_client/apps.py", line 50, in authorize_redirect
+    self.save_authorize_data(redirect_uri=redirect_uri, **rv)
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/flask_client/apps.py", line 38, in save_authorize_data
+    self.framework.set_state_data(session, state, kwargs)
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/base_client/framework_integration.py", line 49, in set_state_data
+    session[key] = {"data": data, "exp": now + self.expires_in}
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/sessions.py", line 104, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+2026-03-26 20:41:47,989 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 20:41:47] "[35m[1mGET /api/auth/login HTTP/1.1[0m" 500 -
+2026-03-26 20:43:10,527 - werkzeug - ERROR - 127.0.0.1 - - [26/Mar/2026 20:43:10] code 400, message Bad request version ('\x00/Ë&c<Ð\x02Äºù=\x00***\x13\x01\x13\x02\x13\x03À,À+Ì©À0À/Ì¨À')
+2026-03-26 20:43:10,528 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 20:43:10] "[35m[1m\x16\x03\x01\x02\x00\x01\x00\x01ü\x03\x03l\x86\x15\x8d¶¾1ðÞd\x86\x1c^Ö0¬ü²«è\x01\x99hÙÊ\x09R[à;\x96¶ <Ô\x90\x98\x07JÓð¿bì¦z«\x90"±\x1cN\x1c\x00/Ë&c<Ð\x02Äºù=\x00***\x13\x01\x13\x02\x13\x03À,À+Ì©À0À/Ì¨À[0m" HTTPStatus.BAD_REQUEST -
+2026-03-26 20:43:10,532 - werkzeug - ERROR - 127.0.0.1 - - [26/Mar/2026 20:43:10] code 400, message Bad request version ('h\x96ãÐQ\x1a\x00,ZZ\x13\x01\x13\x02\x13\x03À,À+Ì©À0À/Ì¨À')
+2026-03-26 20:43:10,532 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 20:43:10] "[35m[1m\x16\x03\x01\x02\x00\x01\x00\x01ü\x03\x030F\x10qÀÊ­\x081:üëøß\x13t\x1d\x92Gð\x00\x05\x9d§k[Þ\x93ëåù@ ó°Â6\x10!\x8e\x06¡$PÝ«îé¾Ùån2³`RÛ@\x1eh\x96ãÐQ\x1a\x00,ZZ\x13\x01\x13\x02\x13\x03À,À+Ì©À0À/Ì¨À[0m" HTTPStatus.BAD_REQUEST -
+2026-03-26 20:43:10,534 - werkzeug - ERROR - 127.0.0.1 - - [26/Mar/2026 20:43:10] code 400, message Bad HTTP/0.9 request type ('\x16\x03\x01\x00}\x01\x00\x00y\x03\x01\x8eZÔÇI5')
+2026-03-26 20:43:10,534 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 20:43:10] "[35m[1m\x16\x03\x01\x00}\x01\x00\x00y\x03\x01\x8eZÔÇI5\x09çZ77\x99en.\x15×^oÐ\x98â\x84\x94Ì\x18È:\x89ëÁ!\x00\x00\x14À[0m" HTTPStatus.BAD_REQUEST -
+2026-03-26 20:44:41,828 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-26 20:44:41,829 - __main__ - INFO - Safety AI loaded successfully
+2026-03-26 20:45:26,095 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-26 20:45:26,096 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-26 20:45:28,546 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 20:45:28] "GET /api/hello HTTP/1.1" 200 -
+2026-03-26 20:45:31,036 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 20:45:31] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-26 20:45:35,450 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 20:45:35] "[32mGET /api/callback?state=iNGtva8RniNBuNbifU4O7ZFCTOIYV3&iss=https://accounts.google.com&code=4/0Aci98E-nspEoRZ2aW97eDNRPhJeJ7PglZPBj68DGJlfT0SsoJ0J0y0QVSnVgIGQIAIyZHw&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=0&prompt=consent HTTP/1.1[0m" 302 -
+2026-03-26 21:13:24,930 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 21:13:24] "OPTIONS /api/auth//login HTTP/1.1" 200 -
+2026-03-26 21:13:24,935 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 21:13:24] "[31m[1mPOST /api/auth//login HTTP/1.1[0m" 405 -
+2026-03-26 21:16:31,458 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 21:16:31] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-26 21:16:34,449 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 21:16:34] "[32mGET /api/callback?state=jXN8ql8PoU0kpe5fZBuF10145ObWtw&iss=https://accounts.google.com&code=4/0Aci98E8cGnFb4E6lcXzoM0hqaKOfdFcGEZS_cq6DgTQPgK9700fgHQosxPecuW16xEB8VA&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=0&prompt=none HTTP/1.1[0m" 302 -
