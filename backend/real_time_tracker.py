@@ -13,6 +13,7 @@ from typing import Dict, List, Optional, Tuple, Set
 from dataclasses import dataclass, asdict
 from enum import Enum
 import numpy as np
+import scipy.integrate as int
 from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
@@ -492,14 +493,19 @@ class RealTimeTracker:
         return route_segments
     
     def _calculate_segment_safety(self, start: Position, end: Position, 
-                                 accessibility_needs: Set[str]) -> float:
+                                 accessibility_needs: Set[str], x:int) -> float:
         """Calculate safety score for a route segment"""
         
         if self.safety_ai and self.safety_ai.is_trained:
             try:
                 # Use midpoint of segment for safety prediction
-                mid_lat = (start.lat + end.lat) / 2
-                mid_lng = (start.lng + end.lng) / 2
+                # mid_lat = (start.lat + end.lat) / 2
+                # mid_lng = (start.lng + end.lng) / 2
+                temp_lat = start.lat
+                temp_lng = start.lng
+
+                lat_function = temp_lat + SAFETY_CHECK_INTERVAL*MAX_WALKING_SPEED*x
+                lng_function = temp_lng + SAFETY_CHECK_INTERVAL*MAX_WALKING_SPEED*x
                 
                 result = self.safety_ai.predict_safety_score(mid_lat, mid_lng)
                 base_score = result['safety_score']
