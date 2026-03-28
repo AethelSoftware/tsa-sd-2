@@ -13,7 +13,7 @@ from typing import Dict, List, Optional, Tuple, Set
 from dataclasses import dataclass, asdict
 from enum import Enum
 import numpy as np
-import scipy.integrate as int
+from scipy.integrate import trapezoid
 from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
@@ -493,7 +493,7 @@ class RealTimeTracker:
         return route_segments
     
     def _calculate_segment_safety(self, start: Position, end: Position, 
-                                 accessibility_needs: Set[str], x:int) -> float:
+                                 accessibility_needs: Set[str], max_iterations: int = 100) -> float:
         """Calculate safety score for a route segment"""
         
         if self.safety_ai and self.safety_ai.is_trained:
@@ -501,14 +501,18 @@ class RealTimeTracker:
                 # Use midpoint of segment for safety prediction
                 # mid_lat = (start.lat + end.lat) / 2
                 # mid_lng = (start.lng + end.lng) / 2
-                temp_lat = start.lat
-                temp_lng = start.lng
 
-                lat_function = temp_lat + SAFETY_CHECK_INTERVAL*MAX_WALKING_SPEED*x
-                lng_function = temp_lng + SAFETY_CHECK_INTERVAL*MAX_WALKING_SPEED*x
+                delta_lat = end.lat - start.lat
+                delta_lng = end.lng - start.lng
+
+                x_data = [i for i in range(0, max_iterations)]
+                y_data = [self.safety_ai.predict_safety_score(start.lat + delta_lat/max_iterations * j, 
+                                                              start.lng + delta_lng/max_iterations * j) for j in range(0, max_iterations)]
                 
-                result = self.safety_ai.predict_safety_score(mid_lat, mid_lng)
-                base_score = result['safety_score']
+
+                avg = trapezoid(y_data, x_data)/((delta_lat**2+delta_lng**2)**(1/2))
+        
+                base_score = avg
             except Exception as e:
                 logger.error(f"Safety AI prediction failed: {e}")
                 base_score = 0.7
