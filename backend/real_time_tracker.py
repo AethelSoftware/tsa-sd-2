@@ -8,17 +8,20 @@ import json
 import logging
 import threading
 import time
+import math
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Set
 from dataclasses import dataclass, asdict
 from enum import Enum
 import numpy as np
-from scipy.integrate import trapezoid
 from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
-import heapq
 import requests
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -32,7 +35,14 @@ MAX_REROUTE_DISTANCE = 500  # Maximum detour in meters
 MIN_WALKING_SPEED = 0.5  # m/s
 MAX_WALKING_SPEED = 1.8  # m/s
 
-CATEGORY_TAGS = ["amenity", "shop", "tourism", "leisure", "office", "building"] #Descending priority ranking
+CATEGORY_TAGS = ["amenity", "shop", "tourism", "leisure", "office", "building"]  # Descending priority ranking
+
+# API Configuration from .env
+TOMTOM_API_KEY = os.getenv('TOMTOM_API_KEY', 'pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM')
+OVER_PASS_URL = os.getenv('OVERPASS_URL', 'https://overpass-api.de/api/interpreter')
+OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY', '8e59367abbea0731a2c8181b25b16276')
+CENSUS_API_KEY = os.getenv('CENSUS_API_KEY', '8e494334b61e6634a487d6432e5992b96c8559e7')
+GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
 
 class PedestrianState(Enum):
     """Pedestrian movement states"""
@@ -126,6 +136,7 @@ class Pedestrian:
     accessibility_needs: Set[str] = None
     emergency_contacts: List[str] = None
     session_id: str = None
+    travel_mode: str = 'pedestrian'  # 'pedestrian', 'transit'
     
     def __post_init__(self):
         if self.accessibility_needs is None:
@@ -156,7 +167,8 @@ class Pedestrian:
             'estimated_arrival': self.estimated_arrival,
             'accessibility_needs': list(self.accessibility_needs),
             'current_segment_index': self.current_segment_index,
-            'walking_speed': self.walking_speed
+            'walking_speed': self.walking_speed,
+            'travel_mode': self.travel_mode
         }
 
 class RealTimeTracker:
@@ -171,6 +183,13 @@ class RealTimeTracker:
         self.safety_check_lock = threading.Lock()
         self.hazard_check_interval = 30  # Check for new hazards every 30 seconds
         
+        # API clients
+        self.tomtom_api_key = TOMTOM_API_KEY
+        self.overpass_url = OVER_PASS_URL
+        self.openweather_api_key = OPENWEATHER_API_KEY
+        self.census_api_key = CENSUS_API_KEY
+        self.google_maps_api_key = GOOGLE_MAPS_API_KEY
+        
         # Lazy loading of safety AI
         self._safety_ai = None
         
@@ -179,13 +198,14 @@ class RealTimeTracker:
         
         # Start background tasks
         self._start_background_tasks()
+        
+        logger.info("RealTimeTracker initialized with real API keys")
     
     @property
     def safety_ai(self):
         """Lazy load safety AI"""
         if self._safety_ai is None:
             try:
-                # Import safety AI module
                 from ai_safety_model import get_safety_ai
                 self._safety_ai = get_safety_ai()
                 logger.info("Safety AI loaded for tracker")
@@ -215,6 +235,314 @@ class RealTimeTracker:
                 logger.info(f"Client disconnected and removed: {user_id}")
             else:
                 logger.info(f"Client disconnected: {request.sid}")
+                
+    def check_route_obstructions(self, route_coords: List[Tuple[float, float]]) -> Dict:
+        """Check if a route has any obstructions (construction, hazards, etc.)"""
+        obstructions = {
+            'construction_zones': [],
+            'hazards': [],
+            'total_blocked_segments': 0,
+            'has_obstruction': False
+        }
+        
+        try:
+            # Check against known construction zones
+            from google_routing import GoogleMapsRouter
+            router = GoogleMapsRouter()
+            
+            # Sample points along the route (every few points)
+            step = max(1, len(route_coords) // 20)
+            sample_points = route_coords[::step]
+            
+            for point in sample_points:
+                try:
+                    zones = router.get_construction_zones(point[0], point[1], radius=100)
+                    if zones:
+                        for zone in zones:
+                            obstructions['construction_zones'].append(zone)
+                            obstructions['has_obstruction'] = True
+                            obstructions['total_blocked_segments'] += 1
+                except Exception as e:
+                    logger.warning(f"Error checking construction zone at {point}: {e}")
+                    continue
+        except ImportError:
+            logger.warning("GoogleMapsRouter not available for obstruction checking")
+        except Exception as e:
+            logger.error(f"Error checking construction zones: {e}")
+        
+        # Also check against active hazards
+        try:
+            for hazard in self.active_hazards:
+                if hazard.is_active():
+                    # Check if hazard is near any route point
+                    for point in route_coords:
+                        distance = self._calculate_distance(
+                            (point[0], point[1]),
+                            hazard.position.coordinates
+                        )
+                        if distance < hazard.radius:
+                            obstructions['hazards'].append({
+                                'type': hazard.type.value,
+                                'description': hazard.description,
+                                'severity': hazard.severity,
+                                'location': {'lat': hazard.position.lat, 'lng': hazard.position.lng}
+                            })
+                            obstructions['has_obstruction'] = True
+                            break
+        except Exception as e:
+            logger.error(f"Error checking hazards: {e}")
+        
+        # Remove duplicates from construction zones
+        if obstructions['construction_zones']:
+            seen = set()
+            unique_zones = []
+            for zone in obstructions['construction_zones']:
+                key = f"{zone.get('lat', 0)},{zone.get('lng', 0)}"
+                if key not in seen:
+                    seen.add(key)
+                    unique_zones.append(zone)
+            obstructions['construction_zones'] = unique_zones
+        
+        return obstructions
+    
+    def get_route_alternatives_with_transit(self, start: Position, destination: Position,
+                                            accessibility_needs: Set[str]) -> List[Dict]:
+        """Get multiple route alternatives including different transit options"""
+        alternatives = []
+        
+        try:
+            from google_routing import GoogleMapsRouter
+            router = GoogleMapsRouter()
+            
+            # Try to get transit routes
+            if router.api_key:
+                routes = router.get_transit_route(
+                    start.lat, start.lng,
+                    destination.lat, destination.lng,
+                    alternatives=True
+                )
+                
+                if routes:
+                    for i, route in enumerate(routes[:3]):  # Limit to top 3
+                        waypoints = route.get('waypoints', [])
+                        if waypoints and len(waypoints) >= 2:
+                            route_segments = self._create_segments_from_waypoints(
+                                waypoints, accessibility_needs
+                            )
+                            
+                            # Check for obstructions
+                            obstructions = self.check_route_obstructions(waypoints)
+                            
+                            alternatives.append({
+                                'index': i,
+                                'type': 'transit',
+                                'transit_lines': route.get('transit_lines', []),
+                                'total_duration_seconds': route['total_duration_seconds'],
+                                'total_duration_minutes': route['total_duration_seconds'] / 60,
+                                'total_distance_meters': route['total_distance_meters'],
+                                'walking_time_minutes': route.get('total_walking_time', 0) / 60,
+                                'transit_time_minutes': route.get('total_transit_time', 0) / 60,
+                                'transit_steps': route.get('transit_steps', []),
+                                'walking_steps': route.get('walking_steps', []),
+                                'waypoints': waypoints,
+                                'route_segments': route_segments,
+                                'safety_score': self._weighted_safety_score(route_segments) if route_segments else 0.7,
+                                'construction_warnings': route.get('construction_warnings', []),
+                                'has_obstruction': len(route.get('construction_warnings', [])) > 0
+                            })
+            
+            # Also try pedestrian routes
+            pedestrian_route = self.generate_route_with_tomtom(start, destination, accessibility_needs)
+            if pedestrian_route:
+                ped_waypoints = [(seg.start.lat, seg.start.lng) for seg in pedestrian_route]
+                ped_waypoints.append((pedestrian_route[-1].end.lat, pedestrian_route[-1].end.lng))
+                ped_obstructions = self.check_route_obstructions(ped_waypoints)
+                
+                alternatives.append({
+                    'index': len(alternatives),
+                    'type': 'pedestrian',
+                    'total_duration_seconds': sum(seg.duration for seg in pedestrian_route),
+                    'total_duration_minutes': sum(seg.duration for seg in pedestrian_route) / 60,
+                    'total_distance_meters': sum(seg.distance for seg in pedestrian_route),
+                    'waypoints': ped_waypoints,
+                    'route_segments': pedestrian_route,
+                    'safety_score': self._weighted_safety_score(pedestrian_route),
+                    'construction_warnings': ped_obstructions.get('construction_zones', []),
+                    'has_obstruction': ped_obstructions.get('has_obstruction', False)
+                })
+            
+            # Sort by duration
+            alternatives.sort(key=lambda x: x['total_duration_seconds'])
+            
+        except ImportError as e:
+            logger.warning(f"Could not import GoogleMapsRouter: {e}")
+        except Exception as e:
+            logger.error(f"Error getting route alternatives: {e}")
+        
+        return alternatives
+    
+    def _create_segments_from_waypoints(self, waypoints: List[Tuple[float, float]],
+                                        accessibility_needs: Set[str]) -> List[RouteSegment]:
+        """Create route segments from waypoints"""
+        segments = []
+        
+        try:
+            for i in range(len(waypoints) - 1):
+                seg_start = Position(lat=waypoints[i][0], lng=waypoints[i][1])
+                seg_end = Position(lat=waypoints[i+1][0], lng=waypoints[i+1][1])
+                
+                distance = self._calculate_distance(seg_start.coordinates, seg_end.coordinates)
+                duration = distance / 1.4  # walking speed for segments
+                safety_score = self._calculate_segment_safety_weighted(seg_start, seg_end, accessibility_needs)
+                
+                segment = RouteSegment(
+                    start=seg_start,
+                    end=seg_end,
+                    safety_score=safety_score,
+                    distance=distance,
+                    duration=duration,
+                    instructions="Continue on route",
+                    hazards=self._get_hazards_in_segment(seg_start, seg_end),
+                    accessibility_features=self._get_accessibility_features(seg_start, seg_end, accessibility_needs)
+                )
+                segments.append(segment)
+        except Exception as e:
+            logger.error(f"Error creating segments from waypoints: {e}")
+        
+        return segments
+                
+        def check_route_obstructions(self, route_coords: List[Tuple[float, float]]) -> Dict:
+            """Check if a route has any obstructions (construction, hazards, etc.)"""
+            obstructions = {
+                'construction_zones': [],
+                'hazards': [],
+                'total_blocked_segments': 0,
+                'has_obstruction': False
+            }
+            
+            # Check against known construction zones
+            try:
+                from google_routing import GoogleMapsRouter
+                router = GoogleMapsRouter()
+                
+                # Sample points along the route (every 50m)
+                for i in range(0, len(route_coords) - 1, max(1, len(route_coords) // 20)):
+                    point = route_coords[i]
+                    zones = router.get_construction_zones(point[0], point[1], radius=100)
+                    if zones:
+                        obstructions['construction_zones'].extend(zones)
+                        obstructions['has_obstruction'] = True
+                        obstructions['total_blocked_segments'] += 1
+            except Exception as e:
+                logger.error(f"Error checking construction zones: {e}")
+            
+            # Remove duplicates
+            if obstructions['construction_zones']:
+                obstructions['construction_zones'] = list({
+                    f"{z['lat']},{z['lng']}": z for z in obstructions['construction_zones']
+                }.values())
+            
+            return obstructions
+        
+        def get_route_alternatives_with_transit(self, start: Position, destination: Position,
+                                            accessibility_needs: Set[str]) -> List[Dict]:
+            """Get multiple route alternatives including different transit options"""
+            alternatives = []
+            
+            try:
+                from google_routing import GoogleMapsRouter
+                router = GoogleMapsRouter()
+                
+                # Get all transit routes
+                routes = router.get_transit_route(
+                    start.lat, start.lng,
+                    destination.lat, destination.lng,
+                    alternatives=True
+                )
+                
+                if routes:
+                    for i, route in enumerate(routes):
+                        # Convert to segments
+                        waypoints = route.get('waypoints', [])
+                        if waypoints:
+                            route_segments = self._create_segments_from_waypoints(
+                                waypoints, accessibility_needs
+                            )
+                            
+                            # Check for obstructions
+                            obstructions = self.check_route_obstructions(waypoints)
+                            
+                            alternatives.append({
+                                'index': i,
+                                'type': 'transit',
+                                'transit_lines': route.get('transit_lines', []),
+                                'total_duration_seconds': route['total_duration_seconds'],
+                                'total_duration_minutes': route['total_duration_seconds'] / 60,
+                                'total_distance_meters': route['total_distance_meters'],
+                                'walking_time_minutes': route.get('total_walking_time', 0) / 60,
+                                'transit_time_minutes': route.get('total_transit_time', 0) / 60,
+                                'transit_steps': route.get('transit_steps', []),
+                                'walking_steps': route.get('walking_steps', []),
+                                'waypoints': waypoints,
+                                'route_segments': route_segments,
+                                'safety_score': self._weighted_safety_score(route_segments),
+                                'construction_warnings': route.get('construction_warnings', []),
+                                'has_obstruction': len(route.get('construction_warnings', [])) > 0
+                            })
+                
+                # Also try pedestrian routes
+                pedestrian_route = self.generate_route_with_tomtom(start, destination, accessibility_needs)
+                if pedestrian_route:
+                    ped_waypoints = [(seg.start.lat, seg.start.lng) for seg in pedestrian_route] + [(pedestrian_route[-1].end.lat, pedestrian_route[-1].end.lng)]
+                    ped_obstructions = self.check_route_obstructions(ped_waypoints)
+                    
+                    alternatives.append({
+                        'index': len(alternatives),
+                        'type': 'pedestrian',
+                        'total_duration_seconds': sum(seg.duration for seg in pedestrian_route),
+                        'total_duration_minutes': sum(seg.duration for seg in pedestrian_route) / 60,
+                        'total_distance_meters': sum(seg.distance for seg in pedestrian_route),
+                        'waypoints': ped_waypoints,
+                        'route_segments': pedestrian_route,
+                        'safety_score': self._weighted_safety_score(pedestrian_route),
+                        'construction_warnings': ped_obstructions.get('construction_zones', []),
+                        'has_obstruction': ped_obstructions.get('has_obstruction', False)
+                    })
+                
+                # Sort by duration
+                alternatives.sort(key=lambda x: x['total_duration_seconds'])
+                
+            except Exception as e:
+                logger.error(f"Error getting route alternatives: {e}")
+            
+            return alternatives
+    
+    def _create_segments_from_waypoints(self, waypoints: List[Tuple[float, float]],
+                                        accessibility_needs: Set[str]) -> List[RouteSegment]:
+        """Create route segments from waypoints"""
+        segments = []
+        
+        for i in range(len(waypoints) - 1):
+            seg_start = Position(lat=waypoints[i][0], lng=waypoints[i][1])
+            seg_end = Position(lat=waypoints[i+1][0], lng=waypoints[i+1][1])
+            
+            distance = self._calculate_distance(seg_start.coordinates, seg_end.coordinates)
+            duration = distance / 1.4  # walking speed for segments
+            safety_score = self._calculate_segment_safety_weighted(seg_start, seg_end, accessibility_needs)
+            
+            segment = RouteSegment(
+                start=seg_start,
+                end=seg_end,
+                safety_score=safety_score,
+                distance=distance,
+                duration=duration,
+                instructions="Continue on route",
+                hazards=self._get_hazards_in_segment(seg_start, seg_end),
+                accessibility_features=self._get_accessibility_features(seg_start, seg_end, accessibility_needs)
+            )
+            segments.append(segment)
+        
+        return segments
         
         @self.socketio.on('start_navigation')
         def handle_start_navigation(data: Dict):
@@ -228,13 +556,14 @@ class RealTimeTracker:
                 
                 accessibility_needs = set(data.get('accessibility_needs', []))
                 walking_speed = float(data.get('walking_speed', 1.4))
+                travel_mode = data.get('travel_mode', 'pedestrian')
                 
                 # Create positions
                 start_pos = Position(lat=start_lat, lng=start_lng)
                 dest_pos = Position(lat=dest_lat, lng=dest_lng)
                 
-                # Generate initial route
-                route = self.generate_route(start_pos, dest_pos, accessibility_needs)
+                # Generate initial route based on travel mode
+                route = self.generate_route(start_pos, dest_pos, accessibility_needs, travel_mode=travel_mode)
                 
                 # Create pedestrian
                 pedestrian = Pedestrian(
@@ -246,7 +575,8 @@ class RealTimeTracker:
                     current_segment_index=0,
                     walking_speed=walking_speed,
                     accessibility_needs=accessibility_needs,
-                    session_id=request.sid
+                    session_id=request.sid,
+                    travel_mode=travel_mode
                 )
                 
                 # Add to tracking
@@ -258,13 +588,17 @@ class RealTimeTracker:
                 # Send initial route
                 emit('route_updated', {
                     'route': [self._segment_to_dict(seg) for seg in route],
-                    'user_id': user_id
+                    'user_id': user_id,
+                    'total_safety': self._weighted_safety_score(route),
+                    'total_distance': sum(seg.distance for seg in route),
+                    'total_duration': sum(seg.duration for seg in route),
+                    'travel_mode': travel_mode
                 }, room=user_id)
                 
                 # Start position updates
                 asyncio.create_task(self._send_position_updates(user_id))
                 
-                logger.info(f"Navigation started for {user_id}")
+                logger.info(f"Navigation started for {user_id} with mode {travel_mode}")
                 
             except Exception as e:
                 logger.error(f"Error starting navigation: {e}")
@@ -360,7 +694,8 @@ class RealTimeTracker:
                         pedestrian.current_position,
                         pedestrian.destination,
                         pedestrian.accessibility_needs,
-                        avoid_hazards=True
+                        avoid_hazards=True,
+                        travel_mode=pedestrian.travel_mode
                     )
                     
                     pedestrian.route = new_route
@@ -370,84 +705,244 @@ class RealTimeTracker:
                     emit('route_updated', {
                         'route': [self._segment_to_dict(seg) for seg in new_route],
                         'reason': reason,
-                        'user_id': user_id
+                        'user_id': user_id,
+                        'total_safety': self._weighted_safety_score(new_route)
                     }, room=user_id)
                     
                     logger.info(f"Rerouted {user_id}: {reason}")
                     
             except Exception as e:
                 logger.error(f"Error handling reroute: {e}")
+        
+        @self.socketio.on('choose_alternative')
+        def handle_choose_alternative(data: Dict):
+            """Handle user choosing an alternative destination"""
+            try:
+                user_id = data['user_id']
+                alternative_index = data.get('alternative_index', 0)
+                
+                if user_id in self.pedestrians:
+                    pedestrian = self.pedestrians[user_id]
+                    cat_info = self._determine_destination_category(user_id)
+                    
+                    if cat_info and cat_info[0] != "unknown":
+                        category, value = cat_info
+                        alternatives = self._find_alternate_destinations(
+                            user_id, category, value, 
+                            pedestrian.route[pedestrian.current_segment_index].safety_score,
+                            pedestrian.current_position.lat,
+                            pedestrian.current_position.lng
+                        )
+                        
+                        if alternatives and alternative_index < len(alternatives):
+                            selected = alternatives[alternative_index]
+                            pedestrian.destination = selected["destination"]
+                            pedestrian.route = selected["route_segments"]
+                            pedestrian.current_segment_index = 0
+                            pedestrian.state = PedestrianState.REROUTING
+                            
+                            emit('route_updated', {
+                                'route': [self._segment_to_dict(seg) for seg in selected["route_segments"]],
+                                'reason': 'user_selected_alternative',
+                                'user_id': user_id,
+                                'new_destination': {
+                                    'lat': selected["destination"].lat,
+                                    'lng': selected["destination"].lng,
+                                    'name': selected["name"]
+                                }
+                            }, room=user_id)
+                            
+                            logger.info(f"User {user_id} chose alternative: {selected['name']}")
+                    
+            except Exception as e:
+                logger.error(f"Error handling alternative selection: {e}")
     
-    def _start_background_tasks(self):
-        """Start background safety checking and hazard monitoring"""
-        
-        def safety_check_loop():
-            """Continuous safety checking loop"""
-            while True:
-                time.sleep(SAFETY_CHECK_INTERVAL)
-                try:
-                    with self.safety_check_lock:
-                        self._check_all_pedestrians_safety()
-                except Exception as e:
-                    logger.error(f"Safety check error: {e}")
-        
-        def hazard_monitoring_loop():
-            """Monitor for expired hazards and fetch new ones"""
-            while True:
-                time.sleep(self.hazard_check_interval)
-                try:
-                    self._update_hazards()
-                    self._fetch_external_hazards()
-                except Exception as e:
-                    logger.error(f"Hazard monitoring error: {e}")
-        
-        # Start threads
-        safety_thread = threading.Thread(target=safety_check_loop, daemon=True)
-        hazard_thread = threading.Thread(target=hazard_monitoring_loop, daemon=True)
-        
-        safety_thread.start()
-        hazard_thread.start()
-        
-        logger.info("Background tasks started")
+    def generate_route(self, start: Position, destination: Position,
+                      accessibility_needs: Set[str], avoid_hazards: bool = True,
+                      travel_mode: str = 'pedestrian') -> List[RouteSegment]:
+        """Generate route with specified travel mode"""
+        if travel_mode == 'transit':
+            return self.generate_transit_route(start, destination, accessibility_needs)
+        else:
+            return self.generate_route_with_tomtom(start, destination, accessibility_needs, avoid_hazards)
     
-    def add_pedestrian(self, pedestrian: Pedestrian):
-        """Add pedestrian to tracking system"""
-        self.pedestrians[pedestrian.user_id] = pedestrian
-        logger.info(f"Added pedestrian: {pedestrian.user_id}")
+    def generate_transit_route(self, start: Position, destination: Position,
+                               accessibility_needs: Set[str]) -> List[RouteSegment]:
+        """Generate transit route using Google Maps Directions API"""
+        try:
+            if not self.google_maps_api_key:
+                logger.warning("Google Maps API key not set for transit routing")
+                return self.generate_route_with_tomtom(start, destination, accessibility_needs)
+            
+            # Import Google Maps router
+            from google_routing import GoogleMapsRouter
+            router = GoogleMapsRouter(self.google_maps_api_key)
+            routes = router.get_transit_route(start.lat, start.lng, destination.lat, destination.lng)
+            
+            if not routes:
+                logger.warning("No transit routes found, falling back to pedestrian")
+                return self.generate_route_with_tomtom(start, destination, accessibility_needs)
+            
+            # Use the first route (or best route based on criteria)
+            route_data = routes[0]
+            return self._parse_google_transit_route(route_data, start, destination, accessibility_needs)
+            
+        except Exception as e:
+            logger.error(f"Error generating transit route: {e}")
+            return self.generate_route_with_tomtom(start, destination, accessibility_needs)
     
-    def remove_pedestrian(self, user_id: str):
-        """Remove pedestrian from tracking"""
-        if user_id in self.pedestrians:
-            del self.pedestrians[user_id]
-            logger.info(f"Removed pedestrian: {user_id}")
+    def _parse_google_transit_route(self, route_data: Dict, start: Position,
+                                    destination: Position, accessibility_needs: Set[str]) -> List[RouteSegment]:
+        """Parse Google Maps transit route into RouteSegment objects"""
+        route_segments = []
+        
+        # Get waypoints (full path)
+        waypoints = route_data.get('waypoints', [])
+        if not waypoints:
+            return self._generate_synthetic_route(start, destination, accessibility_needs, avoid_hazards=True)
+        
+        # Get transit steps for detailed instructions
+        transit_steps = route_data.get('transit_steps', [])
+        
+        # Create segments from waypoints
+        for i in range(len(waypoints) - 1):
+            seg_start = Position(lat=waypoints[i][0], lng=waypoints[i][1])
+            seg_end = Position(lat=waypoints[i+1][0], lng=waypoints[i+1][1])
+            
+            distance = self._calculate_distance(seg_start.coordinates, seg_end.coordinates)
+            
+            # Estimate duration based on travel mode in this segment
+            # For simplicity, use walking speed for all segments
+            # In a more sophisticated version, we'd match to transit step durations
+            duration = distance / 1.4
+            
+            safety_score = self._calculate_segment_safety_weighted(seg_start, seg_end, accessibility_needs)
+            
+            # Find matching transit step instruction
+            instruction = "Continue"
+            for step in transit_steps:
+                if 'instruction' in step:
+                    instruction = step['instruction']
+                    break
+            
+            segment = RouteSegment(
+                start=seg_start,
+                end=seg_end,
+                safety_score=safety_score,
+                distance=distance,
+                duration=duration,
+                instructions=instruction,
+                hazards=self._get_hazards_in_segment(seg_start, seg_end),
+                accessibility_features=self._get_accessibility_features(seg_start, seg_end, accessibility_needs)
+            )
+            route_segments.append(segment)
+        
+        return route_segments
     
-    def add_hazard(self, hazard: Hazard):
-        """Add hazard to system"""
-        self.active_hazards.append(hazard)
-        
-        # Check if any pedestrians need rerouting
-        affected = self._get_pedestrians_near_hazard(hazard)
-        for user_id in affected:
-            self._trigger_reroute_if_needed(user_id, hazard)
+    def generate_route_with_tomtom(self, start: Position, destination: Position,
+                                   accessibility_needs: Set[str], avoid_hazards: bool = True) -> List[RouteSegment]:
+        """Generate route using TomTom API with real road network"""
+        try:
+            # Try to use TomTom API first
+            if self.tomtom_api_key:
+                url = f"https://api.tomtom.com/routing/1/calculateRoute/{start.lat},{start.lng}:{destination.lat},{destination.lng}/json"
+                params = {
+                    'key': self.tomtom_api_key,
+                    'travelMode': 'pedestrian',
+                    'routeType': 'fastest',
+                    'instructionsType': 'text',
+                    'language': 'en-US',
+                    'routeRepresentation': 'polyline',
+                    'computeTravelTimeFor': 'all'
+                }
+                
+                response = requests.get(url, params=params, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+                
+                if 'routes' in data and data['routes']:
+                    route = data['routes'][0]
+                    return self._parse_tomtom_route(route, start, destination, accessibility_needs, avoid_hazards)
+            
+            # Fallback to synthetic route if TomTom fails
+            logger.warning("TomTom API failed, using synthetic route")
+            return self._generate_synthetic_route(start, destination, accessibility_needs, avoid_hazards)
+            
+        except Exception as e:
+            logger.error(f"Error generating route with TomTom: {e}")
+            return self._generate_synthetic_route(start, destination, accessibility_needs, avoid_hazards)
     
-    def generate_route(self, start: Position, destination: Position, 
-                      accessibility_needs: Set[str], avoid_hazards: bool = True) -> List[RouteSegment]:
-        """Generate walking route with safety considerations"""
+    def _parse_tomtom_route(self, route_data: Dict, start: Position, destination: Position,
+                           accessibility_needs: Set[str], avoid_hazards: bool) -> List[RouteSegment]:
+        """Parse TomTom route response into RouteSegment objects"""
+        route_segments = []
         
-        cache_key = f"{start.lat},{start.lng}|{destination.lat},{destination.lng}|{','.join(sorted(accessibility_needs))}"
+        try:
+            legs = route_data.get('legs', [])
+            if not legs:
+                return self._generate_synthetic_route(start, destination, accessibility_needs, avoid_hazards)
+            
+            leg = legs[0]
+            points = leg.get('points', [])
+            
+            # Extract route points
+            route_points = []
+            for point in points:
+                if 'latitude' in point and 'longitude' in point:
+                    route_points.append(Position(lat=point['latitude'], lng=point['longitude']))
+            
+            if len(route_points) < 2:
+                return self._generate_synthetic_route(start, destination, accessibility_needs, avoid_hazards)
+            
+            # Create segments from points
+            for i in range(len(route_points) - 1):
+                seg_start = route_points[i]
+                seg_end = route_points[i + 1]
+                
+                # Calculate segment details
+                distance = self._calculate_distance(seg_start.coordinates, seg_end.coordinates)
+                duration = distance / 1.4  # Average walking speed
+                
+                # Calculate safety score for segment
+                safety_score = self._calculate_segment_safety_weighted(seg_start, seg_end, accessibility_needs)
+                
+                # Get hazards in segment
+                hazards_in_segment = []
+                if avoid_hazards:
+                    hazards_in_segment = self._get_hazards_in_segment(seg_start, seg_end)
+                
+                # Get instructions if available
+                instruction = "Continue straight"
+                if 'guidance' in leg and 'instructions' in leg['guidance'] and i < len(leg['guidance']['instructions']):
+                    instr = leg['guidance']['instructions'][i]
+                    instruction = instr.get('message', 'Continue straight')
+                
+                segment = RouteSegment(
+                    start=seg_start,
+                    end=seg_end,
+                    safety_score=safety_score,
+                    distance=distance,
+                    duration=duration,
+                    instructions=instruction,
+                    hazards=hazards_in_segment,
+                    accessibility_features=self._get_accessibility_features(seg_start, seg_end, accessibility_needs)
+                )
+                
+                route_segments.append(segment)
+            
+        except Exception as e:
+            logger.error(f"Error parsing TomTom route: {e}")
+            return self._generate_synthetic_route(start, destination, accessibility_needs, avoid_hazards)
         
-        if cache_key in self.route_cache and not avoid_hazards:
-            return self.route_cache[cache_key]
-        
-        # In production, this would call Google Maps Directions API
-        # For now, generate a synthetic route with intermediate points
-        
-        # Generate intermediate points (simplified path)
+        return route_segments if route_segments else self._generate_synthetic_route(start, destination, accessibility_needs, avoid_hazards)
+    
+    def _generate_synthetic_route(self, start: Position, destination: Position,
+                                  accessibility_needs: Set[str], avoid_hazards: bool) -> List[RouteSegment]:
+        """Generate synthetic route when API is unavailable"""
         num_segments = 10
         route_segments = []
         
         for i in range(num_segments):
-            # Interpolate between start and destination
             t = i / num_segments
             t_next = (i + 1) / num_segments
             
@@ -458,26 +953,21 @@ class RealTimeTracker:
             
             seg_end = Position(
                 lat=start.lat + t_next * (destination.lat - start.lat),
-                lng=start.lng + t_next * (destination.lng - destination.lng)
+                lng=start.lng + t_next * (destination.lng - start.lng)
             )
             
-            # Calculate safety score for segment
-            safety_score = self._calculate_segment_safety(seg_start, seg_end, accessibility_needs)
+            safety_score = self._calculate_segment_safety_weighted(seg_start, seg_end, accessibility_needs)
             
-            # Check for hazards
             hazards_in_segment = []
             if avoid_hazards:
                 hazards_in_segment = self._get_hazards_in_segment(seg_start, seg_end)
             
-            # Generate instructions
             if i == 0:
                 instructions = "Start walking"
             elif i == num_segments - 1:
                 instructions = "Approaching destination"
-            elif i % 3 == 0:
-                instructions = "Continue straight"
             else:
-                instructions = "Follow path"
+                instructions = "Continue straight"
             
             segment = RouteSegment(
                 start=seg_start,
@@ -492,58 +982,92 @@ class RealTimeTracker:
             
             route_segments.append(segment)
         
-        self.route_cache[cache_key] = route_segments
         return route_segments
     
-    def _return_weighted_safety_score(segments:list[RouteSegment]) -> float:
-        arr = np.array([s.safety_score for s in segments], [s.distance for s in segments])
-        total_distance = np.sum(arr[1])
-        safety_sum = 0.0
-
-        for i in range(len(arr[0])):
-            safety_sum += np.array[0][i] * np.array[1][i]/total_distance
-        return safety_sum
-
-    def _calculate_segment_safety(self, start: Position, end: Position, 
-                                 accessibility_needs: Set[str], max_iterations: int = 100) -> float:
-        """Calculate safety score for a route segment"""
-        
+    def _weighted_safety_score(self, segments: List[RouteSegment]) -> float:
+        """Calculate weighted safety score for a list of route segments using distance weights"""
+        if not segments:
+            return 0.0
+        scores = np.array([seg.safety_score for seg in segments])
+        distances = np.array([seg.distance for seg in segments])
+        total_dist = distances.sum()
+        if total_dist == 0:
+            return float(np.mean(scores))
+        weighted_sum = np.sum(scores * distances)
+        return float(weighted_sum / total_dist)
+    
+    def _calculate_segment_safety_weighted(self, start: Position, end: Position, 
+                                          accessibility_needs: Set[str], max_iterations: int = 30) -> float:
+        """Calculate safety score for a route segment using weighted average along the path"""
         if self.safety_ai and self.safety_ai.is_trained:
             try:
-                # Use midpoint of segment for safety prediction
-                # mid_lat = (start.lat + end.lat) / 2
-                # mid_lng = (start.lng + end.lng) / 2
-
                 delta_lat = end.lat - start.lat
                 delta_lng = end.lng - start.lng
-
-                x_data = [i for i in range(0, max_iterations)]
-                y_data = [self.safety_ai.predict_safety_score(start.lat + delta_lat/max_iterations * j, 
-                                                              start.lng + delta_lng/max_iterations * j) for j in range(0, max_iterations)]
+                steps = max_iterations
+                step_lat = delta_lat / steps
+                step_lng = delta_lng / steps
+                scores = []
+                distances = []
                 
-
-                avg = trapezoid(y_data, x_data)/((delta_lat**2+delta_lng**2)**(1/2))
-        
-                base_score = avg
+                for i in range(steps + 1):
+                    lat = start.lat + i * step_lat
+                    lng = start.lng + i * step_lng
+                    score = self.safety_ai.predict_safety_score(lat, lng)['safety_score']
+                    scores.append(score)
+                    
+                    # Distance from previous point
+                    if i == 0:
+                        distances.append(0)
+                    else:
+                        prev_lat = start.lat + (i - 1) * step_lat
+                        prev_lng = start.lng + (i - 1) * step_lng
+                        dist = self._calculate_distance((lat, lng), (prev_lat, prev_lng))
+                        distances.append(dist)
+                
+                # Use trapezoidal rule to integrate score * ds
+                total = 0.0
+                total_dist = 0.0
+                for i in range(1, steps + 1):
+                    seg_dist = distances[i]
+                    total_dist += seg_dist
+                    # trapezoid: (score[i-1] + score[i])/2 * seg_dist
+                    total += ((scores[i-1] + scores[i]) / 2) * seg_dist
+                
+                if total_dist == 0:
+                    base_score = np.mean(scores)
+                else:
+                    base_score = total / total_dist
+                    
             except Exception as e:
                 logger.error(f"Safety AI prediction failed: {e}")
                 base_score = 0.7
         else:
-            # Synthetic safety score
-            current_hour = datetime.now().hour
-            if 6 <= current_hour <= 18:
-                base_score = np.random.uniform(0.6, 0.9)
-            else:
-                base_score = np.random.uniform(0.3, 0.7)
+            # Use real-time data from OpenWeather if available
+            try:
+                weather_data = self._get_real_weather_data(start.lat, start.lng)
+                crime_data = self._get_real_crime_data(start.lat, start.lng)
+                time_data = self._get_time_based_factors()
+                
+                # Combine real data sources
+                base_score = (weather_data.get('safety_score', 0.7) * 0.3 +
+                             crime_data.get('crime_index', 0.7) * 0.4 +
+                             time_data.get('time_score', 0.7) * 0.3)
+            except Exception as e:
+                logger.warning(f"Could not fetch real data: {e}")
+                # Fallback to time-based synthetic score
+                current_hour = datetime.now().hour
+                if 6 <= current_hour <= 18:
+                    base_score = np.random.uniform(0.6, 0.9)
+                else:
+                    base_score = np.random.uniform(0.3, 0.7)
         
         # Adjust for accessibility needs
         accessibility_factor = 1.0
         if 'blind' in accessibility_needs:
-            # Blind users need better lighting and consistent paths
+            current_hour = datetime.now().hour
             if current_hour < 6 or current_hour > 18:
                 accessibility_factor *= 0.8
         if 'wheelchair' in accessibility_needs:
-            # Wheelchair users need smooth surfaces
             accessibility_factor *= 0.9
         
         # Adjust for nearby hazards
@@ -554,6 +1078,101 @@ class RealTimeTracker:
         
         final_score = base_score * accessibility_factor * hazard_factor
         return max(0.0, min(1.0, final_score))
+    
+    def _get_real_weather_data(self, lat: float, lng: float) -> Dict:
+        """Get real weather data from OpenWeatherMap"""
+        try:
+            if self.openweather_api_key:
+                url = "https://api.openweathermap.org/data/2.5/weather"
+                params = {
+                    'lat': lat,
+                    'lon': lng,
+                    'appid': self.openweather_api_key,
+                    'units': 'metric'
+                }
+                response = requests.get(url, params=params, timeout=5)
+                response.raise_for_status()
+                data = response.json()
+                
+                # Calculate safety score based on weather
+                weather_main = data.get('weather', [{}])[0].get('main', '').lower()
+                temp = data.get('main', {}).get('temp', 20)
+                wind_speed = data.get('wind', {}).get('speed', 0)
+                
+                safety_score = 0.8
+                if any(cond in weather_main for cond in ['thunderstorm', 'tornado']):
+                    safety_score = 0.2
+                elif any(cond in weather_main for cond in ['snow', 'sleet']):
+                    safety_score = 0.4
+                elif 'rain' in weather_main:
+                    safety_score = 0.6
+                elif temp < 0 or temp > 35:
+                    safety_score *= 0.8
+                elif wind_speed > 10:
+                    safety_score *= 0.9
+                
+                return {'safety_score': safety_score, 'temperature': temp, 'condition': weather_main}
+        except Exception as e:
+            logger.warning(f"Could not fetch weather data: {e}")
+        
+        return {'safety_score': 0.7}
+    
+    def _get_real_crime_data(self, lat: float, lng: float) -> Dict:
+        """Get real crime data from WPRDC (Pittsburgh area)"""
+        try:
+            # WPRDC API for Pittsburgh crime data
+            url = "https://data.wprdc.org/api/3/action/datastore_search"
+            params = {
+                'resource_id': '1797ead8-8262-41cc-9099-cbc8a161924b',
+                'limit': 10,
+                'filters': json.dumps({
+                    'LAT': {'$gte': lat - 0.01, '$lte': lat + 0.01},
+                    'LON': {'$gte': lng - 0.01, '$lte': lng + 0.01}
+                })
+            }
+            response = requests.get(url, params=params, timeout=5)
+            response.raise_for_status()
+            data = response.json()
+            
+            if data.get('success'):
+                incidents = data['result'].get('records', [])
+                crime_count = len(incidents)
+                # Lower crime index means safer (0-1, 1 is safest)
+                crime_index = max(0.1, 1.0 - (crime_count * 0.05))
+                return {'crime_index': crime_index, 'incident_count': crime_count}
+        except Exception as e:
+            logger.warning(f"Could not fetch crime data: {e}")
+        
+        return {'crime_index': 0.7}
+    
+    def _get_time_based_factors(self) -> Dict:
+        """Calculate time-based safety factors"""
+        now = datetime.now()
+        hour = now.hour
+        day_of_week = now.weekday()
+        
+        # Time of day factor
+        if 6 <= hour <= 18:
+            time_factor = 0.9
+        elif 19 <= hour <= 21:
+            time_factor = 0.7
+        else:
+            time_factor = 0.4
+        
+        # Day of week factor
+        day_factor = 0.8 if day_of_week < 5 else 0.7
+        
+        # Seasonal factor
+        month = now.month
+        if month in [12, 1, 2]:
+            season_factor = 0.6
+        elif month in [6, 7, 8]:
+            season_factor = 0.9
+        else:
+            season_factor = 0.8
+        
+        time_score = (time_factor * 0.5 + day_factor * 0.3 + season_factor * 0.2)
+        return {'time_score': time_score, 'hour': hour, 'is_weekend': day_of_week >= 5}
     
     def _get_hazards_in_segment(self, start: Position, end: Position) -> List[Hazard]:
         """Get hazards affecting a route segment"""
@@ -593,6 +1212,121 @@ class RealTimeTracker:
         
         return features
     
+    def _determine_destination_category(self, user_id: str) -> Optional[Tuple[str, str]]:
+        """Determine the category of the destination using Overpass API"""
+        if user_id not in self.pedestrians:
+            return None
+        pedestrian = self.pedestrians[user_id]
+        dest_lat = pedestrian.destination.lat
+        dest_lng = pedestrian.destination.lng
+
+        query = f"""
+        [out:json];
+        (
+            node(around:10, {dest_lat}, {dest_lng});
+            way(around:10, {dest_lat}, {dest_lng});
+            relation(around:10, {dest_lat}, {dest_lng});
+        );
+        out tags center;
+        """
+        try:
+            res = requests.get(self.overpass_url, params={"data": query}, timeout=10)
+            res.raise_for_status()
+            data = res.json()
+            elements = [el.get("tags", {}) for el in data["elements"]]
+            # Find first element with relevant category
+            for tags in elements:
+                for tag in CATEGORY_TAGS:
+                    if tag in tags:
+                        return (tag, tags[tag])
+            # If none, return unknown
+            return ("unknown", None)
+        except Exception as e:
+            logger.error(f"Error determining destination category: {e}")
+            return None
+    
+    def _find_alternate_destinations(self, user_id: str, original_category: str, category_value: str,
+                                      current_safety: float, lat: float, lng: float, radius: int = 500) -> List[Dict]:
+        """Find alternate destinations of the same category within radius meters using Overpass API"""
+        if not user_id in self.pedestrians:
+            return []
+
+        pedestrian = self.pedestrians[user_id]
+        # Query Overpass for places with the same category/value
+        query = f"""
+        [out:json];
+        (
+            node["{original_category}"="{category_value}"](around:{radius}, {lat}, {lng});
+            way["{original_category}"="{category_value}"](around:{radius}, {lat}, {lng});
+            relation["{original_category}"="{category_value}"](around:{radius}, {lat}, {lng});
+        );
+        out center;
+        """
+        try:
+            res = requests.get(self.overpass_url, params={"data": query}, timeout=10)
+            res.raise_for_status()
+            data = res.json()
+            candidates = []
+            
+            for el in data["elements"]:
+                # Get coordinates
+                if "lat" in el and "lon" in el:
+                    dest_lat = el["lat"]
+                    dest_lng = el["lon"]
+                elif "center" in el:
+                    dest_lat = el["center"]["lat"]
+                    dest_lng = el["center"]["lon"]
+                else:
+                    continue
+
+                # Skip if too close to original destination
+                distance_to_original = self._calculate_distance((lat, lng), (dest_lat, dest_lng))
+                if distance_to_original < 50:
+                    continue
+
+                # Create candidate destination
+                candidate_dest = Position(lat=dest_lat, lng=dest_lng)
+
+                # Generate route to candidate
+                route = self.generate_route(
+                    pedestrian.current_position, 
+                    candidate_dest,
+                    pedestrian.accessibility_needs, 
+                    avoid_hazards=True,
+                    travel_mode=pedestrian.travel_mode
+                )
+                if not route:
+                    continue
+
+                # Compute weighted safety for this route
+                route_safety = self._weighted_safety_score(route)
+                total_distance = sum(seg.distance for seg in route)
+                total_duration = sum(seg.duration for seg in route)
+
+                # If safety is better than current route, consider it
+                if route_safety > current_safety or current_safety < REROUTE_THRESHOLD:
+                    # Get name from tags
+                    name = el.get("tags", {}).get("name", f"{original_category}:{category_value}")
+                    
+                    candidates.append({
+                        "destination": candidate_dest,
+                        "safety_score": route_safety,
+                        "distance_meters": total_distance,
+                        "duration_seconds": total_duration,
+                        "route_segments": route,
+                        "category": original_category,
+                        "category_value": category_value,
+                        "name": name,
+                        "score_gain": route_safety - current_safety
+                    })
+
+            # Sort by safety score descending, then by distance ascending
+            candidates.sort(key=lambda x: (-x["safety_score"], x["distance_meters"]))
+            return candidates[:5]  # top 5
+        except Exception as e:
+            logger.error(f"Error finding alternate destinations: {e}")
+            return []
+    
     def _check_all_pedestrians_safety(self):
         """Check safety for all tracked pedestrians"""
         for user_id, pedestrian in self.pedestrians.items():
@@ -600,27 +1334,26 @@ class RealTimeTracker:
                 if pedestrian.state not in [PedestrianState.WALKING, PedestrianState.REROUTING]:
                     continue
                 
-                current_segment = pedestrian.route[pedestrian.current_segment_index]
-                
-                # Check if safety has dropped
-                if current_segment.safety_score < REROUTE_THRESHOLD:
-                    logger.info(f"Low safety detected for {user_id}: {current_segment.safety_score}")
+                if pedestrian.current_segment_index < len(pedestrian.route):
+                    current_segment = pedestrian.route[pedestrian.current_segment_index]
                     
-                    # Trigger reroute
-                    self._trigger_reroute_if_needed(user_id, reason="low_safety")
-                
-                # Check for new hazards in upcoming segments
-                upcoming_segments = pedestrian.route[pedestrian.current_segment_index:]
-                for i, segment in enumerate(upcoming_segments):
-                    if segment.hazards and i < 3:  # Hazards in next 3 segments
-                        self._trigger_reroute_if_needed(user_id, reason="hazard_ahead")
-                        break
+                    # Check if safety has dropped
+                    if current_segment.safety_score < REROUTE_THRESHOLD:
+                        logger.info(f"Low safety detected for {user_id}: {current_segment.safety_score}")
+                        self._trigger_reroute_if_needed(user_id, reason="low_safety")
+                    
+                    # Check for new hazards in upcoming segments
+                    upcoming_segments = pedestrian.route[pedestrian.current_segment_index:]
+                    for i, segment in enumerate(upcoming_segments):
+                        if segment.hazards and i < 3:  # Hazards in next 3 segments
+                            self._trigger_reroute_if_needed(user_id, reason="hazard_ahead")
+                            break
                         
             except Exception as e:
                 logger.error(f"Error checking safety for {user_id}: {e}")
     
     def _trigger_reroute_if_needed(self, user_id: str, hazard: Hazard = None, reason: str = None):
-        """Trigger reroute if conditions are met"""
+        """Trigger reroute if conditions are met, with alternative destination support"""
         if user_id not in self.pedestrians:
             return
         
@@ -630,22 +1363,19 @@ class RealTimeTracker:
         if pedestrian.state in [PedestrianState.REROUTING, PedestrianState.ARRIVED]:
             return
         
-        # Generate new route
-        """
-        Replace this code with the alternative destination feature. Or we could keep this as fallback.
-        """
+        # First, try to generate a safer route to the same destination
         new_route = self.generate_route(
             pedestrian.current_position,
             pedestrian.destination,
             pedestrian.accessibility_needs,
-            avoid_hazards=True
+            avoid_hazards=True,
+            travel_mode=pedestrian.travel_mode
         )
-
         
-        # Only reroute if new route is significantly safer
-        current_safety = pedestrian.route[pedestrian.current_segment_index].safety_score
-        new_safety = new_route[0].safety_score if new_route else 0
+        current_safety = pedestrian.route[pedestrian.current_segment_index].safety_score if pedestrian.route else 0
+        new_safety = self._weighted_safety_score(new_route) if new_route else 0
         
+        # If new route is significantly safer, use it
         if new_safety > current_safety + 0.1 or current_safety < REROUTE_THRESHOLD:
             pedestrian.route = new_route
             pedestrian.current_segment_index = 0
@@ -666,86 +1396,67 @@ class RealTimeTracker:
             self._send_accessibility_alerts(user_id, reason, hazard)
             
             logger.info(f"Rerouted {user_id} due to {reason}")
-
-    def _determine_destination_category(self, user_id:str):
-        if not user_id in self.pedestrians:
-            return None
-        pedestrian = self.pedestrians[user_id]
-
-        lat = pedestrian.current_position.lat
-        lng = pedestrian.current_position.lng
-
-        dest_lat = pedestrian.destination.lat
-        dest_lng = pedestrian.destination.lng
-
-        # Retrieve the categorical tags pertaining to the destination
-
-        query = f"""
-        [out:json];
-        (
-            node(around:10, {dest_lat}, {dest_lng});
-            way(around:10, {dest_lat}, {dest_lng});
-            relation(around:10, {dest_lat}, {dest_lng});
-        );
-        out tags center;
-        """
-        url = os.environ.get("OVERPASS_URL")
-        res = requests.get(url, params={"data":query})
-        data = res.json()
-
-        elements = [el.get("tags", {}) for el in data["elements"]]
-        cat_type, cat_val = self._get_relevant_category(elements[0])
-        return (cat_type, cat_val)
+            return
+        
+        # If new route is not much safer, consider alternative destinations
+        cat_info = self._determine_destination_category(user_id)
+        if cat_info and cat_info[0] != "unknown":
+            category, value = cat_info
+            lat = pedestrian.current_position.lat
+            lng = pedestrian.current_position.lng
+            alternatives = self._find_alternate_destinations(
+                user_id, category, value, current_safety, lat, lng, radius=500
+            )
+            if alternatives:
+                best = alternatives[0]
+                pedestrian.destination = best["destination"]
+                pedestrian.route = best["route_segments"]
+                pedestrian.current_segment_index = 0
+                pedestrian.state = PedestrianState.REROUTING
+                
+                self.socketio.emit('alternative_destination', {
+                    'user_id': user_id,
+                    'new_destination': {
+                        'lat': best["destination"].lat,
+                        'lng': best["destination"].lng,
+                        'name': best["name"],
+                        'category': best["category"],
+                        'value': best["category_value"]
+                    },
+                    'new_route': [self._segment_to_dict(seg) for seg in best["route_segments"]],
+                    'safety_score': best["safety_score"],
+                    'distance_meters': best["distance_meters"],
+                    'duration_seconds': best["duration_seconds"],
+                    'reason': "alternative_destination",
+                    'hazard': self._hazard_to_dict(hazard) if hazard else None,
+                    'alternatives': [{
+                        'name': alt["name"],
+                        'safety_score': alt["safety_score"],
+                        'distance_meters': alt["distance_meters"],
+                        'duration_seconds': alt["duration_seconds"]
+                    } for alt in alternatives[1:4]],
+                    'timestamp': time.time()
+                }, room=user_id)
+                
+                self._send_accessibility_alerts(user_id, "alternative_destination", hazard)
+                logger.info(f"Rerouted {user_id} to alternative destination: {best['name']}")
+                return
+        
+        # If no alternative, just warn
+        logger.info(f"No better route or alternative found for {user_id}")
+        self.socketio.emit('reroute_unavailable', {
+            'user_id': user_id,
+            'current_safety': current_safety,
+            'reason': reason,
+            'timestamp': time.time()
+        }, room=user_id)
     
-    def _find_alternate_destinations(self, user_id:str, original_category:str, category_value: str, current_safety:float,
-                                     lat: float, lng: float, radius: int | float = 500):
-
-        # Take the category of the destination and query the API to find other destinations
-        # Use haversine distance function and safety score computations to rank them
-        # NOTE: new safety score must be higher: if original is the highest, then suggest that the user
-        # go home or just not continue on the route
-        # Set the destination to the new destination
-        if not user_id in self.pedestrians:
-            return None
-        
-        pedestrian = self.pedestrians.get(user_id)
-        
-        query = f"""
-        [out:json];
-        (
-            node[{original_category}={category_value}](around:{radius}, {lat}, {lng});
-            way[{original_category}={category_value}](around:{radius}, {lat}, {lng});
-            relation[{original_category}={category_value}](around:{radius}, {lat}, {lng});
-        );
-        out center;
-        """
-        try:
-            url = os.environ.get("OVERPASS_URL")
-            res = requests.get(url, params={"data":query})
-            data = res.json()
-            elements = [(el.get("lat", {}), el.get("lon", {})) for el in data["elements"]] # List of tuples
-
-            for e in elements:
-                test_lat, test_lng = e
-                if not test_lat or not test_lng:
-                    continue
-                test_dest = Position(test_lat, test_lng)
-
-
-
-
-        except Exception as e:
-            logger.error(e)
-
-
-
-    def _get_relevant_category(tags:dict) -> tuple:
+    def _get_relevant_category(self, tags: dict) -> Tuple[str, Optional[str]]:
+        """Get the most relevant category from tags based on priority order"""
         for tag in CATEGORY_TAGS:
             if tag in tags:
                 return (tag, tags[tag])
-        else:
-            return ("unknown", None)
-
+        return ("unknown", None)
     
     def _send_accessibility_alerts(self, user_id: str, reason: str, hazard: Hazard = None):
         """Send accessibility-appropriate alerts"""
@@ -763,7 +1474,6 @@ class RealTimeTracker:
         }
         
         if 'blind' in needs:
-            # Audio alert with verbal description
             description = f"Rerouting due to {reason.replace('_', ' ')}"
             if hazard:
                 description += f". Hazard: {hazard.description}"
@@ -774,11 +1484,10 @@ class RealTimeTracker:
                     'type': 'warning',
                     'priority': 'high'
                 },
-                'haptic_pattern': 'triple_pulse'  # Specific pattern for rerouting
+                'haptic_pattern': 'triple_pulse'
             })
         
         if 'deaf' in needs:
-            # Visual alert with flashing
             alert_data.update({
                 'visual_alert': {
                     'pattern': 'flash',
@@ -788,7 +1497,6 @@ class RealTimeTracker:
                 'vibration_pattern': 'long_pulse'
             })
         
-        # Send alert
         self.socketio.emit('accessibility_alert', alert_data, room=user_id)
     
     def _get_pedestrians_near_hazard(self, hazard: Hazard) -> List[str]:
@@ -801,53 +1509,108 @@ class RealTimeTracker:
                 hazard.position.coordinates
             )
             
-            if distance < hazard.radius * 2:  # Double radius for warning zone
+            if distance < hazard.radius * 2:
                 affected.append(user_id)
         
         return affected
     
     def _update_hazards(self):
-        """Remove expired hazards"""
+        """Remove expired hazards and fetch new ones from APIs"""
         current_time = time.time()
         self.active_hazards = [
             h for h in self.active_hazards 
             if h.is_active(current_time)
         ]
+        
+        # Fetch hazards from real APIs periodically
+        self._fetch_crime_hazards()
+        self._fetch_weather_hazards()
     
-    def _fetch_external_hazards(self):
-        """Fetch hazards from external APIs"""
+    def _fetch_crime_hazards(self):
+        """Fetch real crime data from WPRDC API"""
         try:
-            # This would integrate with real APIs
-            # For now, simulate occasional hazard reports
-            
-            if np.random.random() < 0.1:  # 10% chance of new hazard
-                hazard_types = list(HazardType)
-                hazard_type = np.random.choice(hazard_types)
+            for user_id, pedestrian in self.pedestrians.items():
+                lat = pedestrian.current_position.lat
+                lng = pedestrian.current_position.lng
                 
-                # Generate random position near tracked pedestrians
-                if self.pedestrians:
-                    random_user = np.random.choice(list(self.pedestrians.keys()))
-                    pedestrian = self.pedestrians[random_user]
-                    
-                    # Offset from pedestrian position
-                    offset_lat = np.random.uniform(-0.001, 0.001)
-                    offset_lng = np.random.uniform(-0.001, 0.001)
-                    
-                    hazard = Hazard(
-                        type=hazard_type,
-                        position=Position(
-                            lat=pedestrian.current_position.lat + offset_lat,
-                            lng=pedestrian.current_position.lng + offset_lng
-                        ),
-                        radius=np.random.uniform(50, 200),
-                        severity=np.random.uniform(0.3, 0.9),
-                        description=f"Simulated {hazard_type.value} hazard"
-                    )
-                    
-                    self.add_hazard(hazard)
-                    
+                url = "https://data.wprdc.org/api/3/action/datastore_search"
+                params = {
+                    'resource_id': '1797ead8-8262-41cc-9099-cbc8a161924b',
+                    'limit': 5,
+                    'filters': json.dumps({
+                        'LAT': {'$gte': lat - 0.01, '$lte': lat + 0.01},
+                        'LON': {'$gte': lng - 0.01, '$lte': lng + 0.01}
+                    })
+                }
+                response = requests.get(url, params=params, timeout=5)
+                response.raise_for_status()
+                data = response.json()
+                
+                if data.get('success'):
+                    records = data['result'].get('records', [])
+                    for record in records:
+                        try:
+                            crime_lat = float(record.get('LAT', 0))
+                            crime_lng = float(record.get('LON', 0))
+                            if crime_lat == 0 or crime_lng == 0:
+                                continue
+                            
+                            offense = record.get('OFFENSES', '').lower()
+                            if any(word in offense for word in ['assault', 'robbery', 'burglary']):
+                                severity = 0.8
+                                radius = 200
+                            elif any(word in offense for word in ['theft', 'larceny']):
+                                severity = 0.5
+                                radius = 150
+                            else:
+                                continue
+                            
+                            hazard = Hazard(
+                                type=HazardType.CRIME,
+                                position=Position(lat=crime_lat, lng=crime_lng),
+                                radius=radius,
+                                severity=severity,
+                                description=f"Crime incident: {record.get('OFFENSES', 'Unknown')}",
+                                timestamp=time.time()
+                            )
+                            self.add_hazard(hazard)
+                        except Exception as e:
+                            continue
         except Exception as e:
-            logger.error(f"Error fetching external hazards: {e}")
+            logger.warning(f"Error fetching crime hazards: {e}")
+    
+    def _fetch_weather_hazards(self):
+        """Fetch weather alerts from OpenWeatherMap"""
+        try:
+            if self.openweather_api_key:
+                for user_id, pedestrian in self.pedestrians.items():
+                    lat = pedestrian.current_position.lat
+                    lng = pedestrian.current_position.lng
+                    
+                    url = "https://api.openweathermap.org/data/2.5/weather"
+                    params = {
+                        'lat': lat,
+                        'lon': lng,
+                        'appid': self.openweather_api_key,
+                        'units': 'metric'
+                    }
+                    response = requests.get(url, params=params, timeout=5)
+                    response.raise_for_status()
+                    data = response.json()
+                    
+                    weather_main = data.get('weather', [{}])[0].get('main', '').lower()
+                    if 'thunderstorm' in weather_main or 'tornado' in weather_main:
+                        hazard = Hazard(
+                            type=HazardType.DISASTER,
+                            position=Position(lat=lat, lng=lng),
+                            radius=1000,
+                            severity=0.9,
+                            description=f"Severe weather: {weather_main}",
+                            timestamp=time.time()
+                        )
+                        self.add_hazard(hazard)
+        except Exception as e:
+            logger.warning(f"Error fetching weather hazards: {e}")
     
     async def _send_position_updates(self, user_id: str):
         """Send regular position updates to client"""
@@ -856,10 +1619,8 @@ class RealTimeTracker:
                 pedestrian = self.pedestrians[user_id]
                 
                 if pedestrian.state == PedestrianState.WALKING:
-                    # Simulate movement along route
                     self._update_pedestrian_position(pedestrian)
                 
-                # Send update
                 self.socketio.emit('position_update', {
                     'user_id': user_id,
                     'position': asdict(pedestrian.current_position),
@@ -881,11 +1642,9 @@ class RealTimeTracker:
         
         current_segment = pedestrian.route[pedestrian.current_segment_index]
         
-        # Calculate progress along segment
         total_seg_distance = current_segment.distance
         distance_moved = pedestrian.walking_speed * UPDATE_INTERVAL
         
-        # Update position along segment
         progress = min(1.0, distance_moved / total_seg_distance)
         
         new_lat = current_segment.start.lat + progress * (current_segment.end.lat - current_segment.start.lat)
@@ -897,31 +1656,27 @@ class RealTimeTracker:
             accuracy=5.0
         )
         
-        # Move to next segment if completed
         if progress >= 1.0:
             pedestrian.current_segment_index += 1
             
-            # Check if route completed
             if pedestrian.current_segment_index >= len(pedestrian.route):
                 pedestrian.state = PedestrianState.ARRIVED
     
     @staticmethod
     def _calculate_distance(coord1: Tuple[float, float], coord2: Tuple[float, float]) -> float:
         """Calculate distance between two coordinates in meters using Haversine"""
-        from math import radians, sin, cos, sqrt, atan2
-        
         lat1, lon1 = coord1
         lat2, lon2 = coord2
         
         R = 6371000  # Earth radius in meters
         
-        lat1_rad = radians(lat1)
-        lat2_rad = radians(lat2)
-        delta_lat = radians(lat2 - lat1)
-        delta_lon = radians(lon2 - lon1)
+        lat1_rad = math.radians(lat1)
+        lat2_rad = math.radians(lat2)
+        delta_lat = math.radians(lat2 - lat1)
+        delta_lon = math.radians(lon2 - lon1)
         
-        a = sin(delta_lat/2)**2 + cos(lat1_rad) * cos(lat2_rad) * sin(delta_lon/2)**2
-        c = 2 * atan2(sqrt(a), sqrt(1-a))
+        a = math.sin(delta_lat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lon/2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
         
         return R * c
     
@@ -988,7 +1743,10 @@ def create_tracking_app():
             'active_hazards': len(tracker.active_hazards),
             'update_interval': UPDATE_INTERVAL,
             'safety_check_interval': SAFETY_CHECK_INTERVAL,
-            'reroute_threshold': REROUTE_THRESHOLD
+            'reroute_threshold': REROUTE_THRESHOLD,
+            'tomtom_available': bool(tracker.tomtom_api_key),
+            'weather_available': bool(tracker.openweather_api_key),
+            'google_maps_available': bool(tracker.google_maps_api_key)
         })
     
     @app.route('/api/tracking/pedestrians', methods=['GET'])
@@ -1020,15 +1778,17 @@ def create_tracking_app():
                 lng=float(data['dest_lng'])
             )
             accessibility_needs = set(data.get('accessibility_needs', []))
+            travel_mode = data.get('travel_mode', 'pedestrian')
             
-            route = tracker.generate_route(start, destination, accessibility_needs)
+            route = tracker.generate_route(start, destination, accessibility_needs, travel_mode=travel_mode)
             
             return json.dumps({
                 'success': True,
                 'route': [tracker._segment_to_dict(seg) for seg in route],
                 'total_distance': sum(seg.distance for seg in route),
                 'total_duration': sum(seg.duration for seg in route),
-                'average_safety': np.mean([seg.safety_score for seg in route]) if route else 0
+                'average_safety': tracker._weighted_safety_score(route) if route else 0,
+                'travel_mode': travel_mode
             })
             
         except Exception as e:
@@ -1041,6 +1801,6 @@ def create_tracking_app():
 
 # Global instances (only created when this module is run directly)
 if __name__ == '__main__':
-    logger.info("Starting Real-time Tracking Server...")
+    logger.info("Starting Real-time Tracking Server with Real APIs...")
     app, socketio, tracker = create_tracking_app()
     socketio.run(app, host='127.0.0.1', port=5001, debug=True)

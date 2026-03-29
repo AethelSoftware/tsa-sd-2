@@ -16,6 +16,7 @@ from math import radians, sin, cos, sqrt, atan2
 import googlemaps
 from authlib.integrations.flask_client import OAuth
 import secrets
+import hashlib
 
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -38,58 +39,20 @@ load_dotenv()
 # Initialize global variables
 vdb = VectorDB(0.90)
 sesh_manager = SessionManager()
-GOOGLE_MAPS_AVAILABLE = False  # Set to True if you have Google Maps API key
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
-# app = Flask(__name__)
-# CORS(app)
-
-
-
-# oauth = OAuth(app)
-
-# google = oauth.register(
-#      name='google',
-#     client_id=os.environ.get("GOOGLE_CLIENT_ID"),
-#     client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
-#     access_token_url='https://oauth2.googleapis.com/token',
-#     authorize_url='https://accounts.google.com/o/oauth2/auth',
-#     client_kwargs={
-#         'scope': 'openid email profile'
-#     },
-# )
-
-
-# @app.route('/login', methods=['GET'])
-# def login():
-#     print("HANDLING LOGIN")
-#     return google.authorize_redirect(
-#         redirect_uri=url_for('callback', _external=True)
-#     )
-
-# @app.route('/callback')
-# def callback():
-#     print("IN THE CALLBACK")
-#     token = google.authorize_access_token()
-#     user_info = google.parse_id_token(token)
-
-#     session['user'] = user_info
-
-#     return redirect('/')
-
-# @app.route('/')
-# def home():
-#     user = session.get('user')
-#     if user:
-#         return f"Hello {user['name']}"
-#     return "You are not logged in"
-
-# @app.route('/logout')
-# def logout():
-#     session.clear()
-#     return redirect('/')
-
-# print("AVAILABLE ROUTES: ", app.url_map)
+# Check API availability
+GOOGLE_MAPS_AVAILABLE = bool(os.getenv('GOOGLE_MAPS_API_KEY'))
 
 # Try to import new modules, fall back gracefully
 try:
@@ -98,7 +61,6 @@ try:
     TOMTOM_AVAILABLE = True
     REAL_API_AVAILABLE = True
 except ImportError as e:
-    logger = logging.getLogger(__name__)
     logger.warning(f"New modules not available: {e}")
     TOMTOM_AVAILABLE = False
     REAL_API_AVAILABLE = False
@@ -112,19 +74,16 @@ try:
 except ImportError as e:
     GEOAPIFY_AVAILABLE = False
     GeoapifyClient = None
-    logger = logging.getLogger(__name__)
     logger.warning(f"Geoapify client not available: {e}")
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('app.log'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+# Try to import Google Maps router
+try:
+    from google_routing import GoogleMapsRouter
+    GOOGLE_ROUTING_AVAILABLE = True
+except ImportError as e:
+    GOOGLE_ROUTING_AVAILABLE = False
+    GoogleMapsRouter = None
+    logger.warning(f"Google Maps router not available: {e}")
 
 # Initialize routers and API clients
 if TOMTOM_AVAILABLE:
@@ -145,8 +104,13 @@ else:
     geoapify_client = None
     logger.warning("Geoapify client not available - search will use fallback")
 
+if GOOGLE_ROUTING_AVAILABLE:
+    google_router = GoogleMapsRouter()
+else:
+    google_router = None
+    logger.warning("Google Maps router not available - transit routing will be limited")
+
 safety_ai = None
-# socketio = SocketIO(app, cors_allowed_origins="*")
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -174,47 +138,60 @@ def calculate_route_google(lat1, lng1, lat2, lng2):
     """Stub for Google Maps - replace with actual implementation if needed."""
     return None
 
+def embed_simple(text: str):
+    """Simple fallback embedding using TF-IDF style hashing"""
+    words = text.lower().split()
+    embedding = np.zeros(384)
+    
+    for i, word in enumerate(words[:100]):  # Limit to 100 words
+        hash_val = int(hashlib.md5(word.encode()).hexdigest(), 16)
+        idx = hash_val % 384
+        embedding[idx] += 1
+    
+    # Normalize
+    norm = np.linalg.norm(embedding)
+    if norm > 0:
+        embedding = embedding / norm
+    
+    return embedding
+
 def embed(text: str):
     """Get embedding from Hugging Face, with fallback on failure."""
     hf_token = os.environ.get("HF_TOKEN")
-    if not hf_token:
-        logger.warning("HF_TOKEN not set, using fallback zero vector")
-        return np.zeros(384)  # all-MiniLM-L6-v2 dimension
-
-    try:
-        response = requests.post(
-            "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2",
-            headers={"Authorization": f"Bearer {hf_token}"},
-            json={"inputs": text},
-            timeout=5
-        )
-        response.raise_for_status()
-        data = response.json()
-        
-        # Handle different response formats
-        if isinstance(data, list) and len(data) > 0:
-            if isinstance(data[0], list):
-                # Format: [[...]] - nested array
-                return np.array(data[0])
-            else:
-                # Format: [...] - flat array
-                return np.array(data)
-        elif isinstance(data, dict) and 'error' in data:
-            logger.error(f"Hugging Face API error: {data['error']}")
-            return np.zeros(384)
-        else:
-            logger.warning(f"Unexpected embedding response format: {type(data)}")
-            return np.zeros(384)
+    
+    # Try multiple endpoints
+    endpoints = [
+        f"https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2",
+        f"https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2",
+    ]
+    
+    for url in endpoints:
+        try:
+            headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else {}
+            response = requests.post(
+                url,
+                headers=headers,
+                json={"inputs": text},
+                timeout=3
+            )
             
-    except requests.exceptions.Timeout:
-        logger.error("Embedding API timeout")
-        return np.zeros(384)
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Embedding API request error: {e}")
-        return np.zeros(384)
-    except Exception as e:
-        logger.error(f"Embedding error: {e}")
-        return np.zeros(384)
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    if isinstance(data[0], list):
+                        return np.array(data[0])
+                    else:
+                        return np.array(data)
+            elif response.status_code == 410:
+                # Endpoint gone, try next
+                continue
+        except Exception as e:
+            logger.warning(f"Embedding endpoint {url} failed: {e}")
+            continue
+    
+    # If all endpoints fail, use simple fallback
+    logger.warning("All embedding endpoints failed, using simple fallback")
+    return embed_simple(text)
 
 def get_safety_ai_instance():
     """Lazy load safety AI to avoid circular imports"""
@@ -242,45 +219,6 @@ def format_metric(value, format_str='.4f'):
         return format(value, format_str)
     except Exception:
         return str(value)
-
-# # ============================================================================
-# # SOCKETIO HANDLERS
-# # ============================================================================
-
-# @socketio.on("connect")
-# def handle_connect():
-#     logger.info(f"Websocket connected: {request.sid}")
-
-# @socketio.on("location-update")
-# def update_location(data):
-#     """Handle location updates from clients"""
-#     # Check to see if we have a valid session id
-#     session_id = request.args.get("session_id")
-#     if not session_id:
-#         return
-    
-#     # Get the session; if there is no session, create one with the id
-#     session_state = sesh_manager.get_session_state(session_id)
-#     if not session_state:
-#         sesh_manager.create_session(session_id)
-#         session_state = sesh_manager.get_session_state(session_id)
-
-#     # Extract the location
-#     new_lat = data["lat"]
-#     new_lng = data["lng"]
-
-#     updated_coords = np.array([new_lat, new_lng])
-
-#     # Update the location if there is no location
-#     if session_state.lng is None or session_state.lat is None:
-#         session_state.update_location(new_lat, new_lng)
-#         return
-    
-#     # Compute the distance from last stored location
-#     old_coords = np.array([session_state.lat, session_state.lng])
-
-#     if np.linalg.norm(updated_coords - old_coords) > 5:
-#         session_state.update_location(new_lat, new_lng)
 
 # ============================================================================
 # MODEL MANAGEMENT FUNCTIONS
@@ -480,7 +418,8 @@ def add_model_endpoints(app):
                 'tomtom': tomtom_router.api_key is not None if tomtom_router else False,
                 'openweather': api_client.openweather_key is not None if api_client else False,
                 'census': api_client.census_key is not None if api_client else False,
-                'geoapify': geoapify_client.api_key is not None if geoapify_client else False
+                'geoapify': geoapify_client.api_key is not None if geoapify_client else False,
+                'google_maps': GOOGLE_MAPS_AVAILABLE
             }
             
             return jsonify({
@@ -494,7 +433,8 @@ def add_model_endpoints(app):
                     'apis_available': apis_available,
                     'tomtom_available': TOMTOM_AVAILABLE,
                     'real_api_available': REAL_API_AVAILABLE,
-                    'geoapify_available': GEOAPIFY_AVAILABLE
+                    'geoapify_available': GEOAPIFY_AVAILABLE,
+                    'google_routing_available': GOOGLE_ROUTING_AVAILABLE
                 }
             })
         except Exception as e:
@@ -794,6 +734,9 @@ def add_model_endpoints(app):
                     'error': 'Missing coordinates'
                 }), 400
             
+            # Extract travel mode
+            travel_mode = data.get('travel_mode', 'pedestrian')
+            
             accessibility_preferences = data.get('accessibility_preferences', {})
             accessibility_needs = []
             
@@ -810,8 +753,60 @@ def add_model_endpoints(app):
             provider_used = None
             error_messages = []
             
-            # TRY 1: TomTom API
-            if tomtom_router and tomtom_router.api_key:
+            # TRY 1: Google Maps Transit (if travel_mode is transit)
+            if travel_mode == 'transit' and google_router:
+                try:
+                    logger.info(f"Attempting Google Maps transit route from {start_lat},{start_lng} to {end_lat},{end_lng}")
+                    routes = google_router.get_transit_route(
+                        float(start_lat), float(start_lng),
+                        float(end_lat), float(end_lng),
+                        alternatives=True
+                    )
+                    if routes:
+                        route_data = routes[0]
+                        waypoints = route_data.get('waypoints', [])
+                        if waypoints:
+                            route_coords = [{'lat': p[0], 'lng': p[1]} for p in waypoints]
+                            provider_used = "Google Maps Transit"
+                            
+                            # Build instructions with transit details
+                            instructions = []
+                            for step in route_data.get('steps', []):
+                                instruction_text = step['instruction']
+                                instruction_text = instruction_text.replace('<b>', '').replace('</b>', '').replace('<div>', ' ').replace('</div>', ' ')
+                                instructions.append({
+                                    'instruction': instruction_text,
+                                    'distance': step.get('distance', ''),
+                                    'distance_meters': step.get('distance_meters', 0),
+                                    'duration': step.get('duration', ''),
+                                    'duration_seconds': step.get('duration_seconds', 0),
+                                    'travel_mode': step.get('travel_mode', 'WALKING'),
+                                    'transit_line': step.get('transit_line', ''),
+                                    'departure_stop': step.get('departure_stop', ''),
+                                    'arrival_stop': step.get('arrival_stop', '')
+                                })
+                            
+                            total_walking_time = route_data.get('total_walking_time', 0)
+                            total_transit_time = route_data.get('total_transit_time', 0)
+                            
+                            route_result = {
+                                'points': waypoints,
+                                'distance_meters': route_data['total_distance_meters'],
+                                'duration_seconds': route_data['total_duration_seconds'],
+                                'instructions': instructions,
+                                'transit_steps': route_data.get('transit_steps', []),
+                                'walking_steps': route_data.get('walking_steps', []),
+                                'segments': [],
+                                'total_walking_time': total_walking_time,
+                                'total_transit_time': total_transit_time
+                            }
+                            logger.info(f"Google Maps transit route successful - Duration: {route_data['total_duration_seconds']/60:.0f} minutes")
+                except Exception as e:
+                    logger.warning(f"Google Maps transit API failed: {e}")
+                    error_messages.append(f"Google Transit: {str(e)}")
+            
+            # TRY 2: TomTom API (for pedestrian routes)
+            if not route_result and tomtom_router and tomtom_router.api_key and travel_mode != 'transit':
                 try:
                     logger.info(f"Attempting TomTom route from {start_lat},{start_lng} to {end_lat},{end_lng}")
                     route_result = tomtom_router.calculate_route(
@@ -828,42 +823,12 @@ def add_model_endpoints(app):
                     logger.warning(f"TomTom API failed: {e}")
                     error_messages.append(f"TomTom: {str(e)}")
             
-            # TRY 2: OSRM (OpenStreetMap)
-            if not route_result:
-                try:
-                    logger.info(f"Attempting OSRM route from {start_lat},{start_lng} to {end_lat},{end_lng}")
-                    route_result = calculate_route_osrm(
-                        float(start_lat), float(start_lng),
-                        float(end_lat), float(end_lng)
-                    )
-                    if route_result:
-                        provider_used = "OSRM"
-                        logger.info("OSRM route successful")
-                except Exception as e:
-                    logger.warning(f"OSRM API failed: {e}")
-                    error_messages.append(f"OSRM: {str(e)}")
-            
-            # TRY 3: Google Maps
-            if not route_result and GOOGLE_MAPS_AVAILABLE:
-                try:
-                    logger.info(f"Attempting Google Maps route from {start_lat},{start_lng} to {end_lat},{end_lng}")
-                    route_result = calculate_route_google(
-                        float(start_lat), float(start_lng),
-                        float(end_lat), float(end_lng)
-                    )
-                    if route_result:
-                        provider_used = "Google Maps"
-                        logger.info("Google Maps route successful")
-                except Exception as e:
-                    logger.warning(f"Google Maps API failed: {e}")
-                    error_messages.append(f"Google Maps: {str(e)}")
-            
             # If any provider succeeded, process and return the route
             if route_result:
                 # Convert points to coordinate objects
                 route_coords = [{'lat': p[0], 'lng': p[1]} for p in route_result['points']]
                 
-                # Get addresses (try TomTom first, then fallback to coordinates)
+                # Get addresses
                 start_address = f"{float(start_lat):.4f}, {float(start_lng):.4f}"
                 end_address = f"{float(end_lat):.4f}, {float(end_lng):.4f}"
                 
@@ -871,23 +836,6 @@ def add_model_endpoints(app):
                     try:
                         start_address = tomtom_router.reverse_geocode(float(start_lat), float(start_lng))
                         end_address = tomtom_router.reverse_geocode(float(end_lat), float(end_lng))
-                    except:
-                        pass
-                
-                # Try Geoapify if TomTom fails
-                if (start_address.startswith(f"{float(start_lat):.4f}") and geoapify_client):
-                    try:
-                        geo_start = geoapify_client.reverse_geocode(float(start_lat), float(start_lng))
-                        if geo_start and not geo_start.startswith(f"{float(start_lat):.4f}"):
-                            start_address = geo_start
-                    except:
-                        pass
-                
-                if (end_address.startswith(f"{float(end_lat):.4f}") and geoapify_client):
-                    try:
-                        geo_end = geoapify_client.reverse_geocode(float(end_lat), float(end_lng))
-                        if geo_end and not geo_end.startswith(f"{float(end_lat):.4f}"):
-                            end_address = geo_end
                     except:
                         pass
                 
@@ -957,12 +905,21 @@ def add_model_endpoints(app):
                             'south': min(float(start_lat), float(end_lat)),
                             'east': max(float(start_lng), float(end_lng)),
                             'west': min(float(start_lng), float(end_lng))
-                        }
+                        },
+                        'travel_mode': travel_mode
                     },
                     'provider': provider_used,
                     'model_used': safety_ai_instance.is_trained if safety_ai_instance else False,
                     'real_api_used': provider_used is not None
                 }
+                
+                # Add transit-specific details if available
+                if travel_mode == 'transit' and 'transit_steps' in route_result:
+                    response_data['route']['transit_details'] = {
+                        'steps': route_result.get('transit_steps', []),
+                        'total_transit_time': route_result.get('total_transit_time', 0),
+                        'total_walking_time': route_result.get('total_walking_time', 0)
+                    }
                 
                 # Update session with route data
                 if session_id:
@@ -973,53 +930,59 @@ def add_model_endpoints(app):
                         prefs=accessibility_preferences
                     )
                 
-                # Try to cache the response (but don't fail if caching fails)
+                # Try to cache the response
                 try:
                     query_text = (
                         f"route from {start_address} to {end_address} "
+                        f"travel mode {travel_mode} "
                         f"the estimated distance was {distance_str} "
                         f"the duration was {duration_str} "
                         f"accessibility needs are {json.dumps(accessibility_preferences, sort_keys=True)} "
                         f"safety features include {json.dumps(safety_dict)}"
                     )
                     query_vector = embed(query_text)
-                    cached_result = vdb.compare(query_vector)
                     
-                    if cached_result is None:
+                    # Check if query_vector is valid
+                    if query_vector is not None and np.any(query_vector):
+                        cached_result = vdb.compare(query_vector)
+                        
+                        if cached_result and isinstance(cached_result, dict):
+                            cached_value = cached_result.get('value')
+                            if cached_value:
+                                logger.info("Using cached route result")
+                                return jsonify(cached_value)
+                        
                         vdb.insert(query_vector, response_data)
                 except Exception as e:
                     logger.warning(f"Caching failed (non-critical): {e}")
-                    # Continue - we still return the freshly calculated route
                 
                 return jsonify(response_data)
             
-            # If ALL providers failed, use calculated fallback (straight line + curves)
+            # If ALL providers failed, use fallback
             logger.warning(f"All routing providers failed: {error_messages}. Using calculated fallback.")
             
-            # Calculate approximate straight-line distance
             straight_distance = haversine_distance(
                 float(start_lat), float(start_lng),
                 float(end_lat), float(end_lng)
             )
             
-            # Approximate road distance (1.3x straight line to account for roads)
             approx_distance = straight_distance * 1.3
-            walking_speed = 1.4  # m/s (5 km/h)
-            approx_duration = approx_distance / walking_speed
+            if travel_mode == 'transit':
+                transit_speed = 5.56  # 20 km/h
+                approx_duration = approx_distance / transit_speed
+            else:
+                approx_duration = approx_distance / 1.4
             
-            # Generate a simple route with intermediate points for visualization
             num_points = 20
             route_coords = []
             for i in range(num_points + 1):
                 t = i / num_points
-                # Add slight curve to make it look natural
                 lat = float(start_lat) + (float(end_lat) - float(start_lat)) * t + math.sin(t * math.pi) * 0.0005
                 lng = float(start_lng) + (float(end_lng) - float(start_lng)) * t + math.cos(t * math.pi) * 0.0005
                 route_coords.append({'lat': lat, 'lng': lng})
             
             points = [[c['lat'], c['lng']] for c in route_coords]
             
-            # Format distance and duration
             if approx_distance < 1000:
                 distance_str = f"{approx_distance:.0f} m"
             else:
@@ -1034,49 +997,6 @@ def add_model_endpoints(app):
                 minutes = int((approx_duration % 3600) / 60)
                 duration_str = f"{hours}h {minutes}m"
             
-            # Determine cardinal direction for instruction
-            delta_lat = float(end_lat) - float(start_lat)
-            delta_lng = float(end_lng) - float(start_lng)
-            bearing = math.degrees(math.atan2(delta_lng, delta_lat))
-            if bearing < 0:
-                bearing += 360
-            
-            if 45 <= bearing < 135:
-                direction = "east"
-            elif 135 <= bearing < 225:
-                direction = "south"
-            elif 225 <= bearing < 315:
-                direction = "west"
-            else:
-                direction = "north"
-            
-            fallback_route = {
-                'points': points,
-                'distance_meters': approx_distance,
-                'duration_seconds': approx_duration,
-                'instructions': [
-                    {
-                        'instruction': f"Head {direction} towards your destination",
-                        'distance': approx_distance / 2,
-                        'duration': approx_duration / 2,
-                        'type': 'depart'
-                    },
-                    {
-                        'instruction': "Continue straight",
-                        'distance': approx_distance / 2,
-                        'duration': approx_duration / 2,
-                        'type': 'continue'
-                    }
-                ]
-            }
-            
-            # Build response with fallback
-            safety_dict = {
-                'overall_safety': 0.7,
-                'risk_level': 'medium',
-                'recommendations': ['Estimated route - use caution', 'Check local conditions']
-            }
-            
             response_data = {
                 'success': True,
                 'route': {
@@ -1084,7 +1004,7 @@ def add_model_endpoints(app):
                     'distance_meters': approx_distance,
                     'duration': duration_str,
                     'duration_seconds': approx_duration,
-                    'steps': fallback_route['instructions'],
+                    'steps': [],
                     'coordinates': route_coords,
                     'points': points,
                     'segments': [],
@@ -1094,19 +1014,19 @@ def add_model_endpoints(app):
                     'warnings': ['Using estimated route due to API unavailability'],
                     'elevator_access': 'wheelchair' in accessibility_needs,
                     'ramp_access': 'wheelchair' in accessibility_needs,
-                    'safety': safety_dict,
+                    'safety': {'overall_safety': 0.7, 'risk_level': 'medium', 'recommendations': ['Estimated route - use caution']},
                     'arrival_time': (datetime.now().timestamp() + approx_duration),
                     'bounds': {
                         'north': max(float(start_lat), float(end_lat)),
                         'south': min(float(start_lat), float(end_lat)),
                         'east': max(float(start_lng), float(end_lng)),
                         'west': min(float(start_lng), float(end_lng))
-                    }
+                    },
+                    'travel_mode': travel_mode
                 },
                 'provider': 'fallback-calculation',
                 'model_used': False,
-                'real_api_used': False,
-                'note': 'All routing APIs failed; using calculated straight-line approximation.'
+                'real_api_used': False
             }
             
             return jsonify(response_data)
@@ -1118,11 +1038,179 @@ def add_model_endpoints(app):
                 'error': str(e)
             }), 500
     
+    # ============================================================================
+    # NEW TRANSIT AND OBSTRUCTION ENDPOINTS
+    # ============================================================================
+    
+    @app.route("/api/route-alternatives", methods=['POST', 'GET', 'OPTIONS'])
+    def get_route_alternatives():
+        """Get multiple route alternatives including different transit options"""
+        # Handle OPTIONS preflight
+        if request.method == 'OPTIONS':
+            return jsonify({'success': True}), 200
+        
+        try:
+            data = request.json
+            start_lat = float(data.get('start_lat'))
+            start_lng = float(data.get('start_lng'))
+            end_lat = float(data.get('end_lat'))
+            end_lng = float(data.get('end_lng'))
+            accessibility_preferences = data.get('accessibility_preferences', {})
+            
+            accessibility_needs = []
+            if accessibility_preferences.get('wheelchair'):
+                accessibility_needs.append('wheelchair')
+            if accessibility_preferences.get('blind'):
+                accessibility_needs.append('blind')
+            
+            # Import the tracker
+            try:
+                from real_time_tracker import Position, RealTimeTracker
+                tracker = RealTimeTracker(None, None)
+            except ImportError:
+                # If tracker not available, return empty alternatives
+                return jsonify({
+                    'success': True,
+                    'alternatives': []
+                })
+            
+            start = Position(lat=start_lat, lng=start_lng)
+            dest = Position(lat=end_lat, lng=end_lng)
+            
+            alternatives = tracker.get_route_alternatives_with_transit(
+                start, dest, set(accessibility_needs)
+            )
+            
+            # Format for frontend
+            formatted_alternatives = []
+            for alt in alternatives:
+                formatted_alt = {
+                    'index': alt.get('index', 0),
+                    'type': alt.get('type', 'pedestrian'),
+                    'duration_minutes': round(alt.get('total_duration_minutes', 0)),
+                    'distance_meters': alt.get('total_distance_meters', 0),
+                    'safety_score': alt.get('safety_score', 0.7),
+                    'has_obstruction': alt.get('has_obstruction', False),
+                    'waypoints': alt.get('waypoints', [])
+                }
+                
+                if alt.get('type') == 'transit':
+                    formatted_alt['transit_lines'] = alt.get('transit_lines', [])
+                    formatted_alt['walking_minutes'] = round(alt.get('walking_time_minutes', 0))
+                    formatted_alt['transit_minutes'] = round(alt.get('transit_time_minutes', 0))
+                
+                if alt.get('construction_warnings'):
+                    formatted_alt['warnings'] = alt['construction_warnings']
+                
+                formatted_alternatives.append(formatted_alt)
+            
+            return jsonify({
+                'success': True,
+                'alternatives': formatted_alternatives
+            })
+            
+        except Exception as e:
+            logger.error(f"Error getting route alternatives: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+    
+        @app.route("/api/check-obstructions", methods=['POST', 'GET', 'OPTIONS'])
+        def check_obstructions():
+            """Check for obstructions along a route"""
+            # Handle OPTIONS preflight
+            if request.method == 'OPTIONS':
+                response = jsonify({'success': True})
+                response.headers.add('Access-Control-Allow-Origin', '*')
+                response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+                response.headers.add('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+                return response
+            
+            try:
+                data = request.json
+                if not data:
+                    return jsonify({
+                        'success': False,
+                        'error': 'No data provided'
+                    }), 400
+                    
+                route_coords = data.get('route_coords', [])
+                
+                if not route_coords:
+                    return jsonify({
+                        'success': False,
+                        'error': 'No route coordinates provided'
+                    }), 400
+                
+                # Try to import and use RealTimeTracker
+                try:
+                    from real_time_tracker import RealTimeTracker
+                    tracker = RealTimeTracker(None, None)
+                    
+                    # Convert to list of tuples
+                    waypoints = [(c['lat'], c['lng']) for c in route_coords]
+                    obstructions = tracker.check_route_obstructions(waypoints)
+                    
+                    # Format for frontend
+                    formatted_obstructions = {
+                        'has_obstruction': obstructions.get('has_obstruction', False),
+                        'construction_zones': [],
+                        'hazards': []
+                    }
+                    
+                    for zone in obstructions.get('construction_zones', []):
+                        formatted_obstructions['construction_zones'].append({
+                            'description': zone.get('description', 'Construction zone'),
+                            'location': {'lat': zone.get('lat', 0), 'lng': zone.get('lng', 0)},
+                            'distance_meters': zone.get('distance_meters', 0)
+                        })
+                    
+                    for hazard in obstructions.get('hazards', []):
+                        formatted_obstructions['hazards'].append({
+                            'type': hazard.get('type', 'hazard'),
+                            'description': hazard.get('description', 'Unknown hazard'),
+                            'severity': hazard.get('severity', 0.5)
+                        })
+                    
+                    return jsonify({
+                        'success': True,
+                        'obstructions': formatted_obstructions
+                    })
+                    
+                except ImportError as e:
+                    logger.warning(f"RealTimeTracker not available: {e}")
+                    # Return empty obstructions if tracker not available
+                    return jsonify({
+                        'success': True,
+                        'obstructions': {
+                            'has_obstruction': False,
+                            'construction_zones': [],
+                            'hazards': []
+                        }
+                    })
+                except Exception as e:
+                    logger.error(f"Error in check_obstructions: {e}", exc_info=True)
+                    return jsonify({
+                        'success': False,
+                        'error': str(e)
+                    }), 500
+                
+            except Exception as e:
+                logger.error(f"Error checking obstructions: {e}", exc_info=True)
+                return jsonify({
+                    'success': False,
+                    'error': str(e)
+                }), 500
+    
+    # ============================================================================
+    # EXISTING ENDPOINTS (keep all existing ones)
+    # ============================================================================
+    
     @app.route("/api/locations", methods=['GET'])
     def get_locations():
         """Get saved locations"""
         try:
-            # Try real search if available
             if tomtom_router and tomtom_router.api_key:
                 locations = tomtom_router.search_places("Pittsburgh")
                 if locations:
@@ -1141,7 +1229,6 @@ def add_model_endpoints(app):
             else:
                 raise Exception("TomTom not available")
         except:
-            # Fallback to default locations
             locations = [
                 {'id': 1, 'name': 'University of Pittsburgh', 'type': 'Education', 'lat': 40.4440, 'lng': -79.9545},
                 {'id': 2, 'name': 'Carnegie Museum of Art', 'type': 'Museum', 'lat': 40.4434, 'lng': -79.9498},
@@ -1179,7 +1266,6 @@ def add_model_endpoints(app):
             lat = float(data.get('lat', 40.4406))
             lng = float(data.get('lng', -79.9959))
             
-            # TRY 1: TomTom
             if tomtom_router and tomtom_router.api_key:
                 try:
                     address = tomtom_router.reverse_geocode(lat, lng)
@@ -1193,7 +1279,6 @@ def add_model_endpoints(app):
                 except Exception as e:
                     logger.warning(f"TomTom reverse geocode failed: {e}")
             
-            # TRY 2: Geoapify
             if geoapify_client and geoapify_client.api_key:
                 try:
                     address = geoapify_client.reverse_geocode(lat, lng)
@@ -1207,7 +1292,6 @@ def add_model_endpoints(app):
                 except Exception as e:
                     logger.warning(f"Geoapify reverse geocode failed: {e}")
             
-            # Fallback to mock
             addresses = [
                 'University of Pittsburgh, Pittsburgh, PA',
                 'Carnegie Mellon University, Pittsburgh, PA',
@@ -1244,7 +1328,6 @@ def add_model_endpoints(app):
                     'error': 'Query too short'
                 }), 400
             
-            # TRY 1: TomTom
             if tomtom_router and tomtom_router.api_key:
                 try:
                     lat = data.get('lat')
@@ -1259,7 +1342,6 @@ def add_model_endpoints(app):
                 except Exception as e:
                     logger.warning(f"TomTom search failed: {e}")
             
-            # TRY 2: Geoapify
             if geoapify_client and geoapify_client.api_key:
                 try:
                     lat = data.get('lat')
@@ -1274,7 +1356,6 @@ def add_model_endpoints(app):
                 except Exception as e:
                     logger.warning(f"Geoapify search failed: {e}")
             
-            # Fallback to mock data
             all_locations = [
                 {'name': 'University of Pittsburgh', 'type': 'Education', 'lat': 40.4440, 'lng': -79.9545},
                 {'name': 'Carnegie Museum', 'type': 'Museum', 'lat': 40.4434, 'lng': -79.9498},
@@ -1302,7 +1383,6 @@ def add_model_endpoints(app):
                 'error': str(e)
             }), 500
     
-    # New API endpoints
     @app.route("/api/weather", methods=['POST'])
     def get_weather():
         """Get real weather data"""
@@ -1319,7 +1399,6 @@ def add_model_endpoints(app):
                     'real_api_used': True
                 })
             
-            # Mock weather data
             import random
             conditions = ['Clear', 'Cloudy', 'Rain', 'Snow']
             return jsonify({
@@ -1355,7 +1434,6 @@ def add_model_endpoints(app):
                     'real_api_used': True
                 })
             
-            # Mock crime data
             import random
             return jsonify({
                 'success': True,
@@ -1389,7 +1467,6 @@ def add_model_endpoints(app):
                     'real_api_used': True
                 })
             
-            # Mock FEMA data
             return jsonify({
                 'success': True,
                 'fema': {
@@ -1422,7 +1499,6 @@ def add_model_endpoints(app):
                     'real_api_used': True
                 })
             
-            # Mock traffic data
             import random
             return jsonify({
                 'success': True,
@@ -1440,34 +1516,6 @@ def add_model_endpoints(app):
                 'error': str(e)
             }), 500
     
-    # Authentication endpoints
-    # @app.route("/api/auth/email-login", methods=['POST'])
-    # def email_login():
-    #     """Email/password login"""
-    #     try:
-    #         data = request.json
-    #         email = data.get('email', '').strip()
-    #         password = data.get('password', '')
-
-    #         # For now, accept any non-empty credentials
-    #         if email and password:
-    #             # In production, validate against database
-    #             user_role = 'admin' if 'admin' in email.lower() else 'user'
-                
-    #             return jsonify({
-    #                 'success': True,
-    #                 'token': 'demo-token-' + str(int(time.time())),
-    #                 'user': {
-    #                     'email': email,
-    #                     'role': user_role,
-    #                     'name': email.split('@')[0].title()
-    #                 }
-    #             })
-    #         return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
-    #     except Exception as e:
-    #         return jsonify({'success': False, 'error': str(e)}), 500
-    
-    # For backend generated session ids
     @app.route("/api/session/create", methods=['GET'])
     def generate_session_id():
         uuid1 = str(uuid.uuid1())
@@ -1487,7 +1535,6 @@ def add_model_endpoints(app):
             password = data.get('password', '')
 
             if name and email and password:
-                # In production, create user in database
                 return jsonify({
                     'success': True,
                     'token': 'demo-token-' + str(int(time.time())),
@@ -1501,15 +1548,6 @@ def add_model_endpoints(app):
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)}), 500
 
-    # @app.route("/api/auth/login", methods=['GET'])
-    # def google_login():
-    #     """Google OAuth login redirect"""
-    #     # Mock Google OAuth flow for now
-    #     return jsonify({
-    #         'success': True,
-    #         'message': 'Google OAuth endpoint',
-    #         'url': 'https://accounts.google.com/o/oauth2/auth'
-    #     })
     app.secret_key = os.environ.get("SECRET_KEY")
     oauth = OAuth(app)
 
@@ -1523,7 +1561,6 @@ def add_model_endpoints(app):
         }
     )
 
-
     @app.route('/api/auth/login', methods=['GET'])
     def login():
         return google.authorize_redirect(
@@ -1532,12 +1569,8 @@ def add_model_endpoints(app):
 
     @app.route('/api/callback')
     def callback():
-
         token = google.authorize_access_token()
         user_info = token.get("userinfo")
-
-        # session['user'] = user_info
-
         return redirect("http://localhost:3000/dashboard")
     
     return app
@@ -1566,12 +1599,10 @@ def setup_socketio_handlers(socketio_instance, app):
             lat = float(data['lat'])
             lng = float(data['lng'])
             
-            # Get safety prediction
             safety_ai_instance = get_safety_ai_instance()
             if safety_ai_instance:
                 safety_result = safety_ai_instance.predict_safety_score(lat, lng)
                 
-                # Get additional real data if available
                 weather = None
                 crime = None
                 if api_client:
@@ -1581,7 +1612,6 @@ def setup_socketio_handlers(socketio_instance, app):
                     except:
                         pass
                 
-                # Broadcast to all clients
                 emit('position_update', {
                     'user_id': user_id,
                     'position': {'lat': lat, 'lng': lng},
@@ -1612,8 +1642,41 @@ def setup_socketio_handlers(socketio_instance, app):
             dest_lng = float(data['dest_lng'])
             
             accessibility_needs = data.get('accessibility_needs', [])
+            travel_mode = data.get('travel_mode', 'pedestrian')
             
-            # Try real routing first
+            if travel_mode == 'transit' and google_router:
+                routes = google_router.get_transit_route(start_lat, start_lng, dest_lat, dest_lng)
+                if routes:
+                    route_data = routes[0]
+                    waypoints = route_data.get('waypoints', [])
+                    if waypoints:
+                        route_coords = [{'lat': p[0], 'lng': p[1]} for p in waypoints]
+                        
+                        safety_ai_instance = get_safety_ai_instance()
+                        if safety_ai_instance:
+                            safety_result = safety_ai_instance.calculate_route_safety(route_coords)
+                            safety_dict = {
+                                'overall_safety': safety_result.get('overall_safety', 0.8),
+                                'risk_level': safety_result.get('risk_level', 'low'),
+                                'recommendations': safety_result.get('recommendations', ['Route appears safe'])
+                            }
+                        else:
+                            safety_dict = {
+                                'overall_safety': 0.8,
+                                'risk_level': 'low',
+                                'recommendations': ['Route appears safe']
+                            }
+                        
+                        emit('route_calculated', {
+                            'route': route_coords,
+                            'route_details': route_data,
+                            'safety': safety_dict,
+                            'timestamp': datetime.now().isoformat(),
+                            'real_api_used': True,
+                            'travel_mode': 'transit'
+                        })
+                        return
+            
             if tomtom_router and tomtom_router.api_key:
                 route_result = tomtom_router.calculate_route(
                     start_lat, start_lng, dest_lat, dest_lng,
@@ -1623,7 +1686,6 @@ def setup_socketio_handlers(socketio_instance, app):
                 if route_result:
                     route_coords = [{'lat': p[0], 'lng': p[1]} for p in route_result['points']]
                     
-                    # Calculate route safety
                     safety_ai_instance = get_safety_ai_instance()
                     if safety_ai_instance:
                         safety_result = safety_ai_instance.calculate_route_safety(route_coords)
@@ -1644,11 +1706,11 @@ def setup_socketio_handlers(socketio_instance, app):
                         'route_details': route_result,
                         'safety': safety_dict,
                         'timestamp': datetime.now().isoformat(),
-                        'real_api_used': True
+                        'real_api_used': True,
+                        'travel_mode': 'pedestrian'
                     })
                     return
             
-            # Fallback
             safety_ai_instance = get_safety_ai_instance()
             if safety_ai_instance:
                 route_coords = [
@@ -1678,7 +1740,8 @@ def setup_socketio_handlers(socketio_instance, app):
                 'route': route_coords,
                 'safety': safety_dict,
                 'timestamp': datetime.now().isoformat(),
-                'real_api_used': False
+                'real_api_used': False,
+                'travel_mode': travel_mode
             })
                 
         except Exception as e:
@@ -1714,6 +1777,8 @@ def main():
     print(f"Python: {sys.version.split()[0]}")
     print(f"Platform: {sys.platform}")
     print(f"TomTom API: {'✅ Available' if tomtom_router and tomtom_router.api_key else '❌ Not Available'}")
+    print(f"Google Maps API: {'✅ Available' if GOOGLE_MAPS_AVAILABLE else '❌ Not Available'}")
+    print(f"Google Routing: {'✅ Available' if GOOGLE_ROUTING_AVAILABLE else '❌ Not Available'}")
     print(f"Real API Client: {'✅ Available' if api_client else '❌ Not Available'}")
     print(f"Geoapify API: {'✅ Available' if geoapify_client and geoapify_client.api_key else '❌ Not Available'}")
     print("="*60)
@@ -1768,78 +1833,28 @@ def main():
     @socketio.on("location-update")
     def update_location(data):
         """Handle location updates from clients"""
-        # Check to see if we have a valid session id
         session_id = request.args.get("session_id")
         if not session_id:
             return
         
-        # Get the session; if there is no session, create one with the id
         session_state = sesh_manager.get_session_state(session_id)
         if not session_state:
             sesh_manager.create_session(session_id)
             session_state = sesh_manager.get_session_state(session_id)
 
-        # Extract the location
         new_lat = data["lat"]
         new_lng = data["lng"]
 
         updated_coords = np.array([new_lat, new_lng])
 
-        # Update the location if there is no location
         if session_state.lng is None or session_state.lat is None:
             session_state.update_location(new_lat, new_lng)
             return
         
-        # Compute the distance from last stored location
         old_coords = np.array([session_state.lat, session_state.lng])
 
         if np.linalg.norm(updated_coords - old_coords) > 5:
             session_state.update_location(new_lat, new_lng)
-
-    # oauth = OAuth(app)
-
-    # google = oauth.register(
-    #     name='google',
-    #     client_id=os.environ.get("GOOGLE_CLIENT_ID"),
-    #     client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
-    #     access_token_url='https://oauth2.googleapis.com/token',
-    #     authorize_url='https://accounts.google.com/o/oauth2/auth',
-    #     client_kwargs={
-    #         'scope': 'openid email profile'
-    #     },
-    # )
-
-
-    # @app.route('/login', methods=['GET'])
-    # def login():
-    #     print("HANDLING LOGIN")
-    #     return google.authorize_redirect(
-    #         redirect_uri=url_for('callback', _external=True)
-    #     )
-
-    # @app.route('/callback')
-    # def callback():
-    #     print("IN THE CALLBACK")
-    #     token = google.authorize_access_token()
-    #     user_info = google.parse_id_token(token)
-
-    #     session['user'] = user_info
-
-    #     return redirect('/')
-
-    # # @app.route('/')
-    # # def home():
-    # #     user = session.get('user')
-    # #     if user:
-    # #         return f"Hello {user['name']}"
-    # #     return "You are not logged in"
-
-    # @app.route('/logout')
-    # def logout():
-    #     session.clear()
-    #     return redirect('/')
-
-    # print("AVAILABLE ROUTES: ", app.url_map)
     
     # Serve frontend
     @app.route('/', defaults={'path': ''})
@@ -1849,8 +1864,6 @@ def main():
             return send_from_directory('../frontend/dist', path)
         else:
             return send_from_directory('../frontend/dist', 'index.html')
-    
-    
     
     # Start browser in background
     if not args.no_browser:
@@ -1881,7 +1894,6 @@ def main():
     print("="*60 + "\n")
     
     try:
-        # Run the server with SocketIO
         socketio.run(app,
                     host=args.host,
                     port=args.port,

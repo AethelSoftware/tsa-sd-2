@@ -1327,3 +1327,229 @@ RuntimeError: The session is unavailable because no secret key was set.  Set the
 2026-03-26 21:13:24,935 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 21:13:24] "[31m[1mPOST /api/auth//login HTTP/1.1[0m" 405 -
 2026-03-26 21:16:31,458 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 21:16:31] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
 2026-03-26 21:16:34,449 - werkzeug - INFO - 127.0.0.1 - - [26/Mar/2026 21:16:34] "[32mGET /api/callback?state=jXN8ql8PoU0kpe5fZBuF10145ObWtw&iss=https://accounts.google.com&code=4/0Aci98E8cGnFb4E6lcXzoM0hqaKOfdFcGEZS_cq6DgTQPgK9700fgHQosxPecuW16xEB8VA&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-28 21:51:54,038 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-28 21:51:54,070 - __main__ - INFO - Safety AI loaded successfully
+2026-03-28 21:52:33,251 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-28 21:52:33,323 - __main__ - INFO - Safety AI loaded successfully
+2026-03-28 21:52:34,468 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-28 21:52:34,472 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-28 21:52:39,489 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:52:39] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-28 21:52:41,473 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:52:41] "GET /api/hello HTTP/1.1" 200 -
+2026-03-28 21:52:41,964 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:52:41] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-03-28 21:52:43,595 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:52:43] "[32mGET /api/callback?state=UQkiESCDPqU45A2VHITu6V6lzwWVxW&iss=https://accounts.google.com&code=4/0Aci98E9s2ZMK_Ezu3MAjUF2FB97SnND_62c-EwbcOZa7gV8OA8TTAoHDPdvSfn4MnW35RQ&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+openid+https://www.googleapis.com/auth/userinfo.profile&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-28 21:53:12,450 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:53:12] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:53:12,737 - __main__ - INFO - Attempting TomTom route from 40.55374737181105,-79.90766308568485 to 40.488521,-79.898154
+2026-03-28 21:53:12,738 - tomtom_router - INFO - Calculating TomTom route from 40.55374737181105,-79.90766308568485 to 40.488521,-79.898154
+2026-03-28 21:53:13,323 - __main__ - INFO - TomTom route successful
+2026-03-28 21:53:16,505 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 21:53:16,546 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:53:16] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:53:19,302 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:53:19] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-28 21:53:27,263 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:53:27] "[32mGET /api/callback?state=ebqI1a4tY3P95KFUKE3a4kfC2uVQ0O&iss=https://accounts.google.com&code=4/0Aci98E_Wy4wsUR7_gnoeartQb7S38kGqoTb2I4gzr5GSWF-CsIYzux4NwjfbedJIUXljQA&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=3&prompt=consent HTTP/1.1[0m" 302 -
+2026-03-28 21:53:57,381 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:53:57] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:53:57,398 - __main__ - INFO - Attempting TomTom route from 40.472,-79.94 to 40.454489,-79.937551
+2026-03-28 21:53:57,400 - tomtom_router - INFO - Calculating TomTom route from 40.472,-79.94 to 40.454489,-79.937551
+2026-03-28 21:53:57,886 - __main__ - INFO - TomTom route successful
+2026-03-28 21:53:58,994 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 21:53:59,013 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 21:53:59,016 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:53:59] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:53:59,769 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:53:59] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:53:59,950 - __main__ - INFO - Attempting TomTom route from 40.55374737181105,-79.90766308568485 to 40.488521,-79.898154
+2026-03-28 21:53:59,950 - tomtom_router - INFO - Calculating TomTom route from 40.55374737181105,-79.90766308568485 to 40.488521,-79.898154
+2026-03-28 21:54:00,474 - __main__ - INFO - TomTom route successful
+2026-03-28 21:54:01,741 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 21:54:01,749 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 21:54:01,783 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:54:01] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:54:16,943 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:54:16] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:54:16,969 - __main__ - INFO - Attempting TomTom route from 40.472,-79.94 to 40.454489,-79.937551
+2026-03-28 21:54:16,969 - tomtom_router - INFO - Calculating TomTom route from 40.472,-79.94 to 40.454489,-79.937551
+2026-03-28 21:54:17,850 - __main__ - INFO - TomTom route successful
+2026-03-28 21:54:19,246 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 21:54:19,261 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 21:54:19,264 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:54:19] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:54:36,217 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:54:36] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:54:36,236 - __main__ - INFO - Attempting TomTom route from 40.488289777598006,-79.89846408505933 to 40.454489,-79.937551
+2026-03-28 21:54:36,236 - tomtom_router - INFO - Calculating TomTom route from 40.488289777598006,-79.89846408505933 to 40.454489,-79.937551
+2026-03-28 21:54:36,724 - __main__ - INFO - TomTom route successful
+2026-03-28 21:54:38,176 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 21:54:38,181 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 21:54:38,190 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:54:38] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:55:17,276 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:55:17] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:55:17,287 - __main__ - INFO - Attempting TomTom route from 40.488289777598006,-79.89846408505933 to 40.454489,-79.937551
+2026-03-28 21:55:17,288 - tomtom_router - INFO - Calculating TomTom route from 40.488289777598006,-79.89846408505933 to 40.454489,-79.937551
+2026-03-28 21:55:17,890 - __main__ - INFO - TomTom route successful
+2026-03-28 21:55:19,086 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 21:55:19,103 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 21:55:19,123 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:55:19] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:55:39,426 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:55:39] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:55:39,442 - __main__ - INFO - Attempting TomTom route from 40.48820573965588,-79.89824892574607 to 40.454489,-79.937551
+2026-03-28 21:55:39,443 - tomtom_router - INFO - Calculating TomTom route from 40.48820573965588,-79.89824892574607 to 40.454489,-79.937551
+2026-03-28 21:55:39,976 - __main__ - INFO - TomTom route successful
+2026-03-28 21:55:41,491 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 21:55:41,497 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 21:55:41,508 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:55:41] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:56:07,983 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:56:07] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:56:08,061 - __main__ - INFO - Attempting TomTom route from 40.48820573965588,-79.89824892574607 to 40.454489,-79.937551
+2026-03-28 21:56:08,062 - tomtom_router - INFO - Calculating TomTom route from 40.48820573965588,-79.89824892574607 to 40.454489,-79.937551
+2026-03-28 21:56:08,740 - __main__ - INFO - TomTom route successful
+2026-03-28 21:56:10,054 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 21:56:10,060 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 21:56:10,071 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:56:10] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:56:50,883 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:56:50] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:56:50,893 - __main__ - INFO - Attempting TomTom route from 40.48820573965588,-79.89824892574607 to 40.454489,-79.937551
+2026-03-28 21:56:50,894 - tomtom_router - INFO - Calculating TomTom route from 40.48820573965588,-79.89824892574607 to 40.454489,-79.937551
+2026-03-28 21:56:51,415 - __main__ - INFO - TomTom route successful
+2026-03-28 21:56:52,844 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 21:56:52,853 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 21:56:52,862 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:56:52] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:59:52,259 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:59:52] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 21:59:52,309 - __main__ - INFO - Attempting TomTom route from 40.422313,-79.965719 to 40.4244618,-79.9810592
+2026-03-28 21:59:52,310 - tomtom_router - INFO - Calculating TomTom route from 40.422313,-79.965719 to 40.4244618,-79.9810592
+2026-03-28 21:59:54,887 - __main__ - INFO - TomTom route successful
+2026-03-28 21:59:57,739 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 21:59:57,756 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 21:59:57,767 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 21:59:57] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:04:06,316 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:04:06] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:04:06,357 - __main__ - INFO - Attempting TomTom route from 40.448335,-80.0026667 to 40.4460173,-80.0167014
+2026-03-28 22:04:06,360 - tomtom_router - INFO - Calculating TomTom route from 40.448335,-80.0026667 to 40.4460173,-80.0167014
+2026-03-28 22:04:07,548 - __main__ - INFO - TomTom route successful
+2026-03-28 22:04:09,747 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 22:04:09,788 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 22:04:09,854 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:04:09] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:05:58,188 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:05:58] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:05:58,312 - __main__ - INFO - Attempting TomTom route from 40.439196,-79.962393 to 40.444086,-79.9535162
+2026-03-28 22:05:58,317 - tomtom_router - INFO - Calculating TomTom route from 40.439196,-79.962393 to 40.444086,-79.9535162
+2026-03-28 22:05:59,249 - __main__ - INFO - TomTom route successful
+2026-03-28 22:06:01,365 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 22:06:01,387 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 22:06:01,394 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:06:01] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:18:09,551 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:18:09] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:18:09,617 - __main__ - INFO - Attempting TomTom route from 40.4239,-79.968796 to 40.4248658,-79.9839149
+2026-03-28 22:18:09,621 - tomtom_router - INFO - Calculating TomTom route from 40.4239,-79.968796 to 40.4248658,-79.9839149
+2026-03-28 22:18:10,678 - __main__ - INFO - TomTom route successful
+2026-03-28 22:18:12,185 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 22:18:12,197 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 22:18:12,200 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:18:12] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:25:43,250 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:25:43] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:25:43,294 - __main__ - INFO - Attempting TomTom route from 40.4475104,-80.0091131 to 40.4466089,-80.0139946
+2026-03-28 22:25:43,298 - tomtom_router - INFO - Calculating TomTom route from 40.4475104,-80.0091131 to 40.4466089,-80.0139946
+2026-03-28 22:25:43,862 - __main__ - INFO - TomTom route successful
+2026-03-28 22:25:44,810 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 22:25:44,819 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 22:25:44,823 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:25:44] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:28:28,700 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:28:28] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:28:28,739 - __main__ - INFO - Attempting TomTom route from 40.464842,-79.942746 to 40.46462,-79.933514
+2026-03-28 22:28:28,740 - tomtom_router - INFO - Calculating TomTom route from 40.464842,-79.942746 to 40.46462,-79.933514
+2026-03-28 22:28:29,371 - __main__ - INFO - TomTom route successful
+2026-03-28 22:28:30,838 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 22:28:30,862 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 22:28:30,894 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:28:30] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:28:49,773 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:28:49] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:28:49,781 - __main__ - INFO - Attempting TomTom route from 40.464842,-79.942746 to 40.46462,-79.933514
+2026-03-28 22:28:49,782 - tomtom_router - INFO - Calculating TomTom route from 40.464842,-79.942746 to 40.46462,-79.933514
+2026-03-28 22:28:50,502 - __main__ - INFO - TomTom route successful
+2026-03-28 22:28:51,701 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 22:28:51,734 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 22:28:51,737 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:28:51] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:28:53,587 - __main__ - INFO - Attempting TomTom route from 40.464842,-79.942746 to 40.46462,-79.933514
+2026-03-28 22:28:53,588 - tomtom_router - INFO - Calculating TomTom route from 40.464842,-79.942746 to 40.46462,-79.933514
+2026-03-28 22:28:54,040 - __main__ - INFO - TomTom route successful
+2026-03-28 22:28:55,471 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 22:28:55,519 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 22:28:55,522 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:28:55] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:32:18,161 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:32:18] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:32:20,076 - __main__ - INFO - Attempting TomTom route from 40.4926274,-79.8975268 to 40.454489,-79.937551
+2026-03-28 22:32:20,084 - tomtom_router - INFO - Calculating TomTom route from 40.4926274,-79.8975268 to 40.454489,-79.937551
+2026-03-28 22:32:20,955 - __main__ - INFO - TomTom route successful
+2026-03-28 22:32:22,476 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 22:32:22,502 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 22:32:22,534 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:32:22] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:47:11,340 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:47:11] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:47:11,507 - __main__ - INFO - Attempting TomTom route from 40.488521,-79.898154 to 40.4907933,-79.906198
+2026-03-28 22:47:11,508 - tomtom_router - INFO - Calculating TomTom route from 40.488521,-79.898154 to 40.4907933,-79.906198
+2026-03-28 22:47:12,579 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/40.488521,-79.898154:40.4907933,-79.906198/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=false&instructionsType=text&language=en-US&routeRepresentation=polyline&computeTravelTimeFor=none&avoid=unpavedRoads&hilliness=normal
+2026-03-28 22:47:12,599 - __main__ - WARNING - TomTom API failed: TomTomRouter._generate_intermediate_points() got an unexpected keyword argument 'steps'
+2026-03-28 22:47:12,611 - __main__ - INFO - Attempting OSRM route from 40.488521,-79.898154 to 40.4907933,-79.906198
+2026-03-28 22:47:12,612 - __main__ - WARNING - All routing providers failed: ["TomTom: TomTomRouter._generate_intermediate_points() got an unexpected keyword argument 'steps'"]. Using calculated fallback.
+2026-03-28 22:47:12,645 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:47:12] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:47:18,659 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:47:18] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:47:18,690 - __main__ - INFO - Attempting TomTom route from 40.488521,-79.898154 to 40.4907933,-79.906198
+2026-03-28 22:47:18,691 - tomtom_router - INFO - Calculating TomTom route from 40.488521,-79.898154 to 40.4907933,-79.906198
+2026-03-28 22:47:19,282 - __main__ - INFO - TomTom route successful
+2026-03-28 22:47:20,708 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 22:47:20,745 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 22:47:20,748 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:47:20] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:47:25,965 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:47:25] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:47:26,013 - __main__ - INFO - Attempting TomTom route from 40.488521,-79.898154 to 40.4907933,-79.906198
+2026-03-28 22:47:26,014 - tomtom_router - INFO - Calculating TomTom route from 40.488521,-79.898154 to 40.4907933,-79.906198
+2026-03-28 22:47:27,148 - __main__ - INFO - TomTom route successful
+2026-03-28 22:47:35,450 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 22:47:35,510 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 22:47:35,541 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:47:35] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:52:49,922 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:52:49] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-28 22:52:53,221 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:52:53] "[32mGET /api/callback?state=PvMkzAvgaI8KsG6GRA0GqaKnMs7qbr&iss=https://accounts.google.com&code=4/0Aci98E9S-zdpmTjM5AuS2TiFyE8hGdebKEsmWtZqG_Muws0r4y5f--AWEOoxyARXjLEzvQ&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+openid+https://www.googleapis.com/auth/userinfo.profile&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-28 22:53:27,585 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:53:27] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:53:27,611 - __main__ - INFO - Attempting TomTom route from 38.9037436,-77.034574 to 40.362957,-80.389816
+2026-03-28 22:53:27,613 - tomtom_router - INFO - Calculating TomTom route from 38.9037436,-77.034574 to 40.362957,-80.389816
+2026-03-28 22:53:28,394 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:53:28] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:53:28,453 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/38.9037436,-77.034574:40.362957,-80.389816/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=false&instructionsType=text&language=en-US&routeRepresentation=polyline&computeTravelTimeFor=none&avoid=unpavedRoads&hilliness=normal
+2026-03-28 22:53:28,473 - __main__ - WARNING - TomTom API failed: TomTomRouter._generate_intermediate_points() got an unexpected keyword argument 'steps'
+2026-03-28 22:53:28,490 - __main__ - INFO - Attempting OSRM route from 38.9037436,-77.034574 to 40.362957,-80.389816
+2026-03-28 22:53:28,491 - __main__ - WARNING - All routing providers failed: ["TomTom: TomTomRouter._generate_intermediate_points() got an unexpected keyword argument 'steps'"]. Using calculated fallback.
+2026-03-28 22:53:28,521 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:53:28] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:53:28,955 - __main__ - INFO - Attempting TomTom route from 39.742158,-77.551429 to 40.4379671,-80.0033069
+2026-03-28 22:53:28,958 - tomtom_router - INFO - Calculating TomTom route from 39.742158,-77.551429 to 40.4379671,-80.0033069
+2026-03-28 22:53:30,786 - __main__ - INFO - TomTom route successful
+2026-03-28 22:53:32,883 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 22:53:32,971 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 22:53:33,331 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:53:33] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:53:33,550 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:53:33] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 22:53:33,561 - __main__ - INFO - Attempting TomTom route from 38.9037436,-77.034574 to 40.362957,-80.389816
+2026-03-28 22:53:33,562 - tomtom_router - INFO - Calculating TomTom route from 38.9037436,-77.034574 to 40.362957,-80.389816
+2026-03-28 22:53:36,349 - __main__ - INFO - TomTom route successful
+2026-03-28 22:53:38,179 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 22:53:38,189 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 22:53:39,808 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 22:53:39] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 23:07:21,273 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:07:21] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 23:07:21,605 - __main__ - INFO - Attempting TomTom route from 40.4926274,-79.8975268 to 40.454489,-79.937551
+2026-03-28 23:07:21,608 - tomtom_router - INFO - Calculating TomTom route from 40.4926274,-79.8975268 to 40.454489,-79.937551
+2026-03-28 23:07:22,329 - __main__ - INFO - TomTom route successful
+2026-03-28 23:07:23,507 - __main__ - ERROR - Embedding API request error: 410 Client Error: Gone for url: https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+2026-03-28 23:07:23,556 - __main__ - WARNING - Caching failed (non-critical): The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+2026-03-28 23:07:23,571 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:07:23] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 23:07:24,321 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:07:24] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-28 23:07:24,545 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:07:24] "[31m[1mPOST /api/check-obstructions HTTP/1.1[0m" 405 -
+2026-03-28 23:15:27,548 - __main__ - WARNING - Geoapify client not available: No module named 'geoapify_client'
+2026-03-28 23:15:27,571 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-28 23:15:27,605 - __main__ - INFO - Safety AI loaded successfully
+2026-03-28 23:15:29,897 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-28 23:15:29,897 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-28 23:15:34,543 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:15:34] "GET /api/hello HTTP/1.1" 200 -
+2026-03-28 23:15:40,088 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:15:40] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 23:15:40,370 - __main__ - INFO - Attempting Google Maps transit route from 40.4926274,-79.8975268 to 40.454489,-79.937551
+2026-03-28 23:15:41,038 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-28 23:15:41,047 - __main__ - WARNING - All routing providers failed: []. Using calculated fallback.
+2026-03-28 23:15:41,050 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:15:41] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 23:15:41,792 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:15:41] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-28 23:15:42,271 - __main__ - ERROR - Error checking obstructions: 'NoneType' object has no attribute 'on'
+2026-03-28 23:15:42,272 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:15:42] "[35m[1mPOST /api/check-obstructions HTTP/1.1[0m" 500 -
+2026-03-28 23:16:05,164 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:16:05] "OPTIONS /api/transit-info HTTP/1.1" 200 -
+2026-03-28 23:16:06,120 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-28 23:16:06,126 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:16:06] "[33mPOST /api/transit-info HTTP/1.1[0m" 404 -
+2026-03-28 23:22:19,138 - __main__ - WARNING - Geoapify client not available: No module named 'geoapify_client'
+2026-03-28 23:22:19,140 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-28 23:22:19,144 - __main__ - INFO - Safety AI loaded successfully
+2026-03-28 23:22:21,448 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-28 23:22:21,449 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-28 23:22:25,899 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:22:25] "GET /api/hello HTTP/1.1" 200 -
+2026-03-28 23:22:26,449 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:22:26] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 23:22:26,951 - __main__ - INFO - Attempting Google Maps transit route from 40.4926274,-79.8975268 to 40.454489,-79.937551
+2026-03-28 23:22:27,413 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-28 23:22:27,417 - __main__ - WARNING - All routing providers failed: []. Using calculated fallback.
+2026-03-28 23:22:27,419 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:22:27] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-28 23:22:28,060 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:22:28] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-28 23:22:28,335 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:22:28] "[31m[1mPOST /api/check-obstructions HTTP/1.1[0m" 405 -
+2026-03-28 23:22:38,384 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:22:38] "OPTIONS /api/transit-info HTTP/1.1" 200 -
+2026-03-28 23:22:38,638 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:22:38] "[31m[1mPOST /api/transit-info HTTP/1.1[0m" 405 -
