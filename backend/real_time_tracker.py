@@ -1246,7 +1246,8 @@ class RealTimeTracker:
             return None
     
     def _find_alternate_destinations(self, user_id: str, original_category: str, category_value: str,
-                                      current_safety: float, lat: float, lng: float, radius: int = 500) -> List[Dict]:
+                                      current_safety: float, lat: float, lng: float, number_of_destinations:int, 
+                                      radius: int = 500) -> List[Dict]:
         """Find alternate destinations of the same category within radius meters using Overpass API"""
         if not user_id in self.pedestrians:
             return []
@@ -1322,7 +1323,7 @@ class RealTimeTracker:
 
             # Sort by safety score descending, then by distance ascending
             candidates.sort(key=lambda x: (-x["safety_score"], x["distance_meters"]))
-            return candidates[:5]  # top 5
+            return candidates[:number_of_destinations]  # top no. of destinations (parameter)
         except Exception as e:
             logger.error(f"Error finding alternate destinations: {e}")
             return []
@@ -1405,7 +1406,7 @@ class RealTimeTracker:
             lat = pedestrian.current_position.lat
             lng = pedestrian.current_position.lng
             alternatives = self._find_alternate_destinations(
-                user_id, category, value, current_safety, lat, lng, radius=500
+                user_id, category, value, current_safety, lat, lng, number_of_destinations = 5, radius=500
             )
             if alternatives:
                 best = alternatives[0]
