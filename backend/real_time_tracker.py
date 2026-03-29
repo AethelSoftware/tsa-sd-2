@@ -18,6 +18,7 @@ from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
 import heapq
+import requests
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -30,6 +31,8 @@ REROUTE_THRESHOLD = 0.3  # Reroute if safety drops below 30%
 MAX_REROUTE_DISTANCE = 500  # Maximum detour in meters
 MIN_WALKING_SPEED = 0.5  # m/s
 MAX_WALKING_SPEED = 1.8  # m/s
+
+CATEGORY_TAGS = ["amenity", "shop", "tourism", "leisure", "office", "building"] #Descending priority ranking
 
 class PedestrianState(Enum):
     """Pedestrian movement states"""
@@ -492,6 +495,15 @@ class RealTimeTracker:
         self.route_cache[cache_key] = route_segments
         return route_segments
     
+    def _return_weighted_safety_score(segments:list[RouteSegment]) -> float:
+        arr = np.array([s.safety_score for s in segments], [s.distance for s in segments])
+        total_distance = np.sum(arr[1])
+        safety_sum = 0.0
+
+        for i in range(len(arr[0])):
+            safety_sum += np.array[0][i] * np.array[1][i]/total_distance
+        return safety_sum
+
     def _calculate_segment_safety(self, start: Position, end: Position, 
                                  accessibility_needs: Set[str], max_iterations: int = 100) -> float:
         """Calculate safety score for a route segment"""
@@ -619,12 +631,16 @@ class RealTimeTracker:
             return
         
         # Generate new route
+        """
+        Replace this code with the alternative destination feature. Or we could keep this as fallback.
+        """
         new_route = self.generate_route(
             pedestrian.current_position,
             pedestrian.destination,
             pedestrian.accessibility_needs,
             avoid_hazards=True
         )
+
         
         # Only reroute if new route is significantly safer
         current_safety = pedestrian.route[pedestrian.current_segment_index].safety_score
@@ -650,6 +666,86 @@ class RealTimeTracker:
             self._send_accessibility_alerts(user_id, reason, hazard)
             
             logger.info(f"Rerouted {user_id} due to {reason}")
+
+    def _determine_destination_category(self, user_id:str):
+        if not user_id in self.pedestrians:
+            return None
+        pedestrian = self.pedestrians[user_id]
+
+        lat = pedestrian.current_position.lat
+        lng = pedestrian.current_position.lng
+
+        dest_lat = pedestrian.destination.lat
+        dest_lng = pedestrian.destination.lng
+
+        # Retrieve the categorical tags pertaining to the destination
+
+        query = f"""
+        [out:json];
+        (
+            node(around:10, {dest_lat}, {dest_lng});
+            way(around:10, {dest_lat}, {dest_lng});
+            relation(around:10, {dest_lat}, {dest_lng});
+        );
+        out tags center;
+        """
+        url = os.environ.get("OVERPASS_URL")
+        res = requests.get(url, params={"data":query})
+        data = res.json()
+
+        elements = [el.get("tags", {}) for el in data["elements"]]
+        cat_type, cat_val = self._get_relevant_category(elements[0])
+        return (cat_type, cat_val)
+    
+    def _find_alternate_destinations(self, user_id:str, original_category:str, category_value: str, current_safety:float,
+                                     lat: float, lng: float, radius: int | float = 500):
+
+        # Take the category of the destination and query the API to find other destinations
+        # Use haversine distance function and safety score computations to rank them
+        # NOTE: new safety score must be higher: if original is the highest, then suggest that the user
+        # go home or just not continue on the route
+        # Set the destination to the new destination
+        if not user_id in self.pedestrians:
+            return None
+        
+        pedestrian = self.pedestrians.get(user_id)
+        
+        query = f"""
+        [out:json];
+        (
+            node[{original_category}={category_value}](around:{radius}, {lat}, {lng});
+            way[{original_category}={category_value}](around:{radius}, {lat}, {lng});
+            relation[{original_category}={category_value}](around:{radius}, {lat}, {lng});
+        );
+        out center;
+        """
+        try:
+            url = os.environ.get("OVERPASS_URL")
+            res = requests.get(url, params={"data":query})
+            data = res.json()
+            elements = [(el.get("lat", {}), el.get("lon", {})) for el in data["elements"]] # List of tuples
+
+            for e in elements:
+                test_lat, test_lng = e
+                if not test_lat or not test_lng:
+                    continue
+                test_dest = Position(test_lat, test_lng)
+
+
+
+
+        except Exception as e:
+            logger.error(e)
+
+
+
+    def _get_relevant_category(tags:dict) -> tuple:
+        for tag in CATEGORY_TAGS:
+            if tag in tags:
+                return (tag, tags[tag])
+        else:
+            return ("unknown", None)
+
     
     def _send_accessibility_alerts(self, user_id: str, reason: str, hazard: Hazard = None):
         """Send accessibility-appropriate alerts"""
