@@ -39,6 +39,7 @@ load_dotenv()
 # Initialize global variables
 vdb = VectorDB(0.90)
 sesh_manager = SessionManager()
+tracker_instance = None  # Global RealTimeTracker instance
 
 # Configure logging
 logging.basicConfig(
@@ -1063,21 +1064,24 @@ def add_model_endpoints(app):
             if accessibility_preferences.get('blind'):
                 accessibility_needs.append('blind')
             
-            # Import the tracker
-            try:
-                from real_time_tracker import Position, RealTimeTracker
-                tracker = RealTimeTracker(None, None)
-            except ImportError:
-                # If tracker not available, return empty alternatives
-                return jsonify({
-                    'success': True,
-                    'alternatives': []
-                })
+            # Use the global tracker instance
+            global tracker_instance
+            
+            if tracker_instance is None:
+                try:
+                    from real_time_tracker import RealTimeTracker, Position
+                    tracker_instance = RealTimeTracker(None, None)
+                    logger.warning("Created temporary tracker for route alternatives")
+                except ImportError:
+                    return jsonify({
+                        'success': True,
+                        'alternatives': []
+                    })
             
             start = Position(lat=start_lat, lng=start_lng)
             dest = Position(lat=end_lat, lng=end_lng)
             
-            alternatives = tracker.get_route_alternatives_with_transit(
+            alternatives = tracker_instance.get_route_alternatives_with_transit(
                 start, dest, set(accessibility_needs)
             )
             
@@ -1143,58 +1147,78 @@ def add_model_endpoints(app):
                     'error': 'No route coordinates provided'
                 }), 400
             
-            # Try to import and use RealTimeTracker
-            try:
-                from real_time_tracker import RealTimeTracker
-                tracker = RealTimeTracker(None, None)
-                
-                # Convert to list of tuples
-                waypoints = [(c['lat'], c['lng']) for c in route_coords]
-                obstructions = tracker.check_route_obstructions(waypoints)
-                
-                # Format for frontend
-                formatted_obstructions = {
-                    'has_obstruction': obstructions.get('has_obstruction', False),
-                    'construction_zones': [],
-                    'hazards': []
-                }
-                
-                for zone in obstructions.get('construction_zones', []):
-                    formatted_obstructions['construction_zones'].append({
-                        'description': zone.get('description', 'Construction zone'),
-                        'location': {'lat': zone.get('lat', 0), 'lng': zone.get('lng', 0)},
-                        'distance_meters': zone.get('distance_meters', 0)
-                    })
-                
-                for hazard in obstructions.get('hazards', []):
-                    formatted_obstructions['hazards'].append({
-                        'type': hazard.get('type', 'hazard'),
-                        'description': hazard.get('description', 'Unknown hazard'),
-                        'severity': hazard.get('severity', 0.5)
-                    })
-                
-                return jsonify({
-                    'success': True,
-                    'obstructions': formatted_obstructions
-                })
-                
-            except ImportError as e:
-                logger.warning(f"RealTimeTracker not available: {e}")
-                # Return empty obstructions if tracker not available
-                return jsonify({
-                    'success': True,
-                    'obstructions': {
-                        'has_obstruction': False,
-                        'construction_zones': [],
-                        'hazards': []
-                    }
-                })
-            except Exception as e:
-                logger.error(f"Error in check_obstructions: {e}", exc_info=True)
+            # Handle different coordinate formats
+            waypoints = []
+            for coord in route_coords:
+                # Check if coord is a dictionary with lat/lng
+                if isinstance(coord, dict):
+                    if 'lat' in coord and 'lng' in coord:
+                        waypoints.append((coord['lat'], coord['lng']))
+                    elif 'latitude' in coord and 'longitude' in coord:
+                        waypoints.append((coord['latitude'], coord['longitude']))
+                    else:
+                        logger.warning(f"Unknown coordinate format: {coord}")
+                        continue
+                # Check if coord is a list/tuple of two values
+                elif isinstance(coord, (list, tuple)) and len(coord) >= 2:
+                    waypoints.append((coord[0], coord[1]))
+                else:
+                    logger.warning(f"Unsupported coordinate type: {type(coord)}")
+                    continue
+            
+            if not waypoints:
                 return jsonify({
                     'success': False,
-                    'error': str(e)
-                }), 500
+                    'error': 'No valid coordinates found'
+                }), 400
+            
+            # Use the global tracker instance
+            global tracker_instance
+            
+            if tracker_instance is None:
+                try:
+                    from real_time_tracker import RealTimeTracker
+                    tracker_instance = RealTimeTracker(None, None)
+                    logger.warning("Created temporary tracker for obstruction checking")
+                except ImportError as e:
+                    logger.warning(f"RealTimeTracker not available: {e}")
+                    return jsonify({
+                        'success': True,
+                        'obstructions': {
+                            'has_obstruction': False,
+                            'construction_zones': [],
+                            'hazards': []
+                        }
+                    })
+            
+            # Check obstructions
+            obstructions = tracker_instance.check_route_obstructions(waypoints)
+            
+            # Format for frontend
+            formatted_obstructions = {
+                'has_obstruction': obstructions.get('has_obstruction', False),
+                'construction_zones': [],
+                'hazards': []
+            }
+            
+            for zone in obstructions.get('construction_zones', []):
+                formatted_obstructions['construction_zones'].append({
+                    'description': zone.get('description', 'Construction zone'),
+                    'location': {'lat': zone.get('lat', 0), 'lng': zone.get('lng', 0)},
+                    'distance_meters': zone.get('distance_meters', 0)
+                })
+            
+            for hazard in obstructions.get('hazards', []):
+                formatted_obstructions['hazards'].append({
+                    'type': hazard.get('type', 'hazard'),
+                    'description': hazard.get('description', 'Unknown hazard'),
+                    'severity': hazard.get('severity', 0.5)
+                })
+            
+            return jsonify({
+                'success': True,
+                'obstructions': formatted_obstructions
+            })
             
         except Exception as e:
             logger.error(f"Error checking obstructions: {e}", exc_info=True)
@@ -1809,12 +1833,24 @@ def main():
     CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
     
     # Initialize SocketIO
-    global socketio
+    global socketio, tracker_instance
     socketio = SocketIO(app, 
                        cors_allowed_origins="*",
                        async_mode='threading',
                        logger=True,
                        engineio_logger=args.debug)
+    
+    # Initialize the RealTimeTracker with valid parameters
+    try:
+        from real_time_tracker import RealTimeTracker
+        tracker_instance = RealTimeTracker(socketio, app)
+        logger.info("RealTimeTracker initialized successfully")
+    except ImportError as e:
+        logger.warning(f"Could not import RealTimeTracker: {e}")
+        tracker_instance = None
+    except Exception as e:
+        logger.error(f"Error initializing RealTimeTracker: {e}")
+        tracker_instance = None
     
     # Add model endpoints
     app = add_model_endpoints(app)
