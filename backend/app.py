@@ -1116,92 +1116,92 @@ def add_model_endpoints(app):
                 'error': str(e)
             }), 500
     
-        @app.route("/api/check-obstructions", methods=['POST', 'GET', 'OPTIONS'])
-        def check_obstructions():
-            """Check for obstructions along a route"""
-            # Handle OPTIONS preflight
-            if request.method == 'OPTIONS':
-                response = jsonify({'success': True})
-                response.headers.add('Access-Control-Allow-Origin', '*')
-                response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-                response.headers.add('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-                return response
+    @app.route("/api/check-obstructions", methods=['POST', 'GET', 'OPTIONS'])
+    def check_obstructions():
+        """Check for obstructions along a route"""
+        # Handle OPTIONS preflight
+        if request.method == 'OPTIONS':
+            response = jsonify({'success': True})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+            response.headers.add('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+            return response
+        
+        try:
+            data = request.json
+            if not data:
+                return jsonify({
+                    'success': False,
+                    'error': 'No data provided'
+                }), 400
+                
+            route_coords = data.get('route_coords', [])
             
+            if not route_coords:
+                return jsonify({
+                    'success': False,
+                    'error': 'No route coordinates provided'
+                }), 400
+            
+            # Try to import and use RealTimeTracker
             try:
-                data = request.json
-                if not data:
-                    return jsonify({
-                        'success': False,
-                        'error': 'No data provided'
-                    }), 400
-                    
-                route_coords = data.get('route_coords', [])
+                from real_time_tracker import RealTimeTracker
+                tracker = RealTimeTracker(None, None)
                 
-                if not route_coords:
-                    return jsonify({
-                        'success': False,
-                        'error': 'No route coordinates provided'
-                    }), 400
+                # Convert to list of tuples
+                waypoints = [(c['lat'], c['lng']) for c in route_coords]
+                obstructions = tracker.check_route_obstructions(waypoints)
                 
-                # Try to import and use RealTimeTracker
-                try:
-                    from real_time_tracker import RealTimeTracker
-                    tracker = RealTimeTracker(None, None)
-                    
-                    # Convert to list of tuples
-                    waypoints = [(c['lat'], c['lng']) for c in route_coords]
-                    obstructions = tracker.check_route_obstructions(waypoints)
-                    
-                    # Format for frontend
-                    formatted_obstructions = {
-                        'has_obstruction': obstructions.get('has_obstruction', False),
+                # Format for frontend
+                formatted_obstructions = {
+                    'has_obstruction': obstructions.get('has_obstruction', False),
+                    'construction_zones': [],
+                    'hazards': []
+                }
+                
+                for zone in obstructions.get('construction_zones', []):
+                    formatted_obstructions['construction_zones'].append({
+                        'description': zone.get('description', 'Construction zone'),
+                        'location': {'lat': zone.get('lat', 0), 'lng': zone.get('lng', 0)},
+                        'distance_meters': zone.get('distance_meters', 0)
+                    })
+                
+                for hazard in obstructions.get('hazards', []):
+                    formatted_obstructions['hazards'].append({
+                        'type': hazard.get('type', 'hazard'),
+                        'description': hazard.get('description', 'Unknown hazard'),
+                        'severity': hazard.get('severity', 0.5)
+                    })
+                
+                return jsonify({
+                    'success': True,
+                    'obstructions': formatted_obstructions
+                })
+                
+            except ImportError as e:
+                logger.warning(f"RealTimeTracker not available: {e}")
+                # Return empty obstructions if tracker not available
+                return jsonify({
+                    'success': True,
+                    'obstructions': {
+                        'has_obstruction': False,
                         'construction_zones': [],
                         'hazards': []
                     }
-                    
-                    for zone in obstructions.get('construction_zones', []):
-                        formatted_obstructions['construction_zones'].append({
-                            'description': zone.get('description', 'Construction zone'),
-                            'location': {'lat': zone.get('lat', 0), 'lng': zone.get('lng', 0)},
-                            'distance_meters': zone.get('distance_meters', 0)
-                        })
-                    
-                    for hazard in obstructions.get('hazards', []):
-                        formatted_obstructions['hazards'].append({
-                            'type': hazard.get('type', 'hazard'),
-                            'description': hazard.get('description', 'Unknown hazard'),
-                            'severity': hazard.get('severity', 0.5)
-                        })
-                    
-                    return jsonify({
-                        'success': True,
-                        'obstructions': formatted_obstructions
-                    })
-                    
-                except ImportError as e:
-                    logger.warning(f"RealTimeTracker not available: {e}")
-                    # Return empty obstructions if tracker not available
-                    return jsonify({
-                        'success': True,
-                        'obstructions': {
-                            'has_obstruction': False,
-                            'construction_zones': [],
-                            'hazards': []
-                        }
-                    })
-                except Exception as e:
-                    logger.error(f"Error in check_obstructions: {e}", exc_info=True)
-                    return jsonify({
-                        'success': False,
-                        'error': str(e)
-                    }), 500
-                
+                })
             except Exception as e:
-                logger.error(f"Error checking obstructions: {e}", exc_info=True)
+                logger.error(f"Error in check_obstructions: {e}", exc_info=True)
                 return jsonify({
                     'success': False,
                     'error': str(e)
                 }), 500
+            
+        except Exception as e:
+            logger.error(f"Error checking obstructions: {e}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
     
     # ============================================================================
     # EXISTING ENDPOINTS (keep all existing ones)
