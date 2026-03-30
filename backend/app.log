@@ -1553,3 +1553,131 @@ RuntimeError: The session is unavailable because no secret key was set.  Set the
 2026-03-28 23:22:28,335 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:22:28] "[31m[1mPOST /api/check-obstructions HTTP/1.1[0m" 405 -
 2026-03-28 23:22:38,384 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:22:38] "OPTIONS /api/transit-info HTTP/1.1" 200 -
 2026-03-28 23:22:38,638 - werkzeug - INFO - 127.0.0.1 - - [28/Mar/2026 23:22:38] "[31m[1mPOST /api/transit-info HTTP/1.1[0m" 405 -
+2026-03-30 19:14:28,875 - __main__ - WARNING - Geoapify client not available: No module named 'geoapify_client'
+2026-03-30 19:14:28,876 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-30 19:14:28,878 - __main__ - INFO - Safety AI loaded successfully
+2026-03-30 19:14:30,038 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-03-30 19:14:30,038 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-03-30 19:14:30,046 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-30 19:14:30,047 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-30 19:14:32,369 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:14:32] "GET /api/hello HTTP/1.1" 200 -
+2026-03-30 19:15:02,619 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:15:02] "OPTIONS /api/auth/login HTTP/1.1" 200 -
+2026-03-30 19:15:02,622 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:15:02] "[31m[1mPOST /api/auth/login HTTP/1.1[0m" 405 -
+2026-03-30 19:15:09,591 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:15:09] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-30 19:15:12,301 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:15:12] "[32mGET /api/callback?state=x0fP34PNFjGERUwHmh4stbZuYcUn7Y&iss=https://accounts.google.com&code=4/0Aci98E_H4MBHCWUopvM7RTkUG0yJVUv8qzEjyA2r4Z31HQsDPufxK-jmetEIleQlQ1h8PA&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+openid+https://www.googleapis.com/auth/userinfo.email&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-30 19:15:12,499 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:15:12] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:15:12,499 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:15:12] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:15:12,500 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 19:15:12,500 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.964,40.454,-79.916,40.49&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 19:15:12,501 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 19:15:12,501 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.964,40.454,-79.916,40.49&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 19:15:12,736 - __main__ - INFO - TomTom returned 2 incidents. Keys: ['incidents']
+2026-03-30 19:15:12,736 - __main__ - INFO - Parsed 1 construction zones, 1 hazards from TomTom
+2026-03-30 19:15:12,740 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:15:12] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:15:12,760 - __main__ - INFO - TomTom returned 2 incidents. Keys: ['incidents']
+2026-03-30 19:15:12,760 - __main__ - INFO - Parsed 1 construction zones, 1 hazards from TomTom
+2026-03-30 19:15:12,763 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:15:12] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:15:16,597 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 19:15:16,598 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 19:15:16,696 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 19:15:16,696 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 19:15:16,696 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 19:15:16,699 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:15:16] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:20:17,007 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:20:17] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:20:17,012 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 19:20:17,012 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 19:20:17,213 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 19:20:17,213 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 19:20:17,213 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 19:20:17,216 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:20:17] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:25:16,990 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:25:16] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:25:16,994 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 19:25:16,994 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 19:25:17,219 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 19:25:17,220 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 19:25:17,220 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 19:25:17,224 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:25:17] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:30:16,603 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:30:16] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:30:16,606 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 19:30:16,606 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 19:30:16,768 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 19:30:16,768 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 19:30:16,768 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 19:30:16,769 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:30:16] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:35:16,987 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:35:16] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:35:16,990 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 19:35:16,990 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 19:35:17,129 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 19:35:17,130 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 19:35:17,130 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 19:35:17,132 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:35:17] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:39:51,481 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:39:51] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 19:39:51,582 - __main__ - INFO - Found 1 obstructions to avoid in route
+2026-03-30 19:39:51,582 - __main__ - INFO - Attempting TomTom route from 40.464842,-79.942746 to 40.46462,-79.933514
+2026-03-30 19:39:51,582 - tomtom_router - INFO - Calculating TomTom route from 40.464842,-79.942746 to 40.46462,-79.933514
+2026-03-30 19:39:51,692 - tomtom_router - INFO - TomTom returned 3 route(s)
+2026-03-30 19:39:51,693 - tomtom_router - INFO -   Route 1: 1 conflicts, 787m, score=899.9
+2026-03-30 19:39:51,693 - tomtom_router - INFO -   Route 2: 1 conflicts, 987m, score=899.9
+2026-03-30 19:39:51,693 - tomtom_router - INFO -   Route 3: 0 conflicts, 1005m, score=999.9
+2026-03-30 19:39:51,693 - tomtom_router - INFO - Found clean route avoiding all obstructions
+2026-03-30 19:39:51,695 - __main__ - INFO - TomTom route successful
+2026-03-30 19:39:52,224 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-03-30 19:39:52,238 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:39:52] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 19:39:52,746 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:39:52] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 19:39:52,749 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:39:52] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 19:40:16,604 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:40:16] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:40:16,608 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 19:40:16,609 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 19:40:16,750 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 19:40:16,751 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 19:40:16,751 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 19:40:16,753 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:40:16] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:42:10,167 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:42:10] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 19:42:10,298 - __main__ - INFO - Attempting TomTom route from 40.400206,-79.905393 to 40.4308314,-79.7921633
+2026-03-30 19:42:10,298 - tomtom_router - INFO - Calculating TomTom route from 40.400206,-79.905393 to 40.4308314,-79.7921633
+2026-03-30 19:42:10,463 - tomtom_router - INFO - TomTom returned 1 route(s)
+2026-03-30 19:42:10,469 - __main__ - INFO - TomTom route successful
+2026-03-30 19:42:10,968 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-03-30 19:42:10,980 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:42:10] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 19:42:11,487 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:42:11] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 19:42:11,491 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:42:11] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 19:45:16,992 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:45:16] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:45:16,997 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 19:45:16,998 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 19:45:17,174 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 19:45:17,174 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 19:45:17,174 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 19:45:17,175 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:45:17] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:47:48,855 - __main__ - INFO - Attempting TomTom route from 40.4175,-79.8825 to 40.425,-79.795
+2026-03-30 19:47:48,856 - tomtom_router - INFO - Calculating TomTom route from 40.4175,-79.8825 to 40.425,-79.795
+2026-03-30 19:47:49,004 - tomtom_router - INFO - TomTom returned 1 route(s)
+2026-03-30 19:47:49,008 - __main__ - INFO - TomTom route successful
+2026-03-30 19:47:49,512 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-03-30 19:47:49,522 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:47:49] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 19:50:21,756 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:50:21] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 19:50:48,969 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:50:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:50:48,976 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 19:50:48,976 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 19:50:49,176 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 19:50:49,176 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 19:50:49,176 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 19:50:49,178 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:50:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:51:53,704 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:51:53] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 19:51:53,821 - __main__ - INFO - Found 5 obstructions to avoid in route
+2026-03-30 19:51:53,821 - __main__ - INFO - Attempting TomTom route from 40.443803,-79.88583 to 40.4284563,-79.8916294
+2026-03-30 19:51:53,821 - tomtom_router - INFO - Calculating TomTom route from 40.443803,-79.88583 to 40.4284563,-79.8916294
+2026-03-30 19:51:53,970 - tomtom_router - INFO - TomTom returned 6 route(s)
+2026-03-30 19:51:53,973 - tomtom_router - INFO -   Route 1: 0 conflicts, 2116m, score=999.8
+2026-03-30 19:51:53,974 - tomtom_router - INFO -   Route 2: 0 conflicts, 2118m, score=999.8
+2026-03-30 19:51:53,975 - tomtom_router - INFO -   Route 3: 0 conflicts, 2362m, score=999.8
+2026-03-30 19:51:53,976 - tomtom_router - INFO -   Route 4: 0 conflicts, 2585m, score=999.7
+2026-03-30 19:51:53,977 - tomtom_router - INFO -   Route 5: 0 conflicts, 2159m, score=999.8
+2026-03-30 19:51:53,978 - tomtom_router - INFO -   Route 6: 2 conflicts, 2528m, score=799.7
+2026-03-30 19:51:53,978 - tomtom_router - INFO - Found clean route avoiding all obstructions
+2026-03-30 19:51:53,981 - __main__ - INFO - TomTom route successful
+2026-03-30 19:51:54,470 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-03-30 19:51:54,483 - __main__ - INFO - Using cached route result
+2026-03-30 19:51:54,486 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:51:54] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 19:51:54,993 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:51:54] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 19:51:54,996 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:51:54] "POST /api/check-obstructions HTTP/1.1" 200 -

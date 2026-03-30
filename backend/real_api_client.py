@@ -159,6 +159,54 @@ class RealAPIClient:
             logger.error(f"Crime data error: {e}")
             return self._get_fallback_crime_data()
     
+    def get_crime_data_bounding_box(self, min_lat: float, max_lat: float, 
+                                     min_lng: float, max_lng: float) -> Dict:
+        """Fetch crime incidents within a bounding box from WPRDC"""
+        try:
+            url = "https://data.wprdc.org/api/3/action/datastore_search"
+            resource_id = "1797ead8-8262-41cc-9099-cbc8a161924b"
+
+            # Build filter for bounding box
+            filters = {
+                "LAT": {"$gte": min_lat, "$lte": max_lat},
+                "LON": {"$gte": min_lng, "$lte": max_lng}
+            }
+            params = {
+                'resource_id': resource_id,
+                'limit': 100,
+                'filters': json.dumps(filters)
+            }
+
+            response = self.session.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+
+            incidents = []
+            if data.get('success'):
+                records = data['result'].get('records', [])
+                for record in records:
+                    try:
+                        lat = float(record.get('LAT', 0))
+                        lng = float(record.get('LON', 0))
+                        if lat == 0 or lng == 0:
+                            continue
+                        offense = record.get('OFFENSES', '')
+                        severity = self._classify_crime_severity(offense)
+                        incidents.append({
+                            'lat': lat,
+                            'lng': lng,
+                            'description': offense,
+                            'severity': severity
+                        })
+                    except (ValueError, KeyError):
+                        continue
+
+            logger.info(f"Fetched {len(incidents)} crime incidents from bounding box")
+            return {'incidents': incidents, 'source': 'wprdc'}
+        except Exception as e:
+            logger.error(f"Crime bounding box error: {e}")
+            return {'incidents': [], 'source': 'fallback'}
+    
     def get_fema_alerts(self, lat: float, lng: float) -> Dict:
         """Get FEMA disaster declarations"""
         try:

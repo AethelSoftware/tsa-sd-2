@@ -117,11 +117,3 @@ class SessionManager:
             session.update_safety_score(score)
         if(prefs is not None):
             session.update_preferences(prefs)
-
-    
-
-    
-            
-      
-
-    

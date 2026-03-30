@@ -530,7 +530,8 @@ class RealTimeTracker:
         return obstructions
 
     def get_route_alternatives_with_transit(self, start: Position, destination: Position,
-                                            accessibility_needs: Set[str]) -> List[Dict]:
+                                        accessibility_needs: Set[str],
+                                        obstruction_zones: List[Dict] = None) -> List[Dict]:
         """Get multiple route alternatives including different transit options"""
         alternatives = []
 
@@ -543,7 +544,8 @@ class RealTimeTracker:
                 routes = router.get_transit_route(
                     start.lat, start.lng,
                     destination.lat, destination.lng,
-                    alternatives=True
+                    alternatives=True,
+                    obstruction_zones=obstruction_zones
                 )
 
                 if routes:
@@ -556,6 +558,8 @@ class RealTimeTracker:
 
                             # Check for obstructions
                             obstructions = self.check_route_obstructions(waypoints)
+                            obstruction_count = len(obstructions.get('construction_zones', [])) + \
+                                            len(obstructions.get('hazards', []))
 
                             alternatives.append({
                                 'index': i,
@@ -572,7 +576,8 @@ class RealTimeTracker:
                                 'route_segments': route_segments,
                                 'safety_score': self._weighted_safety_score(route_segments) if route_segments else 0.7,
                                 'construction_warnings': route.get('construction_warnings', []),
-                                'has_obstruction': len(route.get('construction_warnings', [])) > 0
+                                'has_obstruction': obstruction_count > 0,
+                                'obstruction_count': obstruction_count
                             })
 
             # Also try pedestrian routes
@@ -581,6 +586,8 @@ class RealTimeTracker:
                 ped_waypoints = [(seg.start.lat, seg.start.lng) for seg in pedestrian_route]
                 ped_waypoints.append((pedestrian_route[-1].end.lat, pedestrian_route[-1].end.lng))
                 ped_obstructions = self.check_route_obstructions(ped_waypoints)
+                obstruction_count = len(ped_obstructions.get('construction_zones', [])) + \
+                                len(ped_obstructions.get('hazards', []))
 
                 alternatives.append({
                     'index': len(alternatives),
@@ -592,11 +599,12 @@ class RealTimeTracker:
                     'route_segments': pedestrian_route,
                     'safety_score': self._weighted_safety_score(pedestrian_route),
                     'construction_warnings': ped_obstructions.get('construction_zones', []),
-                    'has_obstruction': ped_obstructions.get('has_obstruction', False)
+                    'has_obstruction': obstruction_count > 0,
+                    'obstruction_count': obstruction_count
                 })
 
-            # Sort by duration
-            alternatives.sort(key=lambda x: x['total_duration_seconds'])
+            # Sort by obstruction count first (fewer obstructions better), then duration
+            alternatives.sort(key=lambda x: (x.get('obstruction_count', 0), x['total_duration_seconds']))
 
         except ImportError as e:
             logger.warning(f"Could not import GoogleMapsRouter: {e}")

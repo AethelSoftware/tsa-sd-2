@@ -222,6 +222,147 @@ def format_metric(value, format_str='.4f'):
         return str(value)
 
 # ============================================================================
+# HAZARD FETCHING FUNCTIONS
+# ============================================================================
+
+def fetch_all_obstructions(start_lat, start_lng, end_lat, end_lng, travel_mode='pedestrian'):
+    """
+    Fetch all hazards (construction, incidents, crime, weather) in the area
+    and convert them to obstruction zones for routing.
+    """
+    obstruction_zones = []
+    error_messages = []
+
+    # 1. TomTom traffic incidents (construction + other hazards)
+    tomtom_key = os.getenv('TOMTOM_API_KEY') or (tomtom_router.api_key if tomtom_router else None)
+    if tomtom_key:
+        try:
+            # Bounding box around the route (expand by 2km)
+            km = 2.0
+            d_lat = km * 0.009
+            d_lng = km * 0.012
+            mid_lat = (float(start_lat) + float(end_lat)) / 2
+            mid_lng = (float(start_lng) + float(end_lng)) / 2
+
+            # Fields to include all incident types
+            fields_param = "{incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}"
+            inc_url = (
+                f"https://api.tomtom.com/traffic/services/5/incidentDetails"
+                f"?key={tomtom_key}"
+                f"&bbox={mid_lng - d_lng},{mid_lat - d_lat},{mid_lng + d_lng},{mid_lat + d_lat}"
+                f"&fields={fields_param}"
+                f"&language=en-US&timeValidityFilter=present"
+            )
+            inc_resp = requests.get(inc_url, timeout=8)
+            if inc_resp.status_code == 200:
+                inc_data = inc_resp.json()
+                for inc in inc_data.get('incidents', []):
+                    props = inc.get('properties', {})
+                    geom = inc.get('geometry', {})
+                    coords = geom.get('coordinates', [])
+                    if not coords:
+                        continue
+
+                    geom_type = geom.get('type', 'Point')
+                    if geom_type == 'Point':
+                        inc_lng, inc_lat = coords[0], coords[1]
+                    elif geom_type == 'LineString' and len(coords) > 0:
+                        mid_idx = len(coords) // 2
+                        inc_lng, inc_lat = coords[mid_idx][0], coords[mid_idx][1]
+                    else:
+                        continue
+
+                    icon_cat = props.get('iconCategory', 0)
+                    radius = 50  # default radius in meters
+
+                    # Adjust radius based on incident type
+                    if icon_cat in {7, 8, 9}:  # construction
+                        radius = 80
+                    elif icon_cat in {1, 2, 3, 4, 5, 10, 11, 14}:  # hazards
+                        radius = 60
+
+                    # Get description from events
+                    events = props.get('events', [])
+                    description_parts = [e.get('description', '') for e in events if e.get('description')]
+                    description = '; '.join(description_parts) if description_parts else 'Traffic incident'
+                    
+                    from_str = props.get('from', '')
+                    to_str = props.get('to', '')
+                    if from_str:
+                        description += f" - from {from_str}"
+                    if to_str:
+                        description += f" to {to_str}"
+
+                    # Add as obstruction
+                    obstruction_zones.append({
+                        'lat': inc_lat,
+                        'lng': inc_lng,
+                        'radius': radius,
+                        'description': description,
+                        'type': 'traffic',
+                        'icon_category': icon_cat,
+                        'start_time': props.get('startTime', ''),
+                        'end_time': props.get('endTime', '')
+                    })
+                logger.info(f"Fetched {len(obstruction_zones)} TomTom incidents")
+            else:
+                logger.warning(f"TomTom incidents API returned {inc_resp.status_code}")
+        except Exception as e:
+            logger.error(f"Error fetching TomTom incidents: {e}")
+            error_messages.append(f"TomTom incidents: {str(e)}")
+
+    # 2. Crime data (if available)
+    if api_client and api_client.census_key:
+        try:
+            # Use bounding box to fetch crimes in area
+            min_lat = min(float(start_lat), float(end_lat)) - 0.02
+            max_lat = max(float(start_lat), float(end_lat)) + 0.02
+            min_lng = min(float(start_lng), float(end_lng)) - 0.02
+            max_lng = max(float(start_lng), float(end_lng)) + 0.02
+
+            crime_data = api_client.get_crime_data_bounding_box(min_lat, max_lat, min_lng, max_lng)
+            for crime in crime_data.get('incidents', []):
+                lat = crime.get('lat')
+                lng = crime.get('lng')
+                if lat and lng:
+                    radius = 100  # crime radius
+                    obstruction_zones.append({
+                        'lat': lat,
+                        'lng': lng,
+                        'radius': radius,
+                        'description': crime.get('description', 'Crime incident'),
+                        'type': 'crime',
+                        'severity': crime.get('severity', 0.5)
+                    })
+            logger.info(f"Added {len(crime_data.get('incidents', []))} crime hazards")
+        except Exception as e:
+            logger.warning(f"Crime data fetch failed: {e}")
+            error_messages.append(f"Crime: {str(e)}")
+
+    # 3. Weather alerts (if severe)
+    if api_client and api_client.openweather_key:
+        try:
+            # Check weather for start and end, use the worst
+            for lat, lng in [(float(start_lat), float(start_lng)), (float(end_lat), float(end_lng))]:
+                weather = api_client.get_weather_data(lat, lng)
+                if weather.get('safety_score', 1.0) < 0.5:
+                    # Severe weather – create a large zone around that point
+                    obstruction_zones.append({
+                        'lat': lat,
+                        'lng': lng,
+                        'radius': 500,
+                        'description': f"Severe weather: {weather.get('condition', 'unknown')}",
+                        'type': 'weather',
+                        'severity': 1 - weather.get('safety_score', 0)
+                    })
+            logger.info(f"Added {len([z for z in obstruction_zones if z['type']=='weather'])} weather hazards")
+        except Exception as e:
+            logger.warning(f"Weather fetch failed: {e}")
+            error_messages.append(f"Weather: {str(e)}")
+
+    return obstruction_zones, error_messages
+
+# ============================================================================
 # MODEL MANAGEMENT FUNCTIONS
 # ============================================================================
 
@@ -750,6 +891,13 @@ def add_model_endpoints(app):
             if accessibility_preferences.get('elevator_access'):
                 accessibility_needs.append('elevator')
             
+            # Fetch all obstructions for the area
+            obstruction_zones, obst_errors = fetch_all_obstructions(
+                start_lat, start_lng, end_lat, end_lng, travel_mode
+            )
+            if obstruction_zones:
+                logger.info(f"Total obstruction zones to avoid: {len(obstruction_zones)}")
+            
             route_result = None
             provider_used = None
             error_messages = []
@@ -761,7 +909,8 @@ def add_model_endpoints(app):
                     routes = google_router.get_transit_route(
                         float(start_lat), float(start_lng),
                         float(end_lat), float(end_lng),
-                        alternatives=True
+                        alternatives=True,
+                        obstruction_zones=obstruction_zones if obstruction_zones else None
                     )
                     if routes:
                         route_data = routes[0]
@@ -807,51 +956,8 @@ def add_model_endpoints(app):
                     error_messages.append(f"Google Transit: {str(e)}")
             
             # TRY 2: TomTom API (for pedestrian routes)
-            # TRY 2: TomTom API (for pedestrian routes)
             if not route_result and tomtom_router and tomtom_router.api_key and travel_mode != 'transit':
                 try:
-                    # Fetch current obstructions to avoid
-                    current_obstructions = []
-                    try:
-                        tomtom_key = os.getenv('TOMTOM_API_KEY') or tomtom_router.api_key
-                        km = 2.0
-                        d_lat = km * 0.009
-                        d_lng = km * 0.012
-                        mid_lat = (float(start_lat) + float(end_lat)) / 2
-                        mid_lng = (float(start_lng) + float(end_lng)) / 2
-                        fields_param = "{incidents{type,geometry{type,coordinates},properties{iconCategory}}}"
-                        inc_url = (
-                            f"https://api.tomtom.com/traffic/services/5/incidentDetails"
-                            f"?key={tomtom_key}"
-                            f"&bbox={mid_lng - d_lng},{mid_lat - d_lat},{mid_lng + d_lng},{mid_lat + d_lat}"
-                            f"&fields={fields_param}"
-                            f"&language=en-US&timeValidityFilter=present"
-                        )
-                        inc_resp = requests.get(inc_url, timeout=5)
-                        if inc_resp.status_code == 200:
-                            inc_data = inc_resp.json()
-                            construction_cats = {7, 8, 9}
-                            for inc in inc_data.get('incidents', []):
-                                icon_cat = inc.get('properties', {}).get('iconCategory', 0)
-                                if icon_cat in construction_cats:
-                                    geom = inc.get('geometry', {})
-                                    coords = geom.get('coordinates', [])
-                                    if coords:
-                                        g_type = geom.get('type', 'Point')
-                                        if g_type == 'Point':
-                                            current_obstructions.append({
-                                                'lat': coords[1], 'lng': coords[0], 'radius': 50
-                                            })
-                                        elif g_type == 'LineString' and len(coords) > 0:
-                                            mid = coords[len(coords) // 2]
-                                            current_obstructions.append({
-                                                'lat': mid[1], 'lng': mid[0], 'radius': 50
-                                            })
-                            if current_obstructions:
-                                logger.info(f"Found {len(current_obstructions)} obstructions to avoid in route")
-                    except Exception as obs_err:
-                        logger.warning(f"Failed to fetch obstructions for route avoidance: {obs_err}")
-                    
                     logger.info(f"Attempting TomTom route from {start_lat},{start_lng} to {end_lat},{end_lng}")
                     route_result = tomtom_router.calculate_route(
                         float(start_lat), float(start_lng),
@@ -859,7 +965,7 @@ def add_model_endpoints(app):
                         travel_mode="pedestrian",
                         avoid_hazards=True,
                         accessibility_needs=accessibility_needs if accessibility_needs else None,
-                        obstruction_zones=current_obstructions if current_obstructions else None
+                        obstruction_zones=obstruction_zones if obstruction_zones else None
                     )
                     if route_result and route_result.get('points') and len(route_result['points']) > 1:
                         provider_used = "TomTom"
@@ -926,6 +1032,17 @@ def add_model_endpoints(app):
                     minutes = int((duration_val % 3600) / 60)
                     duration_str = f"{hours}h {minutes}m"
                 
+                # Add obstruction warnings to response
+                obstruction_warnings = []
+                if obstruction_zones:
+                    for zone in obstruction_zones[:5]:  # Limit to top 5
+                        obstruction_warnings.append({
+                            'description': zone.get('description', 'Obstruction ahead'),
+                            'location': {'lat': zone['lat'], 'lng': zone['lng']},
+                            'radius': zone.get('radius', 50),
+                            'type': zone.get('type', 'unknown')
+                        })
+                
                 response_data = {
                     'success': True,
                     'route': {
@@ -940,7 +1057,7 @@ def add_model_endpoints(app):
                         'start_address': start_address,
                         'end_address': end_address,
                         'accessibility_score': 85 if not accessibility_needs else 90,
-                        'warnings': [],
+                        'warnings': obstruction_warnings,
                         'elevator_access': 'wheelchair' in accessibility_needs,
                         'ramp_access': 'wheelchair' in accessibility_needs,
                         'safety': safety_dict,
@@ -955,7 +1072,8 @@ def add_model_endpoints(app):
                     },
                     'provider': provider_used,
                     'model_used': safety_ai_instance.is_trained if safety_ai_instance else False,
-                    'real_api_used': provider_used is not None
+                    'real_api_used': provider_used is not None,
+                    'obstructions_avoided': len(obstruction_zones)
                 }
                 
                 # Add transit-specific details if available
@@ -1071,7 +1189,8 @@ def add_model_endpoints(app):
                 },
                 'provider': 'fallback-calculation',
                 'model_used': False,
-                'real_api_used': False
+                'real_api_used': False,
+                'obstructions_avoided': 0
             }
             
             return jsonify(response_data)
@@ -1124,16 +1243,12 @@ def add_model_endpoints(app):
                     )
 
                     logger.info(f"Fetching TomTom incidents for bbox: {min_lat},{min_lng} to {max_lat},{max_lng}")
-                    logger.info(f"TomTom incidents URL: {incidents_url}")
                     resp = requests.get(incidents_url, timeout=8)
 
                     if resp.status_code == 200:
                         incidents_data = resp.json()
                         incidents = incidents_data.get('incidents', [])
-                        logger.info(f"TomTom returned {len(incidents)} incidents. Keys: {list(incidents_data.keys())}")
-
-                        if len(incidents) == 0:
-                            logger.info(f"TomTom response (first 500 chars): {resp.text[:500]}")
+                        logger.info(f"TomTom returned {len(incidents)} incidents")
 
                         construction_categories = {7, 8, 9}
                         hazard_categories = {1, 2, 3, 4, 5, 10, 11, 14}
@@ -1173,7 +1288,7 @@ def add_model_endpoints(app):
                                 construction_zones.append({
                                     'lat': inc_lat,
                                     'lng': inc_lng,
-                                    'radius': 30,
+                                    'radius': 80,
                                     'description': description,
                                     'distance_meters': round(distance, 1),
                                     'icon_category': icon_cat,
@@ -1186,7 +1301,7 @@ def add_model_endpoints(app):
                                 hazards.append({
                                     'lat': inc_lat,
                                     'lng': inc_lng,
-                                    'radius': 40,
+                                    'radius': 60,
                                     'type': description_parts[0] if description_parts else 'incident',
                                     'description': description,
                                     'severity': severity,
@@ -1197,7 +1312,7 @@ def add_model_endpoints(app):
                                 hazards.append({
                                     'lat': inc_lat,
                                     'lng': inc_lng,
-                                    'radius': 35,
+                                    'radius': 50,
                                     'type': 'traffic_incident',
                                     'description': description,
                                     'severity': 0.4,
@@ -1211,6 +1326,22 @@ def add_model_endpoints(app):
 
                 except Exception as e:
                     logger.error(f"TomTom incidents API error: {e}", exc_info=True)
+
+            # Also fetch crime data
+            if api_client:
+                try:
+                    crime_data = api_client.get_crime_data_bounding_box(lat - 0.02, lat + 0.02, lng - 0.02, lng + 0.02)
+                    for crime in crime_data.get('incidents', []):
+                        hazards.append({
+                            'lat': crime['lat'],
+                            'lng': crime['lng'],
+                            'radius': 100,
+                            'type': 'crime',
+                            'description': crime.get('description', 'Crime incident'),
+                            'severity': crime.get('severity', 0.5)
+                        })
+                except Exception as e:
+                    logger.warning(f"Crime data fetch failed: {e}")
 
             return jsonify({
                 'success': True,
@@ -1250,6 +1381,9 @@ def add_model_endpoints(app):
             if accessibility_preferences.get('blind'):
                 accessibility_needs.append('blind')
             
+            # Fetch obstructions for alternatives
+            obstruction_zones, _ = fetch_all_obstructions(start_lat, start_lng, end_lat, end_lng)
+            
             # Use the global tracker instance
             global tracker_instance
             
@@ -1268,7 +1402,7 @@ def add_model_endpoints(app):
             dest = Position(lat=end_lat, lng=end_lng)
             
             alternatives = tracker_instance.get_route_alternatives_with_transit(
-                start, dest, set(accessibility_needs)
+                start, dest, set(accessibility_needs), obstruction_zones
             )
             
             # Format for frontend
@@ -1281,6 +1415,7 @@ def add_model_endpoints(app):
                     'distance_meters': alt.get('total_distance_meters', 0),
                     'safety_score': alt.get('safety_score', 0.7),
                     'has_obstruction': alt.get('has_obstruction', False),
+                    'obstruction_count': alt.get('obstruction_count', 0),
                     'waypoints': alt.get('waypoints', [])
                 }
                 
@@ -1336,20 +1471,16 @@ def add_model_endpoints(app):
             # Handle different coordinate formats
             waypoints = []
             for coord in route_coords:
-                # Check if coord is a dictionary with lat/lng
                 if isinstance(coord, dict):
                     if 'lat' in coord and 'lng' in coord:
                         waypoints.append((coord['lat'], coord['lng']))
                     elif 'latitude' in coord and 'longitude' in coord:
                         waypoints.append((coord['latitude'], coord['longitude']))
                     else:
-                        logger.warning(f"Unknown coordinate format: {coord}")
                         continue
-                # Check if coord is a list/tuple of two values
                 elif isinstance(coord, (list, tuple)) and len(coord) >= 2:
                     waypoints.append((coord[0], coord[1]))
                 else:
-                    logger.warning(f"Unsupported coordinate type: {type(coord)}")
                     continue
             
             if not waypoints:
@@ -1854,8 +1985,14 @@ def setup_socketio_handlers(socketio_instance, app):
             accessibility_needs = data.get('accessibility_needs', [])
             travel_mode = data.get('travel_mode', 'pedestrian')
             
+            # Fetch obstructions
+            obstruction_zones, _ = fetch_all_obstructions(start_lat, start_lng, dest_lat, dest_lng, travel_mode)
+            
             if travel_mode == 'transit' and google_router:
-                routes = google_router.get_transit_route(start_lat, start_lng, dest_lat, dest_lng)
+                routes = google_router.get_transit_route(
+                    start_lat, start_lng, dest_lat, dest_lng,
+                    obstruction_zones=obstruction_zones if obstruction_zones else None
+                )
                 if routes:
                     route_data = routes[0]
                     waypoints = route_data.get('waypoints', [])
@@ -1883,14 +2020,16 @@ def setup_socketio_handlers(socketio_instance, app):
                             'safety': safety_dict,
                             'timestamp': datetime.now().isoformat(),
                             'real_api_used': True,
-                            'travel_mode': 'transit'
+                            'travel_mode': 'transit',
+                            'obstructions_avoided': len(obstruction_zones)
                         })
                         return
             
             if tomtom_router and tomtom_router.api_key:
                 route_result = tomtom_router.calculate_route(
                     start_lat, start_lng, dest_lat, dest_lng,
-                    accessibility_needs=accessibility_needs if accessibility_needs else None
+                    accessibility_needs=accessibility_needs if accessibility_needs else None,
+                    obstruction_zones=obstruction_zones if obstruction_zones else None
                 )
                 
                 if route_result:
@@ -1917,7 +2056,8 @@ def setup_socketio_handlers(socketio_instance, app):
                         'safety': safety_dict,
                         'timestamp': datetime.now().isoformat(),
                         'real_api_used': True,
-                        'travel_mode': 'pedestrian'
+                        'travel_mode': 'pedestrian',
+                        'obstructions_avoided': len(obstruction_zones)
                     })
                     return
             
@@ -1951,7 +2091,8 @@ def setup_socketio_handlers(socketio_instance, app):
                 'safety': safety_dict,
                 'timestamp': datetime.now().isoformat(),
                 'real_api_used': False,
-                'travel_mode': travel_mode
+                'travel_mode': travel_mode,
+                'obstructions_avoided': 0
             })
                 
         except Exception as e:

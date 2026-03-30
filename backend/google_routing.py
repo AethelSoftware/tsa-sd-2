@@ -51,10 +51,12 @@ class GoogleMapsRouter:
                          dest_lat: float, dest_lng: float,
                          departure_time: datetime = None,
                          alternatives: bool = True,
-                         transit_mode: str = None) -> Optional[List[Dict]]:
+                         transit_mode: str = None,
+                         obstruction_zones: List[Dict] = None) -> Optional[List[Dict]]:
         """
         Get transit route between two points using Google Maps
         transit_mode: 'bus', 'subway', 'train', 'tram', 'rail' (None = all)
+        obstruction_zones: List of hazards to avoid (optional)
         """
         if not self.api_key:
             logger.warning("Google Maps API key not set")
@@ -90,11 +92,29 @@ class GoogleMapsRouter:
             for route in data.get('routes', []):
                 processed = self._process_route(route)
                 if processed:
-                    # Check if route passes through construction zones
+                    # Check obstruction zones
+                    if obstruction_zones:
+                        processed['obstruction_conflicts'] = self._count_obstruction_conflicts(
+                            processed['waypoints'], obstruction_zones
+                        )
+                    else:
+                        processed['obstruction_conflicts'] = 0
+                    
+                    # Check construction zones
                     processed['construction_warnings'] = self._check_construction_zones(processed)
                     routes.append(processed)
             
-            # Sort routes by duration (fastest first)
+            # If we have obstructions, score routes and pick the best
+            if obstruction_zones and routes:
+                # Score: fewer conflicts = better; tie-break by duration
+                for r in routes:
+                    conflict_weight = r.get('obstruction_conflicts', 0) * 100
+                    r['score'] = (1000 - conflict_weight) - (r['total_duration_seconds'] / 60)
+                routes.sort(key=lambda x: x.get('score', 0), reverse=True)
+                # Return only the best route (or top few if needed)
+                return [routes[0]] if routes else None
+            
+            # Otherwise, return all (sorted by duration)
             routes.sort(key=lambda x: x.get('total_duration_seconds', float('inf')))
             
             logger.info(f"Found {len(routes)} transit routes, fastest: {routes[0].get('total_duration_seconds', 0) / 60:.0f} minutes")
@@ -103,6 +123,29 @@ class GoogleMapsRouter:
         except Exception as e:
             logger.error(f"Google Maps request failed: {e}")
             return None
+    
+    def _count_obstruction_conflicts(self, waypoints: List[Tuple[float, float]], 
+                                      obstruction_zones: List[Dict]) -> int:
+        """Count how many obstruction zones the route passes through"""
+        if not waypoints or not obstruction_zones:
+            return 0
+        
+        conflicts = 0
+        for zone in obstruction_zones:
+            z_lat = zone.get('lat')
+            z_lng = zone.get('lng')
+            z_radius = zone.get('radius', 50)
+            if z_lat is None or z_lng is None:
+                continue
+            
+            # Sample route points (use every 5th point for efficiency)
+            for i in range(0, len(waypoints), 5):
+                wp = waypoints[i]
+                dist = self._haversine_distance(wp[0], wp[1], z_lat, z_lng)
+                if dist < z_radius + 20:
+                    conflicts += 1
+                    break
+        return conflicts
     
     def _check_construction_zones(self, route: Dict) -> List[Dict]:
         """Check if route passes through known construction zones"""
