@@ -807,15 +807,59 @@ def add_model_endpoints(app):
                     error_messages.append(f"Google Transit: {str(e)}")
             
             # TRY 2: TomTom API (for pedestrian routes)
+            # TRY 2: TomTom API (for pedestrian routes)
             if not route_result and tomtom_router and tomtom_router.api_key and travel_mode != 'transit':
                 try:
+                    # Fetch current obstructions to avoid
+                    current_obstructions = []
+                    try:
+                        tomtom_key = os.getenv('TOMTOM_API_KEY') or tomtom_router.api_key
+                        km = 2.0
+                        d_lat = km * 0.009
+                        d_lng = km * 0.012
+                        mid_lat = (float(start_lat) + float(end_lat)) / 2
+                        mid_lng = (float(start_lng) + float(end_lng)) / 2
+                        fields_param = "{incidents{type,geometry{type,coordinates},properties{iconCategory}}}"
+                        inc_url = (
+                            f"https://api.tomtom.com/traffic/services/5/incidentDetails"
+                            f"?key={tomtom_key}"
+                            f"&bbox={mid_lng - d_lng},{mid_lat - d_lat},{mid_lng + d_lng},{mid_lat + d_lat}"
+                            f"&fields={fields_param}"
+                            f"&language=en-US&timeValidityFilter=present"
+                        )
+                        inc_resp = requests.get(inc_url, timeout=5)
+                        if inc_resp.status_code == 200:
+                            inc_data = inc_resp.json()
+                            construction_cats = {7, 8, 9}
+                            for inc in inc_data.get('incidents', []):
+                                icon_cat = inc.get('properties', {}).get('iconCategory', 0)
+                                if icon_cat in construction_cats:
+                                    geom = inc.get('geometry', {})
+                                    coords = geom.get('coordinates', [])
+                                    if coords:
+                                        g_type = geom.get('type', 'Point')
+                                        if g_type == 'Point':
+                                            current_obstructions.append({
+                                                'lat': coords[1], 'lng': coords[0], 'radius': 50
+                                            })
+                                        elif g_type == 'LineString' and len(coords) > 0:
+                                            mid = coords[len(coords) // 2]
+                                            current_obstructions.append({
+                                                'lat': mid[1], 'lng': mid[0], 'radius': 50
+                                            })
+                            if current_obstructions:
+                                logger.info(f"Found {len(current_obstructions)} obstructions to avoid in route")
+                    except Exception as obs_err:
+                        logger.warning(f"Failed to fetch obstructions for route avoidance: {obs_err}")
+                    
                     logger.info(f"Attempting TomTom route from {start_lat},{start_lng} to {end_lat},{end_lng}")
                     route_result = tomtom_router.calculate_route(
                         float(start_lat), float(start_lng),
                         float(end_lat), float(end_lng),
                         travel_mode="pedestrian",
                         avoid_hazards=True,
-                        accessibility_needs=accessibility_needs if accessibility_needs else None
+                        accessibility_needs=accessibility_needs if accessibility_needs else None,
+                        obstruction_zones=current_obstructions if current_obstructions else None
                     )
                     if route_result and route_result.get('points') and len(route_result['points']) > 1:
                         provider_used = "TomTom"

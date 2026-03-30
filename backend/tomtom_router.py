@@ -23,10 +23,10 @@ class TomTomRouter:
                        dest_lat: float, dest_lng: float,
                        travel_mode: str = "pedestrian",
                        avoid_hazards: bool = True,
-                       accessibility_needs: List[str] = None) -> Optional[Dict]:
-        """Calculate route between two points using TomTom API"""
+                       accessibility_needs: List[str] = None,
+                       obstruction_zones: List[Dict] = None) -> Optional[Dict]:
+        """Calculate route between two points using TomTom API, avoiding known obstructions"""
         try:
-            # Validate coordinates are within reasonable range
             if not (-90 <= start_lat <= 90) or not (-180 <= start_lng <= 180):
                 logger.error(f"Invalid start coordinates: {start_lat}, {start_lng}")
                 return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
@@ -35,41 +35,54 @@ class TomTomRouter:
                 logger.error(f"Invalid destination coordinates: {dest_lat}, {dest_lng}")
                 return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
             
-            # Format coordinates for TomTom API
             origin = f"{start_lat},{start_lng}"
             destination = f"{dest_lat},{dest_lng}"
-            
-            # Construct URL
             url = f"{self.base_url}/calculateRoute/{origin}:{destination}/json"
             
-            # Build parameters - simplified to avoid 400 errors
             params = {
                 'key': self.api_key,
                 'travelMode': travel_mode,
                 'routeType': 'fastest',
-                'traffic': 'false',  # Disable traffic to avoid extra validation
+                'traffic': 'false',
                 'instructionsType': 'text',
                 'language': 'en-US',
                 'routeRepresentation': 'polyline',
-                'computeTravelTimeFor': 'none',  # Simplify request
+                'computeTravelTimeFor': 'none',
                 'avoid': 'unpavedRoads'
             }
             
-            # Add accessibility considerations
             if accessibility_needs:
                 if 'wheelchair' in accessibility_needs:
-                    params['hilliness'] = 'normal'  # Avoid steep hills
+                    params['hilliness'] = 'normal'
                 if 'blind' in accessibility_needs:
                     params['avoid'] = params.get('avoid', '') + ',tollRoads,motorways'
             
+            # Build avoidAreas from known obstructions
+            if obstruction_zones and len(obstruction_zones) > 0:
+                avoid_rects = []
+                for zone in obstruction_zones[:5]:  # TomTom limits to ~5 avoid areas
+                    z_lat = zone.get('lat')
+                    z_lng = zone.get('lng')
+                    z_radius = zone.get('radius', 30)
+                    if z_lat is None or z_lng is None:
+                        continue
+                    # Convert radius in meters to approximate lat/lng offset
+                    # ~0.000009 degrees per meter of latitude
+                    # ~0.000012 degrees per meter of longitude at Pittsburgh's latitude
+                    d_lat = z_radius * 0.000009
+                    d_lng = z_radius * 0.000012
+                    # TomTom avoidAreas format: top-left lat,lng : bottom-right lat,lng
+                    rect = f"{z_lat + d_lat},{z_lng - d_lng}:{z_lat - d_lat},{z_lng + d_lng}"
+                    avoid_rects.append(rect)
+                
+                if avoid_rects:
+                    params['avoidAreas'] = '|'.join(avoid_rects)
+                    logger.info(f"Avoiding {len(avoid_rects)} obstruction zones in route")
+            
             logger.info(f"Calculating TomTom route from {origin} to {destination}")
             
-            # Make request with timeout
             response = requests.get(url, params=params, timeout=10)
-            
-            # Log the full URL for debugging
             logger.debug(f"TomTom URL: {response.url}")
-            
             response.raise_for_status()
             data = response.json()
             
@@ -77,11 +90,9 @@ class TomTomRouter:
                 logger.warning("No routes found in TomTom response")
                 return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
             
-            # Process best route
             route = data['routes'][0]
             processed = self._process_route(route, start_lat, start_lng, dest_lat, dest_lng)
             
-            # Add accessibility features
             if accessibility_needs:
                 processed = self._add_accessibility_features(processed, accessibility_needs)
             
@@ -89,30 +100,29 @@ class TomTomRouter:
             
         except requests.exceptions.HTTPError as e:
             if hasattr(e, 'response') and e.response and e.response.status_code == 400:
-                logger.warning(f"TomTom 400 error - trying simplified request: {e}")
-                # Try with minimal parameters
+                logger.warning(f"TomTom 400 error - retrying without avoidAreas")
                 try:
-                    simplified_params = {
+                    retry_params = {
                         'key': self.api_key,
                         'travelMode': 'pedestrian',
                         'routeType': 'shortest',
                         'instructionsType': 'text',
                         'language': 'en-US',
                     }
-                    response = requests.get(url, params=simplified_params, timeout=10)
+                    response = requests.get(url, params=retry_params, timeout=10)
                     response.raise_for_status()
                     data = response.json()
                     if 'routes' in data and data['routes']:
                         route = data['routes'][0]
                         processed = self._process_route(route, start_lat, start_lng, dest_lat, dest_lng)
+                        if accessibility_needs:
+                            processed = self._add_accessibility_features(processed, accessibility_needs)
+                        logger.info("TomTom route successful (without avoidAreas)")
                         return processed
                 except Exception as e2:
                     logger.warning(f"Simplified TomTom request also failed: {e2}")
             else:
                 logger.error(f"TomTom API request failed: {e}")
-            return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
-        except requests.exceptions.RequestException as e:
-            logger.error(f"TomTom API request failed: {e}")
             return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
         except Exception as e:
             logger.error(f"Error calculating route: {e}")
@@ -363,7 +373,7 @@ class TomTomRouter:
         distance = self._haversine_distance(start_lat, start_lng, dest_lat, dest_lng)
         
         # Create intermediate points for a more natural route
-        points = self._generate_intermediate_points(start_lat, start_lng, dest_lat, dest_lng, steps=20)
+        points = self._generate_intermediate_points(start_lat, start_lng, dest_lat, dest_lng, num_points=20)
         
         segments = []
         for i in range(len(points) - 1):
