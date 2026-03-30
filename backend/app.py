@@ -1042,7 +1042,149 @@ def add_model_endpoints(app):
     # ============================================================================
     # NEW TRANSIT AND OBSTRUCTION ENDPOINTS
     # ============================================================================
-    
+
+    @app.route("/api/area-obstructions", methods=['POST'])
+    def get_area_obstructions():
+        """Get real obstructions in a specific area using TomTom Traffic Incidents API"""
+        try:
+            data = request.json
+            lat = float(data.get('lat', 40.4406))
+            lng = float(data.get('lng', -79.9959))
+            radius = float(data.get('radius', 2000))
+
+            construction_zones = []
+            hazards = []
+
+            tomtom_key = os.getenv('TOMTOM_API_KEY') or (tomtom_router.api_key if tomtom_router else None)
+            if tomtom_key:
+                try:
+                    km = radius / 1000.0
+                    delta_lat = km * 0.009
+                    delta_lng = km * 0.012
+
+                    min_lat = lat - delta_lat
+                    max_lat = lat + delta_lat
+                    min_lng = lng - delta_lng
+                    max_lng = lng + delta_lng
+
+                    # IMPORTANT: fields param must NOT be in an f-string or Python eats the braces
+                    fields_param = "{incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}"
+
+                    incidents_url = (
+                        f"https://api.tomtom.com/traffic/services/5/incidentDetails"
+                        f"?key={tomtom_key}"
+                        f"&bbox={min_lng},{min_lat},{max_lng},{max_lat}"
+                        f"&fields={fields_param}"
+                        f"&language=en-US"
+                        f"&timeValidityFilter=present"
+                    )
+
+                    logger.info(f"Fetching TomTom incidents for bbox: {min_lat},{min_lng} to {max_lat},{max_lng}")
+                    logger.info(f"TomTom incidents URL: {incidents_url}")
+                    resp = requests.get(incidents_url, timeout=8)
+
+                    if resp.status_code == 200:
+                        incidents_data = resp.json()
+                        incidents = incidents_data.get('incidents', [])
+                        logger.info(f"TomTom returned {len(incidents)} incidents. Keys: {list(incidents_data.keys())}")
+
+                        if len(incidents) == 0:
+                            logger.info(f"TomTom response (first 500 chars): {resp.text[:500]}")
+
+                        construction_categories = {7, 8, 9}
+                        hazard_categories = {1, 2, 3, 4, 5, 10, 11, 14}
+
+                        for inc in incidents:
+                            props = inc.get('properties', {})
+                            geom = inc.get('geometry', {})
+
+                            coords = geom.get('coordinates', [])
+                            if not coords:
+                                continue
+
+                            geom_type = geom.get('type', 'Point')
+                            if geom_type == 'Point':
+                                inc_lng, inc_lat = coords[0], coords[1]
+                            elif geom_type == 'LineString' and len(coords) > 0:
+                                mid_idx = len(coords) // 2
+                                inc_lng, inc_lat = coords[mid_idx][0], coords[mid_idx][1]
+                            else:
+                                continue
+
+                            events = props.get('events', [])
+                            description_parts = [e.get('description', '') for e in events if e.get('description')]
+                            description = '; '.join(description_parts) if description_parts else 'Traffic incident'
+
+                            from_str = props.get('from', '')
+                            to_str = props.get('to', '')
+                            if from_str:
+                                description += f" - from {from_str}"
+                            if to_str:
+                                description += f" to {to_str}"
+
+                            icon_cat = props.get('iconCategory', 0)
+                            distance = haversine_distance(lat, lng, inc_lat, inc_lng)
+
+                            if icon_cat in construction_categories:
+                                construction_zones.append({
+                                    'lat': inc_lat,
+                                    'lng': inc_lng,
+                                    'radius': 30,
+                                    'description': description,
+                                    'distance_meters': round(distance, 1),
+                                    'icon_category': icon_cat,
+                                    'start_time': props.get('startTime', ''),
+                                    'end_time': props.get('endTime', '')
+                                })
+                            elif icon_cat in hazard_categories:
+                                magnitude = props.get('magnitudeOfDelay', 0)
+                                severity = min(1.0, 0.3 + (magnitude / 4) * 0.7) if magnitude else 0.5
+                                hazards.append({
+                                    'lat': inc_lat,
+                                    'lng': inc_lng,
+                                    'radius': 40,
+                                    'type': description_parts[0] if description_parts else 'incident',
+                                    'description': description,
+                                    'severity': severity,
+                                    'distance_meters': round(distance, 1),
+                                    'icon_category': icon_cat
+                                })
+                            else:
+                                hazards.append({
+                                    'lat': inc_lat,
+                                    'lng': inc_lng,
+                                    'radius': 35,
+                                    'type': 'traffic_incident',
+                                    'description': description,
+                                    'severity': 0.4,
+                                    'distance_meters': round(distance, 1),
+                                    'icon_category': icon_cat
+                                })
+
+                        logger.info(f"Parsed {len(construction_zones)} construction zones, {len(hazards)} hazards from TomTom")
+                    else:
+                        logger.warning(f"TomTom incidents API returned {resp.status_code}: {resp.text[:300]}")
+
+                except Exception as e:
+                    logger.error(f"TomTom incidents API error: {e}", exc_info=True)
+
+            return jsonify({
+                'success': True,
+                'construction_zones': construction_zones,
+                'hazards': hazards,
+                'area_center': {'lat': lat, 'lng': lng},
+                'radius_meters': radius,
+                'source': 'tomtom_incidents' if (construction_zones or hazards) else 'none',
+                'total_incidents': len(construction_zones) + len(hazards)
+            })
+
+        except Exception as e:
+            logger.error(f"Error getting area obstructions: {e}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+        
     @app.route("/api/route-alternatives", methods=['POST', 'GET', 'OPTIONS'])
     def get_route_alternatives():
         """Get multiple route alternatives including different transit options"""

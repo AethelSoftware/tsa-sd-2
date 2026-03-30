@@ -7,6 +7,7 @@ import {
   Polyline,
   useMap,
   CircleMarker,
+  Circle,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -68,9 +69,21 @@ const destinationIcon = new L.Icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41],
 });
-const hazardIcon = new L.Icon({
+
+const constructionIcon = new L.Icon({
   iconUrl:
     "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const hazardIcon = new L.Icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
   shadowUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
   iconSize: [25, 41],
@@ -123,7 +136,6 @@ const CSS = `
     --rail-w: 64px;
     --panel-w: 310px;
 
-    /* Wood palette - enhanced contrast */
     --bg:       #110a04;
     --surface:  rgba(28, 17, 8, 0.97);
     --card:     rgba(42, 26, 12, 0.98);
@@ -132,21 +144,21 @@ const CSS = `
     --border:   rgba(180, 120, 60, 0.16);
     --border2:  rgba(200, 140, 70, 0.38);
 
-    --wood:     #e8a870;  /* Lighter for better contrast */
-    --wood-lt:  #ffc89c;  /* Much lighter */
+    --wood:     #e8a870;
+    --wood-lt:  #ffc89c;
     --wood-g:   linear-gradient(135deg, #c06c30, #e89c60);
     --wood-dim: rgba(232, 168, 112, 0.18);
     --wood-glow:rgba(232, 168, 112, 0.3);
 
-    --green:    #8cd69c;  /* Lighter green */
+    --green:    #8cd69c;
     --green-dim:rgba(140,214,156,0.15);
-    --amber:    #ffb347;  /* Lighter amber */
-    --red:      #ff7b6b;  /* Lighter red */
+    --amber:    #ffb347;
+    --red:      #ff7b6b;
     --red-dim:  rgba(255,123,107,0.15);
 
-    --txt:  #ffffff;      /* Pure white for maximum contrast */
-    --txt2: #e0c8b0;      /* Very light beige */
-    --txt3: #b09878;      /* Medium-light brown */
+    --txt:  #ffffff;
+    --txt2: #e0c8b0;
+    --txt3: #b09878;
 
     --ff-d: 'Playfair Display', Georgia, serif;
     --ff-b: 'DM Sans', system-ui, sans-serif;
@@ -167,6 +179,17 @@ const CSS = `
     }
   }
 
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 0.4;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(1.1);
+    }
+  }
+
   .root {
     font-family: var(--ff-b);
     background: var(--bg);
@@ -176,7 +199,6 @@ const CSS = `
     position: relative;
   }
 
-  /* ── MAP ─────────────────────────────────────────── */
   .map-wrap { position: absolute; inset: 0; z-index: 0; }
   .leaflet-container { background: #0e0804 !important; }
   .leaflet-tile-pane { filter: saturate(.7) brightness(.82) sepia(.08); }
@@ -192,7 +214,6 @@ const CSS = `
   .leaflet-control-zoom { display: none !important; }
   .leaflet-control-attribution { display: none; }
 
-  /* ── RAIL ────────────────────────────────────────── */
   .rail {
     position: absolute; left: 0; top: 0; bottom: 0;
     width: var(--rail-w);
@@ -227,7 +248,6 @@ const CSS = `
   .r-sep   { width: 26px; height: 1px; background: var(--border); margin: 5px 0; flex-shrink: 0; }
   .r-space { flex: 1; }
 
-  /* Rail tooltip */
   .r-btn[data-tip]::after {
     content: attr(data-tip);
     position: absolute; left: calc(100% + 11px); top: 50%; transform: translateY(-50%);
@@ -238,7 +258,6 @@ const CSS = `
   }
   .r-btn[data-tip]:hover::after { opacity: 1; }
 
-  /* ── SIDE PANEL ───────────────────────────────────── */
   .panel {
     position: absolute; left: var(--rail-w); top: 0; bottom: 0;
     width: var(--panel-w);
@@ -306,7 +325,6 @@ const CSS = `
 
   .p-empty { text-align: center; color: var(--txt2); font-size: 12.5px; line-height: 1.7; padding: 20px 0; }
 
-  /* a11y grid */
   .ag  { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
   .ab  {
     background: var(--inset); border: 1px solid var(--border); border-radius: 10px;
@@ -326,7 +344,6 @@ const CSS = `
   }
   .ab.on .ab-c { background: var(--wood); border-color: var(--wood); color: #1a0c04; }
 
-  /* ── SEARCH CARD ─────────────────────────────────── */
   .sc {
     position: absolute;
     top: 14px; left: calc(var(--rail-w) + 14px);
@@ -348,7 +365,6 @@ const CSS = `
 
   .sc-inputs { padding: 12px 14px 8px; display: flex; flex-direction: column; gap: 6px; }
 
-  /* input rows */
   .rr { position: relative; }
   .rr-dot {
     position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
@@ -379,7 +395,6 @@ const CSS = `
   .ri-conn-line { width: 1px; height: 12px; flex-shrink: 0; background: linear-gradient(to bottom,var(--green),var(--red)); opacity: .3; }
   .ri-conn-lbl  { font-size: 11px; color: var(--txt2); }
 
-  /* autocomplete */
   .ac { position: relative; }
   .ac-drop {
     position: absolute; top: calc(100% + 6px); left: 0; right: 0;
@@ -421,7 +436,6 @@ const CSS = `
   .spn  { width: 12px; height: 12px; border: 2px solid var(--border); border-top-color: var(--wood); border-radius: 50%; animation: spin .6s linear infinite; flex-shrink: 0; }
   .spn2 { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.15); border-top-color: var(--wood); border-radius: 50%; animation: spin .65s linear infinite; }
 
-  /* mode pills */
   .sc-modes { display: flex; gap: 6px; padding: 2px 14px 4px; }
   .mp {
     flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -433,7 +447,6 @@ const CSS = `
   .mp-i { flex-shrink: 0; }
   .mp-l { font-size: 10px; font-weight: 600; letter-spacing: .3px; text-transform: uppercase; color: inherit; }
 
-  /* find btn */
   .sc-find {
     margin: 6px 14px 12px; width: calc(100% - 28px); padding: 13px;
     background: var(--wood-g); border: none; border-radius: 13px;
@@ -444,7 +457,6 @@ const CSS = `
   .sc-find:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(232,168,112,.5); filter: brightness(1.1); }
   .sc-find:disabled { background: var(--inset); color: var(--txt2); box-shadow: none; cursor: not-allowed; filter: none; }
 
-  /* legend */
   .sc-leg-btn {
     display: flex; align-items: center; justify-content: space-between;
     padding: 9px 14px; border-top: 1px solid var(--border);
@@ -459,7 +471,6 @@ const CSS = `
   .leg-row { display: flex; align-items: center; gap: 10px; }
   .leg-lbl { font-size: 12px; color: var(--txt2); }
 
-  /* route bar */
   .rbar {
     position: absolute; bottom: 22px; left: calc(var(--rail-w) + 14px); z-index: 50;
     background: var(--surface); border: 1px solid var(--border2);
@@ -485,7 +496,6 @@ const CSS = `
   }
   .rs-bus:hover { background: var(--wood-dim); color: var(--wood-lt); }
 
-  /* map type bar */
   .mt-bar { position: absolute; top: 16px; right: 14px; z-index: 50; display: flex; gap: 5px; }
   .mt-btn {
     background: var(--surface); border: 1px solid var(--border); border-radius: 9px;
@@ -497,7 +507,6 @@ const CSS = `
   .mt-btn:hover { color: var(--txt); border-color: var(--border2); }
   .mt-btn.on    { color: var(--wood); border-color: var(--wood); background: var(--wood-dim); }
 
-  /* map controls */
   .mctrl { position: absolute; right: 14px; bottom: 80px; z-index: 50; display: flex; flex-direction: column; gap: 5px; }
   .mc {
     width: 40px; height: 40px; background: var(--surface); border: 1px solid var(--border);
@@ -508,7 +517,6 @@ const CSS = `
   .mc:hover { border-color: var(--border2); color: var(--wood); background: var(--wood-dim); }
   .mc-z { font-size: 10px; font-weight: 700; letter-spacing: .3px; color: var(--txt2); text-align: center; padding: 3px 0; }
 
-  /* toast */
   .toast {
     position: absolute; bottom: 24px; left: 50%; z-index: 200;
     transform: translateX(-50%) translateY(12px);
@@ -523,8 +531,6 @@ const CSS = `
 
   .sr { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0; }
 `;
-
-// ── DATA ────────────────────────────────────────────────────────────────────
 
 const A11Y_FEATS = [
   { key: "visionImpaired", Icon: Eye, label: "Vision Mode" },
@@ -648,21 +654,29 @@ function getCatIcon(cat) {
   return MapPin;
 }
 
-// ── COMPONENT ───────────────────────────────────────────────────────────────
+function getSegmentColor(safetyScore) {
+  if (safetyScore >= 0.7) return "#8cd69c";
+  if (safetyScore >= 0.4) return "#ffb347";
+  return "#ff7b6b";
+}
 
 export default function AccessibleMap() {
   const [mapType, setMapType] = useState("openstreetmap");
   const [zoom, setZoom] = useState(13);
   const [loc, setLoc] = useState([40.472, -79.94]);
   const [routePath, setRoutePath] = useState([]);
+  const [routeSegments, setRouteSegments] = useState([]);
   const [dest, setDest] = useState(null);
-  const [hazards] = useState([]);
+  const [constructionZones, setConstructionZones] = useState([]);
+  const [activeHazards, setActiveHazards] = useState([]);
   const [routeInfo, setRouteInfo] = useState(null);
   const [showRouteAlert, setShowRouteAlert] = useState(false);
   const [routeAlert, setRouteAlert] = useState(null);
   const [routeAlternatives, setRouteAlternatives] = useState([]);
   const [transitInfo, setTransitInfo] = useState(null);
   const [showTransitInfo, setShowTransitInfo] = useState(false);
+  const [showSafetyHeatmap, setShowSafetyHeatmap] = useState(false);
+  const [alternativeRoutes, setAlternativeRoutes] = useState([]);
 
   const [fromVal, setFromVal] = useState("Current Location");
   const [fromCoords, setFromCoords] = useState(null);
@@ -735,6 +749,104 @@ export default function AccessibleMap() {
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
+
+  useEffect(() => {
+    // Fetch obstructions for the current area
+    const fetchAreaObstructions = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:5000/api/area-obstructions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lat: loc[0],
+            lng: loc[1],
+            radius: 2000
+          })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          setConstructionZones(data.construction_zones || []);
+          setActiveHazards(data.hazards || []);
+          console.log(`Loaded ${data.construction_zones.length} construction zones and ${data.hazards.length} hazards`);
+        } else {
+          console.error("Failed to load obstructions:", data.error);
+          // Set demo data if API fails
+          setConstructionZones([
+            {
+              lat: 40.4450,
+              lng: -79.9550,
+              radius: 80,
+              description: "Road construction on Fifth Ave",
+              distance_meters: 150
+            },
+            {
+              lat: 40.4600,
+              lng: -79.9400,
+              radius: 100,
+              description: "Sidewalk closure",
+              distance_meters: 300
+            }
+          ]);
+          setActiveHazards([
+            {
+              lat: 40.4550,
+              lng: -79.9450,
+              radius: 100,
+              type: "poor_lighting",
+              description: "Poorly lit intersection",
+              severity: 0.7
+            }
+          ]);
+        }
+      } catch (error) {
+        console.error("Error fetching area obstructions:", error);
+        // Set demo data on error
+        setConstructionZones([
+          {
+            lat: 40.4450,
+            lng: -79.9550,
+            radius: 30,
+            description: "Road construction on Fifth Ave",
+            distance_meters: 150
+          },
+          {
+            lat: 40.4600,
+            lng: -79.9400,
+            radius: 25,
+            description: "Sidewalk closure",
+            distance_meters: 300
+          }
+        ]);
+        setActiveHazards([
+          {
+            lat: 40.4550,
+            lng: -79.9450,
+            radius: 40,
+            type: "poor_lighting",
+            description: "Poorly lit intersection",
+            severity: 0.7
+          }
+        ]);
+        setActiveHazards([
+          {
+            lat: 40.4550,
+            lng: -79.9450,
+            radius: 100,
+            type: "poor_lighting",
+            description: "Poorly lit intersection",
+            severity: 0.7
+          }
+        ]);
+      }
+    };
+    
+    fetchAreaObstructions();
+    
+    // Refresh obstructions every 5 minutes
+    const interval = setInterval(fetchAreaObstructions, 300000);
+    return () => clearInterval(interval);
+  }, [loc]); // Re-fetch when location changes
 
   const searchPlaces = (q) => {
     if (debRef.current) clearTimeout(debRef.current);
@@ -811,34 +923,55 @@ export default function AccessibleMap() {
 
   const checkRouteForObstructions = async (routeCoords) => {
     try {
-      const res = await fetch(" http://127.0.0.1:5000/api/check-obstructions", {
+      const res = await fetch("http://127.0.0.1:5000/api/check-obstructions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ route_coords: routeCoords })
       });
       const data = await res.json();
       
-      if (data.success && data.obstructions.has_obstruction) {
-        const constructionZones = data.obstructions.construction_zones;
-        const hazards = data.obstructions.hazards;
-        
-        let message = "";
-        if (constructionZones.length > 0) {
-          message = `⚠️ ${constructionZones.length} construction zone(s) detected on your route!`;
-        } else if (hazards.length > 0) {
-          message = `⚠️ ${hazards.length} hazard(s) detected on your route!`;
+      if (data.success && data.obstructions) {
+        // Update construction zones from route check
+        if (data.obstructions.construction_zones && data.obstructions.construction_zones.length > 0) {
+          setConstructionZones(prev => {
+            // Merge with existing, avoid duplicates
+            const existing = new Set(prev.map(z => `${z.lat},${z.lng}`));
+            const newZones = data.obstructions.construction_zones.filter(z => 
+              !existing.has(`${z.lat},${z.lng}`)
+            );
+            return [...prev, ...newZones];
+          });
         }
         
-        setRouteAlert({
-          type: "obstruction",
-          message: message,
-          constructionZones: constructionZones,
-          hazards: hazards
-        });
-        setShowRouteAlert(true);
+        // Update hazards from route check
+        if (data.obstructions.hazards && data.obstructions.hazards.length > 0) {
+          setActiveHazards(prev => {
+            const existing = new Set(prev.map(h => `${h.lat},${h.lng}`));
+            const newHazards = data.obstructions.hazards.filter(h => 
+              !existing.has(`${h.lat},${h.lng}`)
+            );
+            return [...prev, ...newHazards];
+          });
+        }
         
-        // Also get alternatives
-        await getRouteAlternatives();
+        if (data.obstructions.has_obstruction) {
+          let message = "";
+          if (data.obstructions.construction_zones.length > 0) {
+            message = `⚠️ ${data.obstructions.construction_zones.length} construction zone(s) detected on your route!`;
+          } else if (data.obstructions.hazards.length > 0) {
+            message = `⚠️ ${data.obstructions.hazards.length} hazard(s) detected on your route!`;
+          }
+          
+          setRouteAlert({
+            type: "obstruction",
+            message: message,
+            constructionZones: data.obstructions.construction_zones,
+            hazards: data.obstructions.hazards
+          });
+          setShowRouteAlert(true);
+          
+          await getRouteAlternatives();
+        }
       }
     } catch (error) {
       console.error("Error checking obstructions:", error);
@@ -865,6 +998,7 @@ export default function AccessibleMap() {
       
       if (data.success && data.alternatives.length > 0) {
         setRouteAlternatives(data.alternatives);
+        setAlternativeRoutes(data.alternatives);
       }
     } catch (error) {
       console.error("Error getting alternatives:", error);
@@ -952,7 +1086,6 @@ export default function AccessibleMap() {
     say("Finding your safe, accessible route…");
 
     try {
-      // Geocode the destination to get coordinates
       const geoRes = await fetch(
         `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(toVal)}.json?key=${TOMTOM_API_KEY}&limit=1`,
       );
@@ -967,13 +1100,10 @@ export default function AccessibleMap() {
       const destPos = geoData.results[0].position;
       const destCoords = { lat: destPos.lat, lng: destPos.lon };
 
-      // Use current location or geocode "Current Location"
       let startCoords;
       if (fromVal === "Current Location") {
-        // Use the current GPS position from state
         startCoords = { lat: loc[0], lng: loc[1] };
       } else {
-        // Geocode the custom start location
         const startGeoRes = await fetch(
           `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(fromVal)}.json?key=${TOMTOM_API_KEY}&limit=1`,
         );
@@ -982,11 +1112,10 @@ export default function AccessibleMap() {
           const startPos = startGeoData.results[0].position;
           startCoords = { lat: startPos.lat, lng: startPos.lon };
         } else {
-          startCoords = { lat: loc[0], lng: loc[1] }; // Fallback to current location
+          startCoords = { lat: loc[0], lng: loc[1] };
         }
       }
 
-      // Now calculate the route with actual coordinates
       const routeRes = await fetch(
         "http://localhost:5000/api/calculate-route",
         {
@@ -1014,6 +1143,24 @@ export default function AccessibleMap() {
       if (data.success && data.route?.coordinates?.length >= 2) {
         const coords = data.route.coordinates.map((c) => [c.lat, c.lng]);
         setRoutePath(coords);
+        
+        // Create route segments with safety scores if available
+        if (data.route.segments && data.route.segments.length > 0) {
+          setRouteSegments(data.route.segments);
+        } else {
+          // Create simple segments if not provided
+          const segments = [];
+          for (let i = 0; i < coords.length - 1; i++) {
+            segments.push({
+              start: coords[i],
+              end: coords[i + 1],
+              safety_score: data.route.safety?.overall_safety || 0.7,
+              instructions: "Continue on route"
+            });
+          }
+          setRouteSegments(segments);
+        }
+        
         setDest(coords[coords.length - 1]);
         setRouteInfo({
           distance: data.route.distance,
@@ -1034,7 +1181,6 @@ export default function AccessibleMap() {
 
         say(`Route found · ${data.route.distance} · ${data.route.duration}`);
         
-        // Check for obstructions after route is set
         setTimeout(() => {
           checkRouteForObstructions(coords);
         }, 500);
@@ -1120,7 +1266,6 @@ export default function AccessibleMap() {
                 <button
                   key={idx}
                   onClick={() => {
-                    // Apply alternative route
                     const waypoints = alt.waypoints;
                     setRoutePath(waypoints);
                     setDest(waypoints[waypoints.length - 1]);
@@ -1131,7 +1276,6 @@ export default function AccessibleMap() {
                     setShowRouteAlert(false);
                     say(`Switched to ${alt.type} route, ${alt.duration_minutes} minutes`);
                     
-                    // If transit, show bus info
                     if (alt.type === 'transit' && alt.transit_lines?.length > 0) {
                       const busInfo = alt.transit_lines.map(l => l.line).join(", ");
                       say(`Taking ${busInfo} bus. ${alt.walking_minutes} min walk, ${alt.transit_minutes} min ride`);
@@ -1272,7 +1416,6 @@ export default function AccessibleMap() {
           {toast}
         </div>
 
-        {/* ── MAP ──────────────────────────────── */}
         <div className="map-wrap">
           <MapContainer
             center={loc}
@@ -1290,6 +1433,7 @@ export default function AccessibleMap() {
               attribution={mapTypes[mapType].attribution}
               url={mapTypes[mapType].url}
             />
+            
             <CircleMarker
               center={loc}
               radius={11}
@@ -1301,39 +1445,108 @@ export default function AccessibleMap() {
               }}
             >
               <Popup>
-                <strong
-                  style={{ fontFamily: "DM Sans,sans-serif", color: "#ffffff" }}
-                >
+                <strong style={{ fontFamily: "DM Sans,sans-serif", color: "#ffffff" }}>
                   You are here
                 </strong>
               </Popup>
             </CircleMarker>
+            
             {dest && (
               <Marker position={dest} icon={destinationIcon}>
                 <Popup>
-                  <strong
-                    style={{
-                      fontFamily: "DM Sans,sans-serif",
-                      color: "#ffffff",
-                    }}
-                  >
+                  <strong style={{ fontFamily: "DM Sans,sans-serif", color: "#ffffff" }}>
                     Destination
                   </strong>
                   <br />
-                  <small
-                    style={{
-                      color: "#e0c8b0",
-                      fontFamily: "DM Sans,sans-serif",
-                    }}
-                  >
+                  <small style={{ color: "#e0c8b0", fontFamily: "DM Sans,sans-serif" }}>
                     {toVal}
                   </small>
                 </Popup>
               </Marker>
             )}
-            {routePath.length >= 2 && (
+            
+            {/* Construction Zones - Display as CircleMarkers with popups */}
+            {/* Construction Zones - Block-level circles in meters */}
+{constructionZones.map((zone, idx) => (
+  <Circle
+    key={`construction-${idx}`}
+    center={[zone.lat, zone.lng]}
+    radius={zone.radius && zone.radius <= 200 ? zone.radius : 30}
+    pathOptions={{
+      color: "#ff7b6b",
+      fillColor: "#ff7b6b",
+      fillOpacity: 0.25,
+      weight: 2,
+      dashArray: "6,4",
+    }}
+  >
+    <Popup>
+      <div>
+        <strong style={{ color: "#ff7b6b" }}>🚧 Construction Zone</strong>
+        <br />
+        <small>{zone.description || "Construction in progress"}</small>
+        {zone.distance_meters && (
+          <div>📍 {zone.distance_meters.toFixed(0)}m from route</div>
+        )}
+      </div>
+    </Popup>
+  </Circle>
+))}
+            
+            {/* Active Hazards - Display as CircleMarkers with popups */}
+{/* Active Hazards - Block-level circles in meters */}
+{activeHazards.map((hazard, idx) => (
+  <Circle
+    key={`hazard-${idx}`}
+    center={[hazard.lat, hazard.lng]}
+    radius={hazard.radius && hazard.radius <= 200 ? hazard.radius : 40}
+    pathOptions={{
+      color: "#ffb347",
+      fillColor: "#ffb347",
+      fillOpacity: 0.2,
+      weight: 2,
+    }}
+  >
+    <Popup>
+      <div>
+        <strong style={{ color: "#ffb347" }}>⚠️ {hazard.type || "Hazard"}</strong>
+        <br />
+        <small>{hazard.description}</small>
+        {hazard.severity && (
+          <div>Severity: {Math.round(hazard.severity * 100)}%</div>
+        )}
+      </div>
+    </Popup>
+  </Circle>
+))}
+            
+            {/* Route Segments - Color coded by safety */}
+            {routeSegments.length > 0 ? (
+              routeSegments.map((segment, idx) => (
+                <Polyline
+                  key={`segment-${idx}`}
+                  positions={[segment.start, segment.end]}
+                  pathOptions={{
+                    color: getSegmentColor(segment.safety_score || 0.7),
+                    weight: 6,
+                    opacity: 0.9,
+                    lineCap: "round",
+                    lineJoin: "round",
+                  }}
+                >
+                  <Popup>
+                    <div>
+                      <strong>Segment {idx + 1}</strong>
+                      <br />
+                      Safety: {Math.round((segment.safety_score || 0.7) * 100)}%
+                      <br />
+                      {segment.instructions || "Continue on route"}
+                    </div>
+                  </Popup>
+                </Polyline>
+              ))
+            ) : routePath.length >= 2 && (
               <>
-                {/* Glow layer */}
                 <Polyline
                   positions={routePath}
                   pathOptions={{
@@ -1344,7 +1557,6 @@ export default function AccessibleMap() {
                     lineJoin: "round",
                   }}
                 />
-                {/* Outer stroke */}
                 <Polyline
                   positions={routePath}
                   pathOptions={{
@@ -1355,7 +1567,6 @@ export default function AccessibleMap() {
                     lineJoin: "round",
                   }}
                 />
-                {/* Main route */}
                 <Polyline
                   positions={routePath}
                   pathOptions={{
@@ -1369,33 +1580,40 @@ export default function AccessibleMap() {
                 />
               </>
             )}
-            {hazards.map((h, i) => (
-              <Marker key={i} position={h.position} icon={hazardIcon}>
-                <Popup>
-                  <strong
-                    style={{
-                      color: "#ffb347",
-                      fontFamily: "DM Sans,sans-serif",
-                    }}
-                  >
-                    ⚠ {h.type}
-                  </strong>
-                  <br />
-                  <small
-                    style={{
-                      fontFamily: "DM Sans,sans-serif",
-                      color: "#ffffff",
-                    }}
-                  >
-                    {h.description}
-                  </small>
-                </Popup>
-              </Marker>
+            
+            {/* Alternative Routes - Dashed lines */}
+            {alternativeRoutes.map((alt, idx) => (
+              alt.waypoints && alt.waypoints.length > 0 && (
+                <Polyline
+                  key={`alt-${idx}`}
+                  positions={alt.waypoints}
+                  pathOptions={{
+                    color: "#e8a870",
+                    weight: 3,
+                    opacity: 0.6,
+                    dashArray: "10,5",
+                    lineCap: "round",
+                    lineJoin: "round",
+                  }}
+                >
+                  <Popup>
+                    <div>
+                      <strong>Alternative Route {idx + 1}</strong>
+                      <br />
+                      Duration: {alt.duration_minutes} min
+                      <br />
+                      Safety: {Math.round((alt.safety_score || 0.7) * 100)}%
+                      {alt.has_obstruction && (
+                        <div style={{ color: "#ff7b6b" }}>⚠️ Contains obstructions</div>
+                      )}
+                    </div>
+                  </Popup>
+                </Polyline>
+              )
             ))}
           </MapContainer>
         </div>
 
-        {/* ── RAIL ─────────────────────────────── */}
         <nav className="rail" role="navigation" aria-label="Main navigation">
           <div className="r-logo" aria-hidden="true">
             <Accessibility size={20} />
@@ -1457,7 +1675,6 @@ export default function AccessibleMap() {
           </button>
         </nav>
 
-        {/* ── SIDE PANEL ───────────────────────── */}
         <aside
           ref={panelRef}
           className={`panel${panel ? " open" : ""}`}
@@ -1488,18 +1705,11 @@ export default function AccessibleMap() {
           </div>
 
           <div className="p-body">
-            {/* SAVED */}
             {panel === "saved" && (
               <>
                 <div>
                   <div className="p-sec">Pinned</div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "6px",
-                    }}
-                  >
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     {SAVED_PLACES.map((d) => (
                       <button
                         key={d.name}
@@ -1517,10 +1727,7 @@ export default function AccessibleMap() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div className="p-name">{d.name}</div>
                           <div className="p-sub">
-                            <Accessibility
-                              size={10}
-                              style={{ color: "var(--green)", flexShrink: 0 }}
-                            />
+                            <Accessibility size={10} style={{ color: "var(--green)", flexShrink: 0 }} />
                             {d.sub}
                           </div>
                         </div>
@@ -1534,13 +1741,7 @@ export default function AccessibleMap() {
 
                 <div>
                   <div className="p-sec">Nearby in Pittsburgh</div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "6px",
-                    }}
-                  >
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     {NEARBY_PITTSBURGH.map((d) => (
                       <button
                         key={d.name}
@@ -1569,7 +1770,6 @@ export default function AccessibleMap() {
               </>
             )}
 
-            {/* RECENTS */}
             {panel === "recents" && (
               <div>
                 <div className="p-sec">Recent</div>
@@ -1580,13 +1780,7 @@ export default function AccessibleMap() {
                     Routes you calculate will appear here.
                   </div>
                 ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "6px",
-                    }}
-                  >
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     {recents.map((r, i) => (
                       <button
                         key={i}
@@ -1615,7 +1809,6 @@ export default function AccessibleMap() {
               </div>
             )}
 
-            {/* A11Y */}
             {panel === "a11y" && (
               <>
                 <div>
@@ -1645,13 +1838,7 @@ export default function AccessibleMap() {
 
                 <div>
                   <div className="p-sec">Map Style</div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "6px",
-                    }}
-                  >
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     {Object.entries(mapTypes).map(([k, v]) => {
                       const MIcon = MAP_TYPE_ICONS[k] || Layers;
                       return (
@@ -1669,12 +1856,7 @@ export default function AccessibleMap() {
                           </div>
                           <div className="p-name">{v.name}</div>
                           {mapType === k && (
-                            <span
-                              style={{
-                                marginLeft: "auto",
-                                color: "var(--wood)",
-                              }}
-                            >
+                            <span style={{ marginLeft: "auto", color: "var(--wood)" }}>
                               <ChevronRight size={14} />
                             </span>
                           )}
@@ -1713,7 +1895,6 @@ export default function AccessibleMap() {
           </div>
         </aside>
 
-        {/* ── SEARCH CARD ──────────────────────── */}
         <div className="sc" role="search" aria-label="Route planner">
           <div className="sc-head">
             <Route size={16} style={{ color: "var(--wood)", flexShrink: 0 }} />
@@ -1723,7 +1904,6 @@ export default function AccessibleMap() {
           </div>
 
           <div className="sc-inputs">
-            {/* FROM */}
             <div className="ac">
               <div className="rr">
                 <span className="rr-dot rr-dot-g" aria-hidden="true" />
@@ -1745,14 +1925,7 @@ export default function AccessibleMap() {
                   autoComplete="off"
                 />
                 {fromSuggLoad && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      right: "34px",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                    }}
-                  >
+                  <div style={{ position: "absolute", right: "34px", top: "50%", transform: "translateY(-50%)" }}>
                     <div className="spn" aria-hidden="true" />
                   </div>
                 )}
@@ -1822,7 +1995,6 @@ export default function AccessibleMap() {
               <span className="ri-conn-lbl">to</span>
             </div>
 
-            {/* TO + AUTOCOMPLETE */}
             <div className="ac">
               <div className="rr">
                 <span className="rr-dot rr-dot-r" aria-hidden="true" />
@@ -1845,14 +2017,7 @@ export default function AccessibleMap() {
                   autoComplete="off"
                 />
                 {suggLoad && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      right: "9px",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                    }}
-                  >
+                  <div style={{ position: "absolute", right: "9px", top: "50%", transform: "translateY(-50%)" }}>
                     <div className="spn" aria-hidden="true" />
                   </div>
                 )}
@@ -1927,7 +2092,6 @@ export default function AccessibleMap() {
             </div>
           </div>
 
-          {/* TRAVEL MODES */}
           <div className="sc-modes" role="radiogroup" aria-label="Travel mode">
             {[
               { id: "walk", Icon: PersonStanding, l: "Walk" },
@@ -1940,8 +2104,12 @@ export default function AccessibleMap() {
                 onClick={() => {
                   setMode(t.id);
                   setRoutePath([]);
+                  setRouteSegments([]);
                   setDest(null);
                   setRouteInfo(null);
+                  setConstructionZones([]);
+                  setActiveHazards([]);
+                  setAlternativeRoutes([]);
                   say(`${t.l} mode`);
                 }}
                 aria-pressed={mode === t.id}
@@ -1955,7 +2123,6 @@ export default function AccessibleMap() {
             ))}
           </div>
 
-          {/* FIND ROUTE BUTTON */}
           <button
             className="sc-find"
             onClick={calcRoute}
@@ -1973,7 +2140,6 @@ export default function AccessibleMap() {
             )}
           </button>
 
-          {/* LEGEND */}
           <button
             className="sc-leg-btn"
             onClick={() => setLegendOpen((o) => !o)}
@@ -1989,21 +2155,23 @@ export default function AccessibleMap() {
           {legendOpen && (
             <div className="sc-leg-body" role="list">
               {[
-                { color: "#e8a870", label: "Accessible Route", dash: true },
-                { color: "#8cd69c", label: "Walking Route", dash: false },
-                { color: "#ffb347", label: "Hazard / Construction", dot: true },
-                { color: "#ff7b6b", label: "Avoid Zone", dot: true },
+                { color: "#8cd69c", label: "Safe Route (70-100%)", type: "line" },
+                { color: "#ffb347", label: "Caution Route (40-69%)", type: "line" },
+                { color: "#ff7b6b", label: "Unsafe Route (0-39%)", type: "line" },
+                { color: "#ff7b6b", label: "Construction Zone", type: "circle", dash: true },
+                { color: "#ffb347", label: "Hazard Area", type: "circle" },
+                { color: "#e8a870", label: "Alternative Route", type: "line", dash: true },
               ].map((item) => (
                 <div key={item.label} className="leg-row" role="listitem">
-                  {item.dot ? (
+                  {item.type === "circle" ? (
                     <div
                       style={{
-                        width: "9px",
-                        height: "9px",
+                        width: "12px",
+                        height: "12px",
                         borderRadius: "50%",
                         background: item.color,
+                        border: item.dash ? "1px dashed white" : "none",
                         flexShrink: 0,
-                        boxShadow: `0 0 5px ${item.color}`,
                       }}
                       aria-hidden="true"
                     />
@@ -2028,7 +2196,6 @@ export default function AccessibleMap() {
           )}
         </div>
 
-        {/* ── MAP TYPE BAR ─────────────────────── */}
         <div className="mt-bar" role="radiogroup" aria-label="Map style">
           {Object.entries(mapTypes).map(([k, v]) => {
             const MIcon = MAP_TYPE_ICONS[k] || Layers;
@@ -2049,7 +2216,6 @@ export default function AccessibleMap() {
           })}
         </div>
 
-        {/* ── MAP CONTROLS ─────────────────────── */}
         <div className="mctrl">
           <button
             className="mc"
@@ -2082,7 +2248,6 @@ export default function AccessibleMap() {
           </button>
         </div>
 
-        {/* ── ROUTE INFO BAR ───────────────────── */}
         {routeInfo && (
           <div className="rbar" role="region" aria-label="Route information">
             <div className="rs">
@@ -2101,6 +2266,17 @@ export default function AccessibleMap() {
               </div>
               <div className="rs-l">Accessible</div>
             </div>
+            {constructionZones.length > 0 && (
+              <>
+                <div className="rs-d" aria-hidden="true" />
+                <div className="rs">
+                  <div className="rs-v" style={{ color: "#ff7b6b" }}>
+                    🚧 {constructionZones.length}
+                  </div>
+                  <div className="rs-l">Obstructions</div>
+                </div>
+              </>
+            )}
             {mode === 'transit' && (
               <>
                 <div className="rs-d" aria-hidden="true" />
@@ -2117,9 +2293,13 @@ export default function AccessibleMap() {
               className="rs-cl"
               onClick={() => {
                 setRoutePath([]);
+                setRouteSegments([]);
                 setDest(null);
                 setRouteInfo(null);
                 setShowRouteAlert(false);
+                setConstructionZones([]);
+                setActiveHazards([]);
+                setAlternativeRoutes([]);
               }}
               aria-label="Clear route"
             >
@@ -2128,11 +2308,9 @@ export default function AccessibleMap() {
           </div>
         )}
 
-        {/* ── ALERTS AND MODALS ────────────────── */}
         <RouteAlertComponent />
         <TransitInfoModal />
 
-        {/* ── TOAST ────────────────────────────── */}
         <div
           className={`toast${toast ? " vis" : ""}`}
           role="status"
