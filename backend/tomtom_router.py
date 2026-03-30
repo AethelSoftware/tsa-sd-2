@@ -25,14 +25,11 @@ class TomTomRouter:
                        avoid_hazards: bool = True,
                        accessibility_needs: List[str] = None,
                        obstruction_zones: List[Dict] = None) -> Optional[Dict]:
-        """Calculate route between two points using TomTom API, avoiding known obstructions"""
+        """Calculate route, picking the best alternative that avoids obstructions"""
         try:
             if not (-90 <= start_lat <= 90) or not (-180 <= start_lng <= 180):
-                logger.error(f"Invalid start coordinates: {start_lat}, {start_lng}")
                 return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
-            
             if not (-90 <= dest_lat <= 90) or not (-180 <= dest_lng <= 180):
-                logger.error(f"Invalid destination coordinates: {dest_lat}, {dest_lng}")
                 return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
             
             origin = f"{start_lat},{start_lng}"
@@ -48,8 +45,13 @@ class TomTomRouter:
                 'language': 'en-US',
                 'routeRepresentation': 'polyline',
                 'computeTravelTimeFor': 'none',
-                'avoid': 'unpavedRoads'
+                'avoid': 'unpavedRoads',
             }
+            
+            # Request alternatives if we have obstructions to dodge
+            if obstruction_zones and len(obstruction_zones) > 0:
+                params['maxAlternatives'] = 5
+                params['alternativeType'] = 'anyRoute'
             
             if accessibility_needs:
                 if 'wheelchair' in accessibility_needs:
@@ -57,50 +59,65 @@ class TomTomRouter:
                 if 'blind' in accessibility_needs:
                     params['avoid'] = params.get('avoid', '') + ',tollRoads,motorways'
             
-            # Build avoidAreas from known obstructions
-            if obstruction_zones and len(obstruction_zones) > 0:
-                avoid_rects = []
-                for zone in obstruction_zones[:5]:  # TomTom limits to ~5 avoid areas
-                    z_lat = zone.get('lat')
-                    z_lng = zone.get('lng')
-                    z_radius = zone.get('radius', 30)
-                    if z_lat is None or z_lng is None:
-                        continue
-                    # Convert radius in meters to approximate lat/lng offset
-                    # ~0.000009 degrees per meter of latitude
-                    # ~0.000012 degrees per meter of longitude at Pittsburgh's latitude
-                    d_lat = z_radius * 0.000009
-                    d_lng = z_radius * 0.000012
-                    # TomTom avoidAreas format: top-left lat,lng : bottom-right lat,lng
-                    rect = f"{z_lat + d_lat},{z_lng - d_lng}:{z_lat - d_lat},{z_lng + d_lng}"
-                    avoid_rects.append(rect)
-                
-                if avoid_rects:
-                    params['avoidAreas'] = '|'.join(avoid_rects)
-                    logger.info(f"Avoiding {len(avoid_rects)} obstruction zones in route")
-            
             logger.info(f"Calculating TomTom route from {origin} to {destination}")
             
             response = requests.get(url, params=params, timeout=10)
-            logger.debug(f"TomTom URL: {response.url}")
             response.raise_for_status()
             data = response.json()
             
             if 'routes' not in data or not data['routes']:
-                logger.warning("No routes found in TomTom response")
                 return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
             
-            route = data['routes'][0]
-            processed = self._process_route(route, start_lat, start_lng, dest_lat, dest_lng)
+            all_routes = data['routes']
+            logger.info(f"TomTom returned {len(all_routes)} route(s)")
             
+            # Process all routes
+            processed_routes = []
+            for route in all_routes:
+                processed = self._process_route(route, start_lat, start_lng, dest_lat, dest_lng)
+                if processed and processed.get('points') and len(processed['points']) > 1:
+                    processed_routes.append(processed)
+            
+            if not processed_routes:
+                return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
+            
+            # If we have obstructions, score each route and pick the best
+            if obstruction_zones and len(obstruction_zones) > 0:
+                best_route = None
+                best_score = -1
+                
+                for i, route in enumerate(processed_routes):
+                    conflicts = self._count_obstruction_conflicts(route['points'], obstruction_zones)
+                    # Score: fewer conflicts = better. Tie-break on shorter distance.
+                    # A clean route (0 conflicts) always wins over a dirty one
+                    score = (1000 - conflicts * 100) - (route['distance_meters'] / 10000)
+                    
+                    logger.info(f"  Route {i+1}: {conflicts} conflicts, {route['distance_meters']:.0f}m, score={score:.1f}")
+                    
+                    if score > best_score:
+                        best_score = score
+                        best_route = route
+                        best_route['obstruction_conflicts'] = conflicts
+                
+                if best_route:
+                    if best_route.get('obstruction_conflicts', 0) > 0:
+                        logger.warning(f"Best route still has {best_route['obstruction_conflicts']} conflict(s) - no clean alternative available")
+                    else:
+                        logger.info("Found clean route avoiding all obstructions")
+                    
+                    if accessibility_needs:
+                        best_route = self._add_accessibility_features(best_route, accessibility_needs)
+                    return best_route
+            
+            # No obstructions or no alternatives needed - return first route
+            result = processed_routes[0]
             if accessibility_needs:
-                processed = self._add_accessibility_features(processed, accessibility_needs)
-            
-            return processed
+                result = self._add_accessibility_features(result, accessibility_needs)
+            return result
             
         except requests.exceptions.HTTPError as e:
             if hasattr(e, 'response') and e.response and e.response.status_code == 400:
-                logger.warning(f"TomTom 400 error - retrying without avoidAreas")
+                logger.warning(f"TomTom 400 error - retrying with minimal params")
                 try:
                     retry_params = {
                         'key': self.api_key,
@@ -109,24 +126,43 @@ class TomTomRouter:
                         'instructionsType': 'text',
                         'language': 'en-US',
                     }
+                    url = f"{self.base_url}/calculateRoute/{origin}:{destination}/json"
                     response = requests.get(url, params=retry_params, timeout=10)
                     response.raise_for_status()
                     data = response.json()
                     if 'routes' in data and data['routes']:
-                        route = data['routes'][0]
-                        processed = self._process_route(route, start_lat, start_lng, dest_lat, dest_lng)
+                        processed = self._process_route(data['routes'][0], start_lat, start_lng, dest_lat, dest_lng)
                         if accessibility_needs:
                             processed = self._add_accessibility_features(processed, accessibility_needs)
-                        logger.info("TomTom route successful (without avoidAreas)")
+                        logger.info("TomTom route successful (simplified)")
                         return processed
                 except Exception as e2:
-                    logger.warning(f"Simplified TomTom request also failed: {e2}")
+                    logger.warning(f"Simplified request also failed: {e2}")
             else:
                 logger.error(f"TomTom API request failed: {e}")
             return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
         except Exception as e:
             logger.error(f"Error calculating route: {e}")
             return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
+    
+    def _count_obstruction_conflicts(self, route_points: List[Tuple], 
+                                      obstruction_zones: List[Dict]) -> int:
+        """Count how many obstruction zones the route passes through"""
+        conflicts = 0
+        for zone in obstruction_zones:
+            z_lat = zone.get('lat')
+            z_lng = zone.get('lng')
+            z_radius = zone.get('radius', 50)
+            if z_lat is None or z_lng is None:
+                continue
+            
+            for point in route_points:
+                dist = self._haversine_distance(point[0], point[1], z_lat, z_lng)
+                if dist < z_radius + 20:
+                    conflicts += 1
+                    break
+        
+        return conflicts
     
     def _process_route(self, route: Dict, start_lat: float, start_lng: float,
                       dest_lat: float, dest_lng: float) -> Dict:
