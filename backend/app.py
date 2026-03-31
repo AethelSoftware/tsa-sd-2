@@ -543,6 +543,72 @@ def add_model_endpoints(app):
         'speed': '0 MB/s',
         'eta': 'Calculating...'
     }
+
+    @app.route("/api/transit-info", methods=['POST', 'OPTIONS'])
+    def get_transit_info():
+        """Get detailed transit information (bus routes, stops, etc.)"""
+        if request.method == 'OPTIONS':
+            response = jsonify({'success': True})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+            response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+            return response
+
+        try:
+            data = request.json
+            start_lat = float(data.get('start_lat', 40.4406))
+            start_lng = float(data.get('start_lng', -79.9959))
+            end_lat   = float(data.get('end_lat',   40.4406))
+            end_lng   = float(data.get('end_lng',  -79.9959))
+
+            if not google_router or not google_router.api_key:
+                return jsonify({
+                    'success': False,
+                    'error': 'Google Maps router not available.'
+                }), 503
+
+            routes = google_router.get_transit_route(
+                start_lat, start_lng, end_lat, end_lng, alternatives=True
+            )
+
+            if not routes:
+                return jsonify({'success': False, 'error': 'No transit routes found'}), 503
+
+            formatted_routes = []
+            for idx, route in enumerate(routes[:3]):
+                steps = route.get('steps', [])
+                instructions = []
+                for step in steps:
+                    entry = {
+                        'instruction':      step['instruction'],
+                        'duration_seconds': step.get('duration_seconds', 0),
+                        'distance_meters':  step.get('distance_meters', 0),
+                    }
+                    if step.get('travel_mode') == 'TRANSIT':
+                        entry.update({
+                            'transit_line':    step.get('transit_line', 'Bus'),
+                            'departure_stop':  step.get('departure_stop', ''),
+                            'arrival_stop':    step.get('arrival_stop', ''),
+                        })
+                    instructions.append(entry)
+
+                formatted_routes.append({
+                    'index':                  idx,
+                    'total_duration_minutes': route['total_duration_seconds'] / 60,
+                    'walking_minutes':        route.get('total_walking_time', 0) / 60,
+                    'transit_minutes':        route.get('total_transit_time', 0) / 60,
+                    'total_distance_meters':  route['total_distance_meters'],
+                    'transit_lines':          route.get('transit_lines', []),
+                    'steps':                  instructions,
+                    'has_obstruction':        bool(route.get('construction_warnings')),
+                    'obstruction_warnings':   route.get('construction_warnings', []),
+                })
+
+            return jsonify({'success': True, 'routes': formatted_routes})
+
+        except Exception as e:
+            logger.error(f"Transit info error: {e}", exc_info=True)
+            return jsonify({'success': False, 'error': str(e)}), 500
     
     @app.route("/api/hello")
     def hello():
@@ -2137,24 +2203,6 @@ def main():
     # Initialize safety AI
     safety_ai_instance = get_safety_ai_instance()
     
-    # Check model status and train if needed
-    should_train = False
-    
-    if args.train:
-        should_train = True
-        print("\n⏩ Skipping prompts - training model as requested...")
-    elif args.no_train:
-        should_train = False
-        print("\n⏩ Skipping training as requested...")
-    elif safety_ai_instance:
-        should_train = check_model_status()
-    
-    # Train model if needed
-    if should_train and safety_ai_instance:
-        success = train_model_interactive()
-        if not success and not safety_ai_instance.is_trained:
-            print("\n⚠️  Model not trained, some features may be limited")
-    
     # Create Flask app with SocketIO
     app = Flask(__name__, static_folder='../frontend/dist', static_url_path='/')
     CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
@@ -2181,6 +2229,7 @@ def main():
     
     # Add model endpoints
     app = add_model_endpoints(app)
+    
     
     # Setup SocketIO handlers
     setup_socketio_handlers(socketio, app)
@@ -2235,6 +2284,24 @@ def main():
     
     # Create models directory
     os.makedirs('models', exist_ok=True)
+    
+    # Check model status and train if needed
+    should_train = False
+    
+    if args.train:
+        should_train = True
+        print("\n⏩ Skipping prompts - training model as requested...")
+    elif args.no_train:
+        should_train = False
+        print("\n⏩ Skipping training as requested...")
+    elif safety_ai_instance:
+        should_train = check_model_status()
+    
+    # Train model if needed
+    if should_train and safety_ai_instance:
+        success = train_model_interactive()
+        if not success and not safety_ai_instance.is_trained:
+            print("\n⚠️  Model not trained, some features may be limited")
     
     # Start combined server
     print("\n" + "="*60)

@@ -1681,3 +1681,637 @@ RuntimeError: The session is unavailable because no secret key was set.  Set the
 2026-03-30 19:51:54,486 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:51:54] "POST /api/calculate-route HTTP/1.1" 200 -
 2026-03-30 19:51:54,993 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:51:54] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
 2026-03-30 19:51:54,996 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:51:54] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 19:55:16,961 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:55:16] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 19:55:16,966 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 19:55:16,966 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 19:55:17,233 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 19:55:17,234 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 19:55:17,234 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 19:55:17,239 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 19:55:17] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:00:47,978 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:00:47] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:00:47,981 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 20:00:47,981 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 20:00:48,163 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 20:00:48,163 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 20:00:48,163 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 20:00:48,164 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:00:48] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:05:48,970 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:05:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:05:48,974 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 20:05:48,974 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 20:05:49,209 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 20:05:49,210 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 20:05:49,210 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 20:05:49,214 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:05:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:10:48,971 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:10:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:10:48,976 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 20:10:48,977 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 20:10:49,414 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 20:10:49,414 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 20:10:49,414 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 20:10:49,417 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:10:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:15:48,969 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:15:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:15:48,973 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 20:15:48,973 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 20:15:49,178 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 20:15:49,179 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 20:15:49,179 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 20:15:49,181 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:15:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:20:48,995 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:20:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:20:48,998 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 20:20:48,999 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 20:20:49,193 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 20:20:49,194 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 20:20:49,194 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 20:20:49,196 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:20:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:25:48,975 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:25:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:25:48,979 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 20:25:48,979 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 20:25:49,096 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 20:25:49,096 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 20:25:49,096 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 20:25:49,097 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:25:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:30:16,584 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:30:16] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:30:16,587 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 20:30:16,587 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 20:30:16,763 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 20:30:16,763 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 20:30:16,763 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 20:30:16,765 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:30:16] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:34:59,222 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:34:59] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 20:34:59,226 - __main__ - INFO - Attempting Google Maps transit route from 40.4413617,-79.9948369 to 40.444086,-79.9535162
+2026-03-30 20:34:59,360 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 20:34:59,362 - __main__ - WARNING - All routing providers failed: []. Using calculated fallback.
+2026-03-30 20:34:59,363 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:34:59] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 20:34:59,871 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:34:59] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 20:34:59,874 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:34:59] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 20:35:03,145 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:35:03] "OPTIONS /api/transit-info HTTP/1.1" 200 -
+2026-03-30 20:35:03,150 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:35:03] "[31m[1mPOST /api/transit-info HTTP/1.1[0m" 405 -
+2026-03-30 20:35:04,218 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:35:04] "[31m[1mPOST /api/transit-info HTTP/1.1[0m" 405 -
+2026-03-30 20:35:04,717 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:35:04] "[31m[1mPOST /api/transit-info HTTP/1.1[0m" 405 -
+2026-03-30 20:35:06,030 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:35:06] "[31m[1mPOST /api/transit-info HTTP/1.1[0m" 405 -
+2026-03-30 20:35:06,910 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:35:06] "[31m[1mPOST /api/transit-info HTTP/1.1[0m" 405 -
+2026-03-30 20:35:07,442 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:35:07] "[31m[1mPOST /api/transit-info HTTP/1.1[0m" 405 -
+2026-03-30 20:35:16,571 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:35:16] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:35:16,574 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 20:35:16,574 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 20:35:16,724 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 20:35:16,724 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 20:35:16,724 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 20:35:16,728 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:35:16] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:35:32,034 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:35:32] "OPTIONS /api/transit-info HTTP/1.1" 200 -
+2026-03-30 20:35:32,038 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:35:32] "[31m[1mPOST /api/transit-info HTTP/1.1[0m" 405 -
+2026-03-30 20:40:48,974 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:40:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:40:48,977 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 20:40:48,977 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 20:40:49,119 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 20:40:49,119 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 20:40:49,119 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 20:40:49,121 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:40:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:45:48,978 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:45:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:45:48,990 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 20:45:48,990 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 20:45:49,167 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 20:45:49,167 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 20:45:49,167 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 20:45:49,169 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:45:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:49:32,833 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:49:32] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 20:49:32,836 - __main__ - INFO - Attempting Google Maps transit route from 40.4413617,-79.9948369 to 40.444086,-79.9535162
+2026-03-30 20:49:32,963 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 20:49:32,965 - __main__ - WARNING - All routing providers failed: []. Using calculated fallback.
+2026-03-30 20:49:32,966 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:49:32] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 20:49:33,473 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:49:33] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 20:49:33,476 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:49:33] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 20:49:42,510 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:49:42] "OPTIONS /api/transit-info HTTP/1.1" 200 -
+2026-03-30 20:49:42,514 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:49:42] "[31m[1mPOST /api/transit-info HTTP/1.1[0m" 405 -
+2026-03-30 20:49:43,355 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:49:43] "[31m[1mPOST /api/transit-info HTTP/1.1[0m" 405 -
+2026-03-30 20:50:16,988 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:50:16] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:50:16,993 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 20:50:16,993 - __main__ - INFO - TomTom incidents URL: https://api.tomtom.com/traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-79.9314269579108,40.53560450037976,-79.8834269579108,40.57160450037976&fields={incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}&language=en-US&timeValidityFilter=present
+2026-03-30 20:50:17,146 - __main__ - INFO - TomTom returned 0 incidents. Keys: ['incidents']
+2026-03-30 20:50:17,147 - __main__ - INFO - TomTom response (first 500 chars): {"incidents":[]}
+2026-03-30 20:50:17,147 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 20:50:17,149 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:50:17] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:52:55,317 - __main__ - WARNING - Geoapify client not available: No module named 'geoapify_client'
+2026-03-30 20:52:55,319 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-30 20:52:55,321 - __main__ - INFO - Safety AI loaded successfully
+2026-03-30 20:53:18,794 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-03-30 20:53:18,795 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-03-30 20:53:18,809 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-30 20:53:18,809 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-30 20:53:21,324 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:53:21] "GET /api/hello HTTP/1.1" 200 -
+2026-03-30 20:55:47,983 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:55:47] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 20:55:47,989 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 20:55:48,245 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 20:55:48,245 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 20:55:48,531 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 20:55:48,535 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 20:55:48] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:00:49,014 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:00:49] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:00:49,023 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 21:00:49,321 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 21:00:49,321 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 21:00:49,467 - real_api_client - ERROR - Crime bounding box error: 502 Server Error: Bad Gateway for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 21:00:49,475 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:00:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:05:48,989 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:05:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:05:48,993 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 21:05:49,213 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 21:05:49,214 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 21:05:59,161 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 21:05:59,168 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:05:59] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:07:02,398 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:07:02] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 21:07:02,551 - __main__ - INFO - Fetched 17 TomTom incidents
+2026-03-30 21:07:02,577 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.4213617%2C+%22%24lte%22%3A+40.464086%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-80.01483689999999%2C+%22%24lte%22%3A+-79.9335162%7D%7D
+2026-03-30 21:07:02,578 - __main__ - INFO - Added 0 crime hazards
+2026-03-30 21:07:02,721 - __main__ - INFO - Added 0 weather hazards
+2026-03-30 21:07:02,725 - __main__ - INFO - Total obstruction zones to avoid: 17
+2026-03-30 21:07:02,725 - __main__ - INFO - Attempting Google Maps transit route from 40.4413617,-79.9948369 to 40.444086,-79.9535162
+2026-03-30 21:07:02,834 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 21:07:02,837 - __main__ - WARNING - All routing providers failed: []. Using calculated fallback.
+2026-03-30 21:07:02,838 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:07:02] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 21:07:03,346 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:07:03] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 21:07:03,349 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:07:03] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 21:07:05,565 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:07:05] "OPTIONS /api/transit-info HTTP/1.1" 200 -
+2026-03-30 21:07:05,567 - __main__ - INFO - Transit info request from (40.55360450037976,-79.9074269579108) to (40.444086,-79.9540162)
+2026-03-30 21:07:05,649 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 21:07:05,652 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:07:05] "[33mPOST /api/transit-info HTTP/1.1[0m" 404 -
+2026-03-30 21:10:45,007 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:10:45] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:10:45,012 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 21:10:45,178 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 21:10:45,178 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 21:10:45,324 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 21:10:45,327 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:10:45] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:12:30,341 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:12:30] "[33mGET /api/test-google-maps HTTP/1.1[0m" 404 -
+2026-03-30 21:13:50,124 - __main__ - WARNING - Geoapify client not available: No module named 'geoapify_client'
+2026-03-30 21:13:50,125 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-30 21:13:50,126 - __main__ - INFO - Safety AI loaded successfully
+2026-03-30 21:24:12,646 - __main__ - WARNING - Geoapify client not available: No module named 'geoapify_client'
+2026-03-30 21:24:12,649 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-30 21:24:12,651 - __main__ - INFO - Safety AI loaded successfully
+2026-03-30 21:24:12,711 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-03-30 21:24:12,711 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-03-30 21:24:14,488 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-30 21:24:14,488 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-30 21:24:15,316 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:24:15] "GET /api/hello HTTP/1.1" 200 -
+2026-03-30 21:24:19,071 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:24:19] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-30 21:24:21,639 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:24:21] "[32mGET /api/callback?state=FamoCINIhY7eafDq6CXXaZpDAxI6WG&iss=https://accounts.google.com&code=4/0Aci98E9WOG_0GU5AlONaczUL51LOkdtJu4JK9wfUDjkumyiWk2LeSMXXoI0UrGq5j4nfkQ&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+openid+https://www.googleapis.com/auth/userinfo.email&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-30 21:24:21,935 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:24:21] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:24:21,936 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:24:21] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:24:21,937 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 21:24:21,938 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 21:24:22,071 - __main__ - INFO - TomTom returned 1 incidents
+2026-03-30 21:24:22,071 - __main__ - INFO - Parsed 1 construction zones, 0 hazards from TomTom
+2026-03-30 21:24:22,102 - __main__ - INFO - TomTom returned 1 incidents
+2026-03-30 21:24:22,102 - __main__ - INFO - Parsed 1 construction zones, 0 hazards from TomTom
+2026-03-30 21:24:22,539 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.452%2C+%22%24lte%22%3A+40.492000000000004%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.96%2C+%22%24lte%22%3A+-79.92%7D%7D
+2026-03-30 21:24:22,543 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:24:22] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:24:22,551 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.452%2C+%22%24lte%22%3A+40.492000000000004%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.96%2C+%22%24lte%22%3A+-79.92%7D%7D
+2026-03-30 21:24:22,554 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:24:22] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:24:29,439 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:24:29] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 21:24:29,550 - __main__ - INFO - Fetched 18 TomTom incidents
+2026-03-30 21:24:29,585 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.4213617%2C+%22%24lte%22%3A+40.464086%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-80.01483689999999%2C+%22%24lte%22%3A+-79.9335162%7D%7D
+2026-03-30 21:24:29,585 - __main__ - INFO - Added 0 crime hazards
+2026-03-30 21:24:29,717 - __main__ - INFO - Added 0 weather hazards
+2026-03-30 21:24:29,721 - __main__ - INFO - Total obstruction zones to avoid: 18
+2026-03-30 21:24:29,721 - __main__ - INFO - Attempting Google Maps transit route from 40.4413617,-79.9948369 to 40.444086,-79.9535162
+2026-03-30 21:24:29,824 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 21:24:29,826 - __main__ - WARNING - All routing providers failed: []. Using calculated fallback.
+2026-03-30 21:24:29,827 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:24:29] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 21:24:30,335 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:24:30] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 21:24:30,338 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:24:30] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 21:24:31,232 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:24:31] "OPTIONS /api/transit-info HTTP/1.1" 200 -
+2026-03-30 21:24:31,234 - __main__ - INFO - Transit info request from (40.55360450037976,-79.9074269579108) to (40.444086,-79.9540162)
+2026-03-30 21:24:31,322 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 21:24:31,325 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:24:31] "[33mPOST /api/transit-info HTTP/1.1[0m" 404 -
+2026-03-30 21:25:16,992 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:25:16] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:25:16,996 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 21:25:17,135 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 21:25:17,135 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 21:25:22,711 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 21:25:22,716 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:25:22] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:30:49,016 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:30:49] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:30:49,021 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 21:30:49,179 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 21:30:49,180 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 21:30:49,384 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 21:30:49,385 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:30:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:35:49,014 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:35:49] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:35:49,017 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 21:35:49,167 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 21:35:49,167 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 21:35:49,259 - real_api_client - ERROR - Crime bounding box error: 502 Server Error: Bad Gateway for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 21:35:49,262 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:35:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:40:49,000 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:40:49] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:40:49,005 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 21:40:49,218 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 21:40:49,219 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 21:40:49,350 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 21:40:49,354 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:40:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:45:49,006 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:45:49] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:45:49,010 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 21:45:49,198 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 21:45:49,199 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 21:45:49,296 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 21:45:49,300 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:45:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:50:49,001 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:50:49] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:50:49,004 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 21:50:49,141 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 21:50:49,142 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 21:50:49,421 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 21:50:49,425 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:50:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:55:48,972 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:55:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:55:48,977 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 21:55:49,144 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 21:55:49,144 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 21:55:49,574 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 21:55:49,577 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:55:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:57:14,764 - __main__ - WARNING - Geoapify client not available: No module named 'geoapify_client'
+2026-03-30 21:57:14,764 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-30 21:57:14,766 - __main__ - INFO - Safety AI loaded successfully
+2026-03-30 21:57:14,820 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-03-30 21:57:14,820 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-03-30 21:57:16,480 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-30 21:57:16,481 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-30 21:57:17,322 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:57:17] "GET /api/hello HTTP/1.1" 200 -
+2026-03-30 21:57:20,306 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:57:20] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-30 21:57:22,452 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:57:22] "[32mGET /api/callback?state=qze3PnvXy1KdHtiiF2WsMbh8YthDoo&iss=https://accounts.google.com&code=4/0Aci98E_0Jb6L6YUbjqcwxdwwh24Qk21LYPqrXhNuVZYhEz6DMq3U9VDF_nrwWysNP0h9WQ&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-30 21:57:22,712 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:57:22] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:57:22,713 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:57:22] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:57:22,714 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 21:57:22,716 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 21:57:22,848 - __main__ - INFO - TomTom returned 1 incidents
+2026-03-30 21:57:22,848 - __main__ - INFO - Parsed 1 construction zones, 0 hazards from TomTom
+2026-03-30 21:57:22,851 - __main__ - INFO - TomTom returned 1 incidents
+2026-03-30 21:57:22,852 - __main__ - INFO - Parsed 1 construction zones, 0 hazards from TomTom
+2026-03-30 21:57:22,958 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.452%2C+%22%24lte%22%3A+40.492000000000004%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.96%2C+%22%24lte%22%3A+-79.92%7D%7D
+2026-03-30 21:57:22,961 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:57:22] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:57:22,963 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.452%2C+%22%24lte%22%3A+40.492000000000004%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.96%2C+%22%24lte%22%3A+-79.92%7D%7D
+2026-03-30 21:57:22,967 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:57:22] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 21:57:38,629 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:57:38] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 21:57:38,733 - __main__ - INFO - Fetched 18 TomTom incidents
+2026-03-30 21:57:38,764 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.4213617%2C+%22%24lte%22%3A+40.464086%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-80.01483689999999%2C+%22%24lte%22%3A+-79.9335162%7D%7D
+2026-03-30 21:57:38,764 - __main__ - INFO - Added 0 crime hazards
+2026-03-30 21:57:38,895 - __main__ - INFO - Added 0 weather hazards
+2026-03-30 21:57:38,897 - __main__ - INFO - Total obstruction zones to avoid: 18
+2026-03-30 21:57:38,898 - __main__ - INFO - Attempting Google Maps transit route from 40.4413617,-79.9948369 to 40.444086,-79.9535162
+2026-03-30 21:57:38,995 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 21:57:38,998 - __main__ - WARNING - All routing providers failed: []. Using calculated fallback.
+2026-03-30 21:57:38,999 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:57:38] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 21:57:39,507 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:57:39] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 21:57:39,511 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:57:39] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 21:57:41,787 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:57:41] "OPTIONS /api/transit-info HTTP/1.1" 200 -
+2026-03-30 21:57:41,789 - __main__ - INFO - Transit info request from (40.55360450037976,-79.9074269579108) to (40.444086,-79.9540162)
+2026-03-30 21:57:41,882 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 21:57:41,885 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 21:57:41] "[33mPOST /api/transit-info HTTP/1.1[0m" 404 -
+2026-03-30 22:00:44,985 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:00:44] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:00:44,989 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 22:00:45,262 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 22:00:45,263 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 22:00:45,423 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 22:00:45,425 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:00:45] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:02:22,984 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:02:22] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:02:22,987 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 22:02:23,175 - __main__ - INFO - TomTom returned 1 incidents
+2026-03-30 22:02:23,176 - __main__ - INFO - Parsed 1 construction zones, 0 hazards from TomTom
+2026-03-30 22:02:23,308 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.452%2C+%22%24lte%22%3A+40.492000000000004%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.96%2C+%22%24lte%22%3A+-79.92%7D%7D
+2026-03-30 22:02:23,312 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:02:23] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:05:48,981 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:05:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:05:48,983 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 22:05:49,104 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 22:05:49,104 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 22:05:49,289 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 22:05:49,294 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:05:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:07:22,973 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:07:22] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:07:22,977 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 22:07:23,106 - __main__ - INFO - TomTom returned 1 incidents
+2026-03-30 22:07:23,106 - __main__ - INFO - Parsed 1 construction zones, 0 hazards from TomTom
+2026-03-30 22:07:23,269 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.452%2C+%22%24lte%22%3A+40.492000000000004%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.96%2C+%22%24lte%22%3A+-79.92%7D%7D
+2026-03-30 22:07:23,272 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:07:23] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:10:48,975 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:10:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:10:48,979 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 22:10:49,182 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 22:10:49,182 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 22:10:49,366 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 22:10:49,370 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:10:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:12:22,966 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:12:22] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:12:22,971 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 22:12:23,125 - __main__ - INFO - TomTom returned 1 incidents
+2026-03-30 22:12:23,125 - __main__ - INFO - Parsed 1 construction zones, 0 hazards from TomTom
+2026-03-30 22:12:23,224 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.452%2C+%22%24lte%22%3A+40.492000000000004%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.96%2C+%22%24lte%22%3A+-79.92%7D%7D
+2026-03-30 22:12:23,227 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:12:23] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:15:36,348 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:15:36] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:15:36,355 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 22:15:36,559 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 22:15:36,559 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 22:15:36,724 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 22:15:36,726 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:15:36] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:15:53,699 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:15:53] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 22:15:53,812 - __main__ - INFO - Fetched 18 TomTom incidents
+2026-03-30 22:15:53,845 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.4213617%2C+%22%24lte%22%3A+40.464086%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-80.01483689999999%2C+%22%24lte%22%3A+-79.9335162%7D%7D
+2026-03-30 22:15:53,845 - __main__ - INFO - Added 0 crime hazards
+2026-03-30 22:15:53,991 - __main__ - INFO - Added 0 weather hazards
+2026-03-30 22:15:53,995 - __main__ - INFO - Total obstruction zones to avoid: 18
+2026-03-30 22:15:53,995 - __main__ - INFO - Attempting Google Maps transit route from 40.4413617,-79.9948369 to 40.444086,-79.9535162
+2026-03-30 22:15:54,123 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 22:15:54,127 - __main__ - WARNING - All routing providers failed: []. Using calculated fallback.
+2026-03-30 22:15:54,128 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:15:54] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 22:15:54,635 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:15:54] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 22:15:54,638 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:15:54] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 22:15:58,959 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:15:58] "OPTIONS /api/transit-info HTTP/1.1" 200 -
+2026-03-30 22:15:58,961 - __main__ - INFO - Transit info request from (40.55360450037976,-79.9074269579108) to (40.444086,-79.9540162)
+2026-03-30 22:15:59,070 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 22:15:59,074 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:15:59] "[33mPOST /api/transit-info HTTP/1.1[0m" 404 -
+2026-03-30 22:16:26,495 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:16:26] "[33mGET /api/transit-info HTTP/1.1[0m" 404 -
+2026-03-30 22:17:22,968 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:17:22] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:17:22,972 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 22:17:23,120 - __main__ - INFO - TomTom returned 1 incidents
+2026-03-30 22:17:23,120 - __main__ - INFO - Parsed 1 construction zones, 0 hazards from TomTom
+2026-03-30 22:17:23,965 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.452%2C+%22%24lte%22%3A+40.492000000000004%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.96%2C+%22%24lte%22%3A+-79.92%7D%7D
+2026-03-30 22:17:23,970 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:17:23] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:20:48,972 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:20:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:20:48,977 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 22:20:49,147 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 22:20:49,148 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 22:20:49,518 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 22:20:49,521 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:20:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:22:22,964 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:22:22] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:22:22,971 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 22:22:23,111 - __main__ - INFO - TomTom returned 1 incidents
+2026-03-30 22:22:23,112 - __main__ - INFO - Parsed 1 construction zones, 0 hazards from TomTom
+2026-03-30 22:22:23,315 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.452%2C+%22%24lte%22%3A+40.492000000000004%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.96%2C+%22%24lte%22%3A+-79.92%7D%7D
+2026-03-30 22:22:23,320 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:22:23] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:25:48,990 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:25:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:25:48,994 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 22:25:49,143 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 22:25:49,143 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 22:25:49,269 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 22:25:49,272 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:25:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:27:22,975 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:27:22] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:27:22,979 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 22:27:23,104 - __main__ - INFO - TomTom returned 1 incidents
+2026-03-30 22:27:23,104 - __main__ - INFO - Parsed 1 construction zones, 0 hazards from TomTom
+2026-03-30 22:27:23,352 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=1797ead8-8262-41cc-9099-cbc8a161924b&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.452%2C+%22%24lte%22%3A+40.492000000000004%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.96%2C+%22%24lte%22%3A+-79.92%7D%7D
+2026-03-30 22:27:23,357 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:27:23] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:30:18,381 - __main__ - WARNING - Geoapify client not available: No module named 'geoapify_client'
+2026-03-30 22:30:18,381 - __main__ - WARNING - Geoapify client not available - search will use fallback
+2026-03-30 22:30:18,382 - __main__ - INFO - Safety AI loaded successfully
+2026-03-30 22:30:18,407 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-03-30 22:30:18,407 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-03-30 22:30:19,851 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-30 22:30:19,852 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-30 22:30:21,033 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:30:21] "GET /api/hello HTTP/1.1" 200 -
+2026-03-30 22:30:25,292 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:30:25] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:30:25,298 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 22:30:25,530 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 22:30:25,530 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 22:30:25,680 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search_sql?sql=%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20SELECT%20%22LAT%22%2C%20%22LON%22%2C%20%22OFFENSE%22%2C%20%22ARRESTDATE%22%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20FROM%20%22f2b8d575-e256-4718-94ad-1e12239ddb92%22%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WHERE%20%22LAT%22%20IS%20NOT%20NULL%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20AND%20%22LON%22%20IS%20NOT%20NULL%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20AND%20%22LAT%22%20BETWEEN%2040.53360450037976%20AND%2040.573604500379766%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20AND%20%22LON%22%20BETWEEN%20-79.9274269579108%20AND%20-79.8874269579108%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20LIMIT%20100%0A%20%20%20%20%20%20%20%20%20%20%20%20
+2026-03-30 22:30:25,683 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:30:25] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:30:33,603 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:30:33] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 22:30:34,201 - __main__ - INFO - Fetched 20 TomTom incidents
+2026-03-30 22:30:34,229 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search_sql?sql=%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20SELECT%20%22LAT%22%2C%20%22LON%22%2C%20%22OFFENSE%22%2C%20%22ARRESTDATE%22%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20FROM%20%22f2b8d575-e256-4718-94ad-1e12239ddb92%22%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WHERE%20%22LAT%22%20IS%20NOT%20NULL%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20AND%20%22LON%22%20IS%20NOT%20NULL%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20AND%20%22LAT%22%20BETWEEN%2040.4213617%20AND%2040.464086%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20AND%20%22LON%22%20BETWEEN%20-80.01483689999999%20AND%20-79.9335162%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20LIMIT%20100%0A%20%20%20%20%20%20%20%20%20%20%20%20
+2026-03-30 22:30:34,229 - __main__ - INFO - Added 0 crime hazards
+2026-03-30 22:30:34,369 - __main__ - INFO - Added 0 weather hazards
+2026-03-30 22:30:34,373 - __main__ - INFO - Total obstruction zones to avoid: 20
+2026-03-30 22:30:34,373 - __main__ - INFO - Attempting TomTom route from 40.4413617,-79.9948369 to 40.444086,-79.9535162
+2026-03-30 22:30:34,373 - tomtom_router - INFO - Calculating TomTom route from 40.4413617,-79.9948369 to 40.444086,-79.9535162
+2026-03-30 22:30:34,580 - tomtom_router - INFO - TomTom returned 6 route(s)
+2026-03-30 22:30:34,594 - tomtom_router - INFO -   Route 1: 3 conflicts, 4129m, score=699.6
+2026-03-30 22:30:34,599 - tomtom_router - INFO -   Route 2: 1 conflicts, 4274m, score=899.6
+2026-03-30 22:30:34,604 - tomtom_router - INFO -   Route 3: 2 conflicts, 4368m, score=799.6
+2026-03-30 22:30:34,608 - tomtom_router - INFO -   Route 4: 2 conflicts, 4427m, score=799.6
+2026-03-30 22:30:34,613 - tomtom_router - INFO -   Route 5: 2 conflicts, 4362m, score=799.6
+2026-03-30 22:30:34,617 - tomtom_router - INFO -   Route 6: 0 conflicts, 4717m, score=999.5
+2026-03-30 22:30:34,617 - tomtom_router - INFO - Found clean route avoiding all obstructions
+2026-03-30 22:30:34,618 - __main__ - INFO - TomTom route successful
+2026-03-30 22:30:35,069 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-03-30 22:30:35,076 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:30:35] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 22:30:35,586 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:30:35] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 22:30:35,590 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:30:35] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 22:30:48,559 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:30:48] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 22:30:48,696 - __main__ - INFO - Fetched 20 TomTom incidents
+2026-03-30 22:30:48,722 - real_api_client - ERROR - Crime bounding box error: 409 Client Error: CONFLICT for url: https://data.wprdc.org/api/3/action/datastore_search_sql?sql=%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20SELECT%20%22LAT%22%2C%20%22LON%22%2C%20%22OFFENSE%22%2C%20%22ARRESTDATE%22%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20FROM%20%22f2b8d575-e256-4718-94ad-1e12239ddb92%22%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20WHERE%20%22LAT%22%20IS%20NOT%20NULL%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20AND%20%22LON%22%20IS%20NOT%20NULL%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20AND%20%22LAT%22%20BETWEEN%2040.4213617%20AND%2040.464086%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20AND%20%22LON%22%20BETWEEN%20-80.01483689999999%20AND%20-79.9335162%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20LIMIT%20100%0A%20%20%20%20%20%20%20%20%20%20%20%20
+2026-03-30 22:30:48,723 - __main__ - INFO - Added 0 crime hazards
+2026-03-30 22:30:48,766 - __main__ - INFO - Added 0 weather hazards
+2026-03-30 22:30:48,770 - __main__ - INFO - Total obstruction zones to avoid: 20
+2026-03-30 22:30:48,770 - __main__ - INFO - Attempting Google Maps transit route from 40.4413617,-79.9948369 to 40.444086,-79.9535162
+2026-03-30 22:30:48,893 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 22:30:48,897 - __main__ - WARNING - All routing providers failed: []. Using calculated fallback.
+2026-03-30 22:30:48,899 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:30:48] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 22:30:49,406 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:30:49] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 22:30:49,409 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:30:49] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 22:45:20,607 - __main__ - INFO - Safety AI loaded successfully
+2026-03-30 22:45:20,637 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-03-30 22:45:20,637 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-03-30 22:45:27,128 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-30 22:45:27,129 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-30 22:45:29,258 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:45:29] "GET /api/hello HTTP/1.1" 200 -
+2026-03-30 22:45:49,018 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:45:49] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:45:49,023 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 22:45:49,185 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 22:45:49,185 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 22:45:49,279 - real_api_client - ERROR - Crime bounding box error: 404 Client Error: NOT FOUND for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=f2b8d575-e256-4718-94ad-1e12239ddb92&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 22:45:49,281 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:45:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:46:41,933 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:46:41] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 22:46:42,049 - __main__ - INFO - Fetched 18 TomTom incidents
+2026-03-30 22:46:42,074 - real_api_client - ERROR - Crime bounding box error: 404 Client Error: NOT FOUND for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=f2b8d575-e256-4718-94ad-1e12239ddb92&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.4213617%2C+%22%24lte%22%3A+40.464086%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-80.01483689999999%2C+%22%24lte%22%3A+-79.9335162%7D%7D
+2026-03-30 22:46:42,074 - __main__ - INFO - Added 0 crime hazards
+2026-03-30 22:46:42,215 - __main__ - INFO - Added 0 weather hazards
+2026-03-30 22:46:42,218 - __main__ - INFO - Total obstruction zones to avoid: 18
+2026-03-30 22:46:42,218 - __main__ - INFO - Attempting TomTom route from 40.4413617,-79.9948369 to 40.444086,-79.9535162
+2026-03-30 22:46:42,218 - tomtom_router - INFO - Calculating TomTom route from 40.4413617,-79.9948369 to 40.444086,-79.9535162
+2026-03-30 22:46:42,384 - tomtom_router - INFO - TomTom returned 6 route(s)
+2026-03-30 22:46:42,396 - tomtom_router - INFO -   Route 1: 3 conflicts, 4129m, score=699.6
+2026-03-30 22:46:42,400 - tomtom_router - INFO -   Route 2: 1 conflicts, 4274m, score=899.6
+2026-03-30 22:46:42,403 - tomtom_router - INFO -   Route 3: 2 conflicts, 4368m, score=799.6
+2026-03-30 22:46:42,407 - tomtom_router - INFO -   Route 4: 2 conflicts, 4427m, score=799.6
+2026-03-30 22:46:42,410 - tomtom_router - INFO -   Route 5: 2 conflicts, 4362m, score=799.6
+2026-03-30 22:46:42,414 - tomtom_router - INFO -   Route 6: 0 conflicts, 4717m, score=999.5
+2026-03-30 22:46:42,414 - tomtom_router - INFO - Found clean route avoiding all obstructions
+2026-03-30 22:46:42,416 - __main__ - INFO - TomTom route successful
+2026-03-30 22:46:42,820 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-03-30 22:46:42,834 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:46:42] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 22:46:43,338 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:46:43] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 22:46:43,342 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:46:43] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 22:47:20,600 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:47:20] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 22:47:20,744 - __main__ - INFO - Fetched 18 TomTom incidents
+2026-03-30 22:47:20,770 - real_api_client - ERROR - Crime bounding box error: 404 Client Error: NOT FOUND for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=f2b8d575-e256-4718-94ad-1e12239ddb92&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.4213617%2C+%22%24lte%22%3A+40.464086%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-80.01483689999999%2C+%22%24lte%22%3A+-79.9335162%7D%7D
+2026-03-30 22:47:20,771 - __main__ - INFO - Added 0 crime hazards
+2026-03-30 22:47:20,814 - __main__ - INFO - Added 0 weather hazards
+2026-03-30 22:47:20,816 - __main__ - INFO - Total obstruction zones to avoid: 18
+2026-03-30 22:47:20,817 - __main__ - INFO - Attempting Google Maps transit route from 40.4413617,-79.9948369 to 40.444086,-79.9535162
+2026-03-30 22:47:20,907 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 22:47:20,910 - __main__ - WARNING - All routing providers failed: []. Using calculated fallback.
+2026-03-30 22:47:20,911 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:47:20] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 22:47:21,416 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:47:21] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 22:47:21,419 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:47:21] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 22:47:24,419 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:47:24] "OPTIONS /api/transit-info HTTP/1.1" 200 -
+2026-03-30 22:47:24,422 - __main__ - INFO - Transit info request from (40.55360450037976,-79.9074269579108) to (40.444086,-79.9540162)
+2026-03-30 22:47:24,505 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 22:47:24,509 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:47:24] "[33mPOST /api/transit-info HTTP/1.1[0m" 404 -
+2026-03-30 22:47:48,981 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:47:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:47:48,984 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 22:47:49,108 - __main__ - INFO - TomTom returned 1 incidents
+2026-03-30 22:47:49,109 - __main__ - INFO - Parsed 1 construction zones, 0 hazards from TomTom
+2026-03-30 22:47:49,137 - real_api_client - ERROR - Crime bounding box error: 404 Client Error: NOT FOUND for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=f2b8d575-e256-4718-94ad-1e12239ddb92&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.452%2C+%22%24lte%22%3A+40.492000000000004%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.96%2C+%22%24lte%22%3A+-79.92%7D%7D
+2026-03-30 22:47:49,138 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:47:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:50:43,994 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:50:43] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:50:43,998 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 22:50:44,129 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 22:50:44,129 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 22:50:44,281 - real_api_client - ERROR - Crime bounding box error: 404 Client Error: NOT FOUND for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=f2b8d575-e256-4718-94ad-1e12239ddb92&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 22:50:44,285 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:50:44] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:52:48,987 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:52:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:52:48,990 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 22:52:49,112 - __main__ - INFO - TomTom returned 1 incidents
+2026-03-30 22:52:49,114 - __main__ - INFO - Parsed 1 construction zones, 0 hazards from TomTom
+2026-03-30 22:52:49,284 - real_api_client - ERROR - Crime bounding box error: 404 Client Error: NOT FOUND for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=f2b8d575-e256-4718-94ad-1e12239ddb92&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.452%2C+%22%24lte%22%3A+40.492000000000004%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.96%2C+%22%24lte%22%3A+-79.92%7D%7D
+2026-03-30 22:52:49,287 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:52:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:55:48,997 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:55:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:55:49,002 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 22:55:49,194 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 22:55:49,195 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 22:55:49,346 - real_api_client - ERROR - Crime bounding box error: 404 Client Error: NOT FOUND for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=f2b8d575-e256-4718-94ad-1e12239ddb92&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 22:55:49,350 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:55:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:57:48,984 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:57:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 22:57:48,991 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 22:57:49,205 - __main__ - INFO - TomTom returned 1 incidents
+2026-03-30 22:57:49,206 - __main__ - INFO - Parsed 1 construction zones, 0 hazards from TomTom
+2026-03-30 22:57:49,362 - real_api_client - ERROR - Crime bounding box error: 404 Client Error: NOT FOUND for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=f2b8d575-e256-4718-94ad-1e12239ddb92&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.452%2C+%22%24lte%22%3A+40.492000000000004%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.96%2C+%22%24lte%22%3A+-79.92%7D%7D
+2026-03-30 22:57:49,366 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 22:57:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:00:48,978 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:00:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:00:48,982 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 23:00:49,105 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 23:00:49,105 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 23:00:49,519 - real_api_client - ERROR - Crime bounding box error: 404 Client Error: NOT FOUND for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=f2b8d575-e256-4718-94ad-1e12239ddb92&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 23:00:49,524 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:00:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:02:48,997 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:02:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:02:49,001 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 23:02:49,162 - __main__ - INFO - TomTom returned 1 incidents
+2026-03-30 23:02:49,162 - __main__ - INFO - Parsed 1 construction zones, 0 hazards from TomTom
+2026-03-30 23:02:49,677 - real_api_client - ERROR - Crime bounding box error: 404 Client Error: NOT FOUND for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=f2b8d575-e256-4718-94ad-1e12239ddb92&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.452%2C+%22%24lte%22%3A+40.492000000000004%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.96%2C+%22%24lte%22%3A+-79.92%7D%7D
+2026-03-30 23:02:49,683 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:02:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:05:49,186 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:05:49] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:05:49,227 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 23:05:49,544 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 23:05:49,544 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 23:05:49,724 - real_api_client - ERROR - Crime bounding box error: 404 Client Error: NOT FOUND for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=f2b8d575-e256-4718-94ad-1e12239ddb92&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 23:05:49,727 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:05:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:07:48,981 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:07:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:07:48,985 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 23:07:49,174 - __main__ - INFO - TomTom returned 1 incidents
+2026-03-30 23:07:49,175 - __main__ - INFO - Parsed 1 construction zones, 0 hazards from TomTom
+2026-03-30 23:07:49,345 - real_api_client - ERROR - Crime bounding box error: 404 Client Error: NOT FOUND for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=f2b8d575-e256-4718-94ad-1e12239ddb92&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.452%2C+%22%24lte%22%3A+40.492000000000004%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.96%2C+%22%24lte%22%3A+-79.92%7D%7D
+2026-03-30 23:07:49,348 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:07:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:27:59,673 - __main__ - INFO - Safety AI loaded successfully
+2026-03-30 23:27:59,714 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-03-30 23:27:59,714 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-03-30 23:28:01,912 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-30 23:28:01,912 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-30 23:28:02,374 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:28:02] "GET /api/hello HTTP/1.1" 200 -
+2026-03-30 23:28:23,509 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:28:23] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 23:28:23,641 - __main__ - INFO - Fetched 18 TomTom incidents
+2026-03-30 23:28:23,808 - real_api_client - ERROR - Crime bounding box error: 404 Client Error: NOT FOUND for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=f2b8d575-e256-4718-94ad-1e12239ddb92&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.4213617%2C+%22%24lte%22%3A+40.464086%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-80.01483689999999%2C+%22%24lte%22%3A+-79.9335162%7D%7D
+2026-03-30 23:28:23,809 - __main__ - INFO - Added 0 crime hazards
+2026-03-30 23:28:23,941 - __main__ - INFO - Added 0 weather hazards
+2026-03-30 23:28:23,944 - __main__ - INFO - Total obstruction zones to avoid: 18
+2026-03-30 23:28:23,944 - __main__ - INFO - Attempting Google Maps transit route from 40.4413617,-79.9948369 to 40.444086,-79.9535162
+2026-03-30 23:28:24,047 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 23:28:24,049 - __main__ - WARNING - All routing providers failed: []. Using calculated fallback.
+2026-03-30 23:28:24,051 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:28:24] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 23:28:24,555 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:28:24] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 23:28:24,557 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:28:24] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 23:30:43,995 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:30:43] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:30:43,999 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 23:30:44,213 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 23:30:44,213 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 23:30:44,362 - real_api_client - ERROR - Crime bounding box error: 404 Client Error: NOT FOUND for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=f2b8d575-e256-4718-94ad-1e12239ddb92&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 23:30:44,366 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:30:44] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:35:49,039 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:35:49] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:35:49,045 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 23:35:49,247 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 23:35:49,247 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 23:35:49,384 - real_api_client - ERROR - Crime bounding box error: 404 Client Error: NOT FOUND for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=f2b8d575-e256-4718-94ad-1e12239ddb92&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 23:35:49,386 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:35:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:40:49,019 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:40:49] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:40:49,024 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 23:40:49,348 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 23:40:49,348 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 23:40:49,443 - real_api_client - ERROR - Crime bounding box error: 404 Client Error: NOT FOUND for url: https://data.wprdc.org/api/3/action/datastore_search?resource_id=f2b8d575-e256-4718-94ad-1e12239ddb92&limit=100&filters=%7B%22LAT%22%3A+%7B%22%24gte%22%3A+40.53360450037976%2C+%22%24lte%22%3A+40.573604500379766%7D%2C+%22LON%22%3A+%7B%22%24gte%22%3A+-79.9274269579108%2C+%22%24lte%22%3A+-79.8874269579108%7D%7D
+2026-03-30 23:40:49,445 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:40:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:44:04,964 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-03-30 23:44:04,966 - __main__ - INFO - Safety AI loaded successfully
+2026-03-30 23:44:05,015 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-03-30 23:44:05,016 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-03-30 23:44:10,032 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-30 23:44:10,032 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-30 23:44:21,261 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:44:21] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 23:44:21,395 - __main__ - INFO - Fetched 19 TomTom incidents
+2026-03-30 23:44:21,395 - real_api_client - WARNING - No coordinate transformer available; skipping crime data.
+2026-03-30 23:44:21,395 - __main__ - INFO - Added 0 crime hazards
+2026-03-30 23:44:21,533 - __main__ - INFO - Added 0 weather hazards
+2026-03-30 23:44:21,536 - __main__ - INFO - Total obstruction zones to avoid: 19
+2026-03-30 23:44:21,536 - __main__ - INFO - Attempting Google Maps transit route from 40.4413617,-79.9948369 to 40.444086,-79.9535162
+2026-03-30 23:44:21,637 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 23:44:21,639 - __main__ - WARNING - All routing providers failed: []. Using calculated fallback.
+2026-03-30 23:44:21,641 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:44:21] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 23:44:22,149 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:44:22] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 23:44:22,152 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:44:22] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 23:44:24,041 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:44:24] "OPTIONS /api/transit-info HTTP/1.1" 200 -
+2026-03-30 23:44:24,043 - __main__ - INFO - Transit info request from (40.55360450037976,-79.9074269579108) to (40.444086,-79.9540162)
+2026-03-30 23:44:24,140 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 23:44:24,144 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:44:24] "[33mPOST /api/transit-info HTTP/1.1[0m" 404 -
+2026-03-30 23:44:25,282 - __main__ - INFO - Transit info request from (40.55360450037976,-79.9074269579108) to (40.444086,-79.9540162)
+2026-03-30 23:44:25,377 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 23:44:25,380 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:44:25] "[33mPOST /api/transit-info HTTP/1.1[0m" 404 -
+2026-03-30 23:45:16,998 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:45:16] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:45:17,001 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.53560450037976,-79.9314269579108 to 40.57160450037976,-79.8834269579108
+2026-03-30 23:45:17,131 - __main__ - INFO - TomTom returned 0 incidents
+2026-03-30 23:45:17,132 - __main__ - INFO - Parsed 0 construction zones, 0 hazards from TomTom
+2026-03-30 23:45:17,132 - real_api_client - WARNING - No coordinate transformer available; skipping crime data.
+2026-03-30 23:45:17,134 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:45:17] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:49:12,771 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-03-30 23:49:12,773 - __main__ - INFO - Safety AI loaded successfully
+2026-03-30 23:49:12,806 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-03-30 23:49:12,807 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-03-30 23:49:14,141 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-30 23:49:14,142 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-30 23:49:15,325 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:49:15] "GET /api/hello HTTP/1.1" 200 -
+2026-03-30 23:49:36,926 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:49:36] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:49:36,927 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:49:36] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:49:36,929 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 23:49:36,930 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 23:49:37,147 - __main__ - INFO - TomTom returned 2 incidents
+2026-03-30 23:49:37,147 - __main__ - INFO - Parsed 1 construction zones, 1 hazards from TomTom
+2026-03-30 23:49:37,147 - real_api_client - WARNING - No coordinate transformer available; skipping crime data.
+2026-03-30 23:49:37,149 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:49:37] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:49:37,186 - __main__ - INFO - TomTom returned 2 incidents
+2026-03-30 23:49:37,186 - __main__ - INFO - Parsed 1 construction zones, 1 hazards from TomTom
+2026-03-30 23:49:37,186 - real_api_client - WARNING - No coordinate transformer available; skipping crime data.
+2026-03-30 23:49:37,189 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:49:37] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:49:59,854 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:49:59] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 23:49:59,975 - __main__ - INFO - Fetched 18 TomTom incidents
+2026-03-30 23:49:59,975 - real_api_client - WARNING - No coordinate transformer available; skipping crime data.
+2026-03-30 23:49:59,975 - __main__ - INFO - Added 0 crime hazards
+2026-03-30 23:50:00,087 - __main__ - INFO - Added 0 weather hazards
+2026-03-30 23:50:00,090 - __main__ - INFO - Total obstruction zones to avoid: 18
+2026-03-30 23:50:00,090 - __main__ - INFO - Attempting Google Maps transit route from 40.4413617,-79.9948369 to 40.444086,-79.9535162
+2026-03-30 23:50:00,197 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 23:50:00,199 - __main__ - WARNING - All routing providers failed: []. Using calculated fallback.
+2026-03-30 23:50:00,200 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:50:00] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-30 23:50:00,707 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:50:00] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 23:50:00,710 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:50:00] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-30 23:50:38,571 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:50:38] "OPTIONS /api/transit-info HTTP/1.1" 200 -
+2026-03-30 23:50:38,659 - google_routing - WARNING - Google Maps API error: REQUEST_DENIED
+2026-03-30 23:50:38,662 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:50:38] "[33mPOST /api/transit-info HTTP/1.1[0m" 404 -
+2026-03-30 23:54:37,002 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:54:37] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:54:37,007 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 23:54:37,209 - __main__ - INFO - TomTom returned 2 incidents
+2026-03-30 23:54:37,209 - __main__ - INFO - Parsed 1 construction zones, 1 hazards from TomTom
+2026-03-30 23:54:37,209 - real_api_client - WARNING - No coordinate transformer available; skipping crime data.
+2026-03-30 23:54:37,211 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:54:37] "POST /api/area-obstructions HTTP/1.1" 200 -
