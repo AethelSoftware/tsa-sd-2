@@ -760,7 +760,7 @@ export default function AccessibleMap() {
           body: JSON.stringify({
             lat: loc[0],
             lng: loc[1],
-            radius: 2000
+            radius: 10000
           })
         });
         const data = await res.json();
