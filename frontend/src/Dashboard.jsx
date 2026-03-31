@@ -102,6 +102,83 @@ function makeLucideIcon(IconComponent, color, borderColor) {
   });
 }
 
+// ---------- Helper: distance from point to line segment (in meters) ----------
+function haversineDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function pointToSegmentDistanceMeters(point, segStart, segEnd) {
+  // point: [lng, lat]
+  // segStart, segEnd: [lng, lat]
+  const [pLng, pLat] = point;
+  const [s1Lng, s1Lat] = segStart;
+  const [s2Lng, s2Lat] = segEnd;
+
+  // Convert to radians
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const φ1 = toRad(s1Lat),
+    λ1 = toRad(s1Lng);
+  const φ2 = toRad(s2Lat),
+    λ2 = toRad(s2Lng);
+  const φp = toRad(pLat),
+    λp = toRad(pLng);
+
+  // Calculate angular distances
+  const δ13 = Math.acos(
+    Math.sin(φ1) * Math.sin(φp) +
+      Math.cos(φ1) * Math.cos(φp) * Math.cos(λp - λ1),
+  );
+  const δ23 = Math.acos(
+    Math.sin(φ2) * Math.sin(φp) +
+      Math.cos(φ2) * Math.cos(φp) * Math.cos(λp - λ2),
+  );
+  const δ12 = Math.acos(
+    Math.sin(φ1) * Math.sin(φ2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.cos(λ2 - λ1),
+  );
+
+  // If the point is beyond the segment ends, return distance to nearest endpoint
+  if (δ13 > δ12 + 1e-10 && δ23 > δ12 + 1e-10) {
+    return Math.min(
+      haversineDistance(s1Lat, s1Lng, pLat, pLng),
+      haversineDistance(s2Lat, s2Lng, pLat, pLng),
+    );
+  }
+
+  // Cross-track distance
+  const δxt = Math.asin(
+    Math.sin(δ13) *
+      Math.sin(
+        Math.acos(
+          (Math.sin(φp) - Math.sin(φ1) * Math.cos(δ13)) /
+            (Math.cos(φ1) * Math.sin(δ13)),
+        ) -
+          Math.acos(
+            (Math.sin(φ2) - Math.sin(φ1) * Math.cos(δ12)) /
+              (Math.cos(φ1) * Math.sin(δ12)),
+          ),
+      ),
+  );
+  const distance = Math.abs(δxt) * 6371000;
+  return isNaN(distance)
+    ? Math.min(
+        haversineDistance(s1Lat, s1Lng, pLat, pLng),
+        haversineDistance(s2Lat, s2Lng, pLat, pLng),
+      )
+    : distance;
+}
+
+// ---------------------------------------------------------------------
+
 const mapTypes = {
   openstreetmap: {
     name: "Street",
@@ -186,6 +263,24 @@ const CSS = `
   @keyframes pulse {
     0%, 100% { opacity: 0.4; transform: scale(1); }
     50% { opacity: 0.7; transform: scale(1.1); }
+  }
+
+  @keyframes pulse-overlay {
+    0%, 100% { opacity: 0.45; }
+    50% { opacity: 0.65; }
+  }
+  
+  @keyframes dash-flow {
+    to { stroke-dashoffset: -16; }
+  }
+  
+  .obstruction-overlay {
+    animation: pulse-overlay 2s ease-in-out infinite;
+  }
+  
+  .obstruction-border {
+    animation: dash-flow 0.5s linear infinite;
+    stroke-dashoffset: 0;
   }
 
   .root {
@@ -528,6 +623,42 @@ const CSS = `
   .toast.vis { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   .sr { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0; }
+
+  @keyframes pulse-road {
+    0%, 100% { opacity: 0.85; }
+    50% { opacity: 1; }
+  }
+  
+  @keyframes dash-flow-road {
+    to { stroke-dashoffset: -40; }
+  }
+  
+  .obstructed-road-overlay {
+    animation: pulse-road 1.5s ease-in-out infinite;
+  }
+  
+  .obstructed-road-border {
+    animation: dash-flow-road 0.8s linear infinite;
+    stroke-dashoffset: 0;
+  }
+
+  @keyframes pulse-road {
+    0%, 100% { opacity: 0.85; }
+    50% { opacity: 1; }
+  }
+  
+  @keyframes dash-flow-road {
+    to { stroke-dashoffset: -40; }
+  }
+  
+  .obstructed-road-overlay {
+    animation: pulse-road 1.5s ease-in-out infinite;
+  }
+  
+  .obstructed-road-border {
+    animation: dash-flow-road 0.8s linear infinite;
+    stroke-dashoffset: 0;
+  }
 `;
 
 const A11Y_FEATS = [
@@ -781,6 +912,9 @@ export default function AccessibleMap() {
   const [fromSuggLoad, setFromSuggLoad] = useState(false);
   const [fromHiIdx, setFromHiIdx] = useState(-1);
 
+  // Add this with your other state variables
+  const [obstructedRoads, setObstructedRoads] = useState([]);
+
   const say = useCallback((msg) => {
     setToast(msg);
     setTimeout(() => setToast(""), 3200);
@@ -827,10 +961,157 @@ export default function AccessibleMap() {
         console.error("Error fetching area obstructions:", error);
       }
     };
+
     fetchAreaObstructions();
     const interval = setInterval(fetchAreaObstructions, 300000);
     return () => clearInterval(interval);
   }, [loc]);
+
+  // Function to fetch road segments directly from TomTom Traffic API
+  const fetchRoadSegmentsFromTrafficAPI = async () => {
+    try {
+      // Use TomTom Traffic Incidents API which returns road segments with geometry
+      const bbox = `${loc[1] - 0.05},${loc[0] - 0.05},${loc[1] + 0.05},${loc[0] + 0.05}`;
+      const url = `https://api.tomtom.com/traffic/services/5/incidentDetails?key=${TOMTOM_API_KEY}&bbox=${bbox}&fields={incidents{geometry{type,coordinates},properties{iconCategory,events{description},from,to,startTime,endTime}}}`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.incidents && data.incidents.length > 0) {
+        const roadSegments = data.incidents
+          .filter((inc) => {
+            // Filter for construction (7,8,9) and other hazards
+            const cat = inc.properties.iconCategory;
+            return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14].includes(cat);
+          })
+          .map((inc) => {
+            const coords = inc.geometry.coordinates;
+            let coordinates = [];
+
+            // Handle different geometry types
+            if (inc.geometry.type === "Point") {
+              coordinates = [[coords[1], coords[0]]];
+            } else if (inc.geometry.type === "LineString") {
+              coordinates = coords.map((coord) => [coord[1], coord[0]]);
+            }
+
+            // Determine obstruction type based on iconCategory
+            let obstructionType = "hazard";
+            let label = "⚠️ HAZARD";
+            let color = "rgba(255, 120, 50, 0.65)";
+            let borderColor = "#ff884d";
+
+            if ([7, 8, 9].includes(inc.properties.iconCategory)) {
+              obstructionType = "construction";
+              label = "🚧 CONSTRUCTION ZONE";
+              color = "rgba(255, 80, 60, 0.75)";
+              borderColor = "#ff4d4d";
+            } else if (inc.properties.iconCategory === 1) {
+              obstructionType = "accident";
+              label = "⚠️ ACCIDENT";
+              color = "rgba(255, 60, 50, 0.75)";
+              borderColor = "#ff3333";
+            } else if (inc.properties.iconCategory === 6) {
+              obstructionType = "jam";
+              label = "🚗 TRAFFIC JAM";
+              color = "rgba(255, 160, 50, 0.65)";
+              borderColor = "#ffaa33";
+            }
+
+            const description =
+              inc.properties.events?.[0]?.description ||
+              "Road incident reported";
+            const fromStreet = inc.properties.from || "";
+            const toStreet = inc.properties.to || "";
+
+            return {
+              id: inc.id,
+              name: `${fromStreet} to ${toStreet}`.trim() || "Road Segment",
+              coordinates: coordinates,
+              type: obstructionType,
+              label: label,
+              color: color,
+              borderColor: borderColor,
+              description: description,
+              fromStreet: fromStreet,
+              toStreet: toStreet,
+              startTime: inc.properties.startTime,
+              endTime: inc.properties.endTime,
+            };
+          })
+          .filter((segment) => segment.coordinates.length > 0);
+
+        setObstructedRoads(roadSegments);
+        console.log(
+          `Found ${roadSegments.length} obstructed road segments from Traffic API`,
+        );
+        return roadSegments;
+      }
+    } catch (error) {
+      console.error("Error fetching road segments from Traffic API:", error);
+    }
+    return [];
+  };
+
+  // Call this when obstructions are loaded
+  useEffect(() => {
+    if (constructionZones.length > 0 || activeHazards.length > 0) {
+      // Also fetch from Traffic API for direct road geometry
+      fetchRoadSegmentsFromTrafficAPI();
+    }
+  }, [constructionZones, activeHazards, loc]);
+
+  // Function to fetch all road segments for all obstructions
+  const fetchAllObstructedRoads = async () => {
+    const allObstructions = [...constructionZones, ...activeHazards];
+    const roadSegments = [];
+
+    for (const obstruction of allObstructions) {
+      // Try to fetch road segment for this obstruction
+      const segment = await fetchRoadSegmentsNearObstruction(obstruction);
+      if (segment) {
+        // Check if we already have this road segment (avoid duplicates)
+        const existing = roadSegments.find((s) => s.id === segment.id);
+        if (!existing) {
+          roadSegments.push(segment);
+        }
+      }
+    }
+
+    setObstructedRoads(roadSegments);
+    console.log(`Found ${roadSegments.length} obstructed road segments`);
+  };
+
+  // Call this when obstructions are loaded
+  useEffect(() => {
+    if (constructionZones.length > 0 || activeHazards.length > 0) {
+      fetchAllObstructedRoads();
+    }
+  }, [constructionZones, activeHazards]);
+
+  const fetchRoadClosures = async () => {
+    try {
+      const res = await fetch(
+        `https://api.tomtom.com/traffic/services/5/incidentDetails?key=${TOMTOM_API_KEY}&bbox=-79.96,40.45,-79.92,40.49&fields={incidents{geometry{coordinates},properties{events{description},from,to,iconCategory}}}`,
+      );
+      const data = await res.json();
+
+      const closures = data.incidents
+        .filter((inc) => [7, 8, 9].includes(inc.properties.iconCategory)) // Road works, closures
+        .map((inc) => ({
+          id: inc.id,
+          fromStreet: inc.properties.from,
+          toStreet: inc.properties.to,
+          coordinates: inc.geometry.coordinates,
+          description:
+            inc.properties.events?.[0]?.description || "Road closure",
+        }));
+
+      setObstructedRoads(closures);
+    } catch (error) {
+      console.error("Error fetching road closures:", error);
+    }
+  };
 
   const searchPlaces = (q) => {
     if (debRef.current) clearTimeout(debRef.current);
@@ -1170,7 +1451,159 @@ export default function AccessibleMap() {
   const hc = a11y.highContrast;
   const lt = a11y.largeText;
 
+  // Updated ObstructedRoadSegment component
+  const ObstructedRoadSegment = ({ segment }) => {
+    const {
+      coordinates,
+      label,
+      color,
+      borderColor,
+      description,
+      fromStreet,
+      toStreet,
+      name,
+      startTime,
+      endTime,
+    } = segment;
+
+    if (!coordinates || coordinates.length === 0) return null;
+
+    // For point geometries, create a small circle
+    if (coordinates.length === 1) {
+      return (
+        <Circle
+          center={coordinates[0]}
+          radius={50}
+          pathOptions={{
+            color: borderColor,
+            fillColor: color,
+            fillOpacity: 0.7,
+            weight: 2,
+          }}
+        >
+          <Popup>
+            <div style={{ fontFamily: "DM Sans, sans-serif", minWidth: 200 }}>
+              <div
+                style={{
+                  fontWeight: "bold",
+                  fontSize: 14,
+                  marginBottom: 8,
+                  color: borderColor,
+                }}
+              >
+                {label}
+              </div>
+              <div
+                style={{ fontSize: 13, fontWeight: "bold", marginBottom: 4 }}
+              >
+                {name}
+              </div>
+              {(fromStreet || toStreet) && (
+                <div
+                  style={{ fontSize: 11, color: "#e0c8b0", marginBottom: 8 }}
+                >
+                  {fromStreet && `From: ${fromStreet}`}
+                  {fromStreet && toStreet && " → "}
+                  {toStreet && `To: ${toStreet}`}
+                </div>
+              )}
+              <div style={{ fontSize: 12, marginTop: 4 }}>{description}</div>
+              {startTime && (
+                <div style={{ fontSize: 10, color: "#b09878", marginTop: 4 }}>
+                  Started: {new Date(startTime).toLocaleString()}
+                </div>
+              )}
+            </div>
+          </Popup>
+        </Circle>
+      );
+    }
+
+    // For line strings (actual road segments)
+    return (
+      <>
+        {/* Thick overlay for the entire road segment */}
+        <Polyline
+          positions={coordinates}
+          pathOptions={{
+            color: color,
+            weight: 28,
+            opacity: 0.85,
+            lineCap: "round",
+            lineJoin: "round",
+            className: "obstructed-road-overlay",
+          }}
+        />
+        {/* Border outline */}
+        <Polyline
+          positions={coordinates}
+          pathOptions={{
+            color: borderColor,
+            weight: 32,
+            opacity: 0.6,
+            lineCap: "round",
+            lineJoin: "round",
+          }}
+        />
+        {/* Animated dashed border */}
+        <Polyline
+          positions={coordinates}
+          pathOptions={{
+            color: borderColor,
+            weight: 4,
+            opacity: 1,
+            lineCap: "round",
+            lineJoin: "round",
+            dashArray: "12, 8",
+            className: "obstructed-road-border",
+          }}
+        >
+          <Popup>
+            <div style={{ fontFamily: "DM Sans, sans-serif", minWidth: 220 }}>
+              <div
+                style={{
+                  fontWeight: "bold",
+                  fontSize: 14,
+                  marginBottom: 8,
+                  color: borderColor,
+                }}
+              >
+                {label}
+              </div>
+              <div
+                style={{ fontSize: 13, fontWeight: "bold", marginBottom: 4 }}
+              >
+                {name}
+              </div>
+              {(fromStreet || toStreet) && (
+                <div
+                  style={{ fontSize: 11, color: "#e0c8b0", marginBottom: 8 }}
+                >
+                  {fromStreet && `From: ${fromStreet}`}
+                  {fromStreet && toStreet && " → "}
+                  {toStreet && `To: ${toStreet}`}
+                </div>
+              )}
+              <div style={{ fontSize: 12, marginTop: 4 }}>{description}</div>
+              {startTime && (
+                <div style={{ fontSize: 10, color: "#b09878", marginTop: 4 }}>
+                  Started: {new Date(startTime).toLocaleString()}
+                </div>
+              )}
+              {endTime && (
+                <div style={{ fontSize: 10, color: "#b09878" }}>
+                  Until: {new Date(endTime).toLocaleString()}
+                </div>
+              )}
+            </div>
+          </Popup>
+        </Polyline>
+      </>
+    );
+  };
+
   // ── Obstruction marker component ──
+  // ── Obstruction marker component (NO CIRCLE) ──
   const ObstructionMarker = ({
     lat,
     lng,
@@ -1184,17 +1617,7 @@ export default function AccessibleMap() {
     const leafletIcon = getOrCreateIcon(type, iconCategory);
     return (
       <>
-        <Circle
-          center={[lat, lng]}
-          radius={radius && radius <= 200 ? radius : 35}
-          pathOptions={{
-            color: style.color,
-            fillColor: style.fill,
-            fillOpacity: 0.35,
-            weight: 1.5,
-            dashArray: type === "construction" ? "6,4" : undefined,
-          }}
-        />
+        {/* REMOVED THE CIRCLE - only keep the marker icon */}
         <Marker position={[lat, lng]} icon={leafletIcon}>
           <Popup>
             <div style={{ fontFamily: "DM Sans, sans-serif", minWidth: 160 }}>
@@ -1618,66 +2041,197 @@ export default function AccessibleMap() {
               />
             ))}
 
-            {/* Route Segments */}
-            {routeSegments.length > 0
-              ? routeSegments.map((segment, idx) => (
-                  <Polyline
-                    key={`segment-${idx}`}
-                    positions={[segment.start, segment.end]}
-                    pathOptions={{
-                      color: getSegmentColor(segment.safety_score || 0.7),
-                      weight: 6,
-                      opacity: 0.9,
-                      lineCap: "round",
-                      lineJoin: "round",
-                    }}
-                  >
-                    <Popup>
-                      <div>
-                        <strong>Segment {idx + 1}</strong>
-                        <br />
-                        Safety:{" "}
-                        {Math.round((segment.safety_score || 0.7) * 100)}%<br />
-                        {segment.instructions || "Continue on route"}
-                      </div>
-                    </Popup>
-                  </Polyline>
-                ))
-              : routePath.length >= 2 && (
-                  <>
+            {/* Active Hazards */}
+            {activeHazards.map((hazard, idx) => (
+              <ObstructionMarker
+                key={`hazard-${idx}`}
+                lat={hazard.lat}
+                lng={hazard.lng}
+                type={hazard.type || "hazard"}
+                iconCategory={hazard.icon_category}
+                description={hazard.description}
+                radius={hazard.radius}
+                extra={
+                  hazard.severity ? (
+                    <div style={{ fontSize: 11, marginTop: 4 }}>
+                      <span
+                        style={{
+                          color: hazard.severity > 0.7 ? "#ff7b6b" : "#ffb347",
+                        }}
+                      >
+                        Severity: {Math.round(hazard.severity * 100)}%
+                      </span>
+                    </div>
+                  ) : null
+                }
+              />
+            ))}
+
+            {obstructedRoads.map((segment, idx) => (
+              <ObstructedRoadSegment key={`road-${idx}`} segment={segment} />
+            ))}
+
+            {/* ========== ROUTE SEGMENTS WITH OBSTRUCTION OVERLAYS ========== */}
+            {routeSegments.length > 0 ? (
+              routeSegments.map((segment, idx) => {
+                // Check if this segment is near any construction zone or hazard
+                let hasObstruction = false;
+                let obstructionType = null;
+                let obstructionDesc = null;
+
+                for (const zone of constructionZones) {
+                  const distance = pointToSegmentDistanceMeters(
+                    [zone.lng, zone.lat],
+                    [segment.start[1], segment.start[0]],
+                    [segment.end[1], segment.end[0]],
+                  );
+                  if (distance < (zone.radius || 50)) {
+                    hasObstruction = true;
+                    obstructionType = "construction";
+                    obstructionDesc = zone.description;
+                    break;
+                  }
+                }
+                if (!hasObstruction) {
+                  for (const hazard of activeHazards) {
+                    const distance = pointToSegmentDistanceMeters(
+                      [hazard.lng, hazard.lat],
+                      [segment.start[1], segment.start[0]],
+                      [segment.end[1], segment.end[0]],
+                    );
+                    if (distance < (hazard.radius || 50)) {
+                      hasObstruction = true;
+                      obstructionType =
+                        hazard.type === "jam" ? "jam" : "hazard";
+                      obstructionDesc = hazard.description;
+                      break;
+                    }
+                  }
+                }
+
+                const overlayColor =
+                  obstructionType === "construction"
+                    ? "rgba(255, 123, 107, 0.5)" // red
+                    : "rgba(255, 179, 71, 0.5)"; // amber
+                const outlineColor =
+                  obstructionType === "construction" ? "#ff7b6b" : "#ffb347";
+
+                return (
+                  <React.Fragment key={`segment-${idx}`}>
+                    {/* Background glow / shadow */}
                     <Polyline
-                      positions={routePath}
+                      positions={[segment.start, segment.end]}
                       pathOptions={{
-                        color: mode === "wheelchair" ? "#e8a870" : "#8cd69c",
-                        weight: 14,
-                        opacity: 0.2,
+                        color: "#000000",
+                        weight: 10,
+                        opacity: 0.4,
                         lineCap: "round",
                         lineJoin: "round",
                       }}
                     />
+                    {/* Obstruction overlay (if any) */}
+                    {hasObstruction && (
+                      <>
+                        <Polyline
+                          positions={[segment.start, segment.end]}
+                          pathOptions={{
+                            color: overlayColor,
+                            weight: 18,
+                            opacity: 0.55,
+                            lineCap: "round",
+                            lineJoin: "round",
+                            className: "obstruction-overlay",
+                          }}
+                        />
+                        <Polyline
+                          positions={[segment.start, segment.end]}
+                          pathOptions={{
+                            color: outlineColor,
+                            weight: 22,
+                            opacity: 0.25,
+                            lineCap: "round",
+                            lineJoin: "round",
+                          }}
+                        />
+                        <Polyline
+                          positions={[segment.start, segment.end]}
+                          pathOptions={{
+                            color: outlineColor,
+                            weight: 3,
+                            opacity: 0.9,
+                            lineCap: "round",
+                            lineJoin: "round",
+                            dashArray: "8, 8",
+                            className: "obstruction-border",
+                          }}
+                        />
+                      </>
+                    )}
+                    {/* Main route line */}
                     <Polyline
-                      positions={routePath}
+                      positions={[segment.start, segment.end]}
                       pathOptions={{
-                        color: "#1a0c04",
-                        weight: 8,
-                        opacity: 0.6,
-                        lineCap: "round",
-                        lineJoin: "round",
-                      }}
-                    />
-                    <Polyline
-                      positions={routePath}
-                      pathOptions={{
-                        color: mode === "wheelchair" ? "#f0b060" : "#60e890",
-                        weight: 5,
+                        color: getSegmentColor(segment.safety_score || 0.7),
+                        weight: 6,
                         opacity: 1,
-                        dashArray: mode === "wheelchair" ? "14,10" : undefined,
                         lineCap: "round",
                         lineJoin: "round",
                       }}
-                    />
-                  </>
-                )}
+                    >
+                      <Popup>
+                        <div>
+                          <strong>Segment {idx + 1}</strong>
+                          <br />
+                          Safety:{" "}
+                          {Math.round((segment.safety_score || 0.7) * 100)}%
+                          <br />
+                          {hasObstruction && obstructionDesc && (
+                            <div style={{ color: "#ff7b6b", marginTop: 4 }}>
+                              <TriangleAlert size={12} /> {obstructionDesc}
+                            </div>
+                          )}
+                          {segment.instructions || "Continue on route"}
+                        </div>
+                      </Popup>
+                    </Polyline>
+                  </React.Fragment>
+                );
+              })
+            ) : routePath.length >= 2 ? (
+              <>
+                <Polyline
+                  positions={routePath}
+                  pathOptions={{
+                    color: mode === "wheelchair" ? "#e8a870" : "#8cd69c",
+                    weight: 14,
+                    opacity: 0.2,
+                    lineCap: "round",
+                    lineJoin: "round",
+                  }}
+                />
+                <Polyline
+                  positions={routePath}
+                  pathOptions={{
+                    color: "#1a0c04",
+                    weight: 8,
+                    opacity: 0.6,
+                    lineCap: "round",
+                    lineJoin: "round",
+                  }}
+                />
+                <Polyline
+                  positions={routePath}
+                  pathOptions={{
+                    color: mode === "wheelchair" ? "#f0b060" : "#60e890",
+                    weight: 5,
+                    opacity: 1,
+                    dashArray: mode === "wheelchair" ? "14,10" : undefined,
+                    lineCap: "round",
+                    lineJoin: "round",
+                  }}
+                />
+              </>
+            ) : null}
 
             {/* Alternative Routes */}
             {alternativeRoutes.map(
