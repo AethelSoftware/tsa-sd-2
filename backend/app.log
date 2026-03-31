@@ -2315,3 +2315,9 @@ RuntimeError: The session is unavailable because no secret key was set.  Set the
 2026-03-30 23:54:37,209 - __main__ - INFO - Parsed 1 construction zones, 1 hazards from TomTom
 2026-03-30 23:54:37,209 - real_api_client - WARNING - No coordinate transformer available; skipping crime data.
 2026-03-30 23:54:37,211 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:54:37] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:59:36,973 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:59:36] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-30 23:59:36,976 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.454,-79.964 to 40.49,-79.916
+2026-03-30 23:59:37,198 - __main__ - INFO - TomTom returned 2 incidents
+2026-03-30 23:59:37,199 - __main__ - INFO - Parsed 1 construction zones, 1 hazards from TomTom
+2026-03-30 23:59:37,199 - real_api_client - WARNING - No coordinate transformer available; skipping crime data.
+2026-03-30 23:59:37,202 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:59:37] "POST /api/area-obstructions HTTP/1.1" 200 -

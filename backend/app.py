@@ -561,50 +561,86 @@ def add_model_endpoints(app):
             end_lat   = float(data.get('end_lat',   40.4406))
             end_lng   = float(data.get('end_lng',  -79.9959))
 
-            if not google_router or not google_router.api_key:
+            logger.info(f"Transit info request from ({start_lat},{start_lng}) to ({end_lat},{end_lng})")
+
+            # Check if Google Maps router is available
+            if not google_router:
                 return jsonify({
                     'success': False,
-                    'error': 'Google Maps router not available.'
+                    'error': 'Google Maps router not configured'
                 }), 503
 
-            routes = google_router.get_transit_route(
-                start_lat, start_lng, end_lat, end_lng, alternatives=True
-            )
+            if not google_router.api_key:
+                return jsonify({
+                    'success': False,
+                    'error': 'Google Maps API key not set. Please configure in .env file.'
+                }), 503
 
-            if not routes:
-                return jsonify({'success': False, 'error': 'No transit routes found'}), 503
+            # Attempt to fetch real transit routes
+            try:
+                routes = google_router.get_transit_route(
+                    start_lat, start_lng,
+                    end_lat, end_lng,
+                    alternatives=True
+                )
+                
+                if not routes:
+                    return jsonify({
+                        'success': False,
+                        'error': 'No transit routes found between these locations'
+                    }), 404
 
-            formatted_routes = []
-            for idx, route in enumerate(routes[:3]):
-                steps = route.get('steps', [])
-                instructions = []
-                for step in steps:
-                    entry = {
-                        'instruction':      step['instruction'],
-                        'duration_seconds': step.get('duration_seconds', 0),
-                        'distance_meters':  step.get('distance_meters', 0),
-                    }
-                    if step.get('travel_mode') == 'TRANSIT':
-                        entry.update({
-                            'transit_line':    step.get('transit_line', 'Bus'),
-                            'departure_stop':  step.get('departure_stop', ''),
-                            'arrival_stop':    step.get('arrival_stop', ''),
-                        })
-                    instructions.append(entry)
+                # Format routes for frontend
+                formatted_routes = []
+                for idx, route in enumerate(routes[:3]):
+                    steps = route.get('steps', [])
+                    instructions = []
+                    for step in steps:
+                        entry = {
+                            'instruction':      step['instruction'],
+                            'duration_seconds': step.get('duration_seconds', 0),
+                            'distance_meters':  step.get('distance_meters', 0),
+                        }
+                        if step.get('travel_mode') == 'TRANSIT':
+                            entry.update({
+                                'transit_line':    step.get('transit_line', 'Bus'),
+                                'departure_stop':  step.get('departure_stop', ''),
+                                'arrival_stop':    step.get('arrival_stop', ''),
+                            })
+                        instructions.append(entry)
 
-                formatted_routes.append({
-                    'index':                  idx,
-                    'total_duration_minutes': route['total_duration_seconds'] / 60,
-                    'walking_minutes':        route.get('total_walking_time', 0) / 60,
-                    'transit_minutes':        route.get('total_transit_time', 0) / 60,
-                    'total_distance_meters':  route['total_distance_meters'],
-                    'transit_lines':          route.get('transit_lines', []),
-                    'steps':                  instructions,
-                    'has_obstruction':        bool(route.get('construction_warnings')),
-                    'obstruction_warnings':   route.get('construction_warnings', []),
-                })
+                    formatted_routes.append({
+                        'index':                  idx,
+                        'total_duration_minutes': route['total_duration_seconds'] / 60,
+                        'walking_minutes':        route.get('total_walking_time', 0) / 60,
+                        'transit_minutes':        route.get('total_transit_time', 0) / 60,
+                        'total_distance_meters':  route['total_distance_meters'],
+                        'transit_lines':          route.get('transit_lines', []),
+                        'steps':                  instructions,
+                        'has_obstruction':        bool(route.get('construction_warnings')),
+                        'obstruction_warnings':   route.get('construction_warnings', []),
+                    })
 
-            return jsonify({'success': True, 'routes': formatted_routes})
+                return jsonify({'success': True, 'routes': formatted_routes})
+
+            except Exception as e:
+                error_msg = str(e)
+                if 'REQUEST_DENIED' in error_msg:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Google Maps Directions API is not enabled. Please enable it in Google Cloud Console.'
+                    }), 403
+                elif 'NOT_FOUND' in error_msg:
+                    return jsonify({
+                        'success': False,
+                        'error': 'No transit routes found. Try different locations.'
+                    }), 404
+                else:
+                    logger.error(f"Google Maps transit error: {e}")
+                    return jsonify({
+                        'success': False,
+                        'error': f'Transit routing failed: {error_msg}'
+                    }), 500
 
         except Exception as e:
             logger.error(f"Transit info error: {e}", exc_info=True)
