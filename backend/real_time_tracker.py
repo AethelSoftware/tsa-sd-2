@@ -78,11 +78,31 @@ class Position:
     def __post_init__(self):
         if self.timestamp is None:
             self.timestamp = time.time()
+        
+        # CRITICAL FIX: Validate coordinates
+        if self.lat is None or self.lng is None:
+            raise ValueError(f"Invalid coordinates: lat={self.lat}, lng={self.lng}")
+        
+        # Ensure coordinates are floats
+        try:
+            self.lat = float(self.lat)
+            self.lng = float(self.lng)
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"Cannot convert coordinates to float: lat={self.lat}, lng={self.lng}") from e
 
     @property
     def coordinates(self) -> Tuple[float, float]:
         return (self.lat, self.lng)
-
+    
+    def to_dict(self) -> Dict:
+        """Safe serialization to dictionary"""
+        return {
+            'lat': float(self.lat) if self.lat is not None else None,
+            'lng': float(self.lng) if self.lng is not None else None,
+            'accuracy': float(self.accuracy),
+            'timestamp': float(self.timestamp) if self.timestamp else None,
+            'altitude': float(self.altitude) if self.altitude else None
+        }
 
 @dataclass
 class Hazard:
@@ -469,63 +489,113 @@ class RealTimeTracker:
             'has_obstruction': False
         }
 
+        if not route_coords or len(route_coords) < 2:
+            return obstructions
+
+        # Sample points along the route (every few points, max 20 samples)
+        step = max(1, len(route_coords) // 20)
+        sample_points = route_coords[::step]
+
+        # --- Check construction zones via Google routing if available ---
         try:
-            # Check against known construction zones
             from google_routing import GoogleMapsRouter
             router = GoogleMapsRouter()
 
-            # Sample points along the route (every few points)
-            step = max(1, len(route_coords) // 20)
-            sample_points = route_coords[::step]
-
             for point in sample_points:
+                lat, lng = point[0], point[1]
+
+                # Skip invalid coordinates
+                if lat is None or lng is None:
+                    continue
+
                 try:
-                    zones = router.get_construction_zones(point[0], point[1], radius=100)
+                    zones = router.get_construction_zones(float(lat), float(lng), radius=100)
                     if zones:
                         for zone in zones:
+                            z_lat = zone.get('lat')
+                            z_lng = zone.get('lng')
+
+                            # Skip zones with missing coordinates
+                            if z_lat is None or z_lng is None:
+                                logger.debug(f"Skipping construction zone with missing coords: {zone}")
+                                continue
+
                             obstructions['construction_zones'].append(zone)
                             obstructions['has_obstruction'] = True
                             obstructions['total_blocked_segments'] += 1
                 except Exception as e:
-                    logger.warning(f"Error checking construction zone at {point}: {e}")
+                    logger.warning(f"Error checking construction zone at ({lat}, {lng}): {e}")
                     continue
+
         except ImportError:
             logger.warning("GoogleMapsRouter not available for obstruction checking")
         except Exception as e:
             logger.error(f"Error checking construction zones: {e}")
 
-        # Also check against active hazards
+        # --- Check against active hazards ---
         try:
             for hazard in self.active_hazards:
-                if hazard.is_active():
-                    # Check if hazard is near any route point
-                    for point in route_coords:
+                if not hazard.is_active():
+                    continue
+
+                # Validate hazard position
+                h_pos = getattr(hazard, 'position', None)
+                if h_pos is None:
+                    continue
+
+                h_lat = getattr(h_pos, 'lat', None)
+                h_lng = getattr(h_pos, 'lng', None)
+                if h_lat is None or h_lng is None:
+                    continue
+
+                h_radius = getattr(hazard, 'radius', 50)
+
+                # Check if hazard is near any route point
+                for point in route_coords:
+                    p_lat, p_lng = point[0], point[1]
+
+                    # Skip invalid route points
+                    if p_lat is None or p_lng is None:
+                        continue
+
+                    try:
                         distance = self._calculate_distance(
-                            (point[0], point[1]),
-                            hazard.position.coordinates
+                            (float(p_lat), float(p_lng)),
+                            (float(h_lat), float(h_lng))
                         )
-                        if distance < hazard.radius:
+                        if distance < h_radius:
                             obstructions['hazards'].append({
-                                'type': hazard.type.value,
-                                'description': hazard.description,
-                                'severity': hazard.severity,
-                                'location': {'lat': hazard.position.lat, 'lng': hazard.position.lng}
+                                'type': hazard.type.value if hasattr(hazard.type, 'value') else str(hazard.type),
+                                'description': getattr(hazard, 'description', 'Unknown hazard'),
+                                'severity': getattr(hazard, 'severity', 0.5),
+                                'location': {'lat': h_lat, 'lng': h_lng}
                             })
                             obstructions['has_obstruction'] = True
                             break
+                    except (TypeError, ValueError) as e:
+                        logger.debug(f"Distance calc error for hazard at ({h_lat}, {h_lng}): {e}")
+                        continue
+
         except Exception as e:
             logger.error(f"Error checking hazards: {e}")
 
-        # Remove duplicates from construction zones
+        # --- Deduplicate construction zones ---
         if obstructions['construction_zones']:
             seen = set()
             unique_zones = []
             for zone in obstructions['construction_zones']:
-                key = f"{zone.get('lat', 0)},{zone.get('lng', 0)}"
+                z_lat = zone.get('lat', 0)
+                z_lng = zone.get('lng', 0)
+                if z_lat is None:
+                    z_lat = 0
+                if z_lng is None:
+                    z_lng = 0
+                key = f"{z_lat:.6f},{z_lng:.6f}"
                 if key not in seen:
                     seen.add(key)
                     unique_zones.append(zone)
             obstructions['construction_zones'] = unique_zones
+            obstructions['total_blocked_segments'] = len(unique_zones)
 
         return obstructions
 

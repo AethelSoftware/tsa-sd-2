@@ -84,6 +84,48 @@ const destinationIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
+function isValidCoordinatePair(lat, lng) {
+  const numLat = Number(lat);
+  const numLng = Number(lng);
+
+  if (isNaN(numLat) || isNaN(numLng)) return false;
+  if (!isFinite(numLat) || !isFinite(numLng)) return false;
+  if (numLat < -90 || numLat > 90) return false;
+  if (numLng < -180 || numLng > 180) return false;
+
+  return true;
+}
+
+function isValidLatLngArray(arr) {
+  if (!Array.isArray(arr) || arr.length !== 2) return false;
+  const [lat, lng] = arr;
+  const numLat = Number(lat);
+  const numLng = Number(lng);
+  if (isNaN(numLat) || isNaN(numLng)) return false;
+  if (!isFinite(numLat) || !isFinite(numLng)) return false;
+  if (numLat < -90 || numLat > 90) return false;
+  if (numLng < -180 || numLng > 180) return false;
+  return true;
+}
+
+function getValidCoordinates(obj) {
+  // Try different property name patterns
+  const lat =
+    obj?.lat ?? obj?.latitude ?? obj?.position?.lat ?? obj?.coords?.lat ?? null;
+  const lng =
+    obj?.lng ??
+    obj?.longitude ??
+    obj?.lon ??
+    obj?.position?.lng ??
+    obj?.coords?.lng ??
+    null;
+
+  if (isValidCoordinatePair(lat, lng)) {
+    return { lat: Number(lat), lng: Number(lng) };
+  }
+  return null;
+}
+
 function makeLucideIcon(IconComponent, color, borderColor, size = 30) {
   const innerSize = Math.max(12, size * 0.55);
   const svg = renderToStaticMarkup(
@@ -352,7 +394,6 @@ const CSS = `
   @keyframes dash-flow-road-top { to{stroke-dashoffset:-36} }
   .obstructed-road-border-top { animation:dash-flow-road-top 0.8s linear infinite;stroke-dashoffset:0;filter:drop-shadow(0 0 2px rgba(255,255,255,0.5)); }
 
-  /* 3D View panel — slides up from bottom-right, DOES NOT overlap map controls */
   .view3d-panel {
     position: absolute;
     bottom: 80px;
@@ -559,8 +600,6 @@ const ObstructedRoadSegment = ({ segment, zoomLevel = 13 }) => {
     color,
     borderColor,
     description,
-    fromStreet,
-    toStreet,
     name,
     startTime,
     endTime,
@@ -660,11 +699,55 @@ const ObstructionMarker = ({
   extra,
   zoomLevel = 13,
 }) => {
+  // EARLY GUARD: Check if coordinates exist at all
+  if (lat === undefined || lat === null || lng === undefined || lng === null) {
+    console.warn("❌ ObstructionMarker missing coordinates:", {
+      lat,
+      lng,
+      type,
+    });
+    return null;
+  }
+
+  // Convert to numbers safely
+  const validLat = parseFloat(lat);
+  const validLng = parseFloat(lng);
+
+  // Check if conversion produced valid numbers
+  if (isNaN(validLat) || isNaN(validLng)) {
+    console.warn("❌ ObstructionMarker NaN coordinates:", { lat, lng, type });
+    return null;
+  }
+
+  // Check if numbers are finite and within valid range
+  if (!isFinite(validLat) || !isFinite(validLng)) {
+    console.warn("❌ ObstructionMarker infinite coordinates:", {
+      validLat,
+      validLng,
+      type,
+    });
+    return null;
+  }
+
+  // Check if latitude is in valid range (-90 to 90)
+  if (validLat < -90 || validLat > 90) {
+    console.warn("❌ ObstructionMarker invalid latitude:", { validLat, type });
+    return null;
+  }
+
+  // Check if longitude is in valid range (-180 to 180)
+  if (validLng < -180 || validLng > 180) {
+    console.warn("❌ ObstructionMarker invalid longitude:", { validLng, type });
+    return null;
+  }
+
+  // All validations passed
   const style = getObstructionStyle(type, iconCategory);
   const sz = Math.min(40, Math.max(20, 20 + ((zoomLevel - 10) / 8) * 20));
+
   return (
     <Marker
-      position={[lat, lng]}
+      position={[validLat, validLng]}
       icon={makeLucideIcon(style.Icon, style.color, style.border, sz)}
     >
       <Popup>
@@ -764,9 +847,7 @@ export default function AccessibleMap() {
   const [obstructedRoads, setObstructedRoads] = useState([]);
   const [currentZoom, setCurrentZoom] = useState(13);
 
-  // 3D view state
   const [show3D, setShow3D] = useState(false);
-  // The position of the animated walker in the 3D view — tracks along routePath
   const [walkerPosition, setWalkerPosition] = useState(null);
   const [walkerIdx, setWalkerIdx] = useState(0);
   const walkerIntervalRef = useRef(null);
@@ -782,12 +863,56 @@ export default function AccessibleMap() {
   const [fromSuggLoad, setFromSuggLoad] = useState(false);
   const [fromHiIdx, setFromHiIdx] = useState(-1);
 
+  const validCenter = isValidLatLngArray(loc) ? loc : [40.472, -79.94];
+
   const say = useCallback((msg) => {
     setToast(msg);
     setTimeout(() => setToast(""), 3200);
   }, []);
 
-  // When route is set, animate walkerPosition along it for the 3D view
+  const isValidCoordinate = useCallback((obj) => {
+    return (
+      obj &&
+      obj.lat != null &&
+      obj.lng != null &&
+      !isNaN(obj.lat) &&
+      !isNaN(obj.lng) &&
+      isFinite(obj.lat) &&
+      isFinite(obj.lng)
+    );
+  }, []);
+
+  const cleanObstructions = useCallback((arr) => {
+    if (!Array.isArray(arr)) return [];
+
+    return arr.filter((item) => {
+      if (!item) return false;
+
+      // Try to get coordinates from different property patterns
+      const lat = item.lat ?? item.latitude ?? item.position?.lat ?? null;
+      const lng =
+        item.lng ?? item.longitude ?? item.lon ?? item.position?.lng ?? null;
+
+      if (
+        lat == null ||
+        lng == null ||
+        isNaN(Number(lat)) ||
+        isNaN(Number(lng))
+      ) {
+        console.warn("Filtering out invalid obstruction:", item);
+        return false;
+      }
+
+      return true;
+    });
+  }, []);
+
+  // Add near the top of your component
+  useEffect(() => {
+    console.log("Current construction zones:", constructionZones);
+    console.log("Current hazards:", activeHazards);
+  }, [constructionZones, activeHazards]);
+
   useEffect(() => {
     if (walkerIntervalRef.current) clearInterval(walkerIntervalRef.current);
     if (routePath.length < 2) {
@@ -795,7 +920,6 @@ export default function AccessibleMap() {
       setWalkerIdx(0);
       return;
     }
-    // Start from beginning of route
     setWalkerIdx(0);
     setWalkerPosition(routePath[0]);
 
@@ -804,29 +928,40 @@ export default function AccessibleMap() {
       idx = (idx + 1) % routePath.length;
       setWalkerIdx(idx);
       setWalkerPosition(routePath[idx]);
-    }, 1200); // moves one step every 1.2s
+    }, 1200);
 
     return () => clearInterval(walkerIntervalRef.current);
   }, [routePath]);
 
-  // Transform hazards to { position: {lat,lng}, ... } for Walking3DView
-  const transformedHazards = useMemo(
-    () =>
-      activeHazards.map((h) => {
-        if (h.position && typeof h.position.lat === "number") return h;
-        return { ...h, position: { lat: h.lat, lng: h.lng } };
-      }),
-    [activeHazards],
-  );
+  const transformedHazards = useMemo(() => {
+    return activeHazards
+      .filter((h) => {
+        // Ensure both lat and lng exist and are valid numbers
+        const lat = h.lat ?? h.position?.lat;
+        const lng = h.lng ?? h.position?.lng;
+        return (
+          lat != null &&
+          lng != null &&
+          !isNaN(Number(lat)) &&
+          !isNaN(Number(lng))
+        );
+      })
+      .map((h) => {
+        const lat = Number(h.lat ?? h.position?.lat);
+        const lng = Number(h.lng ?? h.position?.lng);
+        if (h.position && typeof h.position.lat === "number") {
+          return { ...h, position: { lat, lng } };
+        }
+        return { ...h, position: { lat, lng } };
+      });
+  }, [activeHazards]);
 
-  // Current nav state for 3D view
   const navState3D = useMemo(() => {
     if (!routePath.length) return "idle";
     if (walkerIdx >= routePath.length - 1) return "arrived";
     return "walking";
   }, [routePath, walkerIdx]);
 
-  // Remaining distance for 3D HUD
   const remainingDist3D = useMemo(() => {
     if (!routePath.length || walkerIdx >= routePath.length - 1) return 0;
     let d = 0;
@@ -878,17 +1013,95 @@ export default function AccessibleMap() {
           body: JSON.stringify({ lat: loc[0], lng: loc[1], radius: 10000 }),
         });
         const data = await res.json();
+
         if (data.success) {
-          setConstructionZones(data.construction_zones || []);
-          setActiveHazards(data.hazards || []);
+          // Sanitize construction zones - CRITICAL: ensure both lat AND lng exist
+          const validZones = (data.construction_zones || [])
+            .map((zone) => {
+              // Try to extract lat and lng from various possible property names
+              let lat = zone.lat ?? zone.latitude ?? zone.position?.lat ?? null;
+              let lng =
+                zone.lng ??
+                zone.longitude ??
+                zone.lon ??
+                zone.position?.lng ??
+                null;
+
+              // Convert to numbers
+              if (lat !== null) lat = Number(lat);
+              if (lng !== null) lng = Number(lng);
+
+              // Validate both are valid numbers
+              if (
+                lat !== null &&
+                lng !== null &&
+                !isNaN(lat) &&
+                !isNaN(lng) &&
+                isFinite(lat) &&
+                isFinite(lng)
+              ) {
+                return {
+                  ...zone,
+                  lat: lat,
+                  lng: lng,
+                };
+              }
+              console.warn("Filtered out invalid construction zone:", zone);
+              return null;
+            })
+            .filter((zone) => zone !== null);
+
+          // Sanitize hazards - same critical check
+          const validHazards = (data.hazards || [])
+            .map((hazard) => {
+              let lat =
+                hazard.lat ?? hazard.latitude ?? hazard.position?.lat ?? null;
+              let lng =
+                hazard.lng ??
+                hazard.longitude ??
+                hazard.lon ??
+                hazard.position?.lng ??
+                null;
+
+              if (lat !== null) lat = Number(lat);
+              if (lng !== null) lng = Number(lng);
+
+              if (
+                lat !== null &&
+                lng !== null &&
+                !isNaN(lat) &&
+                !isNaN(lng) &&
+                isFinite(lat) &&
+                isFinite(lng)
+              ) {
+                return {
+                  ...hazard,
+                  lat: lat,
+                  lng: lng,
+                };
+              }
+              console.warn("Filtered out invalid hazard:", hazard);
+              return null;
+            })
+            .filter((hazard) => hazard !== null);
+
+          // Replace the arrays completely instead of merging
+          setConstructionZones(validZones);
+          setActiveHazards(validHazards);
+
+          console.log(
+            `Loaded ${validZones.length} valid zones and ${validHazards.length} valid hazards`,
+          );
         }
-      } catch {}
+      } catch (error) {
+        console.error("Error fetching obstructions:", error);
+      }
     };
+
     fetchAreaObstructions();
     const interval = setInterval(fetchAreaObstructions, 300000);
     return () => clearInterval(interval);
-  }, [loc]);
-
+  }, [loc]); // Remove cleanObstructions from dependencies
   useEffect(() => {
     const fetchRoads = async () => {
       try {
@@ -949,6 +1162,27 @@ export default function AccessibleMap() {
     };
     fetchRoads();
   }, [loc]);
+
+  // Add this around line 839 where you have the console logs
+  useEffect(() => {
+    if (constructionZones.length > 0) {
+      console.log("First construction zone:", constructionZones[0]);
+      // Check each zone for missing lng
+      constructionZones.forEach((zone, idx) => {
+        if (zone.lat && !zone.lng) {
+          console.error(`Zone ${idx} has lat but no lng:`, zone);
+        }
+      });
+    }
+    if (activeHazards.length > 0) {
+      console.log("First hazard:", activeHazards[0]);
+      activeHazards.forEach((hazard, idx) => {
+        if (hazard.lat && !hazard.lng) {
+          console.error(`Hazard ${idx} has lat but no lng:`, hazard);
+        }
+      });
+    }
+  }, [constructionZones, activeHazards]);
 
   const searchPlaces = (q) => {
     if (debRef.current) clearTimeout(debRef.current);
@@ -1082,42 +1316,72 @@ export default function AccessibleMap() {
       });
       const data = await res.json();
       if (data.success && data.obstructions) {
-        if (data.obstructions.construction_zones?.length > 0)
+        // Safely process construction zones
+        if (data.obstructions.construction_zones?.length > 0) {
+          const validZones = data.obstructions.construction_zones
+            .map((zone) => {
+              let lat = zone.lat ?? zone.latitude ?? null;
+              let lng = zone.lng ?? zone.longitude ?? zone.lon ?? null;
+              if (lat !== null) lat = Number(lat);
+              if (lng !== null) lng = Number(lng);
+              if (lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng)) {
+                return { ...zone, lat, lng };
+              }
+              return null;
+            })
+            .filter((z) => z !== null);
+
           setConstructionZones((prev) => {
-            const ex = new Set(prev.map((z) => `${z.lat},${z.lng}`));
+            const existing = new Set(prev.map((z) => `${z.lat},${z.lng}`));
             return [
               ...prev,
-              ...data.obstructions.construction_zones.filter(
-                (z) => !ex.has(`${z.lat},${z.lng}`),
-              ),
+              ...validZones.filter((z) => !existing.has(`${z.lat},${z.lng}`)),
             ];
           });
-        if (data.obstructions.hazards?.length > 0)
+        }
+
+        // Safely process hazards
+        if (data.obstructions.hazards?.length > 0) {
+          const validHazards = data.obstructions.hazards
+            .map((hazard) => {
+              let lat = hazard.lat ?? hazard.latitude ?? null;
+              let lng = hazard.lng ?? hazard.longitude ?? hazard.lon ?? null;
+              if (lat !== null) lat = Number(lat);
+              if (lng !== null) lng = Number(lng);
+              if (lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng)) {
+                return { ...hazard, lat, lng };
+              }
+              return null;
+            })
+            .filter((h) => h !== null);
+
           setActiveHazards((prev) => {
-            const ex = new Set(prev.map((h) => `${h.lat},${h.lng}`));
+            const existing = new Set(prev.map((h) => `${h.lat},${h.lng}`));
             return [
               ...prev,
-              ...data.obstructions.hazards.filter(
-                (h) => !ex.has(`${h.lat},${h.lng}`),
-              ),
+              ...validHazards.filter((h) => !existing.has(`${h.lat},${h.lng}`)),
             ];
           });
+        }
+
         if (data.obstructions.has_obstruction) {
           setRouteAlert({
             type: "obstruction",
             message: `⚠ Obstruction near your route!`,
-            constructionZones: data.obstructions.construction_zones,
-            hazards: data.obstructions.hazards,
+            constructionZones: validZones,
+            hazards: validHazards,
           });
           setShowRouteAlert(true);
         }
       }
-    } catch {}
+    } catch (err) {
+      console.error("Error checking obstructions:", err);
+    }
   };
 
   const getRouteAlternatives = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/route-alternatives", {
+      const res = await fetch("http://127.0.0.1:5000/api/route-alternatives", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1144,12 +1408,11 @@ export default function AccessibleMap() {
       say("Please enter a destination first");
       return;
     }
-    
+
     try {
-      // Get current start location
       let startLat = loc[0];
       let startLng = loc[1];
-      
+
       if (fromVal !== "Current Location") {
         const startGeoData = await (
           await fetch(
@@ -1161,11 +1424,10 @@ export default function AccessibleMap() {
           startLng = startGeoData.results[0].position.lon;
         }
       }
-      
-      // Get destination coordinates
+
       let endLat = dest?.[0];
       let endLng = dest?.[1];
-      
+
       if (!endLat && toVal) {
         const endGeoData = await (
           await fetch(
@@ -1177,15 +1439,15 @@ export default function AccessibleMap() {
           endLng = endGeoData.results[0].position.lon;
         }
       }
-      
+
       if (!endLat || !endLng) {
         say("Couldn't find destination coordinates");
         return;
       }
-      
+
       const currentTime = new Date().toISOString();
-      
-      const res = await fetch("http://localhost:5000/api/transit-route", {
+
+      const res = await fetch("http://127.0.0.1:5000/api/transit-route", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1194,53 +1456,64 @@ export default function AccessibleMap() {
           end_lat: endLat,
           end_lng: endLng,
           start_time: currentTime,
-          max_walk_distance: 1000
+          max_walk_distance: 1000,
         }),
       });
-      
+
       const data = await res.json();
-      
+
       if (data.success && data.route) {
-        const transitSteps = data.route.steps?.filter(s => s.type === 'transit') || [];
-        const walkingSteps = data.route.steps?.filter(s => s.type === 'walk') || [];
-        
-        // Group by trip for display
+        const transitSteps =
+          data.route.steps?.filter((s) => s.type === "transit") || [];
+        const walkingSteps =
+          data.route.steps?.filter((s) => s.type === "walk") || [];
+
         const tripsByLine = new Map();
-        transitSteps.forEach(step => {
-          const line = step.trip_id?.split('_')[0] || 'Bus';
+        transitSteps.forEach((step) => {
+          const line = step.trip_id?.split("_")[0] || "Bus";
           if (!tripsByLine.has(line)) {
             tripsByLine.set(line, []);
           }
           tripsByLine.get(line).push(step);
         });
-        
-        const transitLines = Array.from(tripsByLine.entries()).map(([line, steps]) => ({
-          line: line,
-          vehicle: 'Bus',
-          from_stop: steps[0]?.start_stop || 'Stop',
-          to_stop: steps[steps.length - 1]?.end_stop || 'Stop',
-          departure_time: steps[0]?.time ? new Date(steps[0].time).toLocaleTimeString() : 'Soon',
-          arrival_time: steps[steps.length - 1]?.time ? new Date(steps[steps.length - 1].time).toLocaleTimeString() : 'Arriving'
-        }));
-        
+
+        const transitLines = Array.from(tripsByLine.entries()).map(
+          ([line, steps]) => ({
+            line: line,
+            vehicle: "Bus",
+            from_stop: steps[0]?.start_stop || "Stop",
+            to_stop: steps[steps.length - 1]?.end_stop || "Stop",
+            departure_time: steps[0]?.time
+              ? new Date(steps[0].time).toLocaleTimeString()
+              : "Soon",
+            arrival_time: steps[steps.length - 1]?.time
+              ? new Date(steps[steps.length - 1].time).toLocaleTimeString()
+              : "Arriving",
+          }),
+        );
+
         const totalMinutes = Math.round(data.route.total_time_seconds / 60);
         const hours = Math.floor(totalMinutes / 60);
         const mins = totalMinutes % 60;
         const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
-        
-        setTransitInfo([{
-          duration_minutes: totalMinutes,
-          duration_str: durationStr,
-          walking_minutes: Math.round(walkingSteps.length * 3),
-          transit_minutes: Math.round(transitSteps.length * 8),
-          transit_lines: transitLines,
-          total_steps: data.route.steps?.length || 0,
-          arrival_time: data.route.arrival_time,
-          departure_time: new Date().toLocaleTimeString()
-        }]);
-        
+
+        setTransitInfo([
+          {
+            duration_minutes: totalMinutes,
+            duration_str: durationStr,
+            walking_minutes: Math.round(walkingSteps.length * 3),
+            transit_minutes: Math.round(transitSteps.length * 8),
+            transit_lines: transitLines,
+            total_steps: data.route.steps?.length || 0,
+            arrival_time: data.route.arrival_time,
+            departure_time: new Date().toLocaleTimeString(),
+          },
+        ]);
+
         setShowTransitInfo(true);
-        say(`Found ${transitSteps.length} transit connection(s) · ${durationStr}`);
+        say(
+          `Found ${transitSteps.length} transit connection(s) · ${durationStr}`,
+        );
       } else {
         say(data.error || "No transit routes available at this time");
       }
@@ -1257,25 +1530,23 @@ export default function AccessibleMap() {
     }
     setIsLoading(true);
     say("Finding your safe, accessible route…");
-    
+
     try {
-      // Geocode destination
       const geoData = await (
         await fetch(
           `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(toVal)}.json?key=${TOMTOM_API_KEY}&limit=1`,
         )
       ).json();
-      
+
       if (!geoData.results?.length) {
         say("Couldn't find that location");
         setIsLoading(false);
         return;
       }
-      
+
       const destPos = geoData.results[0].position;
       const destCoords = { lat: destPos.lat, lng: destPos.lon };
-      
-      // Geocode start location if not current location
+
       let startCoords = { lat: loc[0], lng: loc[1] };
       if (fromVal !== "Current Location") {
         const startGeoData = await (
@@ -1288,52 +1559,54 @@ export default function AccessibleMap() {
           startCoords = { lat: sp.lat, lng: sp.lon };
         }
       }
-      
-      // Handle transit mode with GTFS
+
       if (mode === "transit") {
         try {
           say("Searching for transit routes...");
-          
+
           const currentTime = new Date().toISOString();
-          
-          const transitRes = await fetch("http://localhost:5000/api/transit-route", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              start_lat: startCoords.lat,
-              start_lng: startCoords.lng,
-              end_lat: destCoords.lat,
-              end_lng: destCoords.lng,
-              start_time: currentTime,
-              max_walk_distance: 1000
-            }),
-          });
-          
+
+          const transitRes = await fetch(
+            "http://127.0.0.1:5000/api/transit-route",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                start_lat: startCoords.lat,
+                start_lng: startCoords.lng,
+                end_lat: destCoords.lat,
+                end_lng: destCoords.lng,
+                start_time: currentTime,
+                max_walk_distance: 1000,
+              }),
+            },
+          );
+
           const transitData = await transitRes.json();
-          
+
           if (transitData.success && transitData.route) {
-            // Build coordinates from transit steps
             const allCoords = [];
-            
-            transitData.route.steps?.forEach(step => {
+
+            transitData.route.steps?.forEach((step) => {
               if (step.location) {
                 allCoords.push([step.location.lat, step.location.lng]);
               }
               if (step.start_location) {
-                allCoords.push([step.start_location.lat, step.start_location.lng]);
+                allCoords.push([
+                  step.start_location.lat,
+                  step.start_location.lng,
+                ]);
               }
               if (step.end_location) {
                 allCoords.push([step.end_location.lat, step.end_location.lng]);
               }
             });
-            
-            // Add start and end if not already included
+
             if (allCoords.length === 0) {
               allCoords.push([startCoords.lat, startCoords.lng]);
               allCoords.push([destCoords.lat, destCoords.lng]);
             }
-            
-            // Remove duplicate consecutive coordinates
+
             const uniqueCoords = [];
             for (let i = 0; i < allCoords.length; i++) {
               const current = allCoords[i];
@@ -1342,75 +1615,85 @@ export default function AccessibleMap() {
                 uniqueCoords.push(current);
               }
             }
-            
+
             setRoutePath(uniqueCoords);
             setDest(uniqueCoords[uniqueCoords.length - 1]);
-            
-            // Create route segments
+
             const segs = [];
             for (let i = 0; i < uniqueCoords.length - 1; i++) {
-              const stepType = transitData.route.steps?.find(s => 
-                (s.location && s.location.lat === uniqueCoords[i][0] && s.location.lng === uniqueCoords[i][1]) ||
-                (s.start_location && s.start_location.lat === uniqueCoords[i][0] && s.start_location.lng === uniqueCoords[i][1])
+              const stepType = transitData.route.steps?.find(
+                (s) =>
+                  (s.location &&
+                    s.location.lat === uniqueCoords[i][0] &&
+                    s.location.lng === uniqueCoords[i][1]) ||
+                  (s.start_location &&
+                    s.start_location.lat === uniqueCoords[i][0] &&
+                    s.start_location.lng === uniqueCoords[i][1]),
               );
-              
+
               segs.push({
                 start: uniqueCoords[i],
                 end: uniqueCoords[i + 1],
                 safety_score: transitData.route.safety?.overall_safety || 0.75,
-                instructions: stepType?.type === 'transit' 
-                  ? `Take ${stepType.trip_id?.split('_')[0] || 'transit'}`
-                  : "Walk to stop",
-                transit_info: stepType?.type === 'transit' ? stepType : null
+                instructions:
+                  stepType?.type === "transit"
+                    ? `Take ${stepType.trip_id?.split("_")[0] || "transit"}`
+                    : "Walk to stop",
+                transit_info: stepType?.type === "transit" ? stepType : null,
               });
             }
             setRouteSegments(segs);
-            
-            // Format route info
-            const totalMinutes = Math.round(transitData.route.total_time_seconds / 60);
+
+            const totalMinutes = Math.round(
+              transitData.route.total_time_seconds / 60,
+            );
             const hours = Math.floor(totalMinutes / 60);
             const mins = totalMinutes % 60;
-            const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
-            
+            const durationStr =
+              hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
+
             setRouteInfo({
               distance: `${totalMinutes} min`,
               duration: durationStr,
               total_minutes: totalMinutes,
-              transit_steps: transitData.route.steps?.filter(s => s.type === 'transit').length || 0,
-              walking_steps: transitData.route.steps?.filter(s => s.type === 'walk').length || 0
+              transit_steps:
+                transitData.route.steps?.filter((s) => s.type === "transit")
+                  .length || 0,
+              walking_steps:
+                transitData.route.steps?.filter((s) => s.type === "walk")
+                  .length || 0,
             });
-            
-            // Save to recents
+
             const nr = [
               {
                 name: toVal,
                 address: geoData.results[0].address?.freeformAddress || toVal,
-                type: 'transit'
+                type: "transit",
               },
               ...recents.filter((r) => r.name !== toVal),
             ].slice(0, 6);
             setRecents(nr);
             localStorage.setItem("ar_recents", JSON.stringify(nr));
-            
+
             say(`Transit route found · ${durationStr}`);
             setShow3D(true);
             setTimeout(() => checkRouteForObstructions(uniqueCoords), 500);
             setIsLoading(false);
             return;
           } else {
-            say(transitData.error || "No transit routes found. Trying walking route...");
-            // Fall through to pedestrian routing
+            say(
+              transitData.error ||
+                "No transit routes found. Trying walking route...",
+            );
           }
         } catch (transitErr) {
           console.error("GTFS transit error:", transitErr);
           say("Transit service unavailable. Using walking route...");
-          // Fall through to pedestrian routing
         }
       }
-      
-      // PEDESTRIAN ROUTING (fallback for transit or direct pedestrian)
+
       const routeRes = await fetch(
-        "http://localhost:5000/api/calculate-route",
+        "http://127.0.0.1:5000/api/calculate-route",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1429,14 +1712,14 @@ export default function AccessibleMap() {
           }),
         },
       );
-      
+
       if (!routeRes.ok) throw new Error();
       const data = await routeRes.json();
-      
+
       if (data.success && data.route?.coordinates?.length >= 2) {
         const coords = data.route.coordinates.map((c) => [c.lat, c.lng]);
         setRoutePath(coords);
-        
+
         if (data.route.segments?.length > 0) {
           setRouteSegments(data.route.segments);
         } else {
@@ -1451,25 +1734,25 @@ export default function AccessibleMap() {
           }
           setRouteSegments(segs);
         }
-        
+
         setDest(coords[coords.length - 1]);
         setRouteInfo({
           distance: data.route.distance,
           duration: data.route.duration,
-          type: 'pedestrian'
+          type: "pedestrian",
         });
-        
+
         const nr = [
           {
             name: toVal,
             address: geoData.results[0].address?.freeformAddress || toVal,
-            type: 'pedestrian'
+            type: "pedestrian",
           },
           ...recents.filter((r) => r.name !== toVal),
         ].slice(0, 6);
         setRecents(nr);
         localStorage.setItem("ar_recents", JSON.stringify(nr));
-        
+
         say(`Route found · ${data.route.distance} · ${data.route.duration}`);
         setShow3D(true);
         setTimeout(() => checkRouteForObstructions(coords), 500);
@@ -1530,10 +1813,9 @@ export default function AccessibleMap() {
           {toast}
         </div>
 
-        {/* Full-screen map */}
         <div className="map-wrap">
           <MapContainer
-            center={loc}
+            center={validCenter}
             zoom={zoom}
             style={{
               width: "100%",
@@ -1551,23 +1833,25 @@ export default function AccessibleMap() {
               attribution={mapTypes[mapType].attribution}
               url={mapTypes[mapType].url}
             />
-            <CircleMarker
-              center={loc}
-              radius={11}
-              pathOptions={{
-                color: "#e8a870",
-                fillColor: "#e8a870",
-                fillOpacity: 0.28,
-                weight: 2,
-              }}
-            >
-              <Popup>
-                <strong style={{ fontFamily: "DM Sans,sans-serif" }}>
-                  You are here
-                </strong>
-              </Popup>
-            </CircleMarker>
-            {dest && (
+            {isValidLatLngArray(loc) && (
+              <CircleMarker
+                center={loc}
+                radius={11}
+                pathOptions={{
+                  color: "#e8a870",
+                  fillColor: "#e8a870",
+                  fillOpacity: 0.28,
+                  weight: 2,
+                }}
+              >
+                <Popup>
+                  <strong style={{ fontFamily: "DM Sans,sans-serif" }}>
+                    You are here
+                  </strong>
+                </Popup>
+              </CircleMarker>
+            )}
+            {dest && isValidLatLngArray(dest) && (
               <Marker position={dest} icon={destinationIcon}>
                 <Popup>
                   <strong>Destination</strong>
@@ -1786,7 +2070,6 @@ export default function AccessibleMap() {
           </MapContainer>
         </div>
 
-        {/* 3D Walking View — floating panel bottom-right, NOT overlapping map */}
         <div
           className={`view3d-panel${show3D && routePath.length > 0 ? "" : " hidden"}`}
         >
@@ -1797,10 +2080,9 @@ export default function AccessibleMap() {
             navigationState={navState3D}
             routeSafety={avgSafety}
             remainingDistance={remainingDist3D}
-            estimatedTime={remainingDist3D / 1.4} // ~1.4 m/s walking speed
+            estimatedTime={remainingDist3D / 1.4}
             style={{ width: "100%", height: "100%" }}
           />
-          {/* Close button */}
           <button
             onClick={() => setShow3D(false)}
             style={{
@@ -1824,14 +2106,12 @@ export default function AccessibleMap() {
           </button>
         </div>
 
-        {/* Toggle 3D view button — only shown when route exists and 3D is hidden */}
         {routePath.length > 0 && !show3D && (
           <button className="view3d-toggle" onClick={() => setShow3D(true)}>
             <Play size={12} /> 3D Walk View
           </button>
         )}
 
-        {/* Navigation rail */}
         <nav className="rail" role="navigation" aria-label="Main navigation">
           <div className="r-logo" aria-hidden="true">
             <Accessibility size={20} />
@@ -1887,7 +2167,6 @@ export default function AccessibleMap() {
           </button>
         </nav>
 
-        {/* Side panel */}
         <aside
           ref={panelRef}
           className={`panel${panel ? " open" : ""}`}
@@ -2100,7 +2379,6 @@ export default function AccessibleMap() {
           </div>
         </aside>
 
-        {/* Search card */}
         <div className="sc" role="search" aria-label="Route planner">
           <div className="sc-head">
             <Route size={16} style={{ color: "var(--wood)", flexShrink: 0 }} />
@@ -2406,7 +2684,6 @@ export default function AccessibleMap() {
           )}
         </div>
 
-        {/* Map type bar */}
         <div className="mt-bar" role="radiogroup">
           {Object.entries(mapTypes).map(([k, v]) => {
             const MIcon = MAP_TYPE_ICONS[k] || Layers;
@@ -2426,7 +2703,6 @@ export default function AccessibleMap() {
           })}
         </div>
 
-        {/* Zoom controls */}
         <div className="mctrl">
           <button
             className="mc"
@@ -2457,7 +2733,6 @@ export default function AccessibleMap() {
           </button>
         </div>
 
-        {/* Route info bar */}
         {routeInfo && (
           <div className="rbar" role="region" aria-label="Route information">
             <div className="rs">
@@ -2512,7 +2787,6 @@ export default function AccessibleMap() {
           </div>
         )}
 
-        {/* Route alert */}
         {showRouteAlert && routeAlert && (
           <div
             style={{
@@ -2623,7 +2897,6 @@ export default function AccessibleMap() {
           </div>
         )}
 
-        {/* Transit modal */}
         {showTransitInfo && transitInfo && (
           <div
             style={{
