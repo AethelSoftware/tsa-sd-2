@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
-import * as THREE from 'three';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Html } from '@react-three/drei';
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -18,17 +15,12 @@ import {
   Zap,
   Bell,
   Radio,
-  HeartPulse,
-  ArrowLeftRight,
   RefreshCw,
-  Target,
   User,
-  Users,
-  Car,
   Building
 } from 'lucide-react';
+import Walking3DView from './Walking3DView';
 
-// Fix Leaflet default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -38,7 +30,6 @@ L.Icon.Default.mergeOptions({
 
 const TOMTOM_API_KEY = 'pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM';
 
-// Custom leaflet icons
 const pedestrianIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -66,290 +57,6 @@ const destinationIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
-// 3D Pedestrian Component
-const Pedestrian3D = React.memo(({ position, rotation, state, isUser }) => {
-  const meshRef = useRef();
-  const groupRef = useRef();
-  
-  useFrame((state) => {
-    if (meshRef.current && state === 'walking') {
-      meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 5) * 0.1;
-    }
-    
-    if (groupRef.current) {
-      groupRef.current.position.lerp(
-        new THREE.Vector3(position[0], position[1], position[2]),
-        0.1
-      );
-      groupRef.current.rotation.y = rotation;
-    }
-  });
-  
-  const color = isUser ? '#3b82f6' : '#6b7280';
-  
-  return (
-    <group ref={groupRef}>
-      <mesh ref={meshRef} position={[0, 0.5, 0]} castShadow>
-        <capsuleGeometry args={[0.1, 0.3, 4, 8]} />
-        <meshStandardMaterial color={color} roughness={0.7} />
-      </mesh>
-      
-      <mesh position={[0, 0.9, 0]} castShadow>
-        <sphereGeometry args={[0.12, 16, 16]} />
-        <meshStandardMaterial color={color} roughness={0.7} />
-      </mesh>
-      
-      <mesh position={[0.2, 0.6, 0]} rotation={[0, 0, 0.5]} castShadow>
-        <cylinderGeometry args={[0.03, 0.03, 0.3, 8]} />
-        <meshStandardMaterial color={color} roughness={0.7} />
-      </mesh>
-      <mesh position={[-0.2, 0.6, 0]} rotation={[0, 0, -0.5]} castShadow>
-        <cylinderGeometry args={[0.03, 0.03, 0.3, 8]} />
-        <meshStandardMaterial color={color} roughness={0.7} />
-      </mesh>
-      
-      <mesh position={[0.08, 0.2, 0]} rotation={[0.2, 0, 0]} castShadow>
-        <cylinderGeometry args={[0.04, 0.04, 0.4, 8]} />
-        <meshStandardMaterial color={color} roughness={0.7} />
-      </mesh>
-      <mesh position={[-0.08, 0.2, 0]} rotation={[-0.2, 0, 0]} castShadow>
-        <cylinderGeometry args={[0.04, 0.04, 0.4, 8]} />
-        <meshStandardMaterial color={color} roughness={0.7} />
-      </mesh>
-      
-      {isUser && (
-        <mesh position={[0, 0.1, 0.3]} rotation={[Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.05, 0.1, 8]} />
-          <meshBasicMaterial color="#fbbf24" />
-        </mesh>
-      )}
-      
-      <pointLight
-        position={[0, 1.2, 0]}
-        color={
-          state === 'emergency' ? '#ef4444' :
-          state === 'rerouting' ? '#f59e0b' :
-          state === 'walking' ? '#10b981' : '#6b7280'
-        }
-        intensity={1}
-        distance={2}
-      />
-    </group>
-  );
-});
-
-Pedestrian3D.displayName = 'Pedestrian3D';
-
-// 3D Hazard Component
-const Hazard3D = React.memo(({ position, type, severity }) => {
-  const meshRef = useRef();
-  
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.position.y = 0.5 + Math.sin(state.clock.elapsedTime * 2) * 0.2;
-      meshRef.current.rotation.y = state.clock.elapsedTime;
-    }
-  });
-  
-  const colors = {
-    crime: '#ef4444',
-    fire: '#f97316',
-    disaster: '#8b5cf6',
-    congestion: '#f59e0b',
-    construction: '#78716c',
-    poor_lighting: '#fbbf24',
-    accessibility: '#3b82f6'
-  };
-  
-  return (
-    <group position={position}>
-      <mesh ref={meshRef} castShadow>
-        <octahedronGeometry args={[0.3, 0]} />
-        <meshStandardMaterial 
-          color={colors[type] || '#ef4444'} 
-          emissive={colors[type] || '#ef4444'}
-          emissiveIntensity={0.5}
-          roughness={0.3}
-          metalness={0.7}
-        />
-      </mesh>
-      
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.5, 0.7, 32]} />
-        <meshBasicMaterial 
-          color={colors[type] || '#ef4444'} 
-          transparent 
-          opacity={0.3 * severity}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-      
-      <Html position={[0, 1.5, 0]} center>
-        <div className="flex items-center justify-center">
-          <div className="bg-red-500 text-white px-2 py-1 rounded-lg text-sm font-bold animate-pulse">
-            ⚠️
-          </div>
-        </div>
-      </Html>
-    </group>
-  );
-});
-
-Hazard3D.displayName = 'Hazard3D';
-
-// 3D Building Component
-const Building3D = React.memo(({ position, size, height }) => {
-  return (
-    <mesh position={position} castShadow receiveShadow>
-      <boxGeometry args={[size[0], height, size[1]]} />
-      <meshStandardMaterial 
-        color="#94a3b8" 
-        roughness={0.8}
-        metalness={0.2}
-      />
-      
-      <mesh position={[0, height/2 - 0.2, size[1]/2 + 0.01]}>
-        <planeGeometry args={[size[0] * 0.8, height * 0.6]} />
-        <meshStandardMaterial 
-          color="#1e40af" 
-          emissive="#1e40af"
-          emissiveIntensity={0.2}
-          transparent
-          opacity={0.8}
-        />
-      </mesh>
-    </mesh>
-  );
-});
-
-Building3D.displayName = 'Building3D';
-
-// 3D Scene Component
-const CityScene = ({ pedestrians, hazards, userPosition, route }) => {
-  const { camera } = useThree();
-  
-  useEffect(() => {
-    if (userPosition) {
-      camera.position.set(userPosition[0] + 10, 20, userPosition[2] + 10);
-      camera.lookAt(userPosition[0], 0, userPosition[2]);
-    }
-  }, [userPosition, camera]);
-  
-  const buildings = [];
-  for (let i = -5; i <= 5; i += 2) {
-    for (let j = -5; j <= 5; j += 2) {
-      if (Math.abs(i) < 2 && Math.abs(j) < 2) continue;
-      buildings.push({
-        position: [i * 4, 0, j * 4],
-        size: [3 + Math.random(), 3 + Math.random()],
-        height: 3 + Math.random() * 10
-      });
-    }
-  }
-  
-  return (
-    <>
-      <ambientLight intensity={0.5} />
-      
-      <directionalLight
-        position={[10, 20, 10]}
-        intensity={1}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-far={50}
-        shadow-camera-left={-20}
-        shadow-camera-right={20}
-        shadow-camera-top={20}
-        shadow-camera-bottom={-20}
-      />
-      
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[100, 100]} />
-        <meshStandardMaterial color="#4ade80" roughness={0.8} />
-      </mesh>
-      
-      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[40, 40]} />
-        <meshStandardMaterial color="#475569" roughness={0.9} />
-      </mesh>
-      
-      {Array.from({ length: 9 }).map((_, i) => (
-        <mesh key={i} position={[-16 + i * 4, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.5, 40]} />
-          <meshBasicMaterial color="#fbbf24" />
-        </mesh>
-      ))}
-      
-      {buildings.map((building, index) => (
-        <Building3D key={index} {...building} />
-      ))}
-      
-      {route && route.length > 1 && (
-        <mesh>
-          <tubeGeometry args={[
-            new THREE.CatmullRomCurve3(
-              route.map((point, index) => 
-                new THREE.Vector3(
-                  point[0] * 0.1,
-                  0.2 + Math.sin(index * 0.1) * 0.1,
-                  point[1] * 0.1
-                )
-              )
-            ),
-            100,
-            0.2,
-            8,
-            false
-          ]} />
-          <meshStandardMaterial 
-            color="#3b82f6" 
-            emissive="#3b82f6"
-            emissiveIntensity={0.3}
-            transparent
-            opacity={0.7}
-          />
-        </mesh>
-      )}
-      
-      {hazards.map((hazard, index) => (
-        <Hazard3D
-          key={index}
-          position={[hazard.position[0] * 0.1, 0, hazard.position[1] * 0.1]}
-          type={hazard.type}
-          severity={hazard.severity}
-        />
-      ))}
-      
-      {pedestrians.map((pedestrian, index) => (
-        <Pedestrian3D
-          key={index}
-          position={[
-            pedestrian.position[0] * 0.1,
-            0,
-            pedestrian.position[1] * 0.1
-          ]}
-          rotation={pedestrian.rotation || 0}
-          state={pedestrian.state}
-          isUser={pedestrian.isUser}
-        />
-      ))}
-      
-      <gridHelper args={[100, 100, '#94a3b8', '#94a3b8']} />
-      
-      <OrbitControls 
-        enablePan={true}
-        enableZoom={true}
-        enableRotate={true}
-        maxPolarAngle={Math.PI / 2}
-        minDistance={5}
-        maxDistance={50}
-      />
-    </>
-  );
-};
-
-// Accessibility Audio Engine
 const useAudioEngine = () => {
   const audioContextRef = useRef(null);
   
@@ -361,7 +68,6 @@ const useAudioEngine = () => {
   
   const playDirectionAudio = useCallback((direction, distance) => {
     initAudio();
-    
     const directions = {
       'left': 'Turn left in',
       'right': 'Turn right in',
@@ -369,7 +75,6 @@ const useAudioEngine = () => {
       'arriving': 'Arriving at destination',
       'rerouting': 'Rerouting due to safety concern'
     };
-    
     const message = `${directions[direction] || 'Continue'} ${distance ? `${Math.round(distance)} meters` : ''}`;
     speak(message, 'direction');
   }, [initAudio]);
@@ -384,7 +89,6 @@ const useAudioEngine = () => {
       'poor_lighting': 'Poor lighting area',
       'accessibility': 'Accessibility issue detected'
     };
-    
     const message = `${hazards[hazardType] || 'Hazard detected'} ${distance ? `, ${Math.round(distance)} meters ahead` : ' ahead'}`;
     speak(message, 'hazard', true);
   }, []);
@@ -418,26 +122,20 @@ const useAudioEngine = () => {
         'reroute': [300, 100, 300],
         'arrival': [100, 100, 100, 100, 100]
       };
-      
       navigator.vibrate(patterns[pattern] || [100]);
     }
   }, []);
   
   const playBeep = useCallback((frequency = 440, duration = 200) => {
     initAudio();
-    
     const oscillator = audioContextRef.current.createOscillator();
     const gainNode = audioContextRef.current.createGain();
-    
     oscillator.connect(gainNode);
     gainNode.connect(audioContextRef.current.destination);
-    
     oscillator.frequency.value = frequency;
     oscillator.type = 'sine';
-    
     gainNode.gain.setValueAtTime(0.3, audioContextRef.current.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContextRef.current.currentTime + duration / 1000);
-    
     oscillator.start();
     oscillator.stop(audioContextRef.current.currentTime + duration / 1000);
   }, [initAudio]);
@@ -459,11 +157,15 @@ function ChangeView({ center, zoom }) {
   return null;
 }
 
-// Main Live Navigation Component
 const LiveNavigation = () => {
+  const [route, setRoute] = useState([
+    [40.4406, -79.9959],
+    [40.4408, -79.9965],
+    [40.4412, -79.9972],
+    [40.4416, -80.0099],
+  ]);
   const [userPosition, setUserPosition] = useState([40.4406, -79.9959]);
   const [destination, setDestination] = useState([40.4416, -80.0099]);
-  const [route, setRoute] = useState([]);
   const [hazards, setHazards] = useState([]);
   const [pedestrians, setPedestrians] = useState([]);
   const [navigationState, setNavigationState] = useState('idle');
@@ -507,7 +209,19 @@ const LiveNavigation = () => {
     }
   };
   
-  // Initialize WebSocket connection
+  useEffect(() => {
+    if (route.length < 2) return;
+    let idx = 0;
+    const interval = setInterval(() => {
+      idx = (idx + 1) % route.length;
+      setUserPosition(route[idx]);
+      setNavigationState('walking');
+      setRemainingDistance((route.length - idx) * 80);
+      setEstimatedTime((route.length - idx) * 60);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [route]);
+  
   useEffect(() => {
     const newSocket = io('http://localhost:5001');
     socketRef.current = newSocket;
@@ -633,7 +347,6 @@ const LiveNavigation = () => {
     };
   }, [userId, destination, audioEngine, accessibilitySettings]);
   
-  // Update position periodically (simulated)
   useEffect(() => {
     if (navigationState === 'walking' && socket) {
       const interval = setInterval(() => {
@@ -661,7 +374,6 @@ const LiveNavigation = () => {
     }
   }, [navigationState, socket, userId, userPosition, route]);
   
-  // Calculate route safety
   useEffect(() => {
     const calculateSafety = async () => {
       try {
@@ -899,19 +611,18 @@ const LiveNavigation = () => {
           </div>
           
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-black rounded-2xl overflow-hidden border border-white/10" style={{ height: '400px' }}>
-              <Canvas shadows camera={{ position: [10, 20, 10], fov: 50 }}>
-                <CityScene
-                  pedestrians={pedestrians}
-                  hazards={activeHazards.map(h => ({
-                    position: [h.position.lat, h.position.lng],
-                    type: h.type,
-                    severity: h.severity
-                  }))}
-                  userPosition={[userPosition[0] * 0.1, 0, userPosition[1] * 0.1]}
-                  route={route.map(coord => [coord[0] * 0.1, coord[1] * 0.1])}
-                />
-              </Canvas>
+            <div className="bg-black rounded-2xl overflow-hidden border border-white/10"
+                 style={{ height: '400px', position: 'relative' }}>
+              <Walking3DView
+                route={route}
+                hazards={activeHazards}
+                userPosition={userPosition}
+                navigationState={navigationState}
+                routeSafety={routeSafety}
+                remainingDistance={remainingDistance}
+                estimatedTime={estimatedTime}
+                style={{ width: '100%', height: '100%' }}
+              />
               
               <div className="absolute top-4 right-4 flex space-x-2">
                 <button 
@@ -1088,14 +799,6 @@ const LiveNavigation = () => {
       `}</style>
     </div>
   );
-};
-
-export {
-  Pedestrian3D,
-  Hazard3D,
-  Building3D,
-  CityScene,
-  useAudioEngine
 };
 
 export default LiveNavigation;

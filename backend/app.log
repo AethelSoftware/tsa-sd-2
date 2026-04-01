@@ -2321,3 +2321,389 @@ RuntimeError: The session is unavailable because no secret key was set.  Set the
 2026-03-30 23:59:37,199 - __main__ - INFO - Parsed 1 construction zones, 1 hazards from TomTom
 2026-03-30 23:59:37,199 - real_api_client - WARNING - No coordinate transformer available; skipping crime data.
 2026-03-30 23:59:37,202 - werkzeug - INFO - 127.0.0.1 - - [30/Mar/2026 23:59:37] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:38:31,654 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-03-31 21:38:31,660 - __main__ - INFO - Safety AI loaded successfully
+2026-03-31 21:38:33,294 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-03-31 21:38:33,294 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-03-31 21:38:33,305 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-03-31 21:38:33,306 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-31 21:38:35,768 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:38:35] "GET /api/hello HTTP/1.1" 200 -
+2026-03-31 21:38:35,787 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:38:35] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-03-31 21:38:52,942 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:38:52] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-03-31 21:38:55,320 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:38:55] "[32mGET /api/callback?state=rQmo1Zy9qwo3IydG0PIakwDwjEOl0p&iss=https://accounts.google.com&code=4/0Aci98E9bsDZ0s94btR1fZ47swHITrtrnvlh5EL_S_ETcDZuB5sYn2ywayeG5KL0yIGBA_g&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+openid+https://www.googleapis.com/auth/userinfo.profile&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-03-31 21:38:55,614 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:38:55] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:38:55,615 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:38:55] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:38:55,616 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:38:55,617 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:38:55,618 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:38:55,619 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:38:55,801 - __main__ - INFO - TomTom returned 49 incidents
+2026-03-31 21:38:55,802 - __main__ - INFO - TomTom returned 49 incidents
+2026-03-31 21:38:55,803 - __main__ - INFO - Parsed 45 construction zones, 4 hazards from TomTom
+2026-03-31 21:38:55,803 - __main__ - INFO - Parsed 45 construction zones, 4 hazards from TomTom
+2026-03-31 21:38:55,807 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:38:55] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:38:55,809 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:38:55] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:38:58,834 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:38:58] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:38:58,836 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:38:58,836 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:38:58,949 - __main__ - INFO - TomTom returned 49 incidents
+2026-03-31 21:38:58,949 - __main__ - INFO - Parsed 45 construction zones, 4 hazards from TomTom
+2026-03-31 21:38:58,953 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:38:58] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:41:05,441 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:41:05] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:41:05,446 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:41:05] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:41:05,450 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:41:05,450 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:41:05,451 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:41:05,453 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:41:05,610 - __main__ - INFO - TomTom returned 50 incidents
+2026-03-31 21:41:05,610 - __main__ - INFO - TomTom returned 50 incidents
+2026-03-31 21:41:05,611 - __main__ - INFO - Parsed 45 construction zones, 5 hazards from TomTom
+2026-03-31 21:41:05,611 - __main__ - INFO - Parsed 45 construction zones, 5 hazards from TomTom
+2026-03-31 21:41:05,613 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:41:05] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:41:05,615 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:41:05] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:43:58,846 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:43:58] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:43:58,850 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:43:58,850 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:43:59,056 - __main__ - INFO - TomTom returned 49 incidents
+2026-03-31 21:43:59,057 - __main__ - INFO - Parsed 45 construction zones, 4 hazards from TomTom
+2026-03-31 21:43:59,060 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:43:59] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:45:32,567 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:45:32] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:45:32,570 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:45:32] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:45:32,574 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:45:32,574 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:45:32,582 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:45:32,584 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:45:32,712 - __main__ - INFO - TomTom returned 49 incidents
+2026-03-31 21:45:32,713 - __main__ - INFO - TomTom returned 49 incidents
+2026-03-31 21:45:32,714 - __main__ - INFO - Parsed 45 construction zones, 4 hazards from TomTom
+2026-03-31 21:45:32,714 - __main__ - INFO - Parsed 45 construction zones, 4 hazards from TomTom
+2026-03-31 21:45:32,718 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:45:32] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:45:32,722 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:45:32] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:46:00,063 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:46:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:46:00,067 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.46381460512284,-80.02807350663794 to 40.64381460512285,-79.78807350663793
+2026-03-31 21:46:00,068 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.46381460512284,-80.02807350663794 to 40.64381460512285,-79.78807350663793
+2026-03-31 21:46:00,266 - __main__ - INFO - TomTom returned 6 incidents
+2026-03-31 21:46:00,266 - __main__ - INFO - Parsed 5 construction zones, 1 hazards from TomTom
+2026-03-31 21:46:00,269 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:46:00] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:46:17,280 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:46:17] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-31 21:46:17,424 - __main__ - INFO - Attempting TomTom route from 40.553673,-79.907911 to 40.549059,-79.914682
+2026-03-31 21:46:17,424 - tomtom_router - INFO - Calculating TomTom route from 40.553673,-79.907911 to 40.549059,-79.914682
+2026-03-31 21:46:17,535 - tomtom_router - INFO - TomTom returned 1 route(s)
+2026-03-31 21:46:17,538 - __main__ - INFO - TomTom route successful
+2026-03-31 21:46:17,989 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-03-31 21:46:18,005 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:46:18] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-31 21:46:18,511 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:46:18] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-31 21:46:18,514 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:46:18] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-31 21:48:58,820 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:48:58] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:48:58,823 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:48:58,823 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:48:58,967 - __main__ - INFO - TomTom returned 49 incidents
+2026-03-31 21:48:58,968 - __main__ - INFO - Parsed 45 construction zones, 4 hazards from TomTom
+2026-03-31 21:48:58,972 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:48:58] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:51:00,830 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:51:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:51:00,836 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.46381460512284,-80.02807350663794 to 40.64381460512285,-79.78807350663793
+2026-03-31 21:51:00,836 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.46381460512284,-80.02807350663794 to 40.64381460512285,-79.78807350663793
+2026-03-31 21:51:01,052 - __main__ - INFO - TomTom returned 8 incidents
+2026-03-31 21:51:01,053 - __main__ - INFO - Parsed 5 construction zones, 3 hazards from TomTom
+2026-03-31 21:51:01,056 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:51:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:53:58,833 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:53:58] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:53:58,838 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:53:58,838 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:53:58,986 - __main__ - INFO - TomTom returned 53 incidents
+2026-03-31 21:53:58,987 - __main__ - INFO - Parsed 45 construction zones, 8 hazards from TomTom
+2026-03-31 21:53:58,989 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:53:58] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:56:00,815 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:56:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:56:00,819 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.46381460512284,-80.02807350663794 to 40.64381460512285,-79.78807350663793
+2026-03-31 21:56:00,819 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.46381460512284,-80.02807350663794 to 40.64381460512285,-79.78807350663793
+2026-03-31 21:56:01,033 - __main__ - INFO - TomTom returned 7 incidents
+2026-03-31 21:56:01,034 - __main__ - INFO - Parsed 5 construction zones, 2 hazards from TomTom
+2026-03-31 21:56:01,037 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:56:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:58:58,817 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:58:58] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 21:58:58,822 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:58:58,822 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 21:58:58,951 - __main__ - INFO - TomTom returned 53 incidents
+2026-03-31 21:58:58,951 - __main__ - INFO - Parsed 45 construction zones, 8 hazards from TomTom
+2026-03-31 21:58:58,955 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 21:58:58] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:01:00,810 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:01:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:01:00,814 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.46381460512284,-80.02807350663794 to 40.64381460512285,-79.78807350663793
+2026-03-31 22:01:00,814 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.46381460512284,-80.02807350663794 to 40.64381460512285,-79.78807350663793
+2026-03-31 22:01:00,946 - __main__ - INFO - TomTom returned 8 incidents
+2026-03-31 22:01:00,947 - __main__ - INFO - Parsed 5 construction zones, 3 hazards from TomTom
+2026-03-31 22:01:00,950 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:01:00] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:03:58,814 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:03:58] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:03:58,819 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:03:58,820 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:03:58,955 - __main__ - INFO - TomTom returned 59 incidents
+2026-03-31 22:03:58,956 - __main__ - INFO - Parsed 45 construction zones, 14 hazards from TomTom
+2026-03-31 22:03:58,960 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:03:58] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:06:00,807 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:06:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:06:00,812 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.46381460512284,-80.02807350663794 to 40.64381460512285,-79.78807350663793
+2026-03-31 22:06:00,812 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.46381460512284,-80.02807350663794 to 40.64381460512285,-79.78807350663793
+2026-03-31 22:06:01,007 - __main__ - INFO - TomTom returned 6 incidents
+2026-03-31 22:06:01,008 - __main__ - INFO - Parsed 5 construction zones, 1 hazards from TomTom
+2026-03-31 22:06:01,011 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:06:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:08:58,821 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:08:58] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:08:58,825 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:08:58,825 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:08:59,010 - __main__ - INFO - TomTom returned 62 incidents
+2026-03-31 22:08:59,011 - __main__ - INFO - Parsed 45 construction zones, 17 hazards from TomTom
+2026-03-31 22:08:59,015 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:08:59] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:11:00,813 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:11:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:11:00,820 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.46381460512284,-80.02807350663794 to 40.64381460512285,-79.78807350663793
+2026-03-31 22:11:00,820 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.46381460512284,-80.02807350663794 to 40.64381460512285,-79.78807350663793
+2026-03-31 22:11:00,976 - __main__ - INFO - TomTom returned 6 incidents
+2026-03-31 22:11:00,977 - __main__ - INFO - Parsed 5 construction zones, 1 hazards from TomTom
+2026-03-31 22:11:00,981 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:11:00] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:13:58,807 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:13:58] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:13:58,812 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:13:58,813 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:13:59,028 - __main__ - INFO - TomTom returned 65 incidents
+2026-03-31 22:13:59,029 - __main__ - INFO - Parsed 45 construction zones, 20 hazards from TomTom
+2026-03-31 22:13:59,032 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:13:59] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:15:57,651 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:15:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:15:57,653 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:15:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:15:57,659 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:15:57,660 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:15:57,664 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:15:57,665 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:15:57,863 - __main__ - INFO - TomTom returned 64 incidents
+2026-03-31 22:15:57,865 - __main__ - INFO - Parsed 45 construction zones, 19 hazards from TomTom
+2026-03-31 22:15:57,866 - __main__ - INFO - TomTom returned 64 incidents
+2026-03-31 22:15:57,869 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:15:57] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:15:57,870 - __main__ - INFO - Parsed 45 construction zones, 19 hazards from TomTom
+2026-03-31 22:15:57,874 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:15:57] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:16:40,764 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:16:40] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-31 22:16:40,897 - __main__ - INFO - Attempting TomTom route from -12.9266883,-38.5038726 to 40.4391639,-80.007334
+2026-03-31 22:16:40,897 - tomtom_router - INFO - Calculating TomTom route from -12.9266883,-38.5038726 to 40.4391639,-80.007334
+2026-03-31 22:16:41,479 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/-12.9266883,-38.5038726:40.4391639,-80.007334/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=false&instructionsType=text&language=en-US&routeRepresentation=polyline&computeTravelTimeFor=none&avoid=unpavedRoads
+2026-03-31 22:16:41,481 - __main__ - INFO - TomTom route successful
+2026-03-31 22:16:41,926 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-03-31 22:16:41,937 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:16:41] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-31 22:16:42,444 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:16:42] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-31 22:16:42,450 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:16:42] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-31 22:17:01,613 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:17:01] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-31 22:17:01,729 - __main__ - INFO - Attempting TomTom route from -12.9266883,-38.5038726 to 41.6826009,-85.0054638
+2026-03-31 22:17:01,730 - tomtom_router - INFO - Calculating TomTom route from -12.9266883,-38.5038726 to 41.6826009,-85.0054638
+2026-03-31 22:17:02,283 - tomtom_router - ERROR - TomTom API request failed: 400 Client Error: Bad Request for url: https://api.tomtom.com/routing/1/calculateRoute/-12.9266883,-38.5038726:41.6826009,-85.0054638/json?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&travelMode=pedestrian&routeType=fastest&traffic=false&instructionsType=text&language=en-US&routeRepresentation=polyline&computeTravelTimeFor=none&avoid=unpavedRoads
+2026-03-31 22:17:02,286 - __main__ - INFO - TomTom route successful
+2026-03-31 22:17:02,674 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-03-31 22:17:02,676 - __main__ - INFO - Using cached route result
+2026-03-31 22:17:02,678 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:17:02] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-31 22:17:03,182 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:17:03] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-31 22:17:03,184 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:17:03] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-31 22:17:26,592 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:17:26] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-03-31 22:17:26,715 - __main__ - INFO - Found 15 obstructions to avoid in route
+2026-03-31 22:17:26,715 - __main__ - INFO - Attempting TomTom route from 40.4401098,-79.9963332 to 40.4471486,-79.958979
+2026-03-31 22:17:26,715 - tomtom_router - INFO - Calculating TomTom route from 40.4401098,-79.9963332 to 40.4471486,-79.958979
+2026-03-31 22:17:26,891 - tomtom_router - INFO - TomTom returned 6 route(s)
+2026-03-31 22:17:26,901 - tomtom_router - INFO -   Route 1: 0 conflicts, 3754m, score=999.6
+2026-03-31 22:17:26,903 - tomtom_router - INFO -   Route 2: 0 conflicts, 3879m, score=999.6
+2026-03-31 22:17:26,905 - tomtom_router - INFO -   Route 3: 1 conflicts, 4134m, score=899.6
+2026-03-31 22:17:26,907 - tomtom_router - INFO -   Route 4: 0 conflicts, 3991m, score=999.6
+2026-03-31 22:17:26,909 - tomtom_router - INFO -   Route 5: 1 conflicts, 4219m, score=899.6
+2026-03-31 22:17:26,911 - tomtom_router - INFO -   Route 6: 0 conflicts, 4294m, score=999.6
+2026-03-31 22:17:26,911 - tomtom_router - INFO - Found clean route avoiding all obstructions
+2026-03-31 22:17:26,912 - __main__ - INFO - TomTom route successful
+2026-03-31 22:17:27,320 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-03-31 22:17:27,328 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:17:27] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-03-31 22:17:27,833 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:17:27] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-03-31 22:17:27,835 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:17:27] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-03-31 22:18:58,830 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:18:58] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:18:58,833 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:18:58,833 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:18:58,977 - __main__ - INFO - TomTom returned 63 incidents
+2026-03-31 22:18:58,978 - __main__ - INFO - Parsed 45 construction zones, 18 hazards from TomTom
+2026-03-31 22:18:58,980 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:18:58] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:20:57,831 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:20:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:20:57,835 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:20:57,835 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:20:58,038 - __main__ - INFO - TomTom returned 67 incidents
+2026-03-31 22:20:58,039 - __main__ - INFO - Parsed 45 construction zones, 22 hazards from TomTom
+2026-03-31 22:20:58,042 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:20:58] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:23:58,829 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:23:58] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:23:58,835 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:23:58,835 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:23:58,994 - __main__ - INFO - TomTom returned 59 incidents
+2026-03-31 22:23:58,995 - __main__ - INFO - Parsed 45 construction zones, 14 hazards from TomTom
+2026-03-31 22:23:58,999 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:23:58] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:25:57,836 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:25:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:25:57,839 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:25:57,839 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:25:58,042 - __main__ - INFO - TomTom returned 56 incidents
+2026-03-31 22:25:58,043 - __main__ - INFO - Parsed 44 construction zones, 12 hazards from TomTom
+2026-03-31 22:25:58,046 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:25:58] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:28:58,822 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:28:58] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:28:58,827 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:28:58,828 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:28:59,027 - __main__ - INFO - TomTom returned 50 incidents
+2026-03-31 22:28:59,028 - __main__ - INFO - Parsed 44 construction zones, 6 hazards from TomTom
+2026-03-31 22:28:59,031 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:28:59] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:30:57,826 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:30:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:30:57,835 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:30:57,836 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:30:57,998 - __main__ - INFO - TomTom returned 49 incidents
+2026-03-31 22:30:57,999 - __main__ - INFO - Parsed 44 construction zones, 5 hazards from TomTom
+2026-03-31 22:30:58,003 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:30:58] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:33:58,820 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:33:58] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:33:58,823 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:33:58,823 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:33:59,023 - __main__ - INFO - TomTom returned 50 incidents
+2026-03-31 22:33:59,024 - __main__ - INFO - Parsed 44 construction zones, 6 hazards from TomTom
+2026-03-31 22:33:59,028 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:33:59] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:35:57,861 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:35:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:35:57,864 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:35:57,865 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:35:57,998 - __main__ - INFO - TomTom returned 50 incidents
+2026-03-31 22:35:57,999 - __main__ - INFO - Parsed 44 construction zones, 6 hazards from TomTom
+2026-03-31 22:35:58,003 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:35:58] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:38:58,827 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:38:58] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:38:58,832 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:38:58,833 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:38:59,041 - __main__ - INFO - TomTom returned 47 incidents
+2026-03-31 22:38:59,042 - __main__ - INFO - Parsed 44 construction zones, 3 hazards from TomTom
+2026-03-31 22:38:59,045 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:38:59] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:40:57,840 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:40:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 22:40:57,846 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:40:57,846 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 22:40:58,059 - __main__ - INFO - TomTom returned 45 incidents
+2026-03-31 22:40:58,060 - __main__ - INFO - Parsed 44 construction zones, 1 hazards from TomTom
+2026-03-31 22:40:58,064 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 22:40:58] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 23:16:19,496 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 23:16:19] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 23:16:19,501 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 23:16:19,501 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 23:16:19,656 - __main__ - INFO - TomTom returned 47 incidents
+2026-03-31 23:16:19,657 - __main__ - INFO - Parsed 44 construction zones, 3 hazards from TomTom
+2026-03-31 23:16:19,659 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 23:16:19] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 23:50:53,793 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 23:50:53] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-03-31 23:50:53,798 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 23:50:53,798 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-03-31 23:50:54,020 - __main__ - INFO - TomTom returned 44 incidents
+2026-03-31 23:50:54,021 - __main__ - INFO - Parsed 44 construction zones, 0 hazards from TomTom
+2026-03-31 23:50:54,025 - werkzeug - INFO - 127.0.0.1 - - [31/Mar/2026 23:50:54] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 00:58:00,327 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 00:58:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 00:58:00,334 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 00:58:00,334 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 00:58:00,586 - __main__ - INFO - TomTom returned 47 incidents
+2026-04-01 00:58:00,587 - __main__ - INFO - Parsed 44 construction zones, 3 hazards from TomTom
+2026-04-01 00:58:00,590 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 00:58:00] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 01:27:35,024 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 01:27:35] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 01:27:35,027 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 01:27:35,028 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 01:27:35,225 - __main__ - INFO - TomTom returned 46 incidents
+2026-04-01 01:27:35,226 - __main__ - INFO - Parsed 44 construction zones, 2 hazards from TomTom
+2026-04-01 01:27:35,230 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 01:27:35] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 02:20:14,496 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 02:20:14] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 02:20:14,500 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 02:20:14,501 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 02:20:14,655 - __main__ - INFO - TomTom returned 45 incidents
+2026-04-01 02:20:14,655 - __main__ - INFO - Parsed 44 construction zones, 1 hazards from TomTom
+2026-04-01 02:20:14,659 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 02:20:14] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 02:55:17,376 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 02:55:17] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 02:55:17,382 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 02:55:17,382 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 02:55:17,609 - __main__ - INFO - TomTom returned 44 incidents
+2026-04-01 02:55:17,610 - __main__ - INFO - Parsed 44 construction zones, 0 hazards from TomTom
+2026-04-01 02:55:17,613 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 02:55:17] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 03:45:49,044 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 03:45:49] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 03:45:49,049 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 03:45:49,050 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 03:45:49,207 - __main__ - INFO - TomTom returned 44 incidents
+2026-04-01 03:45:49,208 - __main__ - INFO - Parsed 44 construction zones, 0 hazards from TomTom
+2026-04-01 03:45:49,212 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 03:45:49] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 03:48:09,051 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 03:48:09] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 03:48:09,056 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 03:48:09,056 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 03:48:09,194 - __main__ - INFO - TomTom returned 44 incidents
+2026-04-01 03:48:09,195 - __main__ - INFO - Parsed 44 construction zones, 0 hazards from TomTom
+2026-04-01 03:48:09,199 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 03:48:09] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 04:06:09,143 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 04:06:09] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 04:06:09,147 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 04:06:09,147 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 04:06:09,350 - __main__ - INFO - TomTom returned 44 incidents
+2026-04-01 04:06:09,351 - __main__ - INFO - Parsed 44 construction zones, 0 hazards from TomTom
+2026-04-01 04:06:09,355 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 04:06:09] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 04:39:40,036 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 04:39:40] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 04:39:40,039 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 04:39:40,039 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 04:39:40,663 - __main__ - INFO - TomTom returned 44 incidents
+2026-04-01 04:39:40,664 - __main__ - INFO - Parsed 44 construction zones, 0 hazards from TomTom
+2026-04-01 04:39:40,667 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 04:39:40] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 05:30:56,390 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 05:30:56] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 05:30:56,395 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 05:30:56,395 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 05:30:56,564 - __main__ - INFO - TomTom returned 45 incidents
+2026-04-01 05:30:56,564 - __main__ - INFO - Parsed 44 construction zones, 1 hazards from TomTom
+2026-04-01 05:30:56,567 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 05:30:56] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 06:21:15,057 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 06:21:15] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 06:21:15,061 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 06:21:15,062 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 06:21:15,544 - __main__ - INFO - TomTom returned 48 incidents
+2026-04-01 06:21:15,544 - __main__ - INFO - Parsed 45 construction zones, 3 hazards from TomTom
+2026-04-01 06:21:15,548 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 06:21:15] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 07:04:40,051 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 07:04:40] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 07:04:40,056 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 07:04:40,057 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 07:04:40,233 - __main__ - INFO - TomTom returned 58 incidents
+2026-04-01 07:04:40,234 - __main__ - INFO - Parsed 45 construction zones, 13 hazards from TomTom
+2026-04-01 07:04:40,237 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 07:04:40] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 07:55:06,427 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 07:55:06] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 07:55:06,431 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 07:55:06,431 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 07:55:06,979 - __main__ - INFO - TomTom returned 92 incidents
+2026-04-01 07:55:06,980 - __main__ - INFO - Parsed 47 construction zones, 45 hazards from TomTom
+2026-04-01 07:55:06,984 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 07:55:06] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 08:46:26,185 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 08:46:26] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 08:46:26,190 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 08:46:26,190 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 08:46:26,444 - __main__ - INFO - TomTom returned 84 incidents
+2026-04-01 08:46:26,445 - __main__ - INFO - Parsed 47 construction zones, 37 hazards from TomTom
+2026-04-01 08:46:26,449 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 08:46:26] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 08:58:56,591 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 08:58:56] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 08:58:56,596 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 08:58:56,596 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 08:58:56,755 - __main__ - INFO - TomTom returned 84 incidents
+2026-04-01 08:58:56,756 - __main__ - INFO - Parsed 49 construction zones, 35 hazards from TomTom
+2026-04-01 08:58:56,758 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 08:58:56] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 09:01:36,547 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 09:01:36] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 09:01:36,551 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 09:01:36,552 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 09:01:36,686 - __main__ - INFO - TomTom returned 75 incidents
+2026-04-01 09:01:36,687 - __main__ - INFO - Parsed 49 construction zones, 26 hazards from TomTom
+2026-04-01 09:01:36,690 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 09:01:36] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 09:03:56,573 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 09:03:56] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 09:03:56,581 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 09:03:56,582 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 09:03:56,804 - __main__ - INFO - TomTom returned 82 incidents
+2026-04-01 09:03:56,805 - __main__ - INFO - Parsed 49 construction zones, 33 hazards from TomTom
+2026-04-01 09:03:56,811 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 09:03:56] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 09:06:36,552 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 09:06:36] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 09:06:36,555 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 09:06:36,556 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 09:06:36,714 - __main__ - INFO - TomTom returned 74 incidents
+2026-04-01 09:06:36,715 - __main__ - INFO - Parsed 49 construction zones, 25 hazards from TomTom
+2026-04-01 09:06:36,718 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 09:06:36] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 09:08:56,561 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 09:08:56] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 09:08:56,565 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 09:08:56,565 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 09:08:56,818 - __main__ - INFO - TomTom returned 76 incidents
+2026-04-01 09:08:56,819 - __main__ - INFO - Parsed 49 construction zones, 27 hazards from TomTom
+2026-04-01 09:08:56,821 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 09:08:56] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 09:11:36,538 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 09:11:36] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 09:11:36,541 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 09:11:36,541 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 09:11:36,754 - __main__ - INFO - TomTom returned 73 incidents
+2026-04-01 09:11:36,754 - __main__ - INFO - Parsed 49 construction zones, 24 hazards from TomTom
+2026-04-01 09:11:36,758 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 09:11:36] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 09:13:56,567 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 09:13:56] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 09:13:56,570 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 09:13:56,570 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 09:13:56,740 - __main__ - INFO - TomTom returned 70 incidents
+2026-04-01 09:13:56,741 - __main__ - INFO - Parsed 50 construction zones, 20 hazards from TomTom
+2026-04-01 09:13:56,745 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 09:13:56] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 09:16:36,545 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 09:16:36] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-01 09:16:36,551 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 09:16:36,552 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-01 09:16:36,765 - __main__ - INFO - TomTom returned 65 incidents
+2026-04-01 09:16:36,765 - __main__ - INFO - Parsed 50 construction zones, 15 hazards from TomTom
+2026-04-01 09:16:36,769 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 09:16:36] "POST /api/area-obstructions HTTP/1.1" 200 -

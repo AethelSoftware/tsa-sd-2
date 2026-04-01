@@ -51,8 +51,8 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { renderToStaticMarkup } from "react-dom/server";
+import Walking3DView from './Walking3DView';
 
-// Leaflet icon fix
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -76,7 +76,6 @@ const destinationIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-// Helper: create a Leaflet divIcon from a Lucide React icon (with optional size)
 function makeLucideIcon(IconComponent, color, borderColor, size = 30) {
   const innerSize = Math.max(12, size * 0.55);
   const svg = renderToStaticMarkup(
@@ -105,7 +104,6 @@ function makeLucideIcon(IconComponent, color, borderColor, size = 30) {
   });
 }
 
-// Helper: distance from point to line segment (in meters)
 function haversineDistance(lat1, lng1, lat2, lng2) {
   const R = 6371000;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -734,6 +732,403 @@ function getObstructionStyle(type, iconCategory) {
   };
 }
 
+const ObstructedRoadSegment = ({ segment, zoomLevel = 13 }) => {
+  const {
+    coordinates,
+    label,
+    color,
+    borderColor,
+    description,
+    fromStreet,
+    toStreet,
+    name,
+    startTime,
+    endTime,
+  } = segment;
+
+  if (!coordinates || coordinates.length === 0) return null;
+
+  const getRoadWeight = () => {
+    const minZoom = 10;
+    const maxZoom = 18;
+    const minWeight = 2.0;
+    const maxWeight = 8.0;
+    const weight = minWeight + ((zoomLevel - minZoom) / (maxZoom - minZoom)) * (maxWeight - minWeight);
+    return Math.min(maxWeight, Math.max(minWeight, weight));
+  };
+
+  const getBorderWeight = () => {
+    const mainWeight = getRoadWeight();
+    return mainWeight + 1.5;
+  };
+
+  const getDashWeight = () => {
+    const mainWeight = getRoadWeight();
+    return Math.max(1.5, mainWeight * 0.4);
+  };
+
+  const mainWeight = getRoadWeight();
+  const borderWeight = getBorderWeight();
+  const dashWeight = getDashWeight();
+
+  if (coordinates.length === 1) {
+    const getCircleRadius = () => {
+      const minZoom = 10;
+      const maxZoom = 18;
+      const minRadius = 12;
+      const maxRadius = 40;
+      const radius = minRadius + ((zoomLevel - minZoom) / (maxZoom - minZoom)) * (maxRadius - minRadius);
+      return Math.min(maxRadius, Math.max(minRadius, radius));
+    };
+    const circleRadius = getCircleRadius();
+    return (
+      <Circle
+        center={coordinates[0]}
+        radius={circleRadius}
+        pathOptions={{
+          color: borderColor,
+          fillColor: color,
+          fillOpacity: 0.85,
+          weight: Math.max(1, mainWeight / 2),
+        }}
+      >
+        <Popup>
+          <div style={{ fontFamily: "DM Sans, sans-serif", minWidth: 200 }}>
+            <div style={{ fontWeight: "bold", fontSize: 14, marginBottom: 8, color: borderColor }}>{label}</div>
+            <div style={{ fontSize: 13, fontWeight: "bold", marginBottom: 4 }}>{name}</div>
+            {(fromStreet || toStreet) && (
+              <div style={{ fontSize: 11, color: "#e0c8b0", marginBottom: 8 }}>
+                {fromStreet && `From: ${fromStreet}`}
+                {fromStreet && toStreet && " → "}
+                {toStreet && `To: ${toStreet}`}
+              </div>
+            )}
+            <div style={{ fontSize: 12, marginTop: 4 }}>{description}</div>
+            {startTime && (
+              <div style={{ fontSize: 10, color: "#b09878", marginTop: 4 }}>
+                Started: {new Date(startTime).toLocaleString()}
+              </div>
+            )}
+          </div>
+        </Popup>
+      </Circle>
+    );
+  }
+
+  return (
+    <>
+      <Polyline
+        positions={coordinates}
+        pathOptions={{
+          color: color,
+          weight: mainWeight,
+          opacity: 1,
+          lineCap: "round",
+          lineJoin: "round",
+        }}
+      />
+      <Polyline
+        positions={coordinates}
+        pathOptions={{
+          color: borderColor,
+          weight: borderWeight,
+          opacity: 0.85,
+          lineCap: "round",
+          lineJoin: "round",
+        }}
+      />
+      <Polyline
+        positions={coordinates}
+        pathOptions={{
+          color: "#ffffff",
+          weight: dashWeight,
+          opacity: 0.95,
+          lineCap: "round",
+          lineJoin: "round",
+          dashArray: zoomLevel > 13 ? "12, 10" : "8, 6",
+          className: "obstructed-road-border-top",
+        }}
+      >
+        <Popup>
+          <div style={{ fontFamily: "DM Sans, sans-serif", minWidth: 220 }}>
+            <div
+              style={{
+                fontWeight: "bold",
+                fontSize: 14,
+                marginBottom: 8,
+                color: borderColor,
+              }}
+            >
+              {label}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: "bold", marginBottom: 4 }}>{name}</div>
+            {(fromStreet || toStreet) && (
+              <div style={{ fontSize: 11, color: "#e0c8b0", marginBottom: 8 }}>
+                {fromStreet && `From: ${fromStreet}`}
+                {fromStreet && toStreet && " → "}
+                {toStreet && `To: ${toStreet}`}
+              </div>
+            )}
+            <div style={{ fontSize: 12, marginTop: 4 }}>{description}</div>
+            {startTime && (
+              <div style={{ fontSize: 10, color: "#b09878", marginTop: 4 }}>
+                🕒 Started: {new Date(startTime).toLocaleString()}
+              </div>
+            )}
+            {endTime && (
+              <div style={{ fontSize: 10, color: "#b09878" }}>
+                ⏰ Until: {new Date(endTime).toLocaleString()}
+              </div>
+            )}
+          </div>
+        </Popup>
+      </Polyline>
+    </>
+  );
+};
+
+const ObstructionMarker = ({ lat, lng, type, iconCategory, description, radius, extra, zoomLevel = 13 }) => {
+  const style = getObstructionStyle(type, iconCategory);
+  const getIconSize = () => {
+    const minSize = 20,
+      maxSize = 40;
+    const size = minSize + ((zoomLevel - 10) / 8) * (maxSize - minSize);
+    return Math.min(maxSize, Math.max(minSize, size));
+  };
+  const iconSize = getIconSize();
+  const leafletIcon = makeLucideIcon(style.Icon, style.color, style.border, iconSize);
+
+  return (
+    <Marker position={[lat, lng]} icon={leafletIcon}>
+      <Popup>
+        <div style={{ fontFamily: "DM Sans, sans-serif", minWidth: 180, maxWidth: 280 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 10,
+              paddingBottom: 8,
+              borderBottom: `1px solid ${style.color}40`,
+            }}
+          >
+            <style.Icon size={18} color={style.color} strokeWidth={2.5} />
+            <strong style={{ color: style.color, fontSize: 14, fontWeight: 700 }}>{style.label}</strong>
+          </div>
+          <div style={{ fontSize: 12, color: "#e0c8b0", lineHeight: 1.5, marginBottom: 8 }}>
+            {description || "Obstruction reported in this area"}
+          </div>
+          {extra && (
+            <div
+              style={{
+                fontSize: 11,
+                color: "#b09878",
+                borderTop: `1px solid ${style.color}30`,
+                paddingTop: 6,
+                marginTop: 4,
+              }}
+            >
+              {extra}
+            </div>
+          )}
+          {radius && (
+            <div style={{ fontSize: 10, color: "#b09878", marginTop: 4 }}>
+              ⚠️ Affected area: ~{radius}m radius
+            </div>
+          )}
+        </div>
+      </Popup>
+    </Marker>
+  );
+};
+
+const RouteAlertComponent = () => {
+  if (!showRouteAlert) return null;
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 100,
+        left: "calc(var(--rail-w) + 14px)",
+        right: 14,
+        maxWidth: 400,
+        background: "var(--surface)",
+        border: `1px solid ${routeAlert?.type === "construction" ? "#ff7b6b" : "#ffb347"}`,
+        borderRadius: 16,
+        padding: 16,
+        zIndex: 100,
+        backdropFilter: "blur(24px)",
+        boxShadow: "var(--sh-lg)",
+        animation: "slideDown 0.3s ease",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+        <ShieldAlert size={22} color="#ff7b6b" />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: "bold", color: "var(--txt)" }}>{routeAlert?.message}</div>
+          {routeAlert?.constructionZones?.length > 0 && (
+            <div style={{ fontSize: 12, color: "var(--txt2)", marginTop: 4 }}>
+              {routeAlert.constructionZones.map((z) => z.description).join(", ")}
+            </div>
+          )}
+          {routeAlert?.hazards?.length > 0 && (
+            <div style={{ fontSize: 12, color: "var(--txt2)", marginTop: 4 }}>
+              {routeAlert.hazards.map((h) => h.description).join(", ")}
+            </div>
+          )}
+        </div>
+        <button
+          onClick={() => setShowRouteAlert(false)}
+          style={{ background: "transparent", border: "none", color: "var(--txt2)", cursor: "pointer" }}
+        >
+          <X size={16} />
+        </button>
+      </div>
+      {routeAlternatives.length > 0 && (
+        <div>
+          <div style={{ fontSize: 12, fontWeight: "bold", marginBottom: 8, color: "var(--wood)" }}>
+            Alternative Routes:
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {routeAlternatives.slice(0, 3).map((alt, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setRoutePath(alt.waypoints);
+                  setDest(alt.waypoints[alt.waypoints.length - 1]);
+                  setRouteInfo({
+                    distance: `${(alt.distance_meters / 1000).toFixed(1)} km`,
+                    duration: `${alt.duration_minutes} min`,
+                  });
+                  setShowRouteAlert(false);
+                  say(`Switched to ${alt.type} route, ${alt.duration_minutes} minutes`);
+                }}
+                style={{
+                  background: "var(--inset)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 12,
+                  padding: 10,
+                  textAlign: "left",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                  width: "100%",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--wood)")}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {alt.type === "transit" ? (
+                    <Bus size={14} style={{ color: "var(--wood)" }} />
+                  ) : (
+                    <PersonStanding size={14} style={{ color: "var(--green)" }} />
+                  )}
+                  <span style={{ fontWeight: 500, fontSize: 13 }}>
+                    {alt.type === "transit" ? "Transit" : "Walking"} • {alt.duration_minutes} min
+                  </span>
+                  {alt.has_obstruction && (
+                    <span style={{ fontSize: 10, color: "#ff7b6b", marginLeft: "auto" }}>
+                      <TriangleAlert size={10} /> obstruction
+                    </span>
+                  )}
+                </div>
+                {alt.type === "transit" && alt.transit_lines?.length > 0 && (
+                  <div style={{ fontSize: 11, color: "var(--txt2)", marginTop: 4 }}>
+                    {alt.transit_lines.map((l) => `${l.line} ${l.vehicle}`).join(" • ")}
+                  </div>
+                )}
+                {alt.type === "transit" && alt.walking_minutes && (
+                  <div style={{ fontSize: 10, color: "var(--txt2)", marginTop: 4 }}>
+                    Walk: {alt.walking_minutes} min • Ride: {alt.transit_minutes} min
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const TransitInfoModal = () => {
+  if (!showTransitInfo || !transitInfo) return null;
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "90%",
+        maxWidth: 500,
+        maxHeight: "80vh",
+        background: "var(--surface)",
+        border: "1px solid var(--border2)",
+        borderRadius: 20,
+        zIndex: 200,
+        backdropFilter: "blur(32px)",
+        boxShadow: "var(--sh-lg)",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <div className="p-head" style={{ borderBottom: "1px solid var(--border)" }}>
+        <div className="p-title">Transit Information</div>
+        <button className="p-close" onClick={() => setShowTransitInfo(false)}>
+          <X size={14} />
+        </button>
+      </div>
+      <div style={{ overflowY: "auto", padding: 16 }}>
+        {transitInfo.map((route, idx) => (
+          <div
+            key={idx}
+            style={{ marginBottom: 20, borderBottom: "1px solid var(--border)", paddingBottom: 12 }}
+          >
+            <div style={{ fontWeight: "bold", color: "var(--wood)", marginBottom: 8 }}>
+              Option {idx + 1}: {route.duration_minutes} min total
+            </div>
+            <div style={{ fontSize: 12, color: "var(--txt2)", marginBottom: 8 }}>
+              Walk: {route.walking_minutes} min • Ride: {route.transit_minutes} min
+            </div>
+            {route.transit_lines.map((line, li) => (
+              <div
+                key={li}
+                style={{ background: "var(--inset)", padding: 8, borderRadius: 8, marginBottom: 6 }}
+              >
+                <strong style={{ color: "var(--wood)" }}>{line.line}</strong> - {line.vehicle}
+                {line.direction && <div style={{ fontSize: 11 }}>Direction: {line.direction}</div>}
+              </div>
+            ))}
+            <div style={{ fontSize: 11, color: "var(--txt2)", marginTop: 8 }}>
+              {route.steps.map((step, si) => (
+                <div key={si} style={{ marginTop: 4 }}>
+                  • {step.instruction}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <button
+        onClick={() => setShowTransitInfo(false)}
+        style={{
+          margin: "12px 16px 16px",
+          padding: 10,
+          background: "var(--wood-g)",
+          border: "none",
+          borderRadius: 12,
+          color: "white",
+          fontWeight: "bold",
+          cursor: "pointer",
+        }}
+      >
+        Close
+      </button>
+    </div>
+  );
+};
+
 export default function AccessibleMap() {
   const [mapType, setMapType] = useState("openstreetmap");
   const [zoom, setZoom] = useState(13);
@@ -809,7 +1204,6 @@ export default function AccessibleMap() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch area obstructions from backend
   useEffect(() => {
     const fetchAreaObstructions = async () => {
       try {
@@ -835,7 +1229,6 @@ export default function AccessibleMap() {
     return () => clearInterval(interval);
   }, [loc]);
 
-  // Fetch road segments from TomTom Traffic API
   const fetchRoadSegmentsFromTrafficAPI = async () => {
     try {
       const bbox = `${loc[1] - 0.08},${loc[0] - 0.08},${loc[1] + 0.08},${loc[0] + 0.08}`;
@@ -1235,8 +1628,6 @@ export default function AccessibleMap() {
   const hc = a11y.highContrast;
   const lt = a11y.largeText;
 
-  // ----- Components -----
-
   const MapZoomTracker = () => {
     const map = useMap();
     useEffect(() => {
@@ -1248,415 +1639,6 @@ export default function AccessibleMap() {
     return null;
   };
 
-  // Updated ObstructedRoadSegment component with proper road width scaling
-const ObstructedRoadSegment = ({ segment, zoomLevel = 13 }) => {
-  const {
-    coordinates,
-    label,
-    color,
-    borderColor,
-    description,
-    fromStreet,
-    toStreet,
-    name,
-    startTime,
-    endTime,
-  } = segment;
-
-  if (!coordinates || coordinates.length === 0) return null;
-
-  // Calculate road width based on zoom level - NEVER wider than the actual road
-  // At zoom 10: weight = 2px (very thin line)
-  // At zoom 18: weight = 8px (reasonable road width)
-  const getRoadWeight = () => {
-    const minZoom = 10;
-    const maxZoom = 18;
-    const minWeight = 2.0;   // Very thin when zoomed out
-    const maxWeight = 8.0;   // Reasonable road width when zoomed in
-    const weight = minWeight + ((zoomLevel - minZoom) / (maxZoom - minZoom)) * (maxWeight - minWeight);
-    return Math.min(maxWeight, Math.max(minWeight, weight));
-  };
-
-  // Border weight is slightly thicker than the main road
-  const getBorderWeight = () => {
-    const mainWeight = getRoadWeight();
-    return mainWeight + 1.5;
-  };
-
-  // Dash line is thinner and sits on top
-  const getDashWeight = () => {
-    const mainWeight = getRoadWeight();
-    return Math.max(1.5, mainWeight * 0.4);
-  };
-
-  const mainWeight = getRoadWeight();
-  const borderWeight = getBorderWeight();
-  const dashWeight = getDashWeight();
-
-  // For point geometries - circle radius scales with zoom
-  if (coordinates.length === 1) {
-    const getCircleRadius = () => {
-      const minZoom = 10;
-      const maxZoom = 18;
-      const minRadius = 12;
-      const maxRadius = 40;
-      const radius = minRadius + ((zoomLevel - minZoom) / (maxZoom - minZoom)) * (maxRadius - minRadius);
-      return Math.min(maxRadius, Math.max(minRadius, radius));
-    };
-    const circleRadius = getCircleRadius();
-    return (
-      <Circle
-        center={coordinates[0]}
-        radius={circleRadius}
-        pathOptions={{
-          color: borderColor,
-          fillColor: color,
-          fillOpacity: 0.85,
-          weight: Math.max(1, mainWeight / 2),
-        }}
-      >
-        <Popup>
-          <div style={{ fontFamily: "DM Sans, sans-serif", minWidth: 200 }}>
-            <div style={{ fontWeight: "bold", fontSize: 14, marginBottom: 8, color: borderColor }}>{label}</div>
-            <div style={{ fontSize: 13, fontWeight: "bold", marginBottom: 4 }}>{name}</div>
-            {(fromStreet || toStreet) && (
-              <div style={{ fontSize: 11, color: "#e0c8b0", marginBottom: 8 }}>
-                {fromStreet && `From: ${fromStreet}`}
-                {fromStreet && toStreet && " → "}
-                {toStreet && `To: ${toStreet}`}
-              </div>
-            )}
-            <div style={{ fontSize: 12, marginTop: 4 }}>{description}</div>
-            {startTime && (
-              <div style={{ fontSize: 10, color: "#b09878", marginTop: 4 }}>
-                Started: {new Date(startTime).toLocaleString()}
-              </div>
-            )}
-          </div>
-        </Popup>
-      </Circle>
-    );
-  }
-
-  // For line strings - scaled to road width
-  return (
-    <>
-      {/* Solid background overlay - width scales with zoom */}
-      <Polyline
-        positions={coordinates}
-        pathOptions={{
-          color: color,
-          weight: mainWeight,
-          opacity: 1,
-          lineCap: "round",
-          lineJoin: "round",
-        }}
-      />
-      {/* Solid border outline - slightly thicker */}
-      <Polyline
-        positions={coordinates}
-        pathOptions={{
-          color: borderColor,
-          weight: borderWeight,
-          opacity: 0.85,
-          lineCap: "round",
-          lineJoin: "round",
-        }}
-      />
-      {/* Animated dashed border on TOP - thin and visible */}
-      <Polyline
-        positions={coordinates}
-        pathOptions={{
-          color: "#ffffff",
-          weight: dashWeight,
-          opacity: 0.95,
-          lineCap: "round",
-          lineJoin: "round",
-          dashArray: zoomLevel > 13 ? "12, 10" : "8, 6",
-          className: "obstructed-road-border-top",
-        }}
-      >
-        <Popup>
-          <div style={{ fontFamily: "DM Sans, sans-serif", minWidth: 220 }}>
-            <div
-              style={{
-                fontWeight: "bold",
-                fontSize: 14,
-                marginBottom: 8,
-                color: borderColor,
-              }}
-            >
-              {label}
-            </div>
-            <div style={{ fontSize: 13, fontWeight: "bold", marginBottom: 4 }}>{name}</div>
-            {(fromStreet || toStreet) && (
-              <div style={{ fontSize: 11, color: "#e0c8b0", marginBottom: 8 }}>
-                {fromStreet && `From: ${fromStreet}`}
-                {fromStreet && toStreet && " → "}
-                {toStreet && `To: ${toStreet}`}
-              </div>
-            )}
-            <div style={{ fontSize: 12, marginTop: 4 }}>{description}</div>
-            {startTime && (
-              <div style={{ fontSize: 10, color: "#b09878", marginTop: 4 }}>
-                🕒 Started: {new Date(startTime).toLocaleString()}
-              </div>
-            )}
-            {endTime && (
-              <div style={{ fontSize: 10, color: "#b09878" }}>
-                ⏰ Until: {new Date(endTime).toLocaleString()}
-              </div>
-            )}
-          </div>
-        </Popup>
-      </Polyline>
-    </>
-  );
-};
-
-  const ObstructionMarker = ({ lat, lng, type, iconCategory, description, radius, extra, zoomLevel = 13 }) => {
-    const style = getObstructionStyle(type, iconCategory);
-    const getIconSize = () => {
-      const minSize = 20,
-        maxSize = 40;
-      const size = minSize + ((zoomLevel - 10) / 8) * (maxSize - minSize);
-      return Math.min(maxSize, Math.max(minSize, size));
-    };
-    const iconSize = getIconSize();
-    const leafletIcon = makeLucideIcon(style.Icon, style.color, style.border, iconSize);
-
-    return (
-      <Marker position={[lat, lng]} icon={leafletIcon}>
-        <Popup>
-          <div style={{ fontFamily: "DM Sans, sans-serif", minWidth: 180, maxWidth: 280 }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 10,
-                paddingBottom: 8,
-                borderBottom: `1px solid ${style.color}40`,
-              }}
-            >
-              <style.Icon size={18} color={style.color} strokeWidth={2.5} />
-              <strong style={{ color: style.color, fontSize: 14, fontWeight: 700 }}>{style.label}</strong>
-            </div>
-            <div style={{ fontSize: 12, color: "#e0c8b0", lineHeight: 1.5, marginBottom: 8 }}>
-              {description || "Obstruction reported in this area"}
-            </div>
-            {extra && (
-              <div
-                style={{
-                  fontSize: 11,
-                  color: "#b09878",
-                  borderTop: `1px solid ${style.color}30`,
-                  paddingTop: 6,
-                  marginTop: 4,
-                }}
-              >
-                {extra}
-              </div>
-            )}
-            {radius && (
-              <div style={{ fontSize: 10, color: "#b09878", marginTop: 4 }}>
-                ⚠️ Affected area: ~{radius}m radius
-              </div>
-            )}
-          </div>
-        </Popup>
-      </Marker>
-    );
-  };
-
-  const RouteAlertComponent = () => {
-    if (!showRouteAlert) return null;
-    return (
-      <div
-        style={{
-          position: "absolute",
-          top: 100,
-          left: "calc(var(--rail-w) + 14px)",
-          right: 14,
-          maxWidth: 400,
-          background: "var(--surface)",
-          border: `1px solid ${routeAlert?.type === "construction" ? "#ff7b6b" : "#ffb347"}`,
-          borderRadius: 16,
-          padding: 16,
-          zIndex: 100,
-          backdropFilter: "blur(24px)",
-          boxShadow: "var(--sh-lg)",
-          animation: "slideDown 0.3s ease",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-          <ShieldAlert size={22} color="#ff7b6b" />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: "bold", color: "var(--txt)" }}>{routeAlert?.message}</div>
-            {routeAlert?.constructionZones?.length > 0 && (
-              <div style={{ fontSize: 12, color: "var(--txt2)", marginTop: 4 }}>
-                {routeAlert.constructionZones.map((z) => z.description).join(", ")}
-              </div>
-            )}
-            {routeAlert?.hazards?.length > 0 && (
-              <div style={{ fontSize: 12, color: "var(--txt2)", marginTop: 4 }}>
-                {routeAlert.hazards.map((h) => h.description).join(", ")}
-              </div>
-            )}
-          </div>
-          <button
-            onClick={() => setShowRouteAlert(false)}
-            style={{ background: "transparent", border: "none", color: "var(--txt2)", cursor: "pointer" }}
-          >
-            <X size={16} />
-          </button>
-        </div>
-        {routeAlternatives.length > 0 && (
-          <div>
-            <div style={{ fontSize: 12, fontWeight: "bold", marginBottom: 8, color: "var(--wood)" }}>
-              Alternative Routes:
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {routeAlternatives.slice(0, 3).map((alt, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    setRoutePath(alt.waypoints);
-                    setDest(alt.waypoints[alt.waypoints.length - 1]);
-                    setRouteInfo({
-                      distance: `${(alt.distance_meters / 1000).toFixed(1)} km`,
-                      duration: `${alt.duration_minutes} min`,
-                    });
-                    setShowRouteAlert(false);
-                    say(`Switched to ${alt.type} route, ${alt.duration_minutes} minutes`);
-                  }}
-                  style={{
-                    background: "var(--inset)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 12,
-                    padding: 10,
-                    textAlign: "left",
-                    cursor: "pointer",
-                    transition: "all 0.15s",
-                    width: "100%",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--wood)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    {alt.type === "transit" ? (
-                      <Bus size={14} style={{ color: "var(--wood)" }} />
-                    ) : (
-                      <PersonStanding size={14} style={{ color: "var(--green)" }} />
-                    )}
-                    <span style={{ fontWeight: 500, fontSize: 13 }}>
-                      {alt.type === "transit" ? "Transit" : "Walking"} • {alt.duration_minutes} min
-                    </span>
-                    {alt.has_obstruction && (
-                      <span style={{ fontSize: 10, color: "#ff7b6b", marginLeft: "auto" }}>
-                        <TriangleAlert size={10} /> obstruction
-                      </span>
-                    )}
-                  </div>
-                  {alt.type === "transit" && alt.transit_lines?.length > 0 && (
-                    <div style={{ fontSize: 11, color: "var(--txt2)", marginTop: 4 }}>
-                      {alt.transit_lines.map((l) => `${l.line} ${l.vehicle}`).join(" • ")}
-                    </div>
-                  )}
-                  {alt.type === "transit" && alt.walking_minutes && (
-                    <div style={{ fontSize: 10, color: "var(--txt2)", marginTop: 4 }}>
-                      Walk: {alt.walking_minutes} min • Ride: {alt.transit_minutes} min
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const TransitInfoModal = () => {
-    if (!showTransitInfo || !transitInfo) return null;
-    return (
-      <div
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "90%",
-          maxWidth: 500,
-          maxHeight: "80vh",
-          background: "var(--surface)",
-          border: "1px solid var(--border2)",
-          borderRadius: 20,
-          zIndex: 200,
-          backdropFilter: "blur(32px)",
-          boxShadow: "var(--sh-lg)",
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <div className="p-head" style={{ borderBottom: "1px solid var(--border)" }}>
-          <div className="p-title">Transit Information</div>
-          <button className="p-close" onClick={() => setShowTransitInfo(false)}>
-            <X size={14} />
-          </button>
-        </div>
-        <div style={{ overflowY: "auto", padding: 16 }}>
-          {transitInfo.map((route, idx) => (
-            <div
-              key={idx}
-              style={{ marginBottom: 20, borderBottom: "1px solid var(--border)", paddingBottom: 12 }}
-            >
-              <div style={{ fontWeight: "bold", color: "var(--wood)", marginBottom: 8 }}>
-                Option {idx + 1}: {route.duration_minutes} min total
-              </div>
-              <div style={{ fontSize: 12, color: "var(--txt2)", marginBottom: 8 }}>
-                Walk: {route.walking_minutes} min • Ride: {route.transit_minutes} min
-              </div>
-              {route.transit_lines.map((line, li) => (
-                <div
-                  key={li}
-                  style={{ background: "var(--inset)", padding: 8, borderRadius: 8, marginBottom: 6 }}
-                >
-                  <strong style={{ color: "var(--wood)" }}>{line.line}</strong> - {line.vehicle}
-                  {line.direction && <div style={{ fontSize: 11 }}>Direction: {line.direction}</div>}
-                </div>
-              ))}
-              <div style={{ fontSize: 11, color: "var(--txt2)", marginTop: 8 }}>
-                {route.steps.map((step, si) => (
-                  <div key={si} style={{ marginTop: 4 }}>
-                    • {step.instruction}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-        <button
-          onClick={() => setShowTransitInfo(false)}
-          style={{
-            margin: "12px 16px 16px",
-            padding: 10,
-            background: "var(--wood-g)",
-            border: "none",
-            borderRadius: 12,
-            color: "white",
-            fontWeight: "bold",
-            cursor: "pointer",
-          }}
-        >
-          Close
-        </button>
-      </div>
-    );
-  };
-
-  // ----- Render -----
   return (
     <>
       <style>{CSS}</style>
@@ -1702,7 +1684,6 @@ const ObstructedRoadSegment = ({ segment, zoomLevel = 13 }) => {
               </Marker>
             )}
 
-            {/* Obstruction Markers */}
             {constructionZones.map((zone, idx) => (
               <ObstructionMarker
                 key={`construction-${idx}`}
@@ -1744,12 +1725,10 @@ const ObstructedRoadSegment = ({ segment, zoomLevel = 13 }) => {
               />
             ))}
 
-            {/* Obstructed road segments */}
             {obstructedRoads.map((segment, idx) => (
               <ObstructedRoadSegment key={`road-${idx}`} segment={segment} zoomLevel={currentZoom} />
             ))}
 
-            {/* Route segments with obstruction overlays */}
             {routeSegments.length > 0 ? (
               routeSegments.map((segment, idx) => {
                 let hasObstruction = false;
@@ -1918,6 +1897,20 @@ const ObstructedRoadSegment = ({ segment, zoomLevel = 13 }) => {
                 )
             )}
           </MapContainer>
+        </div>
+
+        <div className="bg-black rounded-2xl overflow-hidden border border-white/10"
+             style={{ height: '400px', position: 'relative', margin: '64px 0 0 64px' }}>
+          <Walking3DView
+            route={routePath}
+            hazards={activeHazards}
+            userPosition={loc}
+            navigationState={routePath.length > 0 ? "walking" : "idle"}
+            routeSafety={routeSegments.length > 0 ? routeSegments.reduce((acc, seg) => acc + (seg.safety_score || 0.7), 0) / routeSegments.length : 0.7}
+            remainingDistance={routeInfo?.distance ? parseFloat(routeInfo.distance) * 1000 : 0}
+            estimatedTime={routeInfo?.duration ? parseFloat(routeInfo.duration) * 60 : 0}
+            style={{ width: '100%', height: '100%' }}
+          />
         </div>
 
         <nav className="rail" role="navigation" aria-label="Main navigation">
