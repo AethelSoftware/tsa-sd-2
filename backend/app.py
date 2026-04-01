@@ -86,6 +86,15 @@ except ImportError as e:
     GoogleMapsRouter = None
     logger.warning(f"Google Maps router not available: {e}")
 
+# Try to import GTFS transit router
+try:
+    from transit_router import TransitRouter
+    GTFS_AVAILABLE = True
+except ImportError as e:
+    GTFS_AVAILABLE = False
+    TransitRouter = None
+    logger.warning(f"GTFS transit router not available: {e}")
+
 # Initialize routers and API clients
 if TOMTOM_AVAILABLE:
     tomtom_router = TomTomRouter()
@@ -110,6 +119,22 @@ if GOOGLE_ROUTING_AVAILABLE:
 else:
     google_router = None
     logger.warning("Google Maps router not available - transit routing will be limited")
+
+# Initialize GTFS transit router
+transit_router = None
+GTFS_PATH = os.path.join(os.path.dirname(__file__), 'GTFS.zip')
+if GTFS_AVAILABLE and os.path.exists(GTFS_PATH):
+    try:
+        transit_router = TransitRouter(GTFS_PATH)
+        logger.info("GTFS transit router initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize GTFS transit router: {e}")
+        transit_router = None
+else:
+    if GTFS_AVAILABLE:
+        logger.warning(f"GTFS file not found at {GTFS_PATH}")
+    else:
+        logger.warning("GTFS transit router not available")
 
 safety_ai = None
 
@@ -420,7 +445,8 @@ def add_model_endpoints(app):
                 'openweather': api_client.openweather_key is not None if api_client else False,
                 'census': api_client.census_key is not None if api_client else False,
                 'geoapify': geoapify_client.api_key is not None if geoapify_client else False,
-                'google_maps': GOOGLE_MAPS_AVAILABLE
+                'google_maps': GOOGLE_MAPS_AVAILABLE,
+                'gtfs': transit_router is not None
             }
             
             return jsonify({
@@ -435,7 +461,8 @@ def add_model_endpoints(app):
                     'tomtom_available': TOMTOM_AVAILABLE,
                     'real_api_available': REAL_API_AVAILABLE,
                     'geoapify_available': GEOAPIFY_AVAILABLE,
-                    'google_routing_available': GOOGLE_ROUTING_AVAILABLE
+                    'google_routing_available': GOOGLE_ROUTING_AVAILABLE,
+                    'gtfs_available': GTFS_AVAILABLE and transit_router is not None
                 }
             })
         except Exception as e:
@@ -703,9 +730,164 @@ def add_model_endpoints(app):
                 'error': str(e)
             }), 500
     
+    # ============================================================================
+    # GTFS TRANSIT ROUTING ENDPOINTS
+    # ============================================================================
+    
+    @app.route("/api/transit-route", methods=['POST'])
+    def get_transit_route():
+        """
+        Get transit route using GTFS data
+        Expected JSON:
+        {
+            "start_lat": 40.4406,
+            "start_lng": -79.9959,
+            "end_lat": 40.4445,
+            "end_lng": -80.0000,
+            "start_time": "2024-01-15T08:30:00",  # ISO format
+            "max_walk_distance": 1000  # optional, meters
+        }
+        """
+        try:
+            if not transit_router:
+                return jsonify({
+                    'success': False, 
+                    'error': 'GTFS transit router not initialized. Please ensure GTFS.zip is in the backend folder.'
+                }), 503
+            
+            data = request.json
+            if not data:
+                return jsonify({'success': False, 'error': 'No data provided'}), 400
+            
+            start_lat = float(data.get('start_lat'))
+            start_lng = float(data.get('start_lng'))
+            end_lat = float(data.get('end_lat'))
+            end_lng = float(data.get('end_lng'))
+            start_time_str = data.get('start_time')
+            max_walk = float(data.get('max_walk_distance', 1000))
+            
+            if not all([start_lat, start_lng, end_lat, end_lng, start_time_str]):
+                return jsonify({'success': False, 'error': 'Missing required parameters'}), 400
+            
+            # Parse start time
+            try:
+                start_time = datetime.fromisoformat(start_time_str)
+            except ValueError:
+                return jsonify({'success': False, 'error': 'Invalid start_time format. Use ISO format (YYYY-MM-DDTHH:MM:SS)'}), 400
+            
+            # Find transit route
+            route = transit_router.find_route(
+                start_lat, start_lng,
+                end_lat, end_lng,
+                start_time,
+                max_walk
+            )
+            
+            if not route:
+                return jsonify({'success': False, 'error': 'No transit route found'}), 404
+            
+            # Add safety analysis to the route
+            safety_ai_instance = get_safety_ai_instance()
+            safety_dict = {'overall_safety': 0.7, 'risk_level': 'medium', 'recommendations': []}
+            
+            if safety_ai_instance and safety_ai_instance.is_trained and route.get('steps'):
+                try:
+                    # Extract coordinates from steps
+                    route_coords = []
+                    for step in route.get('steps', []):
+                        if 'location' in step:
+                            route_coords.append({'lat': step['location']['lat'], 'lng': step['location']['lon']})
+                    
+                    if route_coords:
+                        safety_result = safety_ai_instance.calculate_route_safety(route_coords)
+                        safety_dict = {
+                            'overall_safety': safety_result.get('overall_safety', 0.7),
+                            'risk_level': safety_result.get('risk_level', 'medium'),
+                            'recommendations': safety_result.get('recommendations', [])
+                        }
+                except Exception as e:
+                    logger.warning(f"Safety calculation for transit route failed: {e}")
+            
+            route['safety'] = safety_dict
+            
+            return jsonify({
+                'success': True,
+                'route': route
+            })
+            
+        except Exception as e:
+            logger.error(f"Error in transit routing: {e}", exc_info=True)
+            return jsonify({'success': False, 'error': str(e)}), 500
+    
+    @app.route("/api/nearby-stops", methods=['GET'])
+    def get_nearby_stops():
+        """
+        Get stops near a location
+        Query params: lat, lng, radius (meters)
+        """
+        try:
+            if not transit_router:
+                return jsonify({
+                    'success': False, 
+                    'error': 'GTFS transit router not initialized'
+                }), 503
+            
+            lat = float(request.args.get('lat'))
+            lng = float(request.args.get('lng'))
+            radius = float(request.args.get('radius', 500))
+            
+            if lat is None or lng is None:
+                return jsonify({'success': False, 'error': 'Missing lat/lng parameters'}), 400
+            
+            stops = transit_router.gtfs.find_nearby_stops(lat, lng, radius)
+            
+            result = []
+            for stop, distance in stops:
+                result.append({
+                    'stop_id': stop.stop_id,
+                    'name': stop.name,
+                    'lat': stop.lat,
+                    'lon': stop.lon,
+                    'distance_meters': distance
+                })
+            
+            return jsonify({
+                'success': True,
+                'stops': result
+            })
+            
+        except Exception as e:
+            logger.error(f"Error finding nearby stops: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+    
+    @app.route("/api/gtfs-status", methods=['GET'])
+    def gtfs_status():
+        """Get GTFS data status"""
+        if transit_router:
+            return jsonify({
+                'success': True,
+                'status': 'initialized',
+                'stats': {
+                    'stops': len(transit_router.gtfs.stops),
+                    'trips': len(transit_router.gtfs.trips),
+                    'gtfs_path': GTFS_PATH
+                }
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'status': 'not_initialized',
+                'error': 'GTFS transit router not available',
+                'expected_path': GTFS_PATH
+            }), 503
+    
+    # ============================================================================
+    # EXISTING CALCULATE ROUTE ENDPOINT (UPDATED WITH GTFS)
+    # ============================================================================
+    
     @app.route("/api/calculate-route", methods=['POST'])
     def calculate_route():
-        """Calculate accessible route between two points (Enhanced endpoint)"""
+        """Calculate accessible route between two points (Enhanced endpoint with GTFS transit)"""
         try:
             data = request.json
             if not data:
@@ -738,6 +920,18 @@ def add_model_endpoints(app):
             # Extract travel mode
             travel_mode = data.get('travel_mode', 'pedestrian')
             
+            # Extract start time for transit
+            start_time_str = data.get('start_time')
+            start_time = None
+            if start_time_str:
+                try:
+                    start_time = datetime.fromisoformat(start_time_str)
+                except ValueError:
+                    logger.warning(f"Invalid start_time format: {start_time_str}")
+                    start_time = datetime.now()
+            else:
+                start_time = datetime.now()
+            
             accessibility_preferences = data.get('accessibility_preferences', {})
             accessibility_needs = []
             
@@ -754,8 +948,66 @@ def add_model_endpoints(app):
             provider_used = None
             error_messages = []
             
-            # TRY 1: Google Maps Transit (if travel_mode is transit)
-            if travel_mode == 'transit' and google_router:
+            # TRY 1: GTFS Transit Router (if travel_mode is transit and GTFS is available)
+            if travel_mode == 'transit' and transit_router:
+                try:
+                    logger.info(f"Attempting GTFS transit route from {start_lat},{start_lng} to {end_lat},{end_lng}")
+                    gtfs_route = transit_router.find_route(
+                        float(start_lat), float(start_lng),
+                        float(end_lat), float(end_lng),
+                        start_time,
+                        max_walk_distance=1000
+                    )
+                    
+                    if gtfs_route:
+                        # Convert GTFS route to standard format
+                        route_coords = []
+                        steps = []
+                        
+                        for step in gtfs_route.get('steps', []):
+                            if step['type'] == 'transit':
+                                steps.append({
+                                    'instruction': f"Take transit from {step.get('start_stop', 'stop')} to {step.get('end_stop', 'next stop')}",
+                                    'distance': '',
+                                    'distance_meters': 0,
+                                    'duration': '',
+                                    'duration_seconds': 0,
+                                    'travel_mode': 'TRANSIT',
+                                    'transit_line': step.get('trip_id', ''),
+                                    'departure_stop': step.get('start_stop', ''),
+                                    'arrival_stop': step.get('end_stop', '')
+                                })
+                                if 'start_location' in step:
+                                    route_coords.append({'lat': step['start_location']['lat'], 'lng': step['start_location']['lon']})
+                                if 'end_location' in step:
+                                    route_coords.append({'lat': step['end_location']['lat'], 'lng': step['end_location']['lon']})
+                            elif step['type'] == 'walk':
+                                steps.append({
+                                    'instruction': f"Walk to {step.get('to_stop', 'next stop')}",
+                                    'distance': '',
+                                    'distance_meters': 0,
+                                    'duration': '',
+                                    'duration_seconds': 0,
+                                    'travel_mode': 'WALKING'
+                                })
+                        
+                        route_result = {
+                            'points': [[c['lat'], c['lng']] for c in route_coords] if route_coords else [],
+                            'distance_meters': gtfs_route.get('total_time_seconds', 0) * 1.4,  # Approximate
+                            'duration_seconds': gtfs_route.get('total_time_seconds', 0),
+                            'instructions': steps,
+                            'segments': [],
+                            'transit_steps': gtfs_route.get('steps', []),
+                            'walking_steps': [s for s in gtfs_route.get('steps', []) if s['type'] == 'walk']
+                        }
+                        provider_used = "GTFS Transit"
+                        logger.info(f"GTFS transit route successful - Duration: {gtfs_route['total_time_seconds']/60:.0f} minutes")
+                except Exception as e:
+                    logger.warning(f"GTFS transit routing failed: {e}")
+                    error_messages.append(f"GTFS Transit: {str(e)}")
+            
+            # TRY 2: Google Maps Transit (if travel_mode is transit and GTFS failed)
+            if not route_result and travel_mode == 'transit' and google_router:
                 try:
                     logger.info(f"Attempting Google Maps transit route from {start_lat},{start_lng} to {end_lat},{end_lng}")
                     routes = google_router.get_transit_route(
@@ -806,8 +1058,7 @@ def add_model_endpoints(app):
                     logger.warning(f"Google Maps transit API failed: {e}")
                     error_messages.append(f"Google Transit: {str(e)}")
             
-            # TRY 2: TomTom API (for pedestrian routes)
-            # TRY 2: TomTom API (for pedestrian routes)
+            # TRY 3: TomTom API (for pedestrian routes)
             if not route_result and tomtom_router and tomtom_router.api_key and travel_mode != 'transit':
                 try:
                     # Fetch current obstructions to avoid
@@ -871,7 +1122,7 @@ def add_model_endpoints(app):
             # If any provider succeeded, process and return the route
             if route_result:
                 # Convert points to coordinate objects
-                route_coords = [{'lat': p[0], 'lng': p[1]} for p in route_result['points']]
+                route_coords = [{'lat': p[0], 'lng': p[1]} for p in route_result['points']] if route_result.get('points') else []
                 
                 # Get addresses
                 start_address = f"{float(start_lat):.4f}, {float(start_lng):.4f}"
@@ -886,7 +1137,7 @@ def add_model_endpoints(app):
                 
                 # Calculate safety
                 safety_ai_instance = get_safety_ai_instance()
-                if safety_ai_instance and safety_ai_instance.is_trained:
+                if safety_ai_instance and safety_ai_instance.is_trained and route_coords:
                     try:
                         safety_result = safety_ai_instance.calculate_route_safety(route_coords)
                         safety_dict = {
@@ -909,8 +1160,8 @@ def add_model_endpoints(app):
                     }
                 
                 # Format distance and duration nicely
-                distance_val = route_result['distance_meters']
-                duration_val = route_result['duration_seconds']
+                distance_val = route_result.get('distance_meters', 0)
+                duration_val = route_result.get('duration_seconds', 0)
                 
                 if distance_val < 1000:
                     distance_str = f"{distance_val:.0f} m"
@@ -935,7 +1186,7 @@ def add_model_endpoints(app):
                         'duration_seconds': duration_val,
                         'steps': route_result.get('instructions', []),
                         'coordinates': route_coords,
-                        'points': route_result['points'],
+                        'points': route_result.get('points', []),
                         'segments': route_result.get('segments', []),
                         'start_address': start_address,
                         'end_address': end_address,
@@ -959,12 +1210,18 @@ def add_model_endpoints(app):
                 }
                 
                 # Add transit-specific details if available
-                if travel_mode == 'transit' and 'transit_steps' in route_result:
-                    response_data['route']['transit_details'] = {
-                        'steps': route_result.get('transit_steps', []),
-                        'total_transit_time': route_result.get('total_transit_time', 0),
-                        'total_walking_time': route_result.get('total_walking_time', 0)
-                    }
+                if travel_mode == 'transit':
+                    if 'transit_steps' in route_result:
+                        response_data['route']['transit_details'] = {
+                            'steps': route_result.get('transit_steps', []),
+                            'total_transit_time': route_result.get('total_transit_time', 0),
+                            'total_walking_time': route_result.get('total_walking_time', 0)
+                        }
+                    elif provider_used == "GTFS Transit":
+                        response_data['route']['transit_details'] = {
+                            'steps': route_result.get('transit_steps', []),
+                            'total_time_minutes': duration_val / 60
+                        }
                 
                 # Update session with route data
                 if session_id:
@@ -1875,7 +2132,61 @@ def setup_socketio_handlers(socketio_instance, app):
             
             accessibility_needs = data.get('accessibility_needs', [])
             travel_mode = data.get('travel_mode', 'pedestrian')
+            start_time_str = data.get('start_time')
             
+            # Parse start time for transit
+            start_time = None
+            if start_time_str:
+                try:
+                    start_time = datetime.fromisoformat(start_time_str)
+                except ValueError:
+                    start_time = datetime.now()
+            else:
+                start_time = datetime.now()
+            
+            # Try GTFS transit first if transit mode
+            if travel_mode == 'transit' and transit_router:
+                try:
+                    gtfs_route = transit_router.find_route(
+                        start_lat, start_lng,
+                        dest_lat, dest_lng,
+                        start_time
+                    )
+                    if gtfs_route:
+                        route_coords = []
+                        for step in gtfs_route.get('steps', []):
+                            if 'location' in step:
+                                route_coords.append({'lat': step['location']['lat'], 'lng': step['location']['lon']})
+                        
+                        safety_ai_instance = get_safety_ai_instance()
+                        if safety_ai_instance:
+                            safety_result = safety_ai_instance.calculate_route_safety(route_coords)
+                            safety_dict = {
+                                'overall_safety': safety_result.get('overall_safety', 0.8),
+                                'risk_level': safety_result.get('risk_level', 'low'),
+                                'recommendations': safety_result.get('recommendations', ['Route appears safe'])
+                            }
+                        else:
+                            safety_dict = {
+                                'overall_safety': 0.8,
+                                'risk_level': 'low',
+                                'recommendations': ['Route appears safe']
+                            }
+                        
+                        emit('route_calculated', {
+                            'route': route_coords,
+                            'route_details': gtfs_route,
+                            'safety': safety_dict,
+                            'timestamp': datetime.now().isoformat(),
+                            'real_api_used': True,
+                            'travel_mode': 'transit',
+                            'provider': 'GTFS'
+                        })
+                        return
+                except Exception as e:
+                    logger.warning(f"GTFS transit routing in WebSocket failed: {e}")
+            
+            # Try Google Maps transit if transit mode
             if travel_mode == 'transit' and google_router:
                 routes = google_router.get_transit_route(start_lat, start_lng, dest_lat, dest_lng)
                 if routes:
@@ -1905,10 +2216,12 @@ def setup_socketio_handlers(socketio_instance, app):
                             'safety': safety_dict,
                             'timestamp': datetime.now().isoformat(),
                             'real_api_used': True,
-                            'travel_mode': 'transit'
+                            'travel_mode': 'transit',
+                            'provider': 'Google Maps'
                         })
                         return
             
+            # Try TomTom for pedestrian
             if tomtom_router and tomtom_router.api_key:
                 route_result = tomtom_router.calculate_route(
                     start_lat, start_lng, dest_lat, dest_lng,
@@ -1939,10 +2252,12 @@ def setup_socketio_handlers(socketio_instance, app):
                         'safety': safety_dict,
                         'timestamp': datetime.now().isoformat(),
                         'real_api_used': True,
-                        'travel_mode': 'pedestrian'
+                        'travel_mode': 'pedestrian',
+                        'provider': 'TomTom'
                     })
                     return
             
+            # Fallback
             safety_ai_instance = get_safety_ai_instance()
             if safety_ai_instance:
                 route_coords = [
@@ -1973,7 +2288,8 @@ def setup_socketio_handlers(socketio_instance, app):
                 'safety': safety_dict,
                 'timestamp': datetime.now().isoformat(),
                 'real_api_used': False,
-                'travel_mode': travel_mode
+                'travel_mode': travel_mode,
+                'provider': 'fallback'
             })
                 
         except Exception as e:
@@ -2013,6 +2329,10 @@ def main():
     print(f"Google Routing: {'✅ Available' if GOOGLE_ROUTING_AVAILABLE else '❌ Not Available'}")
     print(f"Real API Client: {'✅ Available' if api_client else '❌ Not Available'}")
     print(f"Geoapify API: {'✅ Available' if geoapify_client and geoapify_client.api_key else '❌ Not Available'}")
+    print(f"GTFS Transit: {'✅ Available' if transit_router else '❌ Not Available'}")
+    if transit_router:
+        print(f"  - Stops: {len(transit_router.gtfs.stops)}")
+        print(f"  - Trips: {len(transit_router.gtfs.trips)}")
     print("="*60)
     
     # Initialize safety AI
@@ -2132,6 +2452,9 @@ def main():
             score = safety_ai_instance.training_metrics.get('test_score', 0)
             if score is not None:
                 print(f"Model Accuracy: {score:.2%}")
+    
+    if transit_router:
+        print(f"GTFS Status: ✅ Loaded with {len(transit_router.gtfs.stops)} stops, {len(transit_router.gtfs.trips)} trips")
     
     print("="*60)
     print("Press Ctrl+C to stop the server")

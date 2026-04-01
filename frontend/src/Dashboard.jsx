@@ -1140,24 +1140,114 @@ export default function AccessibleMap() {
   };
 
   const getTransitInfo = async () => {
-    if (!dest) return;
+    if (!toVal.trim() && !dest) {
+      say("Please enter a destination first");
+      return;
+    }
+    
     try {
-      const res = await fetch("http://localhost:5000/api/transit-info", {
+      // Get current start location
+      let startLat = loc[0];
+      let startLng = loc[1];
+      
+      if (fromVal !== "Current Location") {
+        const startGeoData = await (
+          await fetch(
+            `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(fromVal)}.json?key=${TOMTOM_API_KEY}&limit=1`,
+          )
+        ).json();
+        if (startGeoData.results?.length > 0) {
+          startLat = startGeoData.results[0].position.lat;
+          startLng = startGeoData.results[0].position.lon;
+        }
+      }
+      
+      // Get destination coordinates
+      let endLat = dest?.[0];
+      let endLng = dest?.[1];
+      
+      if (!endLat && toVal) {
+        const endGeoData = await (
+          await fetch(
+            `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(toVal)}.json?key=${TOMTOM_API_KEY}&limit=1`,
+          )
+        ).json();
+        if (endGeoData.results?.length > 0) {
+          endLat = endGeoData.results[0].position.lat;
+          endLng = endGeoData.results[0].position.lon;
+        }
+      }
+      
+      if (!endLat || !endLng) {
+        say("Couldn't find destination coordinates");
+        return;
+      }
+      
+      const currentTime = new Date().toISOString();
+      
+      const res = await fetch("http://localhost:5000/api/transit-route", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          start_lat: loc[0],
-          start_lng: loc[1],
-          end_lat: dest[0],
-          end_lng: dest[1],
+          start_lat: startLat,
+          start_lng: startLng,
+          end_lat: endLat,
+          end_lng: endLng,
+          start_time: currentTime,
+          max_walk_distance: 1000
         }),
       });
+      
       const data = await res.json();
-      if (data.success && data.routes?.length > 0) {
-        setTransitInfo(data.routes);
+      
+      if (data.success && data.route) {
+        const transitSteps = data.route.steps?.filter(s => s.type === 'transit') || [];
+        const walkingSteps = data.route.steps?.filter(s => s.type === 'walk') || [];
+        
+        // Group by trip for display
+        const tripsByLine = new Map();
+        transitSteps.forEach(step => {
+          const line = step.trip_id?.split('_')[0] || 'Bus';
+          if (!tripsByLine.has(line)) {
+            tripsByLine.set(line, []);
+          }
+          tripsByLine.get(line).push(step);
+        });
+        
+        const transitLines = Array.from(tripsByLine.entries()).map(([line, steps]) => ({
+          line: line,
+          vehicle: 'Bus',
+          from_stop: steps[0]?.start_stop || 'Stop',
+          to_stop: steps[steps.length - 1]?.end_stop || 'Stop',
+          departure_time: steps[0]?.time ? new Date(steps[0].time).toLocaleTimeString() : 'Soon',
+          arrival_time: steps[steps.length - 1]?.time ? new Date(steps[steps.length - 1].time).toLocaleTimeString() : 'Arriving'
+        }));
+        
+        const totalMinutes = Math.round(data.route.total_time_seconds / 60);
+        const hours = Math.floor(totalMinutes / 60);
+        const mins = totalMinutes % 60;
+        const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
+        
+        setTransitInfo([{
+          duration_minutes: totalMinutes,
+          duration_str: durationStr,
+          walking_minutes: Math.round(walkingSteps.length * 3),
+          transit_minutes: Math.round(transitSteps.length * 8),
+          transit_lines: transitLines,
+          total_steps: data.route.steps?.length || 0,
+          arrival_time: data.route.arrival_time,
+          departure_time: new Date().toLocaleTimeString()
+        }]);
+        
         setShowTransitInfo(true);
+        say(`Found ${transitSteps.length} transit connection(s) · ${durationStr}`);
+      } else {
+        say(data.error || "No transit routes available at this time");
       }
-    } catch {}
+    } catch (err) {
+      console.error("Transit info error:", err);
+      say("Could not fetch transit information");
+    }
   };
 
   const calcRoute = async () => {
@@ -1167,19 +1257,25 @@ export default function AccessibleMap() {
     }
     setIsLoading(true);
     say("Finding your safe, accessible route…");
+    
     try {
+      // Geocode destination
       const geoData = await (
         await fetch(
           `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(toVal)}.json?key=${TOMTOM_API_KEY}&limit=1`,
         )
       ).json();
+      
       if (!geoData.results?.length) {
         say("Couldn't find that location");
         setIsLoading(false);
         return;
       }
+      
       const destPos = geoData.results[0].position;
       const destCoords = { lat: destPos.lat, lng: destPos.lon };
+      
+      // Geocode start location if not current location
       let startCoords = { lat: loc[0], lng: loc[1] };
       if (fromVal !== "Current Location") {
         const startGeoData = await (
@@ -1192,6 +1288,127 @@ export default function AccessibleMap() {
           startCoords = { lat: sp.lat, lng: sp.lon };
         }
       }
+      
+      // Handle transit mode with GTFS
+      if (mode === "transit") {
+        try {
+          say("Searching for transit routes...");
+          
+          const currentTime = new Date().toISOString();
+          
+          const transitRes = await fetch("http://localhost:5000/api/transit-route", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              start_lat: startCoords.lat,
+              start_lng: startCoords.lng,
+              end_lat: destCoords.lat,
+              end_lng: destCoords.lng,
+              start_time: currentTime,
+              max_walk_distance: 1000
+            }),
+          });
+          
+          const transitData = await transitRes.json();
+          
+          if (transitData.success && transitData.route) {
+            // Build coordinates from transit steps
+            const allCoords = [];
+            
+            transitData.route.steps?.forEach(step => {
+              if (step.location) {
+                allCoords.push([step.location.lat, step.location.lng]);
+              }
+              if (step.start_location) {
+                allCoords.push([step.start_location.lat, step.start_location.lng]);
+              }
+              if (step.end_location) {
+                allCoords.push([step.end_location.lat, step.end_location.lng]);
+              }
+            });
+            
+            // Add start and end if not already included
+            if (allCoords.length === 0) {
+              allCoords.push([startCoords.lat, startCoords.lng]);
+              allCoords.push([destCoords.lat, destCoords.lng]);
+            }
+            
+            // Remove duplicate consecutive coordinates
+            const uniqueCoords = [];
+            for (let i = 0; i < allCoords.length; i++) {
+              const current = allCoords[i];
+              const prev = uniqueCoords[uniqueCoords.length - 1];
+              if (!prev || prev[0] !== current[0] || prev[1] !== current[1]) {
+                uniqueCoords.push(current);
+              }
+            }
+            
+            setRoutePath(uniqueCoords);
+            setDest(uniqueCoords[uniqueCoords.length - 1]);
+            
+            // Create route segments
+            const segs = [];
+            for (let i = 0; i < uniqueCoords.length - 1; i++) {
+              const stepType = transitData.route.steps?.find(s => 
+                (s.location && s.location.lat === uniqueCoords[i][0] && s.location.lng === uniqueCoords[i][1]) ||
+                (s.start_location && s.start_location.lat === uniqueCoords[i][0] && s.start_location.lng === uniqueCoords[i][1])
+              );
+              
+              segs.push({
+                start: uniqueCoords[i],
+                end: uniqueCoords[i + 1],
+                safety_score: transitData.route.safety?.overall_safety || 0.75,
+                instructions: stepType?.type === 'transit' 
+                  ? `Take ${stepType.trip_id?.split('_')[0] || 'transit'}`
+                  : "Walk to stop",
+                transit_info: stepType?.type === 'transit' ? stepType : null
+              });
+            }
+            setRouteSegments(segs);
+            
+            // Format route info
+            const totalMinutes = Math.round(transitData.route.total_time_seconds / 60);
+            const hours = Math.floor(totalMinutes / 60);
+            const mins = totalMinutes % 60;
+            const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
+            
+            setRouteInfo({
+              distance: `${totalMinutes} min`,
+              duration: durationStr,
+              total_minutes: totalMinutes,
+              transit_steps: transitData.route.steps?.filter(s => s.type === 'transit').length || 0,
+              walking_steps: transitData.route.steps?.filter(s => s.type === 'walk').length || 0
+            });
+            
+            // Save to recents
+            const nr = [
+              {
+                name: toVal,
+                address: geoData.results[0].address?.freeformAddress || toVal,
+                type: 'transit'
+              },
+              ...recents.filter((r) => r.name !== toVal),
+            ].slice(0, 6);
+            setRecents(nr);
+            localStorage.setItem("ar_recents", JSON.stringify(nr));
+            
+            say(`Transit route found · ${durationStr}`);
+            setShow3D(true);
+            setTimeout(() => checkRouteForObstructions(uniqueCoords), 500);
+            setIsLoading(false);
+            return;
+          } else {
+            say(transitData.error || "No transit routes found. Trying walking route...");
+            // Fall through to pedestrian routing
+          }
+        } catch (transitErr) {
+          console.error("GTFS transit error:", transitErr);
+          say("Transit service unavailable. Using walking route...");
+          // Fall through to pedestrian routing
+        }
+      }
+      
+      // PEDESTRIAN ROUTING (fallback for transit or direct pedestrian)
       const routeRes = await fetch(
         "http://localhost:5000/api/calculate-route",
         {
@@ -1202,7 +1419,7 @@ export default function AccessibleMap() {
             start_lng: startCoords.lng,
             end_lat: destCoords.lat,
             end_lng: destCoords.lng,
-            travel_mode: mode === "transit" ? "transit" : "pedestrian",
+            travel_mode: "pedestrian",
             accessibility_preferences: {
               elevator_access: true,
               wheelchair: mode === "wheelchair",
@@ -1212,46 +1429,55 @@ export default function AccessibleMap() {
           }),
         },
       );
+      
       if (!routeRes.ok) throw new Error();
       const data = await routeRes.json();
+      
       if (data.success && data.route?.coordinates?.length >= 2) {
         const coords = data.route.coordinates.map((c) => [c.lat, c.lng]);
         setRoutePath(coords);
-        if (data.route.segments?.length > 0)
+        
+        if (data.route.segments?.length > 0) {
           setRouteSegments(data.route.segments);
-        else {
+        } else {
           const segs = [];
-          for (let i = 0; i < coords.length - 1; i++)
+          for (let i = 0; i < coords.length - 1; i++) {
             segs.push({
               start: coords[i],
               end: coords[i + 1],
               safety_score: data.route.safety?.overall_safety || 0.7,
               instructions: "Continue on route",
             });
+          }
           setRouteSegments(segs);
         }
+        
         setDest(coords[coords.length - 1]);
         setRouteInfo({
           distance: data.route.distance,
           duration: data.route.duration,
+          type: 'pedestrian'
         });
+        
         const nr = [
           {
             name: toVal,
             address: geoData.results[0].address?.freeformAddress || toVal,
+            type: 'pedestrian'
           },
           ...recents.filter((r) => r.name !== toVal),
         ].slice(0, 6);
         setRecents(nr);
-        try {
-          localStorage.setItem("ar_recents", JSON.stringify(nr));
-        } catch {}
+        localStorage.setItem("ar_recents", JSON.stringify(nr));
+        
         say(`Route found · ${data.route.distance} · ${data.route.duration}`);
-        // Auto-open 3D view when route is found
         setShow3D(true);
         setTimeout(() => checkRouteForObstructions(coords), 500);
-      } else say("Couldn't find a route. Try a different destination.");
-    } catch {
+      } else {
+        say("Couldn't find a route. Try a different destination.");
+      }
+    } catch (err) {
+      console.error("Route calculation error:", err);
       say("Connection error — is the server running?");
     } finally {
       setIsLoading(false);
