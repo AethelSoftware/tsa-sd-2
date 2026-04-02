@@ -20,6 +20,8 @@ class State:
     node_id: str
     trip_id: Optional[str] = field(compare=False, default=None)
     route_id: Optional[str] = field(compare=False, default=None)
+    route_short_name: Optional[str] = field(compare=False, default=None)  # User-friendly route name
+    route_long_name: Optional[str] = field(compare=False, default=None)
     predecessor: Optional['State'] = field(compare=False, default=None)
     edge_type: str = field(compare=False, default='walk')
     stop_sequence: int = field(compare=False, default=-1)
@@ -30,11 +32,69 @@ class TransitRouter:
         self.walking_speed = walking_speed_mps
         self.walking_transfer_time = 120
         
+        # Build route information cache
+        self._route_info: Dict[str, Dict] = {}
+        self._trip_to_route: Dict[str, str] = {}  # trip_id -> route_id
+        self._build_route_cache()
+        
         # Build caches
         self._trip_stop_cache: Dict[str, List[Tuple[str, int]]] = {}
         self._build_trip_cache()
         self._stop_transfer_cache: Dict[str, List[Tuple[str, float]]] = {}
         
+    def _build_route_cache(self):
+        """Build cache of route information from routes.txt"""
+        import zipfile
+        import pandas as pd
+        
+        try:
+            with zipfile.ZipFile(self.gtfs.gtfs_zip_path, 'r') as z:
+                with z.open('routes.txt') as f:
+                    routes_df = pd.read_csv(f, dtype=str)
+                    for _, row in routes_df.iterrows():
+                        route_id = self.gtfs._safe_str(row.get('route_id', ''))
+                        if route_id:
+                            self._route_info[route_id] = {
+                                'route_id': route_id,
+                                'route_short_name': self.gtfs._safe_str(row.get('route_short_name', '')),
+                                'route_long_name': self.gtfs._safe_str(row.get('route_long_name', '')),
+                                'route_type': self.gtfs._safe_str(row.get('route_type', '3')),
+                                'route_color': self.gtfs._safe_str(row.get('route_color', '')),
+                                'route_text_color': self.gtfs._safe_str(row.get('route_text_color', ''))
+                            }
+            logger.info(f"Loaded {len(self._route_info)} routes")
+        except Exception as e:
+            logger.warning(f"Could not load routes.txt: {e}")
+        
+        # Build trip to route mapping
+        for trip_id, trip in self.gtfs.trips.items():
+            if trip.route_id:
+                self._trip_to_route[trip_id] = trip.route_id
+    
+    def _get_route_name(self, route_id: str) -> str:
+        """Get user-friendly route name"""
+        if route_id in self._route_info:
+            route = self._route_info[route_id]
+            short_name = route.get('route_short_name', '')
+            long_name = route.get('route_long_name', '')
+            
+            if short_name:
+                return short_name
+            elif long_name:
+                return long_name[:30]
+        return f"Route {route_id[:8]}"  # Fallback
+    
+    def _get_route_display(self, route_id: str) -> Dict:
+        """Get complete route display info"""
+        if route_id in self._route_info:
+            return self._route_info[route_id]
+        return {
+            'route_short_name': f"Route {route_id[:8]}",
+            'route_long_name': '',
+            'route_color': '888888',
+            'route_text_color': 'FFFFFF'
+        }
+    
     def _build_trip_cache(self):
         """Build cache of trip stop sequences"""
         logger.info("Building trip cache...")
@@ -53,6 +113,22 @@ class TransitRouter:
             if stop_id == current_stop_id and i + 1 < len(stops):
                 return stops[i + 1][0]
         return None
+    
+    def _get_stop_name(self, stop_id: str) -> str:
+        """Get user-friendly stop name"""
+        if stop_id in self.gtfs.stops:
+            stop = self.gtfs.stops[stop_id]
+            if stop.name and stop.name != 'Unknown':
+                # Clean up stop names - remove common suffixes
+                name = stop.name
+                # Remove " + " patterns (like "FREEPORT RD + #2238")
+                if ' + ' in name:
+                    name = name.split(' + ')[0]
+                # Remove " at " patterns
+                if ' at ' in name:
+                    name = name.split(' at ')[0]
+                return name
+        return f"Stop {stop_id[:8]}"
     
     def _haversine_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
         R = 6371000
@@ -94,21 +170,26 @@ class TransitRouter:
         
         logger.info(f"\n📍 START STOPS (within {max_walk_distance}m):")
         for stop, dist in start_stops[:10]:
-            logger.info(f"  • {stop.name[:50]} - {dist:.0f}m away")
+            stop_name = self._get_stop_name(stop.stop_id)
+            logger.info(f"  • {stop_name} - {dist:.0f}m away")
         
         logger.info(f"\n📍 DESTINATION STOPS:")
         for stop, dist in end_stops[:10]:
-            logger.info(f"  • {stop.name[:50]} - {dist:.0f}m away")
+            stop_name = self._get_stop_name(stop.stop_id)
+            logger.info(f"  • {stop_name} - {dist:.0f}m away")
         
         # Check if any start stop has departures within the time window
         logger.info(f"\n🚌 CHECKING DEPARTURES FROM START STOPS (next {time_window_minutes} min):")
         for stop, _ in start_stops[:5]:
             departures = self.gtfs.get_next_departure(stop.stop_id, start_time, time_window_minutes)
-            logger.info(f"  {stop.name[:45]}: {len(departures)} departures found")
+            stop_name = self._get_stop_name(stop.stop_id)
+            logger.info(f"  {stop_name}: {len(departures)} departures found")
             for dep_time, trip_id, next_stop in departures[:5]:
-                next_stop_name = self.gtfs.stops.get(next_stop, Stop('', 0, 0, 'Unknown', None)).name
+                route_id = self._trip_to_route.get(trip_id, '')
+                route_name = self._get_route_name(route_id)
+                next_stop_name = self._get_stop_name(next_stop)
                 wait_minutes = int((dep_time - start_time).total_seconds() / 60)
-                logger.info(f"    → {dep_time.strftime('%H:%M')} (wait {wait_minutes} min) - Trip {trip_id[:12]} to {next_stop_name[:35]}")
+                logger.info(f"    → {dep_time.strftime('%H:%M')} (wait {wait_minutes} min) - Bus {route_name} to {next_stop_name}")
         
         # Priority queue: (arrival_time, node_id, trip_id, transfers, state)
         pq = []
@@ -124,6 +205,8 @@ class TransitRouter:
                 node_id=stop.stop_id,
                 trip_id=None,
                 route_id=None,
+                route_short_name=None,
+                route_long_name=None,
                 predecessor=None,
                 edge_type='walk'
             )
@@ -155,7 +238,7 @@ class TransitRouter:
                 walk_time = walk_distance / self.walking_speed
                 arrival_time = current_time + timedelta(seconds=walk_time)
                 goal_states.append((arrival_time, current_state))
-                logger.info(f"✓ Found route to destination via {end_stop.name[:40]}")
+                logger.info(f"✓ Found route to destination via {self._get_stop_name(current_node)}")
                 if len(goal_states) >= 3:
                     break
             
@@ -183,6 +266,8 @@ class TransitRouter:
                             node_id=other_stop_id,
                             trip_id=None,
                             route_id=None,
+                            route_short_name=None,
+                            route_long_name=None,
                             predecessor=current_state,
                             edge_type='walk'
                         )
@@ -194,7 +279,6 @@ class TransitRouter:
             
             # BOARDING: Take transit - WITH TIME WINDOW
             if current_node in self.gtfs.stops:
-                # Use the time window to look for buses
                 departures = self.gtfs.get_next_departure(current_node, current_time, time_window_minutes)
                 
                 for departure_time, trip_id, next_stop_id in departures[:12]:
@@ -205,6 +289,7 @@ class TransitRouter:
                     
                     trip = self.gtfs.trips.get(trip_id)
                     route_id = trip.route_id if trip else None
+                    route_info = self._get_route_display(route_id) if route_id else {}
                     
                     arrival_time = departure_time + timedelta(seconds=travel_time)
                     
@@ -213,6 +298,8 @@ class TransitRouter:
                         node_id=next_stop_id,
                         trip_id=trip_id,
                         route_id=route_id,
+                        route_short_name=route_info.get('route_short_name', ''),
+                        route_long_name=route_info.get('route_long_name', ''),
                         predecessor=current_state,
                         edge_type='transit'
                     )
@@ -235,6 +322,8 @@ class TransitRouter:
                             node_id=next_stop_id,
                             trip_id=current_trip,
                             route_id=current_state.route_id,
+                            route_short_name=current_state.route_short_name,
+                            route_long_name=current_state.route_long_name,
                             predecessor=current_state,
                             edge_type='transit'
                         )
@@ -263,12 +352,13 @@ class TransitRouter:
         logger.info(f"Steps:")
         for i, step in enumerate(path):
             if step['type'] == 'walk':
-                if 'to_stop' in step:
-                    logger.info(f"  {i+1}. 🚶 Walk to {step['to_stop']}")
+                if 'to_stop' in step and step['to_stop']:
+                    logger.info(f"  {i+1}. 🚶 Walk to {step['to_stop']} stop")
                 else:
                     logger.info(f"  {i+1}. 🚶 Walk")
             elif step['type'] == 'transit':
-                logger.info(f"  {i+1}. 🚌 Take bus {step.get('trip_id', '')[:10]} from {step.get('start_stop', 'stop')} to {step.get('end_stop', 'next stop')}")
+                route_name = step.get('route_short_name', step.get('route_id', 'Bus'))
+                logger.info(f"  {i+1}. 🚌 Take Bus {route_name} from {step.get('start_stop', 'stop')} to {step.get('end_stop', 'next stop')}")
         
         return {
             'total_time_seconds': total_seconds,
@@ -290,12 +380,15 @@ class TransitRouter:
                 'time': state.time.isoformat(),
                 'node_id': state.node_id,
                 'trip_id': state.trip_id,
-                'route_id': state.route_id
+                'route_id': state.route_id,
+                'route_short_name': state.route_short_name,
+                'route_long_name': state.route_long_name
             }
             
             if state.node_id in self.gtfs.stops:
                 stop = self.gtfs.stops[state.node_id]
-                step['stop_name'] = stop.name
+                step['stop_name'] = self._get_stop_name(state.node_id)
+                step['stop_full_name'] = stop.name
                 step['location'] = {'lat': stop.lat, 'lon': stop.lon}
             
             path.insert(0, step)
@@ -307,6 +400,7 @@ class TransitRouter:
             if simplified and simplified[-1]['type'] == step['type']:
                 if step['type'] == 'transit' and simplified[-1].get('trip_id') == step.get('trip_id'):
                     simplified[-1]['end_stop'] = step['stop_name']
+                    simplified[-1]['end_stop_full'] = step.get('stop_full_name', step['stop_name'])
                     simplified[-1]['end_location'] = step['location']
                     continue
                 elif step['type'] == 'walk':
@@ -315,8 +409,10 @@ class TransitRouter:
             else:
                 if step['type'] == 'transit':
                     step['start_stop'] = step['stop_name']
+                    step['start_stop_full'] = step.get('stop_full_name', step['stop_name'])
                     step['start_location'] = step['location']
                     step['end_stop'] = step['stop_name']
+                    step['end_stop_full'] = step.get('stop_full_name', step['stop_name'])
                     step['end_location'] = step['location']
                 simplified.append(step)
         
@@ -326,6 +422,7 @@ class TransitRouter:
                 next_step = simplified[i + 1]
                 if next_step['type'] == 'transit':
                     step['to_stop'] = next_step['start_stop']
+                    step['to_stop_full'] = next_step.get('start_stop_full', next_step['start_stop'])
                     step['to_location'] = next_step['start_location']
         
         return simplified
