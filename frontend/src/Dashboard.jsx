@@ -1895,28 +1895,28 @@ export default function AccessibleMap() {
     }
     setIsLoading(true);
     say("Finding your safe, accessible route…");
-
+  
     // Reset directions state
     setRouteSteps([]);
     setShowDirections(false);
     setTransitSegments([]);
-
+  
     try {
       const geoData = await (
         await fetch(
           `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(toVal)}.json?key=${TOMTOM_API_KEY}&limit=1`,
         )
       ).json();
-
+  
       if (!geoData.results?.length) {
         say("Couldn't find that location");
         setIsLoading(false);
         return;
       }
-
+  
       const destPos = geoData.results[0].position;
       const destCoords = { lat: destPos.lat, lng: destPos.lon };
-
+  
       let startCoords = { lat: loc[0], lng: loc[1] };
       if (fromVal !== "Current Location") {
         const startGeoData = await (
@@ -1929,219 +1929,199 @@ export default function AccessibleMap() {
           startCoords = { lat: sp.lat, lng: sp.lon };
         }
       }
-
+  
       // ── TRANSIT MODE ──────────────────────────────────────────────────────────
-
-      // ── TRANSIT MODE ──────────────────────────────────────────────────────────
-
-if (mode === "transit") {
-  try {
-    say("Searching for transit routes...");
-
-    const transitRes = await fetch(
-      "http://127.0.0.1:5000/api/transit-route",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          start_lat: startCoords.lat,
-          start_lng: startCoords.lng,
-          end_lat: destCoords.lat,
-          end_lng: destCoords.lng,
-          start_time: new Date().toISOString(),
-          max_walk_distance: 1000,
-        }),
-      },
-    );
-
-    const transitData = await transitRes.json();
-
-    if (transitData.success && transitData.route) {
-      const steps = transitData.route.steps || [];
-
-      // Build route coords + coloured segments for the map
-      const allCoords = [];
-      const segments = [];
-
-      let currentSegCoords = [[startCoords.lat, startCoords.lng]];
-      let currentSegType = steps[0]?.type || "walk";
-
-      steps.forEach((step) => {
-        const segType = step.type === "transit" ? "transit" : "walk";
-        const segCoords = [];
-
-        if (step.start_location)
-          segCoords.push([
-            step.start_location.lat,
-            step.start_location.lng || step.start_location.lon,
-          ]);
-        if (step.end_location)
-          segCoords.push([
-            step.end_location.lat,
-            step.end_location.lng || step.end_location.lon,
-          ]);
-        if (step.location)
-          segCoords.push([
-            step.location.lat,
-            step.location.lng || step.location.lon,
-          ]);
-
-        if (segCoords.length > 0) {
-          if (
-            segType !== currentSegType &&
-            currentSegCoords.length > 1
-          ) {
-            segments.push({
-              coords: [...currentSegCoords],
-              type: currentSegType,
-              line: "",
-              route_short_name: "",
+  
+      if (mode === "transit") {
+        try {
+          say("Searching for transit routes...");
+  
+          const transitRes = await fetch(
+            "http://127.0.0.1:5000/api/transit-route",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                start_lat: startCoords.lat,
+                start_lng: startCoords.lng,
+                end_lat: destCoords.lat,
+                end_lng: destCoords.lng,
+                start_time: new Date().toISOString(),
+                max_walk_distance: 1000,
+              }),
+            },
+          );
+  
+          const transitData = await transitRes.json();
+  
+          if (transitData.success && transitData.route) {
+            const steps = transitData.route.steps || [];
+  
+            // Build segments using path_geometry from backend (SHAPES FROM GTFS!)
+            const allCoords = [];
+            const segments = [];
+  
+            steps.forEach((step) => {
+              if (step.type === "transit" && step.path_geometry && step.path_geometry.length > 0) {
+                // USE THE SHAPE GEOMETRY FROM GTFS shapes.txt!
+                const segCoords = step.path_geometry;
+                segments.push({
+                  coords: segCoords,
+                  type: "transit",
+                  line: step.route_short_name || "Bus",
+                  route_short_name: step.route_short_name,
+                });
+                segCoords.forEach(c => {
+                  if (c[0] && c[1]) allCoords.push(c);
+                });
+                console.log(`Added transit segment with ${segCoords.length} points from shapes.txt`);
+              } else if (step.type === "transit") {
+                // Fallback for transit without geometry - use start/end points
+                const segCoords = [];
+                if (step.start_location) {
+                  segCoords.push([step.start_location.lat, step.start_location.lng || step.start_location.lon]);
+                }
+                if (step.end_location) {
+                  segCoords.push([step.end_location.lat, step.end_location.lng || step.end_location.lon]);
+                }
+                if (segCoords.length > 0) {
+                  segments.push({
+                    coords: segCoords,
+                    type: "transit",
+                    line: step.route_short_name || "Bus",
+                    route_short_name: step.route_short_name,
+                  });
+                  segCoords.forEach(c => {
+                    if (c[0] && c[1]) allCoords.push(c);
+                  });
+                }
+              } else if (step.type === "walk" && step.to_location) {
+                // Walking segments - will be handled separately
+                // Just add the point for bounds
+                if (step.to_location) {
+                  allCoords.push([step.to_location.lat, step.to_location.lon]);
+                }
+              }
             });
-            currentSegCoords = [
-              currentSegCoords[currentSegCoords.length - 1],
-            ];
-          }
-          currentSegType = segType;
-          segCoords.forEach((c) => {
-            if (c[0] && c[1]) {
-              currentSegCoords.push(c);
-              allCoords.push(c);
+  
+            // Add start and end points if not already included
+            if (allCoords.length === 0) {
+              allCoords.push([startCoords.lat, startCoords.lng], [destCoords.lat, destCoords.lng]);
             }
-          });
+  
+            // Dedupe coordinates for bounds
+            const uniqueCoords = allCoords.filter((c, i, arr) => {
+              if (i === 0) return true;
+              const prev = arr[i - 1];
+              return !(prev[0] === c[0] && prev[1] === c[1]);
+            });
+  
+            setRoutePath(uniqueCoords);
+            setDest([destCoords.lat, destCoords.lng]);
+            setTransitSegments(segments);
+            setRouteType("transit");
+  
+            // Build display steps for directions panel
+            const displaySteps = [];
+            displaySteps.push({
+              instruction: "Depart from your location",
+              type: "walk",
+              travel_mode: "WALKING",
+            });
+            
+            steps.forEach((step) => {
+              if (step.type === "transit") {
+                const routeName = step.route_short_name || step.trip_id?.split("_")[0] || "Bus";
+                const startStopName = step.start_stop || "stop";
+                const endStopName = step.end_stop || "next stop";
+                
+                displaySteps.push({
+                  ...step,
+                  instruction: `Take Bus ${routeName} from ${startStopName} to ${endStopName}`,
+                  travel_mode: "TRANSIT",
+                  transit_line: routeName,
+                  departure_stop: startStopName,
+                  arrival_stop: endStopName,
+                  route_short_name: routeName,
+                });
+              } else if (step.type === "walk") {
+                const toStopName = step.to_stop || "next stop";
+                displaySteps.push({
+                  ...step,
+                  instruction: `Walk to ${toStopName}`,
+                  travel_mode: "WALKING",
+                });
+              }
+            });
+            
+            displaySteps.push({
+              instruction: `Arrive at ${toVal}`,
+              type: "arrive",
+              travel_mode: "ARRIVE",
+            });
+  
+            setRouteSteps(displaySteps);
+            setShowDirections(true);
+  
+            // Build segments for safety colouring (fallback)
+            const segs = [];
+            for (let i = 0; i < uniqueCoords.length - 1; i++) {
+              segs.push({
+                start: uniqueCoords[i],
+                end: uniqueCoords[i + 1],
+                safety_score: transitData.route.safety?.overall_safety || 0.75,
+                instructions: "Transit route",
+              });
+            }
+            setRouteSegments(segs);
+  
+            const totalMinutes = Math.round(transitData.route.total_time_seconds / 60);
+            const hours = Math.floor(totalMinutes / 60);
+            const mins = totalMinutes % 60;
+            const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
+  
+            setRouteInfo({
+              distance: `${totalMinutes} min transit`,
+              duration: durationStr,
+              total_minutes: totalMinutes,
+              transit_steps: steps.filter((s) => s.type === "transit").length,
+              walking_steps: steps.filter((s) => s.type === "walk").length,
+            });
+  
+            const nr = [
+              {
+                name: toVal,
+                address: geoData.results[0].address?.freeformAddress || toVal,
+                type: "transit",
+              },
+              ...recents.filter((r) => r.name !== toVal),
+            ].slice(0, 6);
+            setRecents(nr);
+            localStorage.setItem("ar_recents", JSON.stringify(nr));
+  
+            // Show user-friendly summary
+            const routeSummary = steps
+              .filter(s => s.type === "transit")
+              .map(s => s.route_short_name || "Bus")
+              .join(" → ");
+            
+            say(`Transit route found · ${durationStr} · ${routeSummary || `${steps.filter(s => s.type === "transit").length} connections`}`);
+            
+            setShow3D(true);
+            setTimeout(() => checkRouteForObstructions(uniqueCoords), 500);
+            setIsLoading(false);
+            return;
+          } else {
+            say(transitData.error || "No transit routes found. Trying walking route...");
+          }
+        } catch (transitErr) {
+          console.error("GTFS transit error:", transitErr);
+          say("Transit service unavailable. Using walking route...");
         }
-      });
-
-      if (currentSegCoords.length > 1) {
-        segments.push({
-          coords: currentSegCoords,
-          type: currentSegType,
-          line: "",
-          route_short_name: "",
-        });
       }
-
-      // Always include start/end
-      if (allCoords.length === 0) {
-        allCoords.push(
-          [startCoords.lat, startCoords.lng],
-          [destCoords.lat, destCoords.lng],
-        );
-      }
-      allCoords.push([destCoords.lat, destCoords.lng]);
-
-      // Dedupe
-      const uniqueCoords = allCoords.filter((c, i) => {
-        if (i === 0) return true;
-        const p = allCoords[i - 1];
-        return !(p[0] === c[0] && p[1] === c[1]);
-      });
-
-      setRoutePath(uniqueCoords);
-      setDest([destCoords.lat, destCoords.lng]);
-      setTransitSegments(segments);
-      setRouteType("transit");
-
-      // Build display steps for directions panel with USER-FRIENDLY names
-      const displaySteps = [];
-      displaySteps.push({
-        instruction: "Depart from your location",
-        type: "walk",
-        travel_mode: "WALKING",
-      });
-      
-      steps.forEach((step) => {
-        if (step.type === "transit") {
-          // Get user-friendly route name (short_name like "1", "61A", etc.)
-          const routeName = step.route_short_name || step.trip_id?.split("_")[0] || "Bus";
-          const startStopName = step.start_stop_name || step.start_stop || "stop";
-          const endStopName = step.end_stop_name || step.end_stop || "stop";
-          
-          displaySteps.push({
-            ...step,
-            instruction: `Take Bus ${routeName} from ${startStopName} to ${endStopName}`,
-            travel_mode: "TRANSIT",
-            transit_line: routeName,
-            departure_stop: startStopName,
-            arrival_stop: endStopName,
-            route_short_name: routeName,
-          });
-        } else {
-          const toStopName = step.to_stop_name || step.to_stop || "next stop";
-          displaySteps.push({
-            ...step,
-            instruction: `Walk to ${toStopName}`,
-            travel_mode: "WALKING",
-          });
-        }
-      });
-      
-      displaySteps.push({
-        instruction: `Arrive at ${toVal}`,
-        type: "arrive",
-        travel_mode: "ARRIVE",
-      });
-
-      setRouteSteps(displaySteps);
-      setShowDirections(true);
-
-      // Build segments for safety colouring
-      const segs = [];
-      for (let i = 0; i < uniqueCoords.length - 1; i++) {
-        segs.push({
-          start: uniqueCoords[i],
-          end: uniqueCoords[i + 1],
-          safety_score: transitData.route.safety?.overall_safety || 0.75,
-          instructions: "Transit route",
-        });
-      }
-      setRouteSegments(segs);
-
-      const totalMinutes = Math.round(transitData.route.total_time_seconds / 60);
-      const hours = Math.floor(totalMinutes / 60);
-      const mins = totalMinutes % 60;
-      const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
-
-      setRouteInfo({
-        distance: `${totalMinutes} min transit`,
-        duration: durationStr,
-        total_minutes: totalMinutes,
-        transit_steps: steps.filter((s) => s.type === "transit").length,
-        walking_steps: steps.filter((s) => s.type === "walk").length,
-      });
-
-      const nr = [
-        {
-          name: toVal,
-          address: geoData.results[0].address?.freeformAddress || toVal,
-          type: "transit",
-        },
-        ...recents.filter((r) => r.name !== toVal),
-      ].slice(0, 6);
-      setRecents(nr);
-      localStorage.setItem("ar_recents", JSON.stringify(nr));
-
-      // Show user-friendly summary
-      const routeSummary = steps
-        .filter(s => s.type === "transit")
-        .map(s => s.route_short_name || "Bus")
-        .join(" → ");
-      
-      say(`Transit route found · ${durationStr} · ${routeSummary || `${steps.filter(s => s.type === "transit").length} connections`}`);
-      
-      setShow3D(true);
-      setTimeout(() => checkRouteForObstructions(uniqueCoords), 500);
-      setIsLoading(false);
-      return;
-    } else {
-      say(transitData.error || "No transit routes found. Trying walking route...");
-    }
-  } catch (transitErr) {
-    console.error("GTFS transit error:", transitErr);
-    say("Transit service unavailable. Using walking route...");
-  }
-}
+  
       // ── WALKING / WHEELCHAIR MODE ─────────────────────────────────────────────
-
+  
       const routeRes = await fetch(
         "http://127.0.0.1:5000/api/calculate-route",
         {
@@ -2162,17 +2142,17 @@ if (mode === "transit") {
           }),
         },
       );
-
+  
       if (!routeRes.ok) throw new Error();
       const data = await routeRes.json();
-
+  
       if (data.success && data.route?.coordinates?.length >= 2) {
         const coords = data.route.coordinates.map((c) => [c.lat, c.lng]);
         setRoutePath(coords);
         setDest(coords[coords.length - 1]);
         setRouteType("walking");
-        setTransitSegments([]); // clear any transit segments
-
+        setTransitSegments([]);
+  
         if (data.route.segments?.length > 0) {
           setRouteSegments(data.route.segments);
         } else {
@@ -2187,7 +2167,7 @@ if (mode === "transit") {
           }
           setRouteSegments(segs);
         }
-
+  
         // Build turn-by-turn directions
         const rawSteps = data.route.steps || [];
         if (rawSteps.length > 0) {
@@ -2215,7 +2195,6 @@ if (mode === "transit") {
           setRouteSteps(displaySteps);
           setShowDirections(true);
         } else {
-          // Minimal steps when backend returns none
           setRouteSteps([
             {
               instruction: `Head towards ${toVal}`,
@@ -2232,13 +2211,13 @@ if (mode === "transit") {
           ]);
           setShowDirections(true);
         }
-
+  
         setRouteInfo({
           distance: data.route.distance,
           duration: data.route.duration,
           type: "pedestrian",
         });
-
+  
         const nr = [
           {
             name: toVal,
@@ -2249,7 +2228,7 @@ if (mode === "transit") {
         ].slice(0, 6);
         setRecents(nr);
         localStorage.setItem("ar_recents", JSON.stringify(nr));
-
+  
         say(`Route found · ${data.route.distance} · ${data.route.duration}`);
         setShow3D(true);
         setTimeout(() => checkRouteForObstructions(coords), 500);
