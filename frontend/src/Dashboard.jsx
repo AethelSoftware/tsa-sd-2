@@ -4,6 +4,9 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  startTransition,
+  lazy,
+  Suspense,
 } from "react";
 import {
   MapContainer,
@@ -71,7 +74,9 @@ import {
   List,
 } from "lucide-react";
 import { renderToStaticMarkup } from "react-dom/server";
-import Walking3DView from "./Walking3DView";
+
+// Lazy load 3D view component
+const Walking3DView = lazy(() => import("./Walking3DView"));
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -95,6 +100,14 @@ const destinationIcon = new L.Icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41],
 });
+
+// Memoized map components
+const MemoizedPolyline = React.memo(Polyline);
+const MemoizedMarker = React.memo(Marker);
+const MemoizedCircle = React.memo(Circle);
+const MemoizedCircleMarker = React.memo(CircleMarker);
+const MemoizedMapContainer = React.memo(MapContainer);
+const MemoizedTileLayer = React.memo(TileLayer);
 
 // ─── coordinate helpers ───────────────────────────────────────────────────────
 
@@ -311,6 +324,8 @@ function ChangeView({ center, zoom, routeBounds }) {
   return null;
 }
 
+const MemoizedChangeView = React.memo(ChangeView);
+
 // ─── CSS ──────────────────────────────────────────────────────────────────────
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
@@ -338,7 +353,7 @@ const CSS = `
   .obstruction-border { animation: dash-flow 0.5s linear infinite; stroke-dashoffset:0; }
   .root { font-family:var(--ff-b);background:var(--bg);color:var(--txt);width:100vw;height:100vh;overflow:hidden;position:relative; }
   .map-wrap { position:absolute;inset:0;z-index:0; }
-  .leaflet-container { background:#0e0804 !important; }
+  .leaflet-container { background:#0e0804 !important; will-change: transform; }
   .leaflet-tile-pane { filter:saturate(.7) brightness(.82) sepia(.08); }
   .leaflet-popup-content-wrapper { background:var(--card) !important;border:1px solid var(--border2) !important;border-radius:12px !important;color:var(--txt) !important;box-shadow:var(--sh) !important;font-family:var(--ff-b) !important; }
   .leaflet-popup-tip { background:rgba(42,26,12,.98) !important; }
@@ -354,7 +369,7 @@ const CSS = `
   .r-space { flex:1; }
   .r-btn[data-tip]::after { content:attr(data-tip);position:absolute;left:calc(100% + 11px);top:50%;transform:translateY(-50%);background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:5px 12px;font-family:var(--ff-b);font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;z-index:999;box-shadow:var(--sh); }
   .r-btn[data-tip]:hover::after { opacity:1; }
-  .panel { position:absolute;left:var(--rail-w);top:0;bottom:0;width:var(--panel-w);background:var(--surface);border-right:1px solid var(--border);backdrop-filter:blur(28px);z-index:55;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);box-shadow:var(--sh-lg); }
+  .panel { position:absolute;left:var(--rail-w);top:0;bottom:0;width:var(--panel-w);background:var(--surface);border-right:1px solid var(--border);backdrop-filter:blur(28px);z-index:55;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);box-shadow:var(--sh-lg);will-change: transform; }
   .panel.open { transform:translateX(0); }
   .p-head { padding:20px 18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0; }
   .p-title { font-family:var(--ff-d);font-size:17px;font-weight:700;color:var(--txt);letter-spacing:.2px; }
@@ -386,7 +401,7 @@ const CSS = `
   .ab.on .ab-l { color:var(--txt); }
   .ab-c { width:15px;height:15px;border-radius:4px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;color:transparent; }
   .ab.on .ab-c { background:var(--wood);border-color:var(--wood);color:#1a0c04; }
-  .sc { position:absolute;top:14px;left:calc(var(--rail-w) + 14px);z-index:50;width:348px;background:var(--surface);border:1px solid var(--border);border-radius:20px;backdrop-filter:blur(32px);box-shadow:var(--sh-lg),var(--sh-w);transition:border-color .2s; }
+  .sc { position:absolute;top:14px;left:calc(var(--rail-w) + 14px);z-index:50;width:348px;background:var(--surface);border:1px solid var(--border);border-radius:20px;backdrop-filter:blur(32px);box-shadow:var(--sh-lg),var(--sh-w);transition:border-color .2s;will-change: transform, opacity; }
   .sc:focus-within { border-color:var(--border2); }
   .sc-head { padding:14px 16px 6px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border); }
   .sc-brand { font-family:var(--ff-d);font-size:15px;font-weight:700;color:var(--txt);letter-spacing:.2px;flex:1; }
@@ -437,7 +452,7 @@ const CSS = `
   .sc-leg-body { padding:4px 14px 14px;display:flex;flex-direction:column;gap:8px; }
   .leg-row { display:flex;align-items:center;gap:10px; }
   .leg-lbl { font-size:12px;color:var(--txt2); }
-  .rbar { position:absolute;bottom:22px;left:calc(var(--rail-w) + 14px);z-index:50;background:var(--surface);border:1px solid var(--border2);border-radius:16px;backdrop-filter:blur(24px);padding:13px 18px;display:flex;align-items:center;gap:14px;box-shadow:var(--sh),var(--sh-w);animation:su .24s ease; }
+  .rbar { position:absolute;bottom:22px;left:calc(var(--rail-w) + 14px);z-index:50;background:var(--surface);border:1px solid var(--border2);border-radius:16px;backdrop-filter:blur(24px);padding:13px 18px;display:flex;align-items:center;gap:14px;box-shadow:var(--sh),var(--sh-w);animation:su .24s ease;will-change: transform, opacity; }
   @keyframes su { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
   .rs { display:flex;flex-direction:column;align-items:center;gap:2px; }
   .rs-v { font-family:var(--ff-d);font-size:15px;font-weight:700;color:var(--wood); }
@@ -480,6 +495,7 @@ const CSS = `
     flex-direction: column;
     overflow: hidden;
     animation: slideUp 0.24s ease;
+    will-change: transform, opacity;
   }
   .dir-header {
     padding: 12px 16px 10px;
@@ -817,7 +833,7 @@ function getObstructionStyle(type, iconCategory) {
 
 // ─── map sub-components ───────────────────────────────────────────────────────
 
-const ObstructedRoadSegment = ({ segment, zoomLevel = 13 }) => {
+const ObstructedRoadSegment = React.memo(({ segment, zoomLevel = 13 }) => {
   const {
     coordinates,
     label,
@@ -833,7 +849,7 @@ const ObstructedRoadSegment = ({ segment, zoomLevel = 13 }) => {
   if (coordinates.length === 1) {
     const r = Math.min(40, Math.max(12, 12 + ((zoomLevel - 10) / 8) * 28));
     return (
-      <Circle
+      <MemoizedCircle
         center={coordinates[0]}
         radius={r}
         pathOptions={{
@@ -852,12 +868,12 @@ const ObstructedRoadSegment = ({ segment, zoomLevel = 13 }) => {
             {description}
           </div>
         </Popup>
-      </Circle>
+      </MemoizedCircle>
     );
   }
   return (
     <>
-      <Polyline
+      <MemoizedPolyline
         positions={coordinates}
         pathOptions={{
           color,
@@ -867,7 +883,7 @@ const ObstructedRoadSegment = ({ segment, zoomLevel = 13 }) => {
           lineJoin: "round",
         }}
       />
-      <Polyline
+      <MemoizedPolyline
         positions={coordinates}
         pathOptions={{
           color: borderColor,
@@ -877,7 +893,7 @@ const ObstructedRoadSegment = ({ segment, zoomLevel = 13 }) => {
           lineJoin: "round",
         }}
       />
-      <Polyline
+      <MemoizedPolyline
         positions={coordinates}
         pathOptions={{
           color: "#ffffff",
@@ -908,93 +924,18 @@ const ObstructedRoadSegment = ({ segment, zoomLevel = 13 }) => {
             )}
           </div>
         </Popup>
-      </Polyline>
+      </MemoizedPolyline>
     </>
   );
-};
-
-const ObstructionMarker = ({
-  lat,
-  lng,
-  type,
-  iconCategory,
-  description,
-  radius,
-  extra,
-  zoomLevel = 13,
-}) => {
-  if (lat === undefined || lat === null || lng === undefined || lng === null) {
-    return null;
-  }
-  const validLat = parseFloat(lat);
-  const validLng = parseFloat(lng);
-  if (isNaN(validLat) || isNaN(validLng)) return null;
-  if (!isFinite(validLat) || !isFinite(validLng)) return null;
-  if (validLat < -90 || validLat > 90) return null;
-  if (validLng < -180 || validLng > 180) return null;
-
-  const style = getObstructionStyle(type, iconCategory);
-  const sz = Math.min(40, Math.max(20, 20 + ((zoomLevel - 10) / 8) * 20));
-
-  return (
-    <Marker
-      position={[validLat, validLng]}
-      icon={makeLucideIcon(style.Icon, style.color, style.border, sz)}
-    >
-      <Popup>
-        <div
-          style={{
-            fontFamily: "DM Sans,sans-serif",
-            minWidth: 180,
-            maxWidth: 280,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginBottom: 10,
-              paddingBottom: 8,
-              borderBottom: `1px solid ${style.color}40`,
-            }}
-          >
-            <style.Icon size={18} color={style.color} strokeWidth={2.5} />
-            <strong style={{ color: style.color, fontSize: 14 }}>
-              {style.label}
-            </strong>
-          </div>
-          <div style={{ fontSize: 12, color: "#e0c8b0", lineHeight: 1.5 }}>
-            {description || "Obstruction reported"}
-          </div>
-          {extra && (
-            <div
-              style={{
-                fontSize: 11,
-                color: "#b09878",
-                borderTop: `1px solid ${style.color}30`,
-                paddingTop: 6,
-                marginTop: 4,
-              }}
-            >
-              {extra}
-            </div>
-          )}
-          {radius && (
-            <div style={{ fontSize: 10, color: "#b09878", marginTop: 4 }}>
-              ⚠️ ~{radius}m radius
-            </div>
-          )}
-        </div>
-      </Popup>
-    </Marker>
-  );
-};
+});
 
 // ─── Directions Panel ─────────────────────────────────────────────────────────
 
-function DirectionsPanel({ steps, onClose, routeType }) {
+const DirectionsPanel = React.memo(({ steps, onClose, routeType }) => {
   if (!steps || steps.length === 0) return null;
+  
+  // Only render first 25 steps for performance
+  const visibleSteps = steps.slice(0, 25);
 
   return (
     <div className="dir-panel">
@@ -1013,9 +954,9 @@ function DirectionsPanel({ steps, onClose, routeType }) {
         </button>
       </div>
       <div className="dir-list">
-        {steps.map((step, idx) => {
+        {visibleSteps.map((step, idx) => {
           const isFirst = idx === 0;
-          const isLast = idx === steps.length - 1;
+          const isLast = idx === visibleSteps.length - 1;
           const isTransit =
             step.type === "transit" ||
             step.travel_mode === "TRANSIT" ||
@@ -1101,7 +1042,7 @@ function DirectionsPanel({ steps, onClose, routeType }) {
       </div>
     </div>
   );
-}
+});
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -1154,83 +1095,26 @@ export default function AccessibleMap() {
   const [show3D, setShow3D] = useState(false);
   const [walkerPosition, setWalkerPosition] = useState(null);
   const [walkerIdx, setWalkerIdx] = useState(0);
-  const walkerIntervalRef = useRef(null);
-
-  // ── Directions state (from new version) ──
   const [routeSteps, setRouteSteps] = useState([]);
   const [showDirections, setShowDirections] = useState(false);
-  const [routeType, setRouteType] = useState("walking"); // "walking" | "transit"
-  const [transitSegments, setTransitSegments] = useState([]); // [{coords, type:'walk'|'transit', line}]
+  const [routeType, setRouteType] = useState("walking");
+  const [transitSegments, setTransitSegments] = useState([]);
+  const [userPosition, setUserPosition] = useState(null);
 
+  const walkerIntervalRef = useRef(null);
   const debRef = useRef(null);
   const destRef = useRef(null);
   const suggRef = useRef(null);
   const panelRef = useRef(null);
   const fromRef = useRef(null);
   const fromDebRef = useRef(null);
+  const obstructionTimerRef = useRef(null);
   const [fromSugg, setFromSugg] = useState([]);
   const [fromSuggOpen, setFromSuggOpen] = useState(false);
   const [fromSuggLoad, setFromSuggLoad] = useState(false);
   const [fromHiIdx, setFromHiIdx] = useState(-1);
 
   const validCenter = isValidLatLngArray(loc) ? loc : [40.472, -79.94];
-
-  const say = useCallback((msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(""), 3200);
-  }, []);
-
-  const isValidCoordinate = useCallback((obj) => {
-    return (
-      obj &&
-      obj.lat != null &&
-      obj.lng != null &&
-      !isNaN(obj.lat) &&
-      !isNaN(obj.lng) &&
-      isFinite(obj.lat) &&
-      isFinite(obj.lng)
-    );
-  }, []);
-
-  const cleanObstructions = useCallback((arr) => {
-    if (!Array.isArray(arr)) return [];
-    return arr.filter((item) => {
-      if (!item) return false;
-      const lat = item.lat ?? item.latitude ?? item.position?.lat ?? null;
-      const lng =
-        item.lng ?? item.longitude ?? item.lon ?? item.position?.lng ?? null;
-      if (
-        lat == null ||
-        lng == null ||
-        isNaN(Number(lat)) ||
-        isNaN(Number(lng))
-      ) {
-        return false;
-      }
-      return true;
-    });
-  }, []);
-
-  // Debug logging (kept from old version)
-  useEffect(() => {
-    if (constructionZones.length > 0) {
-      console.log("First construction zone:", constructionZones[0]);
-      constructionZones.forEach((zone, idx) => {
-        if (zone.lat && !zone.lng) {
-          console.error(`Zone ${idx} has lat but no lng:`, zone);
-        }
-      });
-    }
-    if (activeHazards.length > 0) {
-      console.log("First hazard:", activeHazards[0]);
-      activeHazards.forEach((hazard, idx) => {
-        if (hazard.lat && !hazard.lng) {
-          console.error(`Hazard ${idx} has lat but no lng:`, hazard);
-        }
-      });
-    }
-  }, [constructionZones, activeHazards]);
-
   const transformedHazards = useMemo(() => {
     return activeHazards
       .filter((h) => {
@@ -1278,6 +1162,153 @@ export default function AccessibleMap() {
     );
   }, [routeSegments]);
 
+  const say = useCallback((msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), 3200);
+  }, []);
+
+  // Optimized obstruction fetching with debouncing
+  const fetchAreaObstructionsOptimized = useCallback(async () => {
+    if (obstructionTimerRef.current) return;
+    
+    obstructionTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:5000/api/area-obstructions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat: loc[0], lng: loc[1], radius: 10000 }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          startTransition(() => {
+            const sanitize = (arr) =>
+              (arr || [])
+                .map((item) => {
+                  let lat = item.lat ?? item.latitude ?? item.position?.lat ?? null;
+                  let lng = item.lng ?? item.longitude ?? item.lon ?? item.position?.lng ?? null;
+                  if (lat !== null) lat = Number(lat);
+                  if (lng !== null) lng = Number(lng);
+                  if (lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng) && isFinite(lat) && isFinite(lng)) {
+                    return { ...item, lat, lng };
+                  }
+                  return null;
+                })
+                .filter(Boolean);
+            
+            setConstructionZones(sanitize(data.construction_zones));
+            setActiveHazards(sanitize(data.hazards));
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching obstructions:", error);
+      } finally {
+        obstructionTimerRef.current = null;
+      }
+    }, 500);
+  }, [loc[0], loc[1]]);
+
+  useEffect(() => {
+    fetchAreaObstructionsOptimized();
+    const interval = setInterval(fetchAreaObstructionsOptimized, 300000);
+    return () => {
+      clearInterval(interval);
+      if (obstructionTimerRef.current) clearTimeout(obstructionTimerRef.current);
+    };
+  }, [fetchAreaObstructionsOptimized]);
+
+  // Optimized search functions
+  const searchPlaces = useCallback((q) => {
+    if (debRef.current) clearTimeout(debRef.current);
+    if (!q || q.length < 2) {
+      setSugg([]);
+      setSuggOpen(false);
+      return;
+    }
+    debRef.current = setTimeout(async () => {
+      setSuggLoad(true);
+      try {
+        const [lat, lng] = loc;
+        const d = await (
+          await fetch(
+            `https://api.tomtom.com/search/2/search/${encodeURIComponent(q)}.json?key=${TOMTOM_API_KEY}&limit=5&lat=${lat}&lon=${lng}&radius=50000&language=en-US`,
+          )
+        ).json();
+        const m = (d.results || [])
+          .map((r) => ({
+            id: r.id,
+            name: r.poi?.name || r.address?.freeformAddress,
+            address: r.address?.freeformAddress,
+            category: r.poi?.categories?.[0] || null,
+          }))
+          .filter((r) => r.name);
+        
+        startTransition(() => {
+          setSugg(m);
+          setSuggOpen(m.length > 0);
+          setHiIdx(-1);
+        });
+      } catch {
+      } finally {
+        setSuggLoad(false);
+      }
+    }, 400);
+  }, [loc]);
+
+  const searchFromPlaces = useCallback((q) => {
+    if (fromDebRef.current) clearTimeout(fromDebRef.current);
+    if (!q || q.length < 2 || q === "Current Location") {
+      setFromSugg([]);
+      setFromSuggOpen(false);
+      return;
+    }
+    fromDebRef.current = setTimeout(async () => {
+      setFromSuggLoad(true);
+      try {
+        const [lat, lng] = loc;
+        const d = await (
+          await fetch(
+            `https://api.tomtom.com/search/2/search/${encodeURIComponent(q)}.json?key=${TOMTOM_API_KEY}&limit=5&lat=${lat}&lon=${lng}&radius=50000&language=en-US`,
+          )
+        ).json();
+        const m = (d.results || [])
+          .map((r) => ({
+            id: r.id,
+            name: r.poi?.name || r.address?.freeformAddress,
+            address: r.address?.freeformAddress,
+            category: r.poi?.categories?.[0] || null,
+          }))
+          .filter((r) => r.name);
+        
+        startTransition(() => {
+          setFromSugg(m);
+          setFromSuggOpen(m.length > 0);
+          setFromHiIdx(-1);
+        });
+      } catch {
+      } finally {
+        setFromSuggLoad(false);
+      }
+    }, 400);
+  }, [loc]);
+
+  const pickFromSugg = useCallback((s) => {
+    setFromVal(s.address || s.name);
+    setFromSugg([]);
+    setFromSuggOpen(false);
+    setFromHiIdx(-1);
+    fromRef.current?.blur();
+    say(`Start set — ${s.name}`);
+  }, [say]);
+
+  const pickSugg = useCallback((s) => {
+    setToVal(s.address || s.name);
+    setSugg([]);
+    setSuggOpen(false);
+    setHiIdx(-1);
+    destRef.current?.blur();
+    say(`Destination set — ${s.name}`);
+  }, [say]);
+
   // Walker animation
   useEffect(() => {
     if (walkerIntervalRef.current) clearInterval(walkerIntervalRef.current);
@@ -1295,7 +1326,7 @@ export default function AccessibleMap() {
       setWalkerPosition(routePath[idx]);
     }, 1200);
     return () => clearInterval(walkerIntervalRef.current);
-  }, [routePath]);
+  }, [routePath, loc]);
 
   // Click-outside handler
   useEffect(() => {
@@ -1318,61 +1349,20 @@ export default function AccessibleMap() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch area obstructions (enhanced from old version with proper sanitization)
+  // Geolocation
   useEffect(() => {
-    const fetchAreaObstructions = async () => {
-      try {
-        const res = await fetch("http://127.0.0.1:5000/api/area-obstructions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ lat: loc[0], lng: loc[1], radius: 10000 }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          const sanitize = (arr) =>
-            (arr || [])
-              .map((item) => {
-                let lat =
-                  item.lat ?? item.latitude ?? item.position?.lat ?? null;
-                let lng =
-                  item.lng ??
-                  item.longitude ??
-                  item.lon ??
-                  item.position?.lng ??
-                  null;
-                if (lat !== null) lat = Number(lat);
-                if (lng !== null) lng = Number(lng);
-                if (
-                  lat !== null &&
-                  lng !== null &&
-                  !isNaN(lat) &&
-                  !isNaN(lng) &&
-                  isFinite(lat) &&
-                  isFinite(lng)
-                ) {
-                  return { ...item, lat, lng };
-                }
-                console.warn("Filtered out invalid obstruction:", item);
-                return null;
-              })
-              .filter(Boolean);
+    const id = navigator.geolocation.watchPosition(
+      (pos) => {
+        setUserPosition([pos.coords.latitude, pos.coords.longitude]);
+        setLoc([pos.coords.latitude, pos.coords.longitude]);
+      },
+      (err) => console.warn(err),
+      { enableHighAccuracy: true }
+    );
+    return () => navigator.geolocation.clearWatch(id);
+  }, []);
 
-          setConstructionZones(sanitize(data.construction_zones));
-          setActiveHazards(sanitize(data.hazards));
-          console.log(
-            `Loaded ${sanitize(data.construction_zones).length} valid zones and ${sanitize(data.hazards).length} valid hazards`,
-          );
-        }
-      } catch (error) {
-        console.error("Error fetching obstructions:", error);
-      }
-    };
-    fetchAreaObstructions();
-    const interval = setInterval(fetchAreaObstructions, 300000);
-    return () => clearInterval(interval);
-  }, [loc]);
-
-  // Fetch road incidents from TomTom
+  // Fetch road incidents
   useEffect(() => {
     const fetchRoads = async () => {
       try {
@@ -1434,135 +1424,290 @@ export default function AccessibleMap() {
     fetchRoads();
   }, [loc]);
 
-  // ─── search ──────────────────────────────────────────────────────────────────
-
-  const searchPlaces = (q) => {
-    if (debRef.current) clearTimeout(debRef.current);
-    if (!q || q.length < 2) {
-      setSugg([]);
-      setSuggOpen(false);
-      return;
+  // Optimized route segments rendering with memoization
+  const renderRouteSegments = useMemo(() => {
+    if (transitSegments.length > 0) {
+      return transitSegments.slice(0, 50).map((seg, idx) => {
+        const isTransit = seg.type === "transit";
+        return (
+          <React.Fragment key={`tseg-${idx}`}>
+            <MemoizedPolyline
+              positions={seg.coords}
+              pathOptions={{
+                color: "#000",
+                weight: isTransit ? 12 : 8,
+                opacity: 0.25,
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            />
+            <MemoizedPolyline
+              positions={seg.coords}
+              pathOptions={{
+                color: isTransit ? "#4fc3f7" : "#8cd69c",
+                weight: isTransit ? 7 : 5,
+                opacity: 1,
+                dashArray: isTransit ? undefined : "10,6",
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            >
+              <Popup>
+                <div style={{ fontFamily: "DM Sans,sans-serif" }}>
+                  {isTransit ? (
+                    <>
+                      <Bus size={12} style={{ verticalAlign: "middle", color: "#4fc3f7" }} />{" "}
+                      <strong>Transit segment</strong>
+                    </>
+                  ) : (
+                    <>
+                      <Footprints size={12} style={{ verticalAlign: "middle", color: "#8cd69c" }} />{" "}
+                      <strong>Walking segment</strong>
+                    </>
+                  )}
+                </div>
+              </Popup>
+            </MemoizedPolyline>
+          </React.Fragment>
+        );
+      });
+    } else if (routeSegments.length > 0) {
+      const visibleSegments = routeSegments.slice(0, 100);
+      return visibleSegments.map((seg, idx) => {
+        let hasObs = false;
+        let obsDesc = null;
+        
+        for (const z of constructionZones) {
+          const d = pointToSegmentDistanceMeters(
+            [z.lng, z.lat],
+            [seg.start[1], seg.start[0]],
+            [seg.end[1], seg.end[0]],
+          );
+          if (d < (z.radius || 50)) {
+            hasObs = true;
+            obsDesc = z.description;
+            break;
+          }
+        }
+        
+        if (!hasObs) {
+          for (const h of activeHazards) {
+            const d = pointToSegmentDistanceMeters(
+              [h.lng, h.lat],
+              [seg.start[1], seg.start[0]],
+              [seg.end[1], seg.end[0]],
+            );
+            if (d < (h.radius || 50)) {
+              hasObs = true;
+              obsDesc = h.description;
+              break;
+            }
+          }
+        }
+        
+        return (
+          <React.Fragment key={`seg-${idx}`}>
+            <MemoizedPolyline
+              positions={[seg.start, seg.end]}
+              pathOptions={{
+                color: "#000",
+                weight: 10,
+                opacity: 0.4,
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            />
+            {hasObs && (
+              <>
+                <MemoizedPolyline
+                  positions={[seg.start, seg.end]}
+                  pathOptions={{
+                    color: "rgba(255,123,107,0.5)",
+                    weight: 18,
+                    opacity: 0.55,
+                    lineCap: "round",
+                    lineJoin: "round",
+                    className: "obstruction-overlay",
+                  }}
+                />
+                <MemoizedPolyline
+                  positions={[seg.start, seg.end]}
+                  pathOptions={{
+                    color: "#ff7b6b",
+                    weight: 3,
+                    opacity: 0.9,
+                    lineCap: "round",
+                    lineJoin: "round",
+                    dashArray: "8,8",
+                    className: "obstruction-border",
+                  }}
+                />
+              </>
+            )}
+            <MemoizedPolyline
+              positions={[seg.start, seg.end]}
+              pathOptions={{
+                color: getSegmentColor(seg.safety_score || 0.7),
+                weight: 6,
+                opacity: 1,
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            >
+              <Popup>
+                <div>
+                  <strong>Segment {idx + 1}</strong>
+                  <br />
+                  Safety: {Math.round((seg.safety_score || 0.7) * 100)}%
+                  <br />
+                  {hasObs && obsDesc && (
+                    <div style={{ color: "#ff7b6b" }}>
+                      <TriangleAlert size={12} /> {obsDesc}
+                    </div>
+                  )}
+                  {seg.instructions || "Continue on route"}
+                </div>
+              </Popup>
+            </MemoizedPolyline>
+          </React.Fragment>
+        );
+      });
+    } else if (routePath.length >= 2) {
+      return (
+        <>
+          <MemoizedPolyline
+            positions={routePath}
+            pathOptions={{
+              color: mode === "wheelchair" ? "#e8a870" : "#8cd69c",
+              weight: 14,
+              opacity: 0.2,
+              lineCap: "round",
+              lineJoin: "round",
+            }}
+          />
+          <MemoizedPolyline
+            positions={routePath}
+            pathOptions={{
+              color: "#1a0c04",
+              weight: 8,
+              opacity: 0.6,
+              lineCap: "round",
+              lineJoin: "round",
+            }}
+          />
+          <MemoizedPolyline
+            positions={routePath}
+            pathOptions={{
+              color: mode === "wheelchair" ? "#f0b060" : "#60e890",
+              weight: 5,
+              opacity: 1,
+              dashArray: mode === "wheelchair" ? "14,10" : undefined,
+              lineCap: "round",
+              lineJoin: "round",
+            }}
+          />
+        </>
+      );
     }
-    debRef.current = setTimeout(async () => {
-      setSuggLoad(true);
-      try {
-        const [lat, lng] = loc;
-        const d = await (
-          await fetch(
-            `https://api.tomtom.com/search/2/search/${encodeURIComponent(q)}.json?key=${TOMTOM_API_KEY}&limit=6&lat=${lat}&lon=${lng}&radius=50000&language=en-US`,
-          )
-        ).json();
-        const m = (d.results || [])
-          .map((r) => ({
-            id: r.id,
-            name: r.poi?.name || r.address?.freeformAddress,
-            address: r.address?.freeformAddress,
-            category: r.poi?.categories?.[0] || null,
-          }))
-          .filter((r) => r.name);
-        setSugg(m);
-        setSuggOpen(m.length > 0);
-        setHiIdx(-1);
-      } catch {
-      } finally {
-        setSuggLoad(false);
-      }
-    }, 280);
-  };
+    return null;
+  }, [transitSegments, routeSegments, routePath, mode, constructionZones, activeHazards]);
 
-  const searchFromPlaces = (q) => {
-    if (fromDebRef.current) clearTimeout(fromDebRef.current);
-    if (!q || q.length < 2 || q === "Current Location") {
-      setFromSugg([]);
-      setFromSuggOpen(false);
-      return;
-    }
-    fromDebRef.current = setTimeout(async () => {
-      setFromSuggLoad(true);
-      try {
-        const [lat, lng] = loc;
-        const d = await (
-          await fetch(
-            `https://api.tomtom.com/search/2/search/${encodeURIComponent(q)}.json?key=${TOMTOM_API_KEY}&limit=6&lat=${lat}&lon=${lng}&radius=50000&language=en-US`,
-          )
-        ).json();
-        const m = (d.results || [])
-          .map((r) => ({
-            id: r.id,
-            name: r.poi?.name || r.address?.freeformAddress,
-            address: r.address?.freeformAddress,
-            category: r.poi?.categories?.[0] || null,
-          }))
-          .filter((r) => r.name);
-        setFromSugg(m);
-        setFromSuggOpen(m.length > 0);
-        setFromHiIdx(-1);
-      } catch {
-      } finally {
-        setFromSuggLoad(false);
-      }
-    }, 280);
-  };
+  // Optimized obstruction markers rendering
+  const renderObstructionMarkers = useMemo(() => {
+    const visibleZones = constructionZones.slice(0, 50);
+    const visibleHazards = activeHazards.slice(0, 50);
+    const visibleRoads = obstructedRoads.slice(0, 30);
+    
+    return (
+      <>
+        {visibleZones.map((zone, idx) => {
+          const lat = zone.lat ?? zone.latitude;
+          const lng = zone.lng ?? zone.longitude ?? zone.lon;
+          if (lat === undefined || lng === undefined) return null;
+          return (
+            <MemoizedMarker
+              key={`cz-${idx}`}
+              position={[Number(lat), Number(lng)]}
+              icon={makeLucideIcon(Construction, "#ff7b6b", "rgba(255,123,107,0.5)", Math.min(40, Math.max(20, 20 + ((currentZoom - 10) / 8) * 20)))}
+            >
+              <Popup>
+                <div style={{ fontFamily: "DM Sans,sans-serif", minWidth: 180 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, paddingBottom: 8, borderBottom: "1px solid #ff7b6b40" }}>
+                    <Construction size={18} color="#ff7b6b" strokeWidth={2.5} />
+                    <strong style={{ color: "#ff7b6b", fontSize: 14 }}>Construction Zone</strong>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#e0c8b0", lineHeight: 1.5 }}>
+                    {zone.description || "Construction area"}
+                  </div>
+                  {zone.distance_meters && (
+                    <div style={{ fontSize: 11, color: "#b09878", marginTop: 4 }}>
+                      📍 {zone.distance_meters.toFixed(0)}m from route
+                    </div>
+                  )}
+                </div>
+              </Popup>
+            </MemoizedMarker>
+          );
+        })}
+        {visibleHazards.map((hazard, idx) => {
+          const lat = hazard.lat ?? hazard.latitude;
+          const lng = hazard.lng ?? hazard.longitude ?? hazard.lon;
+          if (lat === undefined || lng === undefined) return null;
+          const style = getObstructionStyle(hazard.type, hazard.icon_category);
+          return (
+            <MemoizedMarker
+              key={`hz-${idx}`}
+              position={[Number(lat), Number(lng)]}
+              icon={makeLucideIcon(style.Icon, style.color, style.border, Math.min(40, Math.max(20, 20 + ((currentZoom - 10) / 8) * 20)))}
+            >
+              <Popup>
+                <div style={{ fontFamily: "DM Sans,sans-serif", minWidth: 180 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, paddingBottom: 8, borderBottom: `1px solid ${style.color}40` }}>
+                    <style.Icon size={18} color={style.color} strokeWidth={2.5} />
+                    <strong style={{ color: style.color, fontSize: 14 }}>{style.label}</strong>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#e0c8b0", lineHeight: 1.5 }}>
+                    {hazard.description || "Hazard reported"}
+                  </div>
+                </div>
+              </Popup>
+            </MemoizedMarker>
+          );
+        })}
+        {visibleRoads.map((seg, idx) => (
+          <ObstructedRoadSegment key={`road-${idx}`} segment={seg} zoomLevel={currentZoom} />
+        ))}
+      </>
+    );
+  }, [constructionZones, activeHazards, obstructedRoads, currentZoom]);
 
-  const pickFromSugg = (s) => {
-    setFromVal(s.address || s.name);
-    setFromSugg([]);
-    setFromSuggOpen(false);
-    setFromHiIdx(-1);
-    fromRef.current?.blur();
-    say(`Start set — ${s.name}`);
-  };
+  const getGPS = useCallback(() => {
+    if (!navigator.geolocation) return;
+    say("Getting your location…");
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        setLoc([p.coords.latitude, p.coords.longitude]);
+        setFromVal("Current Location");
+        say("Location updated ✓");
+      },
+      () => say("Couldn't get location. Using default."),
+    );
+  }, [say]);
 
-  const pickSugg = (s) => {
-    setToVal(s.address || s.name);
-    setSugg([]);
-    setSuggOpen(false);
-    setHiIdx(-1);
-    destRef.current?.blur();
-    say(`Destination set — ${s.name}`);
-  };
+  const clearRoute = useCallback(() => {
+    setRoutePath([]);
+    setRouteSegments([]);
+    setDest(null);
+    setRouteInfo(null);
+    setShowRouteAlert(false);
+    setAlternativeRoutes([]);
+    setShow3D(false);
+    setRouteSteps([]);
+    setShowDirections(false);
+    setTransitSegments([]);
+  }, []);
 
-  const fromKD = (e) => {
-    if (!fromSuggOpen) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setFromHiIdx((p) => Math.min(p + 1, fromSugg.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setFromHiIdx((p) => Math.max(p - 1, -1));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (fromHiIdx >= 0) pickFromSugg(fromSugg[fromHiIdx]);
-    } else if (e.key === "Escape") {
-      setFromSuggOpen(false);
-      setFromHiIdx(-1);
-    }
-  };
-
-  const destKD = (e) => {
-    if (!suggOpen) {
-      if (e.key === "Enter") calcRoute();
-      return;
-    }
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setHiIdx((p) => Math.min(p + 1, sugg.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setHiIdx((p) => Math.max(p - 1, -1));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (hiIdx >= 0) pickSugg(sugg[hiIdx]);
-      else calcRoute();
-    } else if (e.key === "Escape") {
-      setSuggOpen(false);
-      setHiIdx(-1);
-    }
-  };
-
-  // ─── obstruction check ────────────────────────────────────────────────────────
-
-  const checkRouteForObstructions = async (routeCoords) => {
+  const checkRouteForObstructions = useCallback(async (routeCoords) => {
     try {
       const res = await fetch("http://127.0.0.1:5000/api/check-obstructions", {
         method: "POST",
@@ -1571,56 +1716,6 @@ export default function AccessibleMap() {
       });
       const data = await res.json();
       if (data.success && data.obstructions) {
-        // Safely process construction zones
-        if (data.obstructions.construction_zones?.length > 0) {
-          const validZones = data.obstructions.construction_zones
-            .map((zone) => {
-              let lat = zone.lat ?? zone.latitude ?? null;
-              let lng = zone.lng ?? zone.longitude ?? zone.lon ?? null;
-              if (lat !== null) lat = Number(lat);
-              if (lng !== null) lng = Number(lng);
-              if (lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng)) {
-                return { ...zone, lat, lng };
-              }
-              return null;
-            })
-            .filter((z) => z !== null);
-
-          setConstructionZones((prev) => {
-            const existing = new Set(prev.map((z) => `${z.lat},${z.lng}`));
-            return [
-              ...prev,
-              ...validZones.filter((z) => !existing.has(`${z.lat},${z.lng}`)),
-            ];
-          });
-        }
-
-        // Safely process hazards
-        if (data.obstructions.hazards?.length > 0) {
-          const validHazards = data.obstructions.hazards
-            .map((hazard) => {
-              let lat = hazard.lat ?? hazard.latitude ?? null;
-              let lng = hazard.lng ?? hazard.longitude ?? hazard.lon ?? null;
-              if (lat !== null) lat = Number(lat);
-              if (lng !== null) lng = Number(lng);
-              if (lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng)) {
-                return { ...hazard, lat, lng };
-              }
-              return null;
-            })
-            .filter((h) => h !== null);
-
-          setActiveHazards((prev) => {
-            const existing = new Set(prev.map((h) => `${h.lat},${h.lng}`));
-            return [
-              ...prev,
-              ...validHazards.filter(
-                (h) => !existing.has(`${h.lat},${h.lng}`),
-              ),
-            ];
-          });
-        }
-
         if (data.obstructions.has_obstruction) {
           setRouteAlert({
             type: "obstruction",
@@ -1632,37 +1727,9 @@ export default function AccessibleMap() {
     } catch (err) {
       console.error("Error checking obstructions:", err);
     }
-  };
+  }, []);
 
-  // ─── route alternatives ───────────────────────────────────────────────────────
-
-  const getRouteAlternatives = async () => {
-    try {
-      const res = await fetch("http://127.0.0.1:5000/api/route-alternatives", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          start_lat: loc[0],
-          start_lng: loc[1],
-          end_lat: dest?.[0] || loc[0],
-          end_lng: dest?.[1] || loc[1],
-          accessibility_preferences: {
-            wheelchair: mode === "wheelchair",
-            blind: a11y.visionImpaired,
-          },
-        }),
-      });
-      const data = await res.json();
-      if (data.success && data.alternatives.length > 0) {
-        setRouteAlternatives(data.alternatives);
-        setAlternativeRoutes(data.alternatives);
-      }
-    } catch {}
-  };
-
-  // ─── transit info modal ───────────────────────────────────────────────────────
-
-  const getTransitInfo = async () => {
+  const getTransitInfo = useCallback(async () => {
     if (!toVal.trim() && !dest) {
       say("Please enter a destination first");
       return;
@@ -1752,18 +1819,16 @@ export default function AccessibleMap() {
         const durationStr =
           hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
 
-        setTransitInfo([
-          {
-            duration_minutes: totalMinutes,
-            duration_str: durationStr,
-            walking_minutes: Math.round(walkingSteps.length * 3),
-            transit_minutes: Math.round(transitSteps.length * 8),
-            transit_lines: transitLines,
-            total_steps: data.route.steps?.length || 0,
-            arrival_time: data.route.arrival_time,
-            departure_time: new Date().toLocaleTimeString(),
-          },
-        ]);
+        setTransitInfo([{
+          duration_minutes: totalMinutes,
+          duration_str: durationStr,
+          walking_minutes: Math.round(walkingSteps.length * 3),
+          transit_minutes: Math.round(transitSteps.length * 8),
+          transit_lines: transitLines,
+          total_steps: data.route.steps?.length || 0,
+          arrival_time: data.route.arrival_time,
+          departure_time: new Date().toLocaleTimeString(),
+        }]);
         setShowTransitInfo(true);
         say(`Found ${transitSteps.length} transit connection(s) · ${durationStr}`);
       } else {
@@ -1773,26 +1838,9 @@ export default function AccessibleMap() {
       console.error("Transit info error:", err);
       say("Could not fetch transit information");
     }
-  };
+  }, [toVal, dest, fromVal, loc, say]);
 
-  // ─── clear route ──────────────────────────────────────────────────────────────
-
-  const clearRoute = () => {
-    setRoutePath([]);
-    setRouteSegments([]);
-    setDest(null);
-    setRouteInfo(null);
-    setShowRouteAlert(false);
-    setAlternativeRoutes([]);
-    setShow3D(false);
-    setRouteSteps([]);
-    setShowDirections(false);
-    setTransitSegments([]);
-  };
-
-  // ─── main route calc ──────────────────────────────────────────────────────────
-
-  const calcRoute = async () => {
+  const calcRoute = useCallback(async () => {
     if (!toVal.trim()) {
       say("Please enter a destination");
       return;
@@ -1800,7 +1848,6 @@ export default function AccessibleMap() {
     setIsLoading(true);
     say("Finding your safe, accessible route…");
 
-    // Reset directions state
     setRouteSteps([]);
     setShowDirections(false);
     setTransitSegments([]);
@@ -1834,8 +1881,6 @@ export default function AccessibleMap() {
         }
       }
 
-      // ── TRANSIT MODE ──────────────────────────────────────────────────────────
-
       if (mode === "transit") {
         try {
           say("Searching for transit routes...");
@@ -1860,10 +1905,8 @@ export default function AccessibleMap() {
 
           if (transitData.success && transitData.route) {
             const steps = transitData.route.steps || [];
-
-            // Build route coords + coloured segments for the map
             const allCoords = [];
-            const segments = []; // {coords:[[lat,lng],...], type:'walk'|'transit', line}
+            const segments = [];
 
             let currentSegCoords = [[startCoords.lat, startCoords.lng]];
             let currentSegType = steps[0]?.type || "walk";
@@ -1920,7 +1963,6 @@ export default function AccessibleMap() {
               });
             }
 
-            // Always include start/end
             if (allCoords.length === 0) {
               allCoords.push(
                 [startCoords.lat, startCoords.lng],
@@ -1929,7 +1971,6 @@ export default function AccessibleMap() {
             }
             allCoords.push([destCoords.lat, destCoords.lng]);
 
-            // Dedupe
             const uniqueCoords = allCoords.filter((c, i) => {
               if (i === 0) return true;
               const p = allCoords[i - 1];
@@ -1941,7 +1982,6 @@ export default function AccessibleMap() {
             setTransitSegments(segments);
             setRouteType("transit");
 
-            // Build display steps for directions panel
             const displaySteps = [];
             displaySteps.push({
               instruction: "Depart from your location",
@@ -1979,7 +2019,6 @@ export default function AccessibleMap() {
             setRouteSteps(displaySteps);
             setShowDirections(true);
 
-            // Build segments for safety colouring
             const segs = [];
             for (let i = 0; i < uniqueCoords.length - 1; i++) {
               segs.push({
@@ -2039,8 +2078,6 @@ export default function AccessibleMap() {
         }
       }
 
-      // ── WALKING / WHEELCHAIR MODE ─────────────────────────────────────────────
-
       const routeRes = await fetch(
         "http://127.0.0.1:5000/api/calculate-route",
         {
@@ -2070,7 +2107,7 @@ export default function AccessibleMap() {
         setRoutePath(coords);
         setDest(coords[coords.length - 1]);
         setRouteType("walking");
-        setTransitSegments([]); // clear any transit segments
+        setTransitSegments([]);
 
         if (data.route.segments?.length > 0) {
           setRouteSegments(data.route.segments);
@@ -2087,7 +2124,6 @@ export default function AccessibleMap() {
           setRouteSegments(segs);
         }
 
-        // Build turn-by-turn directions
         const rawSteps = data.route.steps || [];
         if (rawSteps.length > 0) {
           const displaySteps = [
@@ -2114,7 +2150,6 @@ export default function AccessibleMap() {
           setRouteSteps(displaySteps);
           setShowDirections(true);
         } else {
-          // Minimal steps when backend returns none
           setRouteSteps([
             {
               instruction: `Head towards ${toVal}`,
@@ -2161,22 +2196,11 @@ export default function AccessibleMap() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toVal, fromVal, loc, mode, a11y.visionImpaired, recents, say, checkRouteForObstructions]);
 
-  const getGPS = () => {
-    if (!navigator.geolocation) return;
-    say("Getting your location…");
-    navigator.geolocation.getCurrentPosition(
-      (p) => {
-        setLoc([p.coords.latitude, p.coords.longitude]);
-        setFromVal("Current Location");
-        say("Location updated ✓");
-      },
-      () => say("Couldn't get location. Using default."),
-    );
-  };
-
-  const MapZoomTracker = () => {
+  const togglePanel = useCallback((name) => setPanel((p) => (p === name ? null : name)), []);
+  
+  const MapZoomTracker = useCallback(() => {
     const map = useMap();
     useEffect(() => {
       const u = () => setCurrentZoom(map.getZoom());
@@ -2185,13 +2209,10 @@ export default function AccessibleMap() {
       return () => map.off("zoomend", u);
     }, [map]);
     return null;
-  };
+  }, []);
 
-  const togglePanel = (name) => setPanel((p) => (p === name ? null : name));
   const hc = a11y.highContrast;
   const lt = a11y.largeText;
-
-  // ─── render ───────────────────────────────────────────────────────────────────
 
   return (
     <>
@@ -2211,9 +2232,9 @@ export default function AccessibleMap() {
           {toast}
         </div>
 
-        {/* ── MAP ── */}
+        {/* MAP */}
         <div className="map-wrap">
-          <MapContainer
+          <MemoizedMapContainer
             center={validCenter}
             zoom={zoom}
             style={{
@@ -2223,19 +2244,19 @@ export default function AccessibleMap() {
             }}
           >
             <MapZoomTracker />
-            <ChangeView
+            <MemoizedChangeView
               center={loc}
               zoom={zoom}
               routeBounds={routePath.length >= 2 ? routePath : null}
             />
-            <TileLayer
+            <MemoizedTileLayer
               attribution={mapTypes[mapType].attribution}
               url={mapTypes[mapType].url}
             />
 
             {/* User position dot */}
             {isValidLatLngArray(loc) && (
-              <CircleMarker
+              <MemoizedCircleMarker
                 center={loc}
                 radius={11}
                 pathOptions={{
@@ -2250,278 +2271,31 @@ export default function AccessibleMap() {
                     You are here
                   </strong>
                 </Popup>
-              </CircleMarker>
+              </MemoizedCircleMarker>
             )}
 
             {/* Destination marker */}
             {dest && isValidLatLngArray(dest) && (
-              <Marker position={dest} icon={destinationIcon}>
+              <MemoizedMarker position={dest} icon={destinationIcon}>
                 <Popup>
                   <strong>Destination</strong>
                   <br />
                   <small style={{ color: "#e0c8b0" }}>{toVal}</small>
                 </Popup>
-              </Marker>
+              </MemoizedMarker>
             )}
 
-            {/* Construction zone markers */}
-            {constructionZones.map((zone, idx) => (
-              <ObstructionMarker
-                key={`cz-${idx}`}
-                lat={zone.lat}
-                lng={zone.lng}
-                type="construction"
-                iconCategory={zone.icon_category}
-                description={zone.description}
-                radius={zone.radius}
-                zoomLevel={currentZoom}
-                extra={
-                  zone.distance_meters ? (
-                    <div style={{ fontSize: 11, color: "#b09878" }}>
-                      📍 {zone.distance_meters.toFixed(0)}m from route
-                    </div>
-                  ) : null
-                }
-              />
-            ))}
+            {/* Obstruction markers */}
+            {renderObstructionMarkers}
 
-            {/* Hazard markers */}
-            {activeHazards.map((hazard, idx) => (
-              <ObstructionMarker
-                key={`hz-${idx}`}
-                lat={hazard.lat}
-                lng={hazard.lng}
-                type={hazard.type || "hazard"}
-                iconCategory={hazard.icon_category}
-                description={hazard.description}
-                radius={hazard.radius}
-                zoomLevel={currentZoom}
-                extra={
-                  hazard.severity ? (
-                    <div style={{ fontSize: 11 }}>
-                      <span
-                        style={{
-                          color:
-                            hazard.severity > 0.7 ? "#ff7b6b" : "#ffb347",
-                        }}
-                      >
-                        ⚡ Severity: {Math.round(hazard.severity * 100)}%
-                      </span>
-                    </div>
-                  ) : null
-                }
-              />
-            ))}
+            {/* Route segments */}
+            {renderRouteSegments}
 
-            {/* Obstructed road segments from TomTom */}
-            {obstructedRoads.map((seg, idx) => (
-              <ObstructedRoadSegment
-                key={`road-${idx}`}
-                segment={seg}
-                zoomLevel={currentZoom}
-              />
-            ))}
-
-            {/* ── TRANSIT route: colour walking vs bus segments differently ── */}
-            {transitSegments.length > 0 ? (
-              transitSegments.map((seg, idx) => {
-                const isTransit = seg.type === "transit";
-                return (
-                  <React.Fragment key={`tseg-${idx}`}>
-                    {/* Shadow */}
-                    <Polyline
-                      positions={seg.coords}
-                      pathOptions={{
-                        color: "#000",
-                        weight: isTransit ? 12 : 8,
-                        opacity: 0.25,
-                        lineCap: "round",
-                        lineJoin: "round",
-                      }}
-                    />
-                    {/* Main line */}
-                    <Polyline
-                      positions={seg.coords}
-                      pathOptions={{
-                        color: isTransit ? "#4fc3f7" : "#8cd69c",
-                        weight: isTransit ? 7 : 5,
-                        opacity: 1,
-                        dashArray: isTransit ? undefined : "10,6",
-                        lineCap: "round",
-                        lineJoin: "round",
-                      }}
-                    >
-                      <Popup>
-                        <div style={{ fontFamily: "DM Sans,sans-serif" }}>
-                          {isTransit ? (
-                            <>
-                              <Bus
-                                size={12}
-                                style={{
-                                  verticalAlign: "middle",
-                                  color: "#4fc3f7",
-                                }}
-                              />{" "}
-                              <strong>Transit segment</strong>
-                            </>
-                          ) : (
-                            <>
-                              <Footprints
-                                size={12}
-                                style={{
-                                  verticalAlign: "middle",
-                                  color: "#8cd69c",
-                                }}
-                              />{" "}
-                              <strong>Walking segment</strong>
-                            </>
-                          )}
-                        </div>
-                      </Popup>
-                    </Polyline>
-                  </React.Fragment>
-                );
-              })
-            ) : routeSegments.length > 0 ? (
-              /* Walking route with safety colouring and obstruction detection */
-              routeSegments.map((seg, idx) => {
-                let hasObs = false,
-                  obsDesc = null;
-                for (const z of constructionZones) {
-                  const d = pointToSegmentDistanceMeters(
-                    [z.lng, z.lat],
-                    [seg.start[1], seg.start[0]],
-                    [seg.end[1], seg.end[0]],
-                  );
-                  if (d < (z.radius || 50)) {
-                    hasObs = true;
-                    obsDesc = z.description;
-                    break;
-                  }
-                }
-                if (!hasObs)
-                  for (const h of activeHazards) {
-                    const d = pointToSegmentDistanceMeters(
-                      [h.lng, h.lat],
-                      [seg.start[1], seg.start[0]],
-                      [seg.end[1], seg.end[0]],
-                    );
-                    if (d < (h.radius || 50)) {
-                      hasObs = true;
-                      obsDesc = h.description;
-                      break;
-                    }
-                  }
-                return (
-                  <React.Fragment key={`seg-${idx}`}>
-                    <Polyline
-                      positions={[seg.start, seg.end]}
-                      pathOptions={{
-                        color: "#000",
-                        weight: 10,
-                        opacity: 0.4,
-                        lineCap: "round",
-                        lineJoin: "round",
-                      }}
-                    />
-                    {hasObs && (
-                      <>
-                        <Polyline
-                          positions={[seg.start, seg.end]}
-                          pathOptions={{
-                            color: "rgba(255,123,107,0.5)",
-                            weight: 18,
-                            opacity: 0.55,
-                            lineCap: "round",
-                            lineJoin: "round",
-                            className: "obstruction-overlay",
-                          }}
-                        />
-                        <Polyline
-                          positions={[seg.start, seg.end]}
-                          pathOptions={{
-                            color: "#ff7b6b",
-                            weight: 3,
-                            opacity: 0.9,
-                            lineCap: "round",
-                            lineJoin: "round",
-                            dashArray: "8,8",
-                            className: "obstruction-border",
-                          }}
-                        />
-                      </>
-                    )}
-                    <Polyline
-                      positions={[seg.start, seg.end]}
-                      pathOptions={{
-                        color: getSegmentColor(seg.safety_score || 0.7),
-                        weight: 6,
-                        opacity: 1,
-                        lineCap: "round",
-                        lineJoin: "round",
-                      }}
-                    >
-                      <Popup>
-                        <div>
-                          <strong>Segment {idx + 1}</strong>
-                          <br />
-                          Safety:{" "}
-                          {Math.round((seg.safety_score || 0.7) * 100)}%
-                          <br />
-                          {hasObs && obsDesc && (
-                            <div style={{ color: "#ff7b6b" }}>
-                              <TriangleAlert size={12} /> {obsDesc}
-                            </div>
-                          )}
-                          {seg.instructions || "Continue on route"}
-                        </div>
-                      </Popup>
-                    </Polyline>
-                  </React.Fragment>
-                );
-              })
-            ) : routePath.length >= 2 ? (
-              /* Fallback plain route */
-              <>
-                <Polyline
-                  positions={routePath}
-                  pathOptions={{
-                    color: mode === "wheelchair" ? "#e8a870" : "#8cd69c",
-                    weight: 14,
-                    opacity: 0.2,
-                    lineCap: "round",
-                    lineJoin: "round",
-                  }}
-                />
-                <Polyline
-                  positions={routePath}
-                  pathOptions={{
-                    color: "#1a0c04",
-                    weight: 8,
-                    opacity: 0.6,
-                    lineCap: "round",
-                    lineJoin: "round",
-                  }}
-                />
-                <Polyline
-                  positions={routePath}
-                  pathOptions={{
-                    color: mode === "wheelchair" ? "#f0b060" : "#60e890",
-                    weight: 5,
-                    opacity: 1,
-                    dashArray: mode === "wheelchair" ? "14,10" : undefined,
-                    lineCap: "round",
-                    lineJoin: "round",
-                  }}
-                />
-              </>
-            ) : null}
-
-            {/* Alternative routes overlay */}
+            {/* Alternative routes */}
             {alternativeRoutes.map(
               (alt, idx) =>
                 alt.waypoints?.length > 0 && (
-                  <Polyline
+                  <MemoizedPolyline
                     key={`alt-${idx}`}
                     positions={alt.waypoints}
                     pathOptions={{
@@ -2540,26 +2314,28 @@ export default function AccessibleMap() {
                         {alt.duration_minutes} min
                       </div>
                     </Popup>
-                  </Polyline>
+                  </MemoizedPolyline>
                 ),
             )}
-          </MapContainer>
+          </MemoizedMapContainer>
         </div>
 
-        {/* ── 3D WALK VIEW ── */}
+        {/* 3D WALK VIEW */}
         <div
           className={`view3d-panel${show3D && routePath.length > 0 ? "" : " hidden"}`}
         >
-          <Walking3DView
-            route={routePath}
-            hazards={transformedHazards}
-            userPosition={walkerPosition || loc}
-            navigationState={navState3D}
-            routeSafety={avgSafety}
-            remainingDistance={remainingDist3D}
-            estimatedTime={remainingDist3D / 1.4}
-            style={{ width: "100%", height: "100%" }}
-          />
+          <Suspense fallback={<div className="loading-spinner" style={{ color: "var(--wood)", textAlign: "center", padding: "20px" }}>Loading 3D view...</div>}>
+            <Walking3DView
+              route={routePath}
+              hazards={transformedHazards}
+              userPosition={walkerPosition || loc}
+              navigationState={navState3D}
+              routeSafety={avgSafety}
+              remainingDistance={remainingDist3D}
+              estimatedTime={remainingDist3D / 1.4}
+              style={{ width: "100%", height: "100%" }}
+            />
+          </Suspense>
           <button
             onClick={() => setShow3D(false)}
             style={{
@@ -2588,7 +2364,7 @@ export default function AccessibleMap() {
           </button>
         )}
 
-        {/* ── NAVIGATION RAIL ── */}
+        {/* NAVIGATION RAIL */}
         <nav className="rail" role="navigation" aria-label="Main navigation">
           <div className="r-logo" aria-hidden="true">
             <Accessibility size={20} />
@@ -2644,7 +2420,7 @@ export default function AccessibleMap() {
           </button>
         </nav>
 
-        {/* ── SIDE PANEL ── */}
+        {/* SIDE PANEL */}
         <aside
           ref={panelRef}
           className={`panel${panel ? " open" : ""}`}
@@ -2875,7 +2651,7 @@ export default function AccessibleMap() {
           </div>
         </aside>
 
-        {/* ── SEARCH / ROUTE PLANNER CARD ── */}
+        {/* SEARCH / ROUTE PLANNER CARD */}
         <div className="sc" role="search" aria-label="Route planner">
           <div className="sc-head">
             <Route size={16} style={{ color: "var(--wood)", flexShrink: 0 }} />
@@ -2899,7 +2675,22 @@ export default function AccessibleMap() {
                   className="ri"
                   placeholder="Your starting point"
                   aria-label="Starting location"
-                  onKeyDown={fromKD}
+                  onKeyDown={(e) => {
+                    if (!fromSuggOpen) return;
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      setFromHiIdx((p) => Math.min(p + 1, fromSugg.length - 1));
+                    } else if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      setFromHiIdx((p) => Math.max(p - 1, -1));
+                    } else if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (fromHiIdx >= 0) pickFromSugg(fromSugg[fromHiIdx]);
+                    } else if (e.key === "Escape") {
+                      setFromSuggOpen(false);
+                      setFromHiIdx(-1);
+                    }
+                  }}
                   onFocus={() => fromSugg.length > 0 && setFromSuggOpen(true)}
                   autoComplete="off"
                 />
@@ -2988,7 +2779,26 @@ export default function AccessibleMap() {
                   className="ri"
                   placeholder="Address, place or business…"
                   aria-label="Destination"
-                  onKeyDown={destKD}
+                  onKeyDown={(e) => {
+                    if (!suggOpen) {
+                      if (e.key === "Enter") calcRoute();
+                      return;
+                    }
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      setHiIdx((p) => Math.min(p + 1, sugg.length - 1));
+                    } else if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      setHiIdx((p) => Math.max(p - 1, -1));
+                    } else if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (hiIdx >= 0) pickSugg(sugg[hiIdx]);
+                      else calcRoute();
+                    } else if (e.key === "Escape") {
+                      setSuggOpen(false);
+                      setHiIdx(-1);
+                    }
+                  }}
                   onFocus={() => sugg.length > 0 && setSuggOpen(true)}
                   autoComplete="off"
                 />
@@ -3195,7 +3005,7 @@ export default function AccessibleMap() {
           )}
         </div>
 
-        {/* ── MAP TYPE BAR ── */}
+        {/* MAP TYPE BAR */}
         <div className="mt-bar" role="radiogroup">
           {Object.entries(mapTypes).map(([k, v]) => {
             const MIcon = MAP_TYPE_ICONS[k] || Layers;
@@ -3215,7 +3025,7 @@ export default function AccessibleMap() {
           })}
         </div>
 
-        {/* ── ZOOM CONTROLS ── */}
+        {/* ZOOM CONTROLS */}
         <div className="mctrl">
           <button
             className="mc"
@@ -3246,7 +3056,7 @@ export default function AccessibleMap() {
           </button>
         </div>
 
-        {/* ── DIRECTIONS PANEL (new feature) ── */}
+        {/* DIRECTIONS PANEL */}
         {showDirections && routeSteps.length > 0 && (
           <DirectionsPanel
             steps={routeSteps}
@@ -3255,7 +3065,7 @@ export default function AccessibleMap() {
           />
         )}
 
-        {/* ── ROUTE INFO BAR ── */}
+        {/* ROUTE INFO BAR */}
         {routeInfo && (
           <div className="rbar" role="region" aria-label="Route information">
             <div className="rs">
@@ -3285,7 +3095,6 @@ export default function AccessibleMap() {
                 </div>
               </>
             )}
-            {/* Directions toggle button (new feature) */}
             <div className="rs-d" />
             <button
               className={`rs-dir-btn${showDirections ? " on" : ""}`}
@@ -3307,7 +3116,7 @@ export default function AccessibleMap() {
           </div>
         )}
 
-        {/* ── ROUTE ALERT OVERLAY ── */}
+        {/* ROUTE ALERT OVERLAY */}
         {showRouteAlert && routeAlert && (
           <div
             style={{
@@ -3418,7 +3227,7 @@ export default function AccessibleMap() {
           </div>
         )}
 
-        {/* ── TRANSIT INFO MODAL ── */}
+        {/* TRANSIT INFO MODAL */}
         {showTransitInfo && transitInfo && (
           <div
             style={{
@@ -3551,7 +3360,7 @@ export default function AccessibleMap() {
           </div>
         )}
 
-        {/* ── TOAST NOTIFICATION ── */}
+        {/* TOAST NOTIFICATION */}
         <div
           className={`toast${toast ? " vis" : ""}`}
           role="status"
