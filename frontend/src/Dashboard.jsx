@@ -262,11 +262,7 @@ function getStepIcon(instruction = "", travelMode = "") {
     return ArrowRight;
   if (txt.includes("u-turn")) return Navigation2;
   if (txt.includes("arrive") || txt.includes("destination")) return Flag;
-  if (
-    txt.includes("depart") ||
-    txt.includes("head") ||
-    txt.includes("start")
-  )
+  if (txt.includes("depart") || txt.includes("head") || txt.includes("start"))
     return CircleDot;
   return ArrowUp;
 }
@@ -929,83 +925,90 @@ const ObstructedRoadSegment = React.memo(({ segment, zoomLevel = 13 }) => {
   );
 });
 
-const ObstructionMarker = React.memo(({
-  lat,
-  lng,
-  type,
-  iconCategory,
-  description,
-  radius,
-  extra,
-  zoomLevel = 13,
-}) => {
-  if (lat === undefined || lat === null || lng === undefined || lng === null) {
-    return null;
-  }
-  const validLat = parseFloat(lat);
-  const validLng = parseFloat(lng);
-  if (isNaN(validLat) || isNaN(validLng)) return null;
-  if (!isFinite(validLat) || !isFinite(validLng)) return null;
-  if (validLat < -90 || validLat > 90) return null;
-  if (validLng < -180 || validLng > 180) return null;
+const ObstructionMarker = React.memo(
+  ({
+    lat,
+    lng,
+    type,
+    iconCategory,
+    description,
+    radius,
+    extra,
+    zoomLevel = 13,
+  }) => {
+    if (
+      lat === undefined ||
+      lat === null ||
+      lng === undefined ||
+      lng === null
+    ) {
+      return null;
+    }
+    const validLat = parseFloat(lat);
+    const validLng = parseFloat(lng);
+    if (isNaN(validLat) || isNaN(validLng)) return null;
+    if (!isFinite(validLat) || !isFinite(validLng)) return null;
+    if (validLat < -90 || validLat > 90) return null;
+    if (validLng < -180 || validLng > 180) return null;
 
-  const style = getObstructionStyle(type, iconCategory);
-  const sz = Math.min(40, Math.max(20, 20 + ((zoomLevel - 10) / 8) * 20));
+    const style = getObstructionStyle(type, iconCategory);
+    const sz = Math.min(40, Math.max(20, 20 + ((zoomLevel - 10) / 8) * 20));
 
-  return (
-    <Marker
-      position={[validLat, validLng]}
-      icon={makeLucideIcon(style.Icon, style.color, style.border, sz)}
-    >
-      <Popup>
-        <div
-          style={{
-            fontFamily: "DM Sans,sans-serif",
-            minWidth: 180,
-            maxWidth: 280,
-          }}
-        >
+    return (
+      <Marker
+        position={[validLat, validLng]}
+        icon={makeLucideIcon(style.Icon, style.color, style.border, sz)}
+      >
+        <Popup>
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginBottom: 10,
-              paddingBottom: 8,
-              borderBottom: `1px solid ${style.color}40`,
+              fontFamily: "DM Sans,sans-serif",
+              minWidth: 180,
+              maxWidth: 280,
             }}
           >
-            <style.Icon size={18} color={style.color} strokeWidth={2.5} />
-            <strong style={{ color: style.color, fontSize: 14 }}>
-              {style.label}
-            </strong>
-          </div>
-          <div style={{ fontSize: 12, color: "#e0c8b0", lineHeight: 1.5 }}>
-            {description || "Obstruction reported"}
-          </div>
-          {extra && (
             <div
               style={{
-                fontSize: 11,
-                color: "#b09878",
-                borderTop: `1px solid ${style.color}30`,
-                paddingTop: 6,
-                marginTop: 4,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 10,
+                paddingBottom: 8,
+                borderBottom: `1px solid ${style.color}40`,
               }}
             >
-              {extra}
+              <style.Icon size={18} color={style.color} strokeWidth={2.5} />
+              <strong style={{ color: style.color, fontSize: 14 }}>
+                {style.label}
+              </strong>
             </div>
-          )}
-          {radius && (
-            <div style={{ fontSize: 10, color: "#b09878", marginTop: 4 }}>
-              ⚠️ ~{radius}m radius
+            <div style={{ fontSize: 12, color: "#e0c8b0", lineHeight: 1.5 }}>
+              {description || "Obstruction reported"}
             </div>
-          )}
-        </div>
-      </Popup>
-    </Marker>
-  );
-});
+            {extra && (
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "#b09878",
+                  borderTop: `1px solid ${style.color}30`,
+                  paddingTop: 6,
+                  marginTop: 4,
+                }}
+              >
+                {extra}
+              </div>
+            )}
+            {radius && (
+              <div style={{ fontSize: 10, color: "#b09878", marginTop: 4 }}>
+                ⚠️ ~{radius}m radius
+              </div>
+            )}
+          </div>
+        </Popup>
+      </Marker>
+    );
+  },
+);
 
 // ─── Directions Panel ─────────────────────────────────────────────────────────
 
@@ -1059,12 +1062,24 @@ const DirectionsPanel = React.memo(({ steps, onClose, routeType }) => {
           } else if (isLast) {
             instruction = `Arrive at ${step.instruction?.replace("Arrive at ", "") || "your destination"}`;
           } else if (isTransit) {
-            const routeName = step.route_short_name || step.transit_line || step.trip_id?.split("_")[0] || "Bus";
-            const fromStop = cleanStopName(step.departure_stop || step.start_stop || "stop");
-            const toStop = cleanStopName(step.arrival_stop || step.end_stop || "next stop");
+            const routeName =
+              step.route_short_name ||
+              step.transit_line ||
+              step.trip_id?.split("_")[0] ||
+              "Bus";
+            const fromStop = cleanStopName(
+              step.departure_stop || step.start_stop || "stop",
+            );
+            const toStop = cleanStopName(
+              step.arrival_stop || step.end_stop || "next stop",
+            );
             instruction = `Take Bus ${routeName} from ${fromStop} to ${toStop}`;
           } else if (isWalk) {
-            const toStop = cleanStopName(step.to_stop || step.instruction?.replace("Walk to ", "") || "next stop");
+            const toStop = cleanStopName(
+              step.to_stop ||
+                step.instruction?.replace("Walk to ", "") ||
+                "next stop",
+            );
             instruction = `Walk to ${toStop}`;
           } else {
             instruction = stripHtml(step.instruction || "Continue");
@@ -1200,15 +1215,74 @@ export default function AccessibleMap() {
   const [fromSuggLoad, setFromSuggLoad] = useState(false);
   const [fromHiIdx, setFromHiIdx] = useState(-1);
 
+  // Add this after your state declarations
+  const memoizedSuggItems = useMemo(() => {
+    return sugg.map((s, i) => {
+      const CIcon = getCatIcon(s.category);
+      return (
+        <button
+          key={s.id || i}
+          className={`ac-row${hiIdx === i ? " hi" : ""}`}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            pickSugg(s);
+          }}
+          onMouseEnter={() => setHiIdx(i)}
+        >
+          <div className="ac-ico">
+            <CIcon size={13} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="ac-name">{s.name}</div>
+            {s.address && s.address !== s.name && (
+              <div className="ac-addr">{s.address}</div>
+            )}
+          </div>
+          {s.category && (
+            <div className="ac-tag">{s.category.split(" ")[0]}</div>
+          )}
+        </button>
+      );
+    });
+  }, [sugg, hiIdx]);
+
+  const memoizedFromSuggItems = useMemo(() => {
+    return fromSugg.map((s, i) => {
+      const CIcon = getCatIcon(s.category);
+      return (
+        <button
+          key={s.id || i}
+          className={`ac-row${fromHiIdx === i ? " hi" : ""}`}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            pickFromSugg(s);
+          }}
+          onMouseEnter={() => setFromHiIdx(i)}
+        >
+          <div className="ac-ico">
+            <CIcon size={13} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="ac-name">{s.name}</div>
+            {s.address && s.address !== s.name && (
+              <div className="ac-addr">{s.address}</div>
+            )}
+          </div>
+          {s.category && (
+            <div className="ac-tag">{s.category.split(" ")[0]}</div>
+          )}
+        </button>
+      );
+    });
+  }, [fromSugg, fromHiIdx]);
+
   // Add throttle function at the top of your component (inside, after useState)
-const throttledSetZoom = useCallback(
-  throttle((newZoom) => {
-    setZoom(newZoom);
-  }, 100),
-  []
-);
-
-
+  const throttledSetZoom = useCallback(
+    throttle((newZoom) => {
+      setZoom(newZoom);
+    }, 100),
+    [],
+  );
 
   const validCenter = isValidLatLngArray(loc) ? loc : [40.472, -79.94];
 
@@ -1216,7 +1290,6 @@ const throttledSetZoom = useCallback(
     setToast(msg);
     setTimeout(() => setToast(""), 3200);
   }, []);
-  
 
   const isValidCoordinate = useCallback((obj) => {
     return (
@@ -1474,40 +1547,44 @@ const throttledSetZoom = useCallback(
 
   // ─── search ──────────────────────────────────────────────────────────────────
 
-  const searchPlaces = useCallback((q) => {
-    if (debRef.current) clearTimeout(debRef.current);
-    if (!q || q.length < 2) {
-      setSugg([]);
-      setSuggOpen(false);
-      return;
-    }
-    debRef.current = setTimeout(async () => {
-      setSuggLoad(true);
-      try {
-        const [lat, lng] = loc;
-        const d = await (
-          await fetch(
-            `https://api.tomtom.com/search/2/search/${encodeURIComponent(q)}.json?key=${TOMTOM_API_KEY}&limit=4&lat=${lat}&lon=${lng}&radius=50000&language=en-US`,
-          )
-        ).json();
-        const m = (d.results || [])
-          .slice(0, 4)
-          .map((r) => ({
-            id: r.id,
-            name: r.poi?.name || r.address?.freeformAddress,
-            address: r.address?.freeformAddress,
-            category: r.poi?.categories?.[0] || null,
-          }))
-          .filter((r) => r.name);
-        setSugg(m);
-        setSuggOpen(m.length > 0);
-        setHiIdx(-1);
-      } catch {
-      } finally {
-        setSuggLoad(false);
+  // REPLACE your searchPlaces function with this optimized version
+  const searchPlaces = useCallback(
+    (q) => {
+      if (debRef.current) clearTimeout(debRef.current);
+      if (!q || q.length < 2) {
+        setSugg([]);
+        setSuggOpen(false);
+        return;
       }
-    }, 300);
-  }, [loc]);
+      debRef.current = setTimeout(async () => {
+        setSuggLoad(true);
+        try {
+          const [lat, lng] = loc;
+          const d = await (
+            await fetch(
+              `https://api.tomtom.com/search/2/search/${encodeURIComponent(q)}.json?key=${TOMTOM_API_KEY}&limit=4&lat=${lat}&lon=${lng}&radius=50000&language=en-US`,
+            )
+          ).json();
+          const m = (d.results || [])
+            .slice(0, 4)
+            .map((r) => ({
+              id: r.id,
+              name: r.poi?.name || r.address?.freeformAddress,
+              address: r.address?.freeformAddress,
+              category: r.poi?.categories?.[0] || null,
+            }))
+            .filter((r) => r.name);
+          setSugg(m);
+          setSuggOpen(m.length > 0);
+          setHiIdx(-1);
+        } catch {
+        } finally {
+          setSuggLoad(false);
+        }
+      }, 300);
+    },
+    [loc],
+  );
 
   const searchFromPlaces = (q) => {
     if (fromDebRef.current) clearTimeout(fromDebRef.current);
@@ -1653,9 +1730,7 @@ const throttledSetZoom = useCallback(
             const existing = new Set(prev.map((h) => `${h.lat},${h.lng}`));
             return [
               ...prev,
-              ...validHazards.filter(
-                (h) => !existing.has(`${h.lat},${h.lng}`),
-              ),
+              ...validHazards.filter((h) => !existing.has(`${h.lat},${h.lng}`)),
             ];
           });
         }
@@ -1709,7 +1784,7 @@ const throttledSetZoom = useCallback(
     try {
       let startLat = loc[0];
       let startLng = loc[1];
-  
+
       if (fromVal !== "Current Location") {
         const startGeoData = await (
           await fetch(
@@ -1721,10 +1796,10 @@ const throttledSetZoom = useCallback(
           startLng = startGeoData.results[0].position.lon;
         }
       }
-  
+
       let endLat = dest?.[0];
       let endLng = dest?.[1];
-  
+
       if (!endLat && toVal) {
         const endGeoData = await (
           await fetch(
@@ -1736,12 +1811,12 @@ const throttledSetZoom = useCallback(
           endLng = endGeoData.results[0].position.lon;
         }
       }
-  
+
       if (!endLat || !endLng) {
         say("Couldn't find destination coordinates");
         return;
       }
-  
+
       const res = await fetch("http://127.0.0.1:5000/api/transit-route", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1754,15 +1829,15 @@ const throttledSetZoom = useCallback(
           max_walk_distance: 1000,
         }),
       });
-  
+
       const data = await res.json();
-  
+
       if (data.success && data.route) {
         const transitSteps =
           data.route.steps?.filter((s) => s.type === "transit") || [];
         const walkingSteps =
           data.route.steps?.filter((s) => s.type === "walk") || [];
-  
+
         // Helper function to clean stop names (remove address numbers and patterns)
         const cleanStopName = (name) => {
           if (!name || name === "Stop" || name === "stop") return name;
@@ -1778,36 +1853,44 @@ const throttledSetZoom = useCallback(
           cleaned = cleaned.replace(/STOP\s+#\d+\s*-\s*/i, "");
           cleaned = cleaned.replace(/STOP\s+#\d+/i, "");
           // Capitalize first letter of each word
-          cleaned = cleaned.split(' ').map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-          ).join(' ');
+          cleaned = cleaned
+            .split(" ")
+            .map(
+              (word) =>
+                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+            )
+            .join(" ");
           return cleaned.trim() || name;
         };
-  
+
         // Helper to get user-friendly route name
         const getRouteName = (step) => {
           // Priority order: route_short_name > route_long_name > route_id > trip_id
-          if (step.route_short_name && step.route_short_name !== '') {
+          if (step.route_short_name && step.route_short_name !== "") {
             return step.route_short_name;
           }
-          if (step.route_long_name && step.route_long_name !== '') {
+          if (step.route_long_name && step.route_long_name !== "") {
             // Shorten long route names
-            const shortName = step.route_long_name.replace(/Bus|Line|Route/i, '').trim();
-            return shortName.length > 15 ? shortName.substring(0, 15) : shortName;
+            const shortName = step.route_long_name
+              .replace(/Bus|Line|Route/i, "")
+              .trim();
+            return shortName.length > 15
+              ? shortName.substring(0, 15)
+              : shortName;
           }
-          if (step.route_id && step.route_id !== '') {
+          if (step.route_id && step.route_id !== "") {
             return step.route_id;
           }
           if (step.trip_id) {
             // Try to extract route number from trip_id (e.g., "4035020" -> try to map, but fallback)
-            const possibleRoute = step.trip_id.split('_')[0];
+            const possibleRoute = step.trip_id.split("_")[0];
             if (possibleRoute && !possibleRoute.match(/^\d{7,}$/)) {
               return possibleRoute;
             }
           }
           return "Bus";
         };
-  
+
         // Group transit steps by route line
         const tripsByLine = new Map();
         transitSteps.forEach((step) => {
@@ -1815,48 +1898,76 @@ const throttledSetZoom = useCallback(
           if (!tripsByLine.has(routeName)) tripsByLine.set(routeName, []);
           tripsByLine.get(routeName).push(step);
         });
-  
+
         const transitLines = Array.from(tripsByLine.entries()).map(
           ([line, steps]) => ({
             line: line,
             vehicle: "Bus",
-            from_stop: cleanStopName(steps[0]?.start_stop_name || steps[0]?.start_stop || "Stop"),
-            to_stop: cleanStopName(steps[steps.length - 1]?.end_stop_name || steps[steps.length - 1]?.end_stop || "Stop"),
-            departure_time: steps[0]?.departure_time 
+            from_stop: cleanStopName(
+              steps[0]?.start_stop_name || steps[0]?.start_stop || "Stop",
+            ),
+            to_stop: cleanStopName(
+              steps[steps.length - 1]?.end_stop_name ||
+                steps[steps.length - 1]?.end_stop ||
+                "Stop",
+            ),
+            departure_time: steps[0]?.departure_time
               ? (() => {
                   try {
                     const d = new Date(steps[0].departure_time);
-                    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    return d.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    });
                   } catch {
-                    return steps[0]?.time ? new Date(steps[0].time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Soon";
+                    return steps[0]?.time
+                      ? new Date(steps[0].time).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "Soon";
                   }
                 })()
-              : steps[0]?.time 
-                ? new Date(steps[0].time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              : steps[0]?.time
+                ? new Date(steps[0].time).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
                 : "Soon",
             arrival_time: steps[steps.length - 1]?.arrival_time
               ? (() => {
                   try {
                     const d = new Date(steps[steps.length - 1].arrival_time);
-                    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    return d.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    });
                   } catch {
-                    return steps[steps.length - 1]?.time 
-                      ? new Date(steps[steps.length - 1].time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    return steps[steps.length - 1]?.time
+                      ? new Date(
+                          steps[steps.length - 1].time,
+                        ).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
                       : "Arriving";
                   }
                 })()
               : steps[steps.length - 1]?.time
-                ? new Date(steps[steps.length - 1].time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                ? new Date(steps[steps.length - 1].time).toLocaleTimeString(
+                    [],
+                    { hour: "2-digit", minute: "2-digit" },
+                  )
                 : "Arriving",
             stop_count: steps.length,
           }),
         );
-  
+
         const totalMinutes = Math.round(data.route.total_time_seconds / 60);
         const hours = Math.floor(totalMinutes / 60);
         const mins = totalMinutes % 60;
         const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
-  
+
         // Calculate estimated walking and transit times
         let walkingSeconds = 0;
         let transitSeconds = 0;
@@ -1867,7 +1978,7 @@ const throttledSetZoom = useCallback(
             transitSeconds += step.duration_seconds;
           }
         });
-  
+
         setTransitInfo([
           {
             duration_minutes: totalMinutes,
@@ -1876,17 +1987,25 @@ const throttledSetZoom = useCallback(
             transit_minutes: Math.round(transitSeconds / 60),
             transit_lines: transitLines,
             total_steps: data.route.steps?.length || 0,
-            arrival_time: data.route.arrival_time 
-              ? new Date(data.route.arrival_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            arrival_time: data.route.arrival_time
+              ? new Date(data.route.arrival_time).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
               : "Arriving",
-            departure_time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            departure_time: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
           },
         ]);
         setShowTransitInfo(true);
-        
+
         // Create a user-friendly summary message
-        const routeSummary = transitLines.map(l => l.line).join(" → ");
-        say(`Found ${transitSteps.length} transit connection(s) · ${durationStr} · ${routeSummary}`);
+        const routeSummary = transitLines.map((l) => l.line).join(" → ");
+        say(
+          `Found ${transitSteps.length} transit connection(s) · ${durationStr} · ${routeSummary}`,
+        );
       } else {
         say(data.error || "No transit routes available at this time");
       }
@@ -1919,28 +2038,28 @@ const throttledSetZoom = useCallback(
     }
     setIsLoading(true);
     say("Finding your safe, accessible route…");
-  
+
     // Reset directions state
     setRouteSteps([]);
     setShowDirections(false);
     setTransitSegments([]);
-  
+
     try {
       const geoData = await (
         await fetch(
           `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(toVal)}.json?key=${TOMTOM_API_KEY}&limit=1`,
         )
       ).json();
-  
+
       if (!geoData.results?.length) {
         say("Couldn't find that location");
         setIsLoading(false);
         return;
       }
-  
+
       const destPos = geoData.results[0].position;
       const destCoords = { lat: destPos.lat, lng: destPos.lon };
-  
+
       let startCoords = { lat: loc[0], lng: loc[1] };
       if (fromVal !== "Current Location") {
         const startGeoData = await (
@@ -1953,13 +2072,13 @@ const throttledSetZoom = useCallback(
           startCoords = { lat: sp.lat, lng: sp.lon };
         }
       }
-  
+
       // ── TRANSIT MODE ──────────────────────────────────────────────────────────
-  
+
       if (mode === "transit") {
         try {
           say("Searching for transit routes...");
-  
+
           const transitRes = await fetch(
             "http://127.0.0.1:5000/api/transit-route",
             {
@@ -1975,18 +2094,22 @@ const throttledSetZoom = useCallback(
               }),
             },
           );
-  
+
           const transitData = await transitRes.json();
-  
+
           if (transitData.success && transitData.route) {
             const steps = transitData.route.steps || [];
-  
+
             // Build segments using path_geometry from backend (SHAPES FROM GTFS!)
             const allCoords = [];
             const segments = [];
-  
+
             steps.forEach((step) => {
-              if (step.type === "transit" && step.path_geometry && step.path_geometry.length > 0) {
+              if (
+                step.type === "transit" &&
+                step.path_geometry &&
+                step.path_geometry.length > 0
+              ) {
                 // USE THE SHAPE GEOMETRY FROM GTFS shapes.txt!
                 const segCoords = step.path_geometry;
                 segments.push({
@@ -1995,18 +2118,26 @@ const throttledSetZoom = useCallback(
                   line: step.route_short_name || "Bus",
                   route_short_name: step.route_short_name,
                 });
-                segCoords.forEach(c => {
+                segCoords.forEach((c) => {
                   if (c[0] && c[1]) allCoords.push(c);
                 });
-                console.log(`Added transit segment with ${segCoords.length} points from shapes.txt`);
+                console.log(
+                  `Added transit segment with ${segCoords.length} points from shapes.txt`,
+                );
               } else if (step.type === "transit") {
                 // Fallback for transit without geometry - use start/end points
                 const segCoords = [];
                 if (step.start_location) {
-                  segCoords.push([step.start_location.lat, step.start_location.lng || step.start_location.lon]);
+                  segCoords.push([
+                    step.start_location.lat,
+                    step.start_location.lng || step.start_location.lon,
+                  ]);
                 }
                 if (step.end_location) {
-                  segCoords.push([step.end_location.lat, step.end_location.lng || step.end_location.lon]);
+                  segCoords.push([
+                    step.end_location.lat,
+                    step.end_location.lng || step.end_location.lon,
+                  ]);
                 }
                 if (segCoords.length > 0) {
                   segments.push({
@@ -2015,7 +2146,7 @@ const throttledSetZoom = useCallback(
                     line: step.route_short_name || "Bus",
                     route_short_name: step.route_short_name,
                   });
-                  segCoords.forEach(c => {
+                  segCoords.forEach((c) => {
                     if (c[0] && c[1]) allCoords.push(c);
                   });
                 }
@@ -2027,24 +2158,27 @@ const throttledSetZoom = useCallback(
                 }
               }
             });
-  
+
             // Add start and end points if not already included
             if (allCoords.length === 0) {
-              allCoords.push([startCoords.lat, startCoords.lng], [destCoords.lat, destCoords.lng]);
+              allCoords.push(
+                [startCoords.lat, startCoords.lng],
+                [destCoords.lat, destCoords.lng],
+              );
             }
-  
+
             // Dedupe coordinates for bounds
             const uniqueCoords = allCoords.filter((c, i, arr) => {
               if (i === 0) return true;
               const prev = arr[i - 1];
               return !(prev[0] === c[0] && prev[1] === c[1]);
             });
-  
+
             setRoutePath(uniqueCoords);
             setDest([destCoords.lat, destCoords.lng]);
             setTransitSegments(segments);
             setRouteType("transit");
-  
+
             // Build display steps for directions panel
             const displaySteps = [];
             displaySteps.push({
@@ -2052,13 +2186,14 @@ const throttledSetZoom = useCallback(
               type: "walk",
               travel_mode: "WALKING",
             });
-            
+
             steps.forEach((step) => {
               if (step.type === "transit") {
-                const routeName = step.route_short_name || step.trip_id?.split("_")[0] || "Bus";
+                const routeName =
+                  step.route_short_name || step.trip_id?.split("_")[0] || "Bus";
                 const startStopName = step.start_stop || "stop";
                 const endStopName = step.end_stop || "next stop";
-                
+
                 displaySteps.push({
                   ...step,
                   instruction: `Take Bus ${routeName} from ${startStopName} to ${endStopName}`,
@@ -2077,16 +2212,16 @@ const throttledSetZoom = useCallback(
                 });
               }
             });
-            
+
             displaySteps.push({
               instruction: `Arrive at ${toVal}`,
               type: "arrive",
               travel_mode: "ARRIVE",
             });
-  
+
             setRouteSteps(displaySteps);
             setShowDirections(true);
-  
+
             // Build segments for safety colouring (fallback)
             const segs = [];
             for (let i = 0; i < uniqueCoords.length - 1; i++) {
@@ -2098,12 +2233,15 @@ const throttledSetZoom = useCallback(
               });
             }
             setRouteSegments(segs);
-  
-            const totalMinutes = Math.round(transitData.route.total_time_seconds / 60);
+
+            const totalMinutes = Math.round(
+              transitData.route.total_time_seconds / 60,
+            );
             const hours = Math.floor(totalMinutes / 60);
             const mins = totalMinutes % 60;
-            const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
-  
+            const durationStr =
+              hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
+
             setRouteInfo({
               distance: `${totalMinutes} min transit`,
               duration: durationStr,
@@ -2111,7 +2249,7 @@ const throttledSetZoom = useCallback(
               transit_steps: steps.filter((s) => s.type === "transit").length,
               walking_steps: steps.filter((s) => s.type === "walk").length,
             });
-  
+
             const nr = [
               {
                 name: toVal,
@@ -2122,30 +2260,35 @@ const throttledSetZoom = useCallback(
             ].slice(0, 6);
             setRecents(nr);
             localStorage.setItem("ar_recents", JSON.stringify(nr));
-  
+
             // Show user-friendly summary
             const routeSummary = steps
-              .filter(s => s.type === "transit")
-              .map(s => s.route_short_name || "Bus")
+              .filter((s) => s.type === "transit")
+              .map((s) => s.route_short_name || "Bus")
               .join(" → ");
-            
-            say(`Transit route found · ${durationStr} · ${routeSummary || `${steps.filter(s => s.type === "transit").length} connections`}`);
-            
+
+            say(
+              `Transit route found · ${durationStr} · ${routeSummary || `${steps.filter((s) => s.type === "transit").length} connections`}`,
+            );
+
             setShow3D(true);
             setTimeout(() => checkRouteForObstructions(uniqueCoords), 500);
             setIsLoading(false);
             return;
           } else {
-            say(transitData.error || "No transit routes found. Trying walking route...");
+            say(
+              transitData.error ||
+                "No transit routes found. Trying walking route...",
+            );
           }
         } catch (transitErr) {
           console.error("GTFS transit error:", transitErr);
           say("Transit service unavailable. Using walking route...");
         }
       }
-  
+
       // ── WALKING / WHEELCHAIR MODE ─────────────────────────────────────────────
-  
+
       const routeRes = await fetch(
         "http://127.0.0.1:5000/api/calculate-route",
         {
@@ -2166,17 +2309,17 @@ const throttledSetZoom = useCallback(
           }),
         },
       );
-  
+
       if (!routeRes.ok) throw new Error();
       const data = await routeRes.json();
-  
+
       if (data.success && data.route?.coordinates?.length >= 2) {
         const coords = data.route.coordinates.map((c) => [c.lat, c.lng]);
         setRoutePath(coords);
         setDest(coords[coords.length - 1]);
         setRouteType("walking");
         setTransitSegments([]);
-  
+
         if (data.route.segments?.length > 0) {
           setRouteSegments(data.route.segments);
         } else {
@@ -2191,7 +2334,7 @@ const throttledSetZoom = useCallback(
           }
           setRouteSegments(segs);
         }
-  
+
         // Build turn-by-turn directions
         const rawSteps = data.route.steps || [];
         if (rawSteps.length > 0) {
@@ -2235,13 +2378,13 @@ const throttledSetZoom = useCallback(
           ]);
           setShowDirections(true);
         }
-  
+
         setRouteInfo({
           distance: data.route.distance,
           duration: data.route.duration,
           type: "pedestrian",
         });
-  
+
         const nr = [
           {
             name: toVal,
@@ -2252,7 +2395,7 @@ const throttledSetZoom = useCallback(
         ].slice(0, 6);
         setRecents(nr);
         localStorage.setItem("ar_recents", JSON.stringify(nr));
-  
+
         say(`Route found · ${data.route.distance} · ${data.route.duration}`);
         setShow3D(true);
         setTimeout(() => checkRouteForObstructions(coords), 500);
@@ -2406,8 +2549,7 @@ const throttledSetZoom = useCallback(
                     <div style={{ fontSize: 11 }}>
                       <span
                         style={{
-                          color:
-                            hazard.severity > 0.7 ? "#ff7b6b" : "#ffb347",
+                          color: hazard.severity > 0.7 ? "#ff7b6b" : "#ffb347",
                         }}
                       >
                         ⚡ Severity: {Math.round(hazard.severity * 100)}%
@@ -2570,8 +2712,7 @@ const throttledSetZoom = useCallback(
                         <div>
                           <strong>Segment {idx + 1}</strong>
                           <br />
-                          Safety:{" "}
-                          {Math.round((seg.safety_score || 0.7) * 100)}%
+                          Safety: {Math.round((seg.safety_score || 0.7) * 100)}%
                           <br />
                           {hasObs && obsDesc && (
                             <div style={{ color: "#ff7b6b" }}>
@@ -2655,7 +2796,23 @@ const throttledSetZoom = useCallback(
         <div
           className={`view3d-panel${show3D && routePath.length > 0 ? "" : " hidden"}`}
         >
-          <Suspense fallback={<div style={{ width: "100%", height: "100%", background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>Loading 3D View...</div>}>
+          <Suspense
+            fallback={
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  background: "rgba(0,0,0,0.7)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                }}
+              >
+                Loading 3D View...
+              </div>
+            }
+          >
             <Walking3DView
               route={routePath}
               hazards={transformedHazards}
@@ -2987,7 +3144,7 @@ const throttledSetZoom = useCallback(
           <div className="sc-head">
             <Route size={16} style={{ color: "var(--wood)", flexShrink: 0 }} />
             <div className="sc-brand">
-              Access<span>Route</span>
+              Try<span>ver</span>
             </div>
           </div>
           <div className="sc-inputs">
@@ -3041,35 +3198,7 @@ const throttledSetZoom = useCallback(
                       Searching…
                     </div>
                   ) : (
-                    fromSugg.map((s, i) => {
-                      const CIcon = getCatIcon(s.category);
-                      return (
-                        <button
-                          key={s.id || i}
-                          className={`ac-row${fromHiIdx === i ? " hi" : ""}`}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            pickFromSugg(s);
-                          }}
-                          onMouseEnter={() => setFromHiIdx(i)}
-                        >
-                          <div className="ac-ico">
-                            <CIcon size={13} />
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div className="ac-name">{s.name}</div>
-                            {s.address && s.address !== s.name && (
-                              <div className="ac-addr">{s.address}</div>
-                            )}
-                          </div>
-                          {s.category && (
-                            <div className="ac-tag">
-                              {s.category.split(" ")[0]}
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })
+                    memoizedFromSuggItems
                   )}
                 </div>
               )}
@@ -3142,35 +3271,7 @@ const throttledSetZoom = useCallback(
                       Searching…
                     </div>
                   ) : (
-                    sugg.map((s, i) => {
-                      const CIcon = getCatIcon(s.category);
-                      return (
-                        <button
-                          key={s.id || i}
-                          className={`ac-row${hiIdx === i ? " hi" : ""}`}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            pickSugg(s);
-                          }}
-                          onMouseEnter={() => setHiIdx(i)}
-                        >
-                          <div className="ac-ico">
-                            <CIcon size={13} />
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div className="ac-name">{s.name}</div>
-                            {s.address && s.address !== s.name && (
-                              <div className="ac-addr">{s.address}</div>
-                            )}
-                          </div>
-                          {s.category && (
-                            <div className="ac-tag">
-                              {s.category.split(" ")[0]}
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })
+                    memoizedSuggItems
                   )}
                 </div>
               )}
@@ -3324,20 +3425,20 @@ const throttledSetZoom = useCallback(
 
         {/* ── ZOOM CONTROLS ── */}
         <div className="mctrl">
-<button
-  className="mc"
-  onClick={() => throttledSetZoom(Math.min(zoom + 1, 18))}
-  aria-label="Zoom in"
->
-  <Plus size={16} />
-</button>
-<button
-  className="mc"
-  onClick={() => throttledSetZoom(Math.max(zoom - 1, 10))}
-  aria-label="Zoom out"
->
-  <Minus size={16} />
-</button>
+          <button
+            className="mc"
+            onClick={() => throttledSetZoom(Math.min(zoom + 1, 18))}
+            aria-label="Zoom in"
+          >
+            <Plus size={16} />
+          </button>
+          <button
+            className="mc"
+            onClick={() => throttledSetZoom(Math.max(zoom - 1, 10))}
+            aria-label="Zoom out"
+          >
+            <Minus size={16} />
+          </button>
         </div>
 
         {/* ── DIRECTIONS PANEL (new feature) ── */}
@@ -3560,7 +3661,8 @@ const throttledSetZoom = useCallback(
                       marginBottom: 8,
                     }}
                   >
-                    Option {idx + 1}: {route.duration_str || `${route.duration_minutes} min`}
+                    Option {idx + 1}:{" "}
+                    {route.duration_str || `${route.duration_minutes} min`}
                   </div>
                   <div
                     style={{
@@ -3592,7 +3694,9 @@ const throttledSetZoom = useCallback(
                         }}
                       >
                         <Bus size={14} color="#4fc3f7" />
-                        <strong style={{ color: "#4fc3f7" }}>{line.line}</strong>
+                        <strong style={{ color: "#4fc3f7" }}>
+                          {line.line}
+                        </strong>
                         <span style={{ fontSize: 11, color: "var(--txt2)" }}>
                           {line.vehicle}
                         </span>
