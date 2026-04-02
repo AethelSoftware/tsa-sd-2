@@ -77,6 +77,18 @@ import { renderToStaticMarkup } from "react-dom/server";
 // Lazy load 3D view to reduce initial bundle size
 const Walking3DView = lazy(() => import("./Walking3DView"));
 
+// Add this after your imports, before the component
+const throttle = (fn, delay) => {
+  let lastCall = 0;
+  return (...args) => {
+    const now = Date.now();
+    if (now - lastCall >= delay) {
+      lastCall = now;
+      fn(...args);
+    }
+  };
+};
+
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -1188,12 +1200,23 @@ export default function AccessibleMap() {
   const [fromSuggLoad, setFromSuggLoad] = useState(false);
   const [fromHiIdx, setFromHiIdx] = useState(-1);
 
+  // Add throttle function at the top of your component (inside, after useState)
+const throttledSetZoom = useCallback(
+  throttle((newZoom) => {
+    setZoom(newZoom);
+  }, 100),
+  []
+);
+
+
+
   const validCenter = isValidLatLngArray(loc) ? loc : [40.472, -79.94];
 
   const say = useCallback((msg) => {
     setToast(msg);
     setTimeout(() => setToast(""), 3200);
   }, []);
+  
 
   const isValidCoordinate = useCallback((obj) => {
     return (
@@ -1451,7 +1474,7 @@ export default function AccessibleMap() {
 
   // ─── search ──────────────────────────────────────────────────────────────────
 
-  const searchPlaces = (q) => {
+  const searchPlaces = useCallback((q) => {
     if (debRef.current) clearTimeout(debRef.current);
     if (!q || q.length < 2) {
       setSugg([]);
@@ -1464,10 +1487,11 @@ export default function AccessibleMap() {
         const [lat, lng] = loc;
         const d = await (
           await fetch(
-            `https://api.tomtom.com/search/2/search/${encodeURIComponent(q)}.json?key=${TOMTOM_API_KEY}&limit=6&lat=${lat}&lon=${lng}&radius=50000&language=en-US`,
+            `https://api.tomtom.com/search/2/search/${encodeURIComponent(q)}.json?key=${TOMTOM_API_KEY}&limit=4&lat=${lat}&lon=${lng}&radius=50000&language=en-US`,
           )
         ).json();
         const m = (d.results || [])
+          .slice(0, 4)
           .map((r) => ({
             id: r.id,
             name: r.poi?.name || r.address?.freeformAddress,
@@ -1482,8 +1506,8 @@ export default function AccessibleMap() {
       } finally {
         setSuggLoad(false);
       }
-    }, 280);
-  };
+    }, 300);
+  }, [loc]);
 
   const searchFromPlaces = (q) => {
     if (fromDebRef.current) clearTimeout(fromDebRef.current);
@@ -2296,6 +2320,7 @@ export default function AccessibleMap() {
           <MapContainer
             center={validCenter}
             zoom={zoom}
+            preferCanvas={true}
             style={{
               width: "100%",
               height: "100%",
@@ -3299,33 +3324,20 @@ export default function AccessibleMap() {
 
         {/* ── ZOOM CONTROLS ── */}
         <div className="mctrl">
-          <button
-            className="mc"
-            onClick={() =>
-              setZoom((z) => {
-                const n = Math.min(z + 1, 18);
-                say(`Zoom ${n}`);
-                return n;
-              })
-            }
-            aria-label="Zoom in"
-          >
-            <Plus size={16} />
-          </button>
-          <div className="mc-z">{zoom}×</div>
-          <button
-            className="mc"
-            onClick={() =>
-              setZoom((z) => {
-                const n = Math.max(z - 1, 10);
-                say(`Zoom ${n}`);
-                return n;
-              })
-            }
-            aria-label="Zoom out"
-          >
-            <Minus size={16} />
-          </button>
+<button
+  className="mc"
+  onClick={() => throttledSetZoom(Math.min(zoom + 1, 18))}
+  aria-label="Zoom in"
+>
+  <Plus size={16} />
+</button>
+<button
+  className="mc"
+  onClick={() => throttledSetZoom(Math.max(zoom - 1, 10))}
+  aria-label="Zoom out"
+>
+  <Minus size={16} />
+</button>
         </div>
 
         {/* ── DIRECTIONS PANEL (new feature) ── */}
