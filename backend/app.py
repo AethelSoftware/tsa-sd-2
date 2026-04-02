@@ -32,6 +32,14 @@ import requests
 from vector_db import VectorDB
 from session_manager import SessionManager
 
+# Try to import dateutil for robust date parsing
+try:
+    from dateutil import parser as date_parser
+    HAS_DATEUTIL = True
+except ImportError:
+    HAS_DATEUTIL = False
+    logging.warning("python-dateutil not installed. Install with: pip install python-dateutil")
+
 # Load environment variables
 from dotenv import load_dotenv
 load_dotenv()
@@ -245,6 +253,27 @@ def format_metric(value, format_str='.4f'):
         return format(value, format_str)
     except Exception:
         return str(value)
+
+def fmt_dist(meters):
+    """Format meters to readable string"""
+    if not meters:
+        return ""
+    if meters >= 1000:
+        return f"{meters/1000:.1f} km"
+    return f"{meters:.0f} m"
+
+def fmt_duration(seconds):
+    """Format seconds to readable string"""
+    if not seconds:
+        return ""
+    if seconds < 60:
+        return f"{seconds:.0f} sec"
+    elif seconds < 3600:
+        return f"{seconds/60:.0f} min"
+    else:
+        hours = int(seconds / 3600)
+        minutes = int((seconds % 3600) / 60)
+        return f"{hours}h {minutes}m"
 
 # ============================================================================
 # MODEL MANAGEMENT FUNCTIONS
@@ -769,11 +798,27 @@ def add_model_endpoints(app):
             if not all([start_lat, start_lng, end_lat, end_lng, start_time_str]):
                 return jsonify({'success': False, 'error': 'Missing required parameters'}), 400
             
-            # Parse start time
+            # Robust date parsing using dateutil if available
             try:
-                start_time = datetime.fromisoformat(start_time_str)
-            except ValueError:
-                return jsonify({'success': False, 'error': 'Invalid start_time format. Use ISO format (YYYY-MM-DDTHH:MM:SS)'}), 400
+                if HAS_DATEUTIL:
+                    # dateutil handles Z, milliseconds, and timezones natively
+                    start_time = date_parser.parse(start_time_str)
+                else:
+                    # Fallback: replace Z with +00:00 and handle microseconds
+                    cleaned = start_time_str.replace('Z', '+00:00')
+                    # Keep only first 6 decimal places for microseconds (Python's limit)
+                    if '.' in cleaned and '+' in cleaned:
+                        parts = cleaned.split('.')
+                        micro_sec = parts[1].split('+')[0][:6]
+                        tz = parts[1].split('+')[1] if '+' in parts[1] else ''
+                        cleaned = f"{parts[0]}.{micro_sec}+{tz}"
+                    start_time = datetime.fromisoformat(cleaned)
+            except Exception as e:
+                logger.error(f"Date parsing error: {e} for string: {start_time_str}")
+                return jsonify({
+                    'success': False, 
+                    'error': f'Invalid start_time format. Use ISO format (YYYY-MM-DDTHH:MM:SS). Got: {start_time_str}'
+                }), 400
             
             # Find transit route
             route = transit_router.find_route(
@@ -882,12 +927,12 @@ def add_model_endpoints(app):
             }), 503
     
     # ============================================================================
-    # EXISTING CALCULATE ROUTE ENDPOINT (UPDATED WITH GTFS)
+    # EXISTING CALCULATE ROUTE ENDPOINT (UPDATED WITH GTFS AND IMPROVED STEPS)
     # ============================================================================
     
     @app.route("/api/calculate-route", methods=['POST'])
     def calculate_route():
-        """Calculate accessible route between two points (Enhanced endpoint with GTFS transit)"""
+        """Calculate accessible route between two points (Enhanced endpoint with GTFS transit and turn-by-turn steps)"""
         try:
             data = request.json
             if not data:
@@ -925,7 +970,13 @@ def add_model_endpoints(app):
             start_time = None
             if start_time_str:
                 try:
-                    start_time = datetime.fromisoformat(start_time_str)
+                    # Robust date parsing using dateutil if available
+                    if HAS_DATEUTIL:
+                        start_time = date_parser.parse(start_time_str)
+                    else:
+                        if start_time_str.endswith('Z'):
+                            start_time_str = start_time_str[:-1] + '+00:00'
+                        start_time = datetime.fromisoformat(start_time_str)
                 except ValueError:
                     logger.warning(f"Invalid start_time format: {start_time_str}")
                     start_time = datetime.now()
@@ -1058,7 +1109,7 @@ def add_model_endpoints(app):
                     logger.warning(f"Google Maps transit API failed: {e}")
                     error_messages.append(f"Google Transit: {str(e)}")
             
-            # TRY 3: TomTom API (for pedestrian routes)
+            # TRY 3: TomTom API (for pedestrian routes) - IMPROVED WITH STEP-BY-STEP INSTRUCTIONS
             if not route_result and tomtom_router and tomtom_router.api_key and travel_mode != 'transit':
                 try:
                     # Fetch current obstructions to avoid
@@ -1103,18 +1154,62 @@ def add_model_endpoints(app):
                     except Exception as obs_err:
                         logger.warning(f"Failed to fetch obstructions for route avoidance: {obs_err}")
                     
-                    logger.info(f"Attempting TomTom route from {start_lat},{start_lng} to {end_lat},{end_lng}")
-                    route_result = tomtom_router.calculate_route(
-                        float(start_lat), float(start_lng),
-                        float(end_lat), float(end_lng),
-                        travel_mode="pedestrian",
-                        avoid_hazards=True,
-                        accessibility_needs=accessibility_needs if accessibility_needs else None,
-                        obstruction_zones=current_obstructions if current_obstructions else None
+                    # Use direct TomTom API call with instructionsType=text to get turn-by-turn directions
+                    tomtom_key = os.getenv('TOMTOM_API_KEY') or tomtom_router.api_key
+                    
+                    # Build the route URL with instructions
+                    route_url = (
+                        f"https://api.tomtom.com/routing/1/calculateRoute/"
+                        f"{start_lat},{start_lng}:{end_lat},{end_lng}/json"
+                        f"?key={tomtom_key}"
+                        f"&travelMode=pedestrian"
+                        f"&instructionsType=text"  # CRITICAL: Get text instructions
+                        f"&routeType=fastest"
+                        f"&traffic=false"
+                        f"&avoid=unpavedRoads"
                     )
-                    if route_result and route_result.get('points') and len(route_result['points']) > 1:
-                        provider_used = "TomTom"
-                        logger.info("TomTom route successful")
+                    
+                    logger.info(f"Calculating TomTom route with instructions from {start_lat},{start_lng} to {end_lat},{end_lng}")
+                    route_response = requests.get(route_url, timeout=15)
+                    
+                    if route_response.status_code == 200:
+                        route_data = route_response.json()
+                        routes = route_data.get('routes', [])
+                        
+                        if routes:
+                            leg = routes[0]['legs'][0]
+                            points = [[p['latitude'], p['longitude']] for p in leg['points']]
+                            distance_meters = leg['summary']['lengthInMeters']
+                            duration_seconds = leg['summary']['travelTimeInSeconds']
+                            
+                            # Extract turn-by-turn instructions
+                            instructions = []
+                            for maneuver in leg.get('maneuvers', []):
+                                instructions.append({
+                                    'instruction': maneuver.get('instruction', 'Continue'),
+                                    'distance': fmt_dist(maneuver.get('lengthInMeters', 0)),
+                                    'distance_meters': maneuver.get('lengthInMeters', 0),
+                                    'duration': fmt_duration(maneuver.get('travelTimeInSeconds', 0)),
+                                    'duration_seconds': maneuver.get('travelTimeInSeconds', 0),
+                                    'travel_mode': 'WALKING',
+                                    'maneuver_type': maneuver.get('type', '')
+                                })
+                            
+                            route_result = {
+                                'points': points,
+                                'distance_meters': distance_meters,
+                                'duration_seconds': duration_seconds,
+                                'instructions': instructions,
+                                'segments': [],
+                                'raw_response': route_data
+                            }
+                            provider_used = "TomTom"
+                            logger.info(f"TomTom route successful with {len(instructions)} turn-by-turn steps")
+                        else:
+                            logger.warning("TomTom returned no routes")
+                    else:
+                        logger.warning(f"TomTom API returned {route_response.status_code}: {route_response.text[:200]}")
+                        
                 except Exception as e:
                     logger.warning(f"TomTom API failed: {e}")
                     error_messages.append(f"TomTom: {str(e)}")
@@ -1177,6 +1272,30 @@ def add_model_endpoints(app):
                     minutes = int((duration_val % 3600) / 60)
                     duration_str = f"{hours}h {minutes}m"
                 
+                # Get the instructions (steps) for turn-by-turn directions
+                steps = route_result.get('instructions', [])
+                
+                # Add start and end instructions if missing
+                if not steps:
+                    steps = [
+                        {
+                            'instruction': f"Head towards {end_address}",
+                            'distance': distance_str,
+                            'distance_meters': distance_val,
+                            'duration': duration_str,
+                            'duration_seconds': duration_val,
+                            'travel_mode': 'WALKING'
+                        },
+                        {
+                            'instruction': f"Arrive at {end_address}",
+                            'distance': '0 m',
+                            'distance_meters': 0,
+                            'duration': '0 sec',
+                            'duration_seconds': 0,
+                            'travel_mode': 'ARRIVE'
+                        }
+                    ]
+                
                 response_data = {
                     'success': True,
                     'route': {
@@ -1184,7 +1303,7 @@ def add_model_endpoints(app):
                         'distance_meters': distance_val,
                         'duration': duration_str,
                         'duration_seconds': duration_val,
-                        'steps': route_result.get('instructions', []),
+                        'steps': steps,  # Turn-by-turn instructions
                         'coordinates': route_coords,
                         'points': route_result.get('points', []),
                         'segments': route_result.get('segments', []),
@@ -1299,6 +1418,26 @@ def add_model_endpoints(app):
                 minutes = int((approx_duration % 3600) / 60)
                 duration_str = f"{hours}h {minutes}m"
             
+            # Add fallback steps
+            fallback_steps = [
+                {
+                    'instruction': f"Head towards destination",
+                    'distance': distance_str,
+                    'distance_meters': approx_distance,
+                    'duration': duration_str,
+                    'duration_seconds': approx_duration,
+                    'travel_mode': 'WALKING'
+                },
+                {
+                    'instruction': f"Arrive at destination",
+                    'distance': '0 m',
+                    'distance_meters': 0,
+                    'duration': '0 sec',
+                    'duration_seconds': 0,
+                    'travel_mode': 'ARRIVE'
+                }
+            ]
+            
             response_data = {
                 'success': True,
                 'route': {
@@ -1306,7 +1445,7 @@ def add_model_endpoints(app):
                     'distance_meters': approx_distance,
                     'duration': duration_str,
                     'duration_seconds': approx_duration,
-                    'steps': [],
+                    'steps': fallback_steps,  # Add fallback steps
                     'coordinates': route_coords,
                     'points': points,
                     'segments': [],
@@ -2138,7 +2277,12 @@ def setup_socketio_handlers(socketio_instance, app):
             start_time = None
             if start_time_str:
                 try:
-                    start_time = datetime.fromisoformat(start_time_str)
+                    if HAS_DATEUTIL:
+                        start_time = date_parser.parse(start_time_str)
+                    else:
+                        if start_time_str.endswith('Z'):
+                            start_time_str = start_time_str[:-1] + '+00:00'
+                        start_time = datetime.fromisoformat(start_time_str)
                 except ValueError:
                     start_time = datetime.now()
             else:

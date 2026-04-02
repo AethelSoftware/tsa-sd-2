@@ -24,6 +24,7 @@ import {
   Crosshair,
   Search,
   ChevronDown,
+  ChevronUp,
   X,
   Accessibility,
   Bus,
@@ -39,6 +40,7 @@ import {
   Wind,
   MapPin,
   Navigation,
+  Navigation2,
   TreePine,
   Building2,
   Stethoscope,
@@ -56,7 +58,17 @@ import {
   Flame,
   ShieldAlert,
   Play,
-  Square,
+  ArrowRight,
+  ArrowLeft,
+  ArrowUp,
+  CornerUpLeft,
+  CornerUpRight,
+  CornerDownLeft,
+  CornerDownRight,
+  CircleDot,
+  Flag,
+  Footprints,
+  List,
 } from "lucide-react";
 import { renderToStaticMarkup } from "react-dom/server";
 import Walking3DView from "./Walking3DView";
@@ -84,15 +96,15 @@ const destinationIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
+// ─── coordinate helpers ───────────────────────────────────────────────────────
+
 function isValidCoordinatePair(lat, lng) {
   const numLat = Number(lat);
   const numLng = Number(lng);
-
   if (isNaN(numLat) || isNaN(numLng)) return false;
   if (!isFinite(numLat) || !isFinite(numLng)) return false;
   if (numLat < -90 || numLat > 90) return false;
   if (numLng < -180 || numLng > 180) return false;
-
   return true;
 }
 
@@ -109,7 +121,6 @@ function isValidLatLngArray(arr) {
 }
 
 function getValidCoordinates(obj) {
-  // Try different property name patterns
   const lat =
     obj?.lat ?? obj?.latitude ?? obj?.position?.lat ?? obj?.coords?.lat ?? null;
   const lng =
@@ -119,12 +130,13 @@ function getValidCoordinates(obj) {
     obj?.position?.lng ??
     obj?.coords?.lng ??
     null;
-
   if (isValidCoordinatePair(lat, lng)) {
     return { lat: Number(lat), lng: Number(lng) };
   }
   return null;
 }
+
+// ─── icon / styling helpers ───────────────────────────────────────────────────
 
 function makeLucideIcon(IconComponent, color, borderColor, size = 30) {
   const innerSize = Math.max(12, size * 0.55);
@@ -140,6 +152,8 @@ function makeLucideIcon(IconComponent, color, borderColor, size = 30) {
     popupAnchor: [0, -size / 2],
   });
 }
+
+// ─── distance helpers ─────────────────────────────────────────────────────────
 
 function haversineDistance(lat1, lng1, lat2, lng2) {
   const R = 6371000;
@@ -210,6 +224,55 @@ function pointToSegmentDistanceMeters(point, segStart, segEnd) {
     : distance;
 }
 
+// ─── directions helpers ───────────────────────────────────────────────────────
+
+/** Pick a turn icon from the instruction text */
+function getStepIcon(instruction = "", travelMode = "") {
+  const txt = instruction.toLowerCase();
+  if (travelMode === "TRANSIT" || travelMode === "BUS") return Bus;
+  if (
+    txt.includes("board") ||
+    txt.includes("take transit") ||
+    txt.includes("take bus")
+  )
+    return Bus;
+  if (txt.includes("walk")) return Footprints;
+  if (txt.includes("turn left")) return CornerUpLeft;
+  if (txt.includes("turn right")) return CornerUpRight;
+  if (txt.includes("sharp left")) return CornerDownLeft;
+  if (txt.includes("sharp right")) return CornerDownRight;
+  if (txt.includes("keep left") || txt.includes("bear left")) return ArrowLeft;
+  if (txt.includes("keep right") || txt.includes("bear right"))
+    return ArrowRight;
+  if (txt.includes("u-turn")) return Navigation2;
+  if (txt.includes("arrive") || txt.includes("destination")) return Flag;
+  if (
+    txt.includes("depart") ||
+    txt.includes("head") ||
+    txt.includes("start")
+  )
+    return CircleDot;
+  return ArrowUp;
+}
+
+/** Strip HTML tags from TomTom instruction strings */
+function stripHtml(str = "") {
+  return str
+    .replace(/<[^>]*>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Format meters → "0.3 km" or "250 m" */
+function fmtDist(meters) {
+  if (!meters) return "";
+  return meters >= 1000
+    ? `${(meters / 1000).toFixed(1)} km`
+    : `${Math.round(meters)} m`;
+}
+
+// ─── map type config ──────────────────────────────────────────────────────────
+
 const mapTypes = {
   openstreetmap: {
     name: "Street",
@@ -248,6 +311,7 @@ function ChangeView({ center, zoom, routeBounds }) {
   return null;
 }
 
+// ─── CSS ──────────────────────────────────────────────────────────────────────
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -259,6 +323,7 @@ const CSS = `
     --wood-dim: rgba(232,168,112,0.18); --wood-glow: rgba(232,168,112,0.3);
     --green: #8cd69c; --green-dim: rgba(140,214,156,0.15); --amber: #ffb347;
     --red: #ff7b6b; --red-dim: rgba(255,123,107,0.15);
+    --blue: #4fc3f7; --blue-dim: rgba(79,195,247,0.15);
     --txt: #ffffff; --txt2: #e0c8b0; --txt3: #b09878;
     --ff-d: 'Playfair Display',Georgia,serif; --ff-b: 'DM Sans',system-ui,sans-serif;
     --sh: 0 6px 28px rgba(0,0,0,0.55),0 2px 8px rgba(0,0,0,0.3);
@@ -266,6 +331,7 @@ const CSS = `
     --sh-w: 0 4px 20px rgba(232,168,112,0.25);
   }
   @keyframes slideDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
   @keyframes pulse-overlay { 0%,100%{opacity:0.45} 50%{opacity:0.65} }
   @keyframes dash-flow { to{stroke-dashoffset:-16} }
   .obstruction-overlay { animation: pulse-overlay 2s ease-in-out infinite; }
@@ -380,6 +446,9 @@ const CSS = `
   .rs-cl { background:var(--red-dim);border:1px solid rgba(255,123,107,.3);border-radius:8px;padding:5px 10px;color:var(--red);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;margin-left:4px; }
   .rs-cl:hover { background:rgba(255,123,107,.25);color:#ff9b8b; }
   .rs-bus { background:var(--wood-dim);border:1px solid var(--wood);border-radius:8px;padding:5px 10px;color:var(--wood);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s; }
+  .rs-dir-btn { background:var(--blue-dim);border:1px solid var(--blue);border-radius:8px;padding:5px 10px;color:var(--blue);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px; }
+  .rs-dir-btn:hover { background:rgba(79,195,247,0.25); }
+  .rs-dir-btn.on { background:rgba(79,195,247,0.25); }
   .mt-bar { position:absolute;top:16px;right:14px;z-index:50;display:flex;gap:5px; }
   .mt-btn { background:var(--surface);border:1px solid var(--border);border-radius:9px;backdrop-filter:blur(20px);padding:7px 12px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--txt2);font-family:var(--ff-b);font-size:12px;font-weight:500;transition:all .15s;white-space:nowrap; }
   .mt-btn:hover { color:var(--txt);border-color:var(--border2); }
@@ -394,6 +463,161 @@ const CSS = `
   @keyframes dash-flow-road-top { to{stroke-dashoffset:-36} }
   .obstructed-road-border-top { animation:dash-flow-road-top 0.8s linear infinite;stroke-dashoffset:0;filter:drop-shadow(0 0 2px rgba(255,255,255,0.5)); }
 
+  /* ── Directions Panel ── */
+  .dir-panel {
+    position: absolute;
+    left: calc(var(--rail-w) + 14px);
+    bottom: 90px;
+    width: 348px;
+    max-height: 380px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 18px;
+    backdrop-filter: blur(28px);
+    box-shadow: var(--sh-lg);
+    z-index: 48;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideUp 0.24s ease;
+  }
+  .dir-header {
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .dir-title {
+    font-family: var(--ff-d);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--txt);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .dir-close {
+    background: var(--inset);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--txt2);
+    transition: all .14s;
+    flex-shrink: 0;
+  }
+  .dir-close:hover { color: var(--red); border-color: rgba(255,123,107,.3); background: var(--red-dim); }
+  .dir-list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 8px 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .dir-list::-webkit-scrollbar { width: 3px; }
+  .dir-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .dir-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 14px;
+    transition: background .12s;
+    cursor: default;
+    border-left: 3px solid transparent;
+  }
+  .dir-step:hover { background: var(--inset); }
+  .dir-step.transit-step {
+    background: rgba(79,195,247,0.05);
+    border-left-color: var(--blue);
+  }
+  .dir-step.walk-step { border-left-color: var(--green); }
+  .dir-step.first-step { border-left-color: var(--green); }
+  .dir-step.last-step { border-left-color: var(--red); }
+  .dir-step + .dir-step { border-top: 1px solid rgba(255,255,255,0.04); }
+  .dir-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .dir-icon.walk-icon { background: var(--green-dim); color: var(--green); }
+  .dir-icon.transit-icon { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(79,195,247,0.3); }
+  .dir-icon.turn-icon { background: var(--wood-dim); color: var(--wood); }
+  .dir-icon.start-icon { background: rgba(140,214,156,0.2); color: var(--green); }
+  .dir-icon.end-icon { background: var(--red-dim); color: var(--red); }
+  .dir-content { flex: 1; min-width: 0; }
+  .dir-instruction {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--txt);
+    line-height: 1.45;
+    word-break: break-word;
+  }
+  .dir-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 3px;
+  }
+  .dir-dist { font-size: 11px; color: var(--txt3); }
+  .dir-dur { font-size: 11px; color: var(--txt3); }
+  .transit-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--blue-dim);
+    border: 1px solid rgba(79,195,247,0.3);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--blue);
+    text-transform: uppercase;
+    letter-spacing: .4px;
+  }
+  .walk-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--green-dim);
+    border: 1px solid rgba(140,214,156,0.3);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: .4px;
+  }
+  .dir-divider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 14px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    color: var(--txt3);
+  }
+  .dir-divider::before, .dir-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── 3D View ── */
   .view3d-panel {
     position: absolute;
     bottom: 80px;
@@ -407,11 +631,7 @@ const CSS = `
     border: 1px solid var(--border2);
     transition: all 0.3s cubic-bezier(.4,0,.2,1);
   }
-  .view3d-panel.hidden {
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(20px);
-  }
+  .view3d-panel.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
   .view3d-toggle {
     position: absolute;
     bottom: 80px;
@@ -433,8 +653,10 @@ const CSS = `
     backdrop-filter: blur(20px);
     box-shadow: var(--sh-w);
   }
-  .view3d-toggle:hover { background:var(--wood-dim); }
+  .view3d-toggle:hover { background: var(--wood-dim); }
 `;
+
+// ─── constants ────────────────────────────────────────────────────────────────
 
 const A11Y_FEATS = [
   { key: "visionImpaired", Icon: Eye, label: "Vision Mode" },
@@ -593,6 +815,8 @@ function getObstructionStyle(type, iconCategory) {
   };
 }
 
+// ─── map sub-components ───────────────────────────────────────────────────────
+
 const ObstructedRoadSegment = ({ segment, zoomLevel = 13 }) => {
   const {
     coordinates,
@@ -699,49 +923,16 @@ const ObstructionMarker = ({
   extra,
   zoomLevel = 13,
 }) => {
-  // EARLY GUARD: Check if coordinates exist at all
   if (lat === undefined || lat === null || lng === undefined || lng === null) {
-    console.warn("❌ ObstructionMarker missing coordinates:", {
-      lat,
-      lng,
-      type,
-    });
     return null;
   }
-
-  // Convert to numbers safely
   const validLat = parseFloat(lat);
   const validLng = parseFloat(lng);
+  if (isNaN(validLat) || isNaN(validLng)) return null;
+  if (!isFinite(validLat) || !isFinite(validLng)) return null;
+  if (validLat < -90 || validLat > 90) return null;
+  if (validLng < -180 || validLng > 180) return null;
 
-  // Check if conversion produced valid numbers
-  if (isNaN(validLat) || isNaN(validLng)) {
-    console.warn("❌ ObstructionMarker NaN coordinates:", { lat, lng, type });
-    return null;
-  }
-
-  // Check if numbers are finite and within valid range
-  if (!isFinite(validLat) || !isFinite(validLng)) {
-    console.warn("❌ ObstructionMarker infinite coordinates:", {
-      validLat,
-      validLng,
-      type,
-    });
-    return null;
-  }
-
-  // Check if latitude is in valid range (-90 to 90)
-  if (validLat < -90 || validLat > 90) {
-    console.warn("❌ ObstructionMarker invalid latitude:", { validLat, type });
-    return null;
-  }
-
-  // Check if longitude is in valid range (-180 to 180)
-  if (validLng < -180 || validLng > 180) {
-    console.warn("❌ ObstructionMarker invalid longitude:", { validLng, type });
-    return null;
-  }
-
-  // All validations passed
   const style = getObstructionStyle(type, iconCategory);
   const sz = Math.min(40, Math.max(20, 20 + ((zoomLevel - 10) / 8) * 20));
 
@@ -800,6 +991,120 @@ const ObstructionMarker = ({
   );
 };
 
+// ─── Directions Panel ─────────────────────────────────────────────────────────
+
+function DirectionsPanel({ steps, onClose, routeType }) {
+  if (!steps || steps.length === 0) return null;
+
+  return (
+    <div className="dir-panel">
+      <div className="dir-header">
+        <div className="dir-title">
+          <List size={14} style={{ color: "var(--wood)" }} />
+          Turn-by-Turn Directions
+          {routeType === "transit" && (
+            <span className="transit-badge">
+              <Bus size={9} /> Transit
+            </span>
+          )}
+        </div>
+        <button className="dir-close" onClick={onClose}>
+          <X size={12} />
+        </button>
+      </div>
+      <div className="dir-list">
+        {steps.map((step, idx) => {
+          const isFirst = idx === 0;
+          const isLast = idx === steps.length - 1;
+          const isTransit =
+            step.type === "transit" ||
+            step.travel_mode === "TRANSIT" ||
+            step.travel_mode === "BUS";
+          const isWalk =
+            step.type === "walk" ||
+            step.travel_mode === "WALKING" ||
+            step.travel_mode === "WALK";
+
+          const instruction = stripHtml(
+            step.instruction ||
+              step.maneuver?.instruction ||
+              (step.type === "transit"
+                ? `Take ${
+                    step.transit_line ||
+                    step.trip_id?.split("_")[0] ||
+                    "transit"
+                  } from ${
+                    step.departure_stop || step.start_stop || "stop"
+                  } to ${step.arrival_stop || step.end_stop || "stop"}`
+                : step.type === "walk"
+                  ? `Walk to ${step.to_stop || "next stop"}`
+                  : "Continue"),
+          );
+
+          const StepIcon = isFirst
+            ? CircleDot
+            : isLast
+              ? Flag
+              : isTransit
+                ? Bus
+                : getStepIcon(instruction, step.travel_mode);
+
+          const iconClass = isFirst
+            ? "start-icon"
+            : isLast
+              ? "end-icon"
+              : isTransit
+                ? "transit-icon"
+                : isWalk
+                  ? "walk-icon"
+                  : "turn-icon";
+
+          const stepClass = `dir-step${isTransit ? " transit-step" : isWalk ? " walk-step" : ""}${isFirst ? " first-step" : ""}${isLast ? " last-step" : ""}`;
+
+          return (
+            <div key={idx} className={stepClass}>
+              <div className={`dir-icon ${iconClass}`}>
+                <StepIcon size={14} strokeWidth={2.2} />
+              </div>
+              <div className="dir-content">
+                <div className="dir-instruction">{instruction}</div>
+                <div className="dir-meta">
+                  {(step.distance || step.distance_meters > 0) && (
+                    <span className="dir-dist">
+                      {step.distance || fmtDist(step.distance_meters)}
+                    </span>
+                  )}
+                  {(step.duration || step.duration_seconds > 0) && (
+                    <span className="dir-dur">
+                      {step.duration ||
+                        `${Math.round(step.duration_seconds / 60)} min`}
+                    </span>
+                  )}
+                  {isTransit && (
+                    <span className="transit-badge">
+                      <Bus size={9} />
+                      {step.transit_line ||
+                        step.trip_id?.split("_")[0] ||
+                        "Bus"}
+                    </span>
+                  )}
+                  {isWalk && !isFirst && !isLast && (
+                    <span className="walk-badge">
+                      <Footprints size={9} /> Walk
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export default function AccessibleMap() {
   const [mapType, setMapType] = useState("openstreetmap");
   const [zoom, setZoom] = useState(13);
@@ -846,11 +1151,16 @@ export default function AccessibleMap() {
   });
   const [obstructedRoads, setObstructedRoads] = useState([]);
   const [currentZoom, setCurrentZoom] = useState(13);
-
   const [show3D, setShow3D] = useState(false);
   const [walkerPosition, setWalkerPosition] = useState(null);
   const [walkerIdx, setWalkerIdx] = useState(0);
   const walkerIntervalRef = useRef(null);
+
+  // ── Directions state (from new version) ──
+  const [routeSteps, setRouteSteps] = useState([]);
+  const [showDirections, setShowDirections] = useState(false);
+  const [routeType, setRouteType] = useState("walking"); // "walking" | "transit"
+  const [transitSegments, setTransitSegments] = useState([]); // [{coords, type:'walk'|'transit', line}]
 
   const debRef = useRef(null);
   const destRef = useRef(null);
@@ -884,59 +1194,46 @@ export default function AccessibleMap() {
 
   const cleanObstructions = useCallback((arr) => {
     if (!Array.isArray(arr)) return [];
-
     return arr.filter((item) => {
       if (!item) return false;
-
-      // Try to get coordinates from different property patterns
       const lat = item.lat ?? item.latitude ?? item.position?.lat ?? null;
       const lng =
         item.lng ?? item.longitude ?? item.lon ?? item.position?.lng ?? null;
-
       if (
         lat == null ||
         lng == null ||
         isNaN(Number(lat)) ||
         isNaN(Number(lng))
       ) {
-        console.warn("Filtering out invalid obstruction:", item);
         return false;
       }
-
       return true;
     });
   }, []);
 
-  // Add near the top of your component
+  // Debug logging (kept from old version)
   useEffect(() => {
-    console.log("Current construction zones:", constructionZones);
-    console.log("Current hazards:", activeHazards);
-  }, [constructionZones, activeHazards]);
-
-  useEffect(() => {
-    if (walkerIntervalRef.current) clearInterval(walkerIntervalRef.current);
-    if (routePath.length < 2) {
-      setWalkerPosition(loc);
-      setWalkerIdx(0);
-      return;
+    if (constructionZones.length > 0) {
+      console.log("First construction zone:", constructionZones[0]);
+      constructionZones.forEach((zone, idx) => {
+        if (zone.lat && !zone.lng) {
+          console.error(`Zone ${idx} has lat but no lng:`, zone);
+        }
+      });
     }
-    setWalkerIdx(0);
-    setWalkerPosition(routePath[0]);
-
-    let idx = 0;
-    walkerIntervalRef.current = setInterval(() => {
-      idx = (idx + 1) % routePath.length;
-      setWalkerIdx(idx);
-      setWalkerPosition(routePath[idx]);
-    }, 1200);
-
-    return () => clearInterval(walkerIntervalRef.current);
-  }, [routePath]);
+    if (activeHazards.length > 0) {
+      console.log("First hazard:", activeHazards[0]);
+      activeHazards.forEach((hazard, idx) => {
+        if (hazard.lat && !hazard.lng) {
+          console.error(`Hazard ${idx} has lat but no lng:`, hazard);
+        }
+      });
+    }
+  }, [constructionZones, activeHazards]);
 
   const transformedHazards = useMemo(() => {
     return activeHazards
       .filter((h) => {
-        // Ensure both lat and lng exist and are valid numbers
         const lat = h.lat ?? h.position?.lat;
         const lng = h.lng ?? h.position?.lng;
         return (
@@ -949,9 +1246,6 @@ export default function AccessibleMap() {
       .map((h) => {
         const lat = Number(h.lat ?? h.position?.lat);
         const lng = Number(h.lng ?? h.position?.lng);
-        if (h.position && typeof h.position.lat === "number") {
-          return { ...h, position: { lat, lng } };
-        }
         return { ...h, position: { lat, lng } };
       });
   }, [activeHazards]);
@@ -984,6 +1278,26 @@ export default function AccessibleMap() {
     );
   }, [routeSegments]);
 
+  // Walker animation
+  useEffect(() => {
+    if (walkerIntervalRef.current) clearInterval(walkerIntervalRef.current);
+    if (routePath.length < 2) {
+      setWalkerPosition(loc);
+      setWalkerIdx(0);
+      return;
+    }
+    setWalkerIdx(0);
+    setWalkerPosition(routePath[0]);
+    let idx = 0;
+    walkerIntervalRef.current = setInterval(() => {
+      idx = (idx + 1) % routePath.length;
+      setWalkerIdx(idx);
+      setWalkerPosition(routePath[idx]);
+    }, 1200);
+    return () => clearInterval(walkerIntervalRef.current);
+  }, [routePath]);
+
+  // Click-outside handler
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -1004,6 +1318,7 @@ export default function AccessibleMap() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Fetch area obstructions (enhanced from old version with proper sanitization)
   useEffect(() => {
     const fetchAreaObstructions = async () => {
       try {
@@ -1013,95 +1328,51 @@ export default function AccessibleMap() {
           body: JSON.stringify({ lat: loc[0], lng: loc[1], radius: 10000 }),
         });
         const data = await res.json();
-
         if (data.success) {
-          // Sanitize construction zones - CRITICAL: ensure both lat AND lng exist
-          const validZones = (data.construction_zones || [])
-            .map((zone) => {
-              // Try to extract lat and lng from various possible property names
-              let lat = zone.lat ?? zone.latitude ?? zone.position?.lat ?? null;
-              let lng =
-                zone.lng ??
-                zone.longitude ??
-                zone.lon ??
-                zone.position?.lng ??
-                null;
+          const sanitize = (arr) =>
+            (arr || [])
+              .map((item) => {
+                let lat =
+                  item.lat ?? item.latitude ?? item.position?.lat ?? null;
+                let lng =
+                  item.lng ??
+                  item.longitude ??
+                  item.lon ??
+                  item.position?.lng ??
+                  null;
+                if (lat !== null) lat = Number(lat);
+                if (lng !== null) lng = Number(lng);
+                if (
+                  lat !== null &&
+                  lng !== null &&
+                  !isNaN(lat) &&
+                  !isNaN(lng) &&
+                  isFinite(lat) &&
+                  isFinite(lng)
+                ) {
+                  return { ...item, lat, lng };
+                }
+                console.warn("Filtered out invalid obstruction:", item);
+                return null;
+              })
+              .filter(Boolean);
 
-              // Convert to numbers
-              if (lat !== null) lat = Number(lat);
-              if (lng !== null) lng = Number(lng);
-
-              // Validate both are valid numbers
-              if (
-                lat !== null &&
-                lng !== null &&
-                !isNaN(lat) &&
-                !isNaN(lng) &&
-                isFinite(lat) &&
-                isFinite(lng)
-              ) {
-                return {
-                  ...zone,
-                  lat: lat,
-                  lng: lng,
-                };
-              }
-              console.warn("Filtered out invalid construction zone:", zone);
-              return null;
-            })
-            .filter((zone) => zone !== null);
-
-          // Sanitize hazards - same critical check
-          const validHazards = (data.hazards || [])
-            .map((hazard) => {
-              let lat =
-                hazard.lat ?? hazard.latitude ?? hazard.position?.lat ?? null;
-              let lng =
-                hazard.lng ??
-                hazard.longitude ??
-                hazard.lon ??
-                hazard.position?.lng ??
-                null;
-
-              if (lat !== null) lat = Number(lat);
-              if (lng !== null) lng = Number(lng);
-
-              if (
-                lat !== null &&
-                lng !== null &&
-                !isNaN(lat) &&
-                !isNaN(lng) &&
-                isFinite(lat) &&
-                isFinite(lng)
-              ) {
-                return {
-                  ...hazard,
-                  lat: lat,
-                  lng: lng,
-                };
-              }
-              console.warn("Filtered out invalid hazard:", hazard);
-              return null;
-            })
-            .filter((hazard) => hazard !== null);
-
-          // Replace the arrays completely instead of merging
-          setConstructionZones(validZones);
-          setActiveHazards(validHazards);
-
+          setConstructionZones(sanitize(data.construction_zones));
+          setActiveHazards(sanitize(data.hazards));
           console.log(
-            `Loaded ${validZones.length} valid zones and ${validHazards.length} valid hazards`,
+            `Loaded ${sanitize(data.construction_zones).length} valid zones and ${sanitize(data.hazards).length} valid hazards`,
           );
         }
       } catch (error) {
         console.error("Error fetching obstructions:", error);
       }
     };
-
     fetchAreaObstructions();
     const interval = setInterval(fetchAreaObstructions, 300000);
     return () => clearInterval(interval);
-  }, [loc]); // Remove cleanObstructions from dependencies
+  }, [loc]);
+
+  // Fetch road incidents from TomTom
   useEffect(() => {
     const fetchRoads = async () => {
       try {
@@ -1163,26 +1434,7 @@ export default function AccessibleMap() {
     fetchRoads();
   }, [loc]);
 
-  // Add this around line 839 where you have the console logs
-  useEffect(() => {
-    if (constructionZones.length > 0) {
-      console.log("First construction zone:", constructionZones[0]);
-      // Check each zone for missing lng
-      constructionZones.forEach((zone, idx) => {
-        if (zone.lat && !zone.lng) {
-          console.error(`Zone ${idx} has lat but no lng:`, zone);
-        }
-      });
-    }
-    if (activeHazards.length > 0) {
-      console.log("First hazard:", activeHazards[0]);
-      activeHazards.forEach((hazard, idx) => {
-        if (hazard.lat && !hazard.lng) {
-          console.error(`Hazard ${idx} has lat but no lng:`, hazard);
-        }
-      });
-    }
-  }, [constructionZones, activeHazards]);
+  // ─── search ──────────────────────────────────────────────────────────────────
 
   const searchPlaces = (q) => {
     if (debRef.current) clearTimeout(debRef.current);
@@ -1260,6 +1512,7 @@ export default function AccessibleMap() {
     fromRef.current?.blur();
     say(`Start set — ${s.name}`);
   };
+
   const pickSugg = (s) => {
     setToVal(s.address || s.name);
     setSugg([]);
@@ -1306,6 +1559,8 @@ export default function AccessibleMap() {
       setHiIdx(-1);
     }
   };
+
+  // ─── obstruction check ────────────────────────────────────────────────────────
 
   const checkRouteForObstructions = async (routeCoords) => {
     try {
@@ -1359,7 +1614,9 @@ export default function AccessibleMap() {
             const existing = new Set(prev.map((h) => `${h.lat},${h.lng}`));
             return [
               ...prev,
-              ...validHazards.filter((h) => !existing.has(`${h.lat},${h.lng}`)),
+              ...validHazards.filter(
+                (h) => !existing.has(`${h.lat},${h.lng}`),
+              ),
             ];
           });
         }
@@ -1367,9 +1624,7 @@ export default function AccessibleMap() {
         if (data.obstructions.has_obstruction) {
           setRouteAlert({
             type: "obstruction",
-            message: `⚠ Obstruction near your route!`,
-            constructionZones: validZones,
-            hazards: validHazards,
+            message: "⚠ Obstruction near your route!",
           });
           setShowRouteAlert(true);
         }
@@ -1378,6 +1633,8 @@ export default function AccessibleMap() {
       console.error("Error checking obstructions:", err);
     }
   };
+
+  // ─── route alternatives ───────────────────────────────────────────────────────
 
   const getRouteAlternatives = async () => {
     try {
@@ -1403,12 +1660,13 @@ export default function AccessibleMap() {
     } catch {}
   };
 
+  // ─── transit info modal ───────────────────────────────────────────────────────
+
   const getTransitInfo = async () => {
     if (!toVal.trim() && !dest) {
       say("Please enter a destination first");
       return;
     }
-
     try {
       let startLat = loc[0];
       let startLng = loc[1];
@@ -1445,8 +1703,6 @@ export default function AccessibleMap() {
         return;
       }
 
-      const currentTime = new Date().toISOString();
-
       const res = await fetch("http://127.0.0.1:5000/api/transit-route", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1455,7 +1711,7 @@ export default function AccessibleMap() {
           start_lng: startLng,
           end_lat: endLat,
           end_lng: endLng,
-          start_time: currentTime,
+          start_time: new Date().toISOString(),
           max_walk_distance: 1000,
         }),
       });
@@ -1471,15 +1727,13 @@ export default function AccessibleMap() {
         const tripsByLine = new Map();
         transitSteps.forEach((step) => {
           const line = step.trip_id?.split("_")[0] || "Bus";
-          if (!tripsByLine.has(line)) {
-            tripsByLine.set(line, []);
-          }
+          if (!tripsByLine.has(line)) tripsByLine.set(line, []);
           tripsByLine.get(line).push(step);
         });
 
         const transitLines = Array.from(tripsByLine.entries()).map(
           ([line, steps]) => ({
-            line: line,
+            line,
             vehicle: "Bus",
             from_stop: steps[0]?.start_stop || "Stop",
             to_stop: steps[steps.length - 1]?.end_stop || "Stop",
@@ -1495,7 +1749,8 @@ export default function AccessibleMap() {
         const totalMinutes = Math.round(data.route.total_time_seconds / 60);
         const hours = Math.floor(totalMinutes / 60);
         const mins = totalMinutes % 60;
-        const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
+        const durationStr =
+          hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
 
         setTransitInfo([
           {
@@ -1509,11 +1764,8 @@ export default function AccessibleMap() {
             departure_time: new Date().toLocaleTimeString(),
           },
         ]);
-
         setShowTransitInfo(true);
-        say(
-          `Found ${transitSteps.length} transit connection(s) · ${durationStr}`,
-        );
+        say(`Found ${transitSteps.length} transit connection(s) · ${durationStr}`);
       } else {
         say(data.error || "No transit routes available at this time");
       }
@@ -1523,6 +1775,23 @@ export default function AccessibleMap() {
     }
   };
 
+  // ─── clear route ──────────────────────────────────────────────────────────────
+
+  const clearRoute = () => {
+    setRoutePath([]);
+    setRouteSegments([]);
+    setDest(null);
+    setRouteInfo(null);
+    setShowRouteAlert(false);
+    setAlternativeRoutes([]);
+    setShow3D(false);
+    setRouteSteps([]);
+    setShowDirections(false);
+    setTransitSegments([]);
+  };
+
+  // ─── main route calc ──────────────────────────────────────────────────────────
+
   const calcRoute = async () => {
     if (!toVal.trim()) {
       say("Please enter a destination");
@@ -1530,6 +1799,11 @@ export default function AccessibleMap() {
     }
     setIsLoading(true);
     say("Finding your safe, accessible route…");
+
+    // Reset directions state
+    setRouteSteps([]);
+    setShowDirections(false);
+    setTransitSegments([]);
 
     try {
       const geoData = await (
@@ -1560,11 +1834,11 @@ export default function AccessibleMap() {
         }
       }
 
+      // ── TRANSIT MODE ──────────────────────────────────────────────────────────
+
       if (mode === "transit") {
         try {
           say("Searching for transit routes...");
-
-          const currentTime = new Date().toISOString();
 
           const transitRes = await fetch(
             "http://127.0.0.1:5000/api/transit-route",
@@ -1576,7 +1850,7 @@ export default function AccessibleMap() {
                 start_lng: startCoords.lng,
                 end_lat: destCoords.lat,
                 end_lng: destCoords.lng,
-                start_time: currentTime,
+                start_time: new Date().toISOString(),
                 max_walk_distance: 1000,
               }),
             },
@@ -1585,61 +1859,135 @@ export default function AccessibleMap() {
           const transitData = await transitRes.json();
 
           if (transitData.success && transitData.route) {
-            const allCoords = [];
+            const steps = transitData.route.steps || [];
 
-            transitData.route.steps?.forEach((step) => {
-              if (step.location) {
-                allCoords.push([step.location.lat, step.location.lng]);
-              }
-              if (step.start_location) {
-                allCoords.push([
+            // Build route coords + coloured segments for the map
+            const allCoords = [];
+            const segments = []; // {coords:[[lat,lng],...], type:'walk'|'transit', line}
+
+            let currentSegCoords = [[startCoords.lat, startCoords.lng]];
+            let currentSegType = steps[0]?.type || "walk";
+
+            steps.forEach((step) => {
+              const segType = step.type === "transit" ? "transit" : "walk";
+              const segCoords = [];
+
+              if (step.start_location)
+                segCoords.push([
                   step.start_location.lat,
-                  step.start_location.lng,
+                  step.start_location.lng || step.start_location.lon,
                 ]);
-              }
-              if (step.end_location) {
-                allCoords.push([step.end_location.lat, step.end_location.lng]);
+              if (step.end_location)
+                segCoords.push([
+                  step.end_location.lat,
+                  step.end_location.lng || step.end_location.lon,
+                ]);
+              if (step.location)
+                segCoords.push([
+                  step.location.lat,
+                  step.location.lng || step.location.lon,
+                ]);
+
+              if (segCoords.length > 0) {
+                if (
+                  segType !== currentSegType &&
+                  currentSegCoords.length > 1
+                ) {
+                  segments.push({
+                    coords: [...currentSegCoords],
+                    type: currentSegType,
+                    line: "",
+                  });
+                  currentSegCoords = [
+                    currentSegCoords[currentSegCoords.length - 1],
+                  ];
+                }
+                currentSegType = segType;
+                segCoords.forEach((c) => {
+                  if (c[0] && c[1]) {
+                    currentSegCoords.push(c);
+                    allCoords.push(c);
+                  }
+                });
               }
             });
 
-            if (allCoords.length === 0) {
-              allCoords.push([startCoords.lat, startCoords.lng]);
-              allCoords.push([destCoords.lat, destCoords.lng]);
+            if (currentSegCoords.length > 1) {
+              segments.push({
+                coords: currentSegCoords,
+                type: currentSegType,
+                line: "",
+              });
             }
 
-            const uniqueCoords = [];
-            for (let i = 0; i < allCoords.length; i++) {
-              const current = allCoords[i];
-              const prev = uniqueCoords[uniqueCoords.length - 1];
-              if (!prev || prev[0] !== current[0] || prev[1] !== current[1]) {
-                uniqueCoords.push(current);
-              }
+            // Always include start/end
+            if (allCoords.length === 0) {
+              allCoords.push(
+                [startCoords.lat, startCoords.lng],
+                [destCoords.lat, destCoords.lng],
+              );
             }
+            allCoords.push([destCoords.lat, destCoords.lng]);
+
+            // Dedupe
+            const uniqueCoords = allCoords.filter((c, i) => {
+              if (i === 0) return true;
+              const p = allCoords[i - 1];
+              return !(p[0] === c[0] && p[1] === c[1]);
+            });
 
             setRoutePath(uniqueCoords);
-            setDest(uniqueCoords[uniqueCoords.length - 1]);
+            setDest([destCoords.lat, destCoords.lng]);
+            setTransitSegments(segments);
+            setRouteType("transit");
 
+            // Build display steps for directions panel
+            const displaySteps = [];
+            displaySteps.push({
+              instruction: "Depart from your location",
+              type: "walk",
+              travel_mode: "WALKING",
+            });
+            steps.forEach((step) => {
+              if (step.type === "transit") {
+                displaySteps.push({
+                  ...step,
+                  instruction: `Take ${
+                    step.trip_id?.split("_")[0] || "transit"
+                  } from ${step.start_stop || "stop"} to ${
+                    step.end_stop || "stop"
+                  }`,
+                  travel_mode: "TRANSIT",
+                  transit_line: step.trip_id?.split("_")[0] || "Bus",
+                  departure_stop: step.start_stop,
+                  arrival_stop: step.end_stop,
+                });
+              } else {
+                displaySteps.push({
+                  ...step,
+                  instruction: `Walk to ${step.to_stop || "next stop"}`,
+                  travel_mode: "WALKING",
+                });
+              }
+            });
+            displaySteps.push({
+              instruction: `Arrive at ${toVal}`,
+              type: "arrive",
+              travel_mode: "ARRIVE",
+            });
+
+            setRouteSteps(displaySteps);
+            setShowDirections(true);
+
+            // Build segments for safety colouring
             const segs = [];
             for (let i = 0; i < uniqueCoords.length - 1; i++) {
-              const stepType = transitData.route.steps?.find(
-                (s) =>
-                  (s.location &&
-                    s.location.lat === uniqueCoords[i][0] &&
-                    s.location.lng === uniqueCoords[i][1]) ||
-                  (s.start_location &&
-                    s.start_location.lat === uniqueCoords[i][0] &&
-                    s.start_location.lng === uniqueCoords[i][1]),
-              );
-
               segs.push({
                 start: uniqueCoords[i],
                 end: uniqueCoords[i + 1],
-                safety_score: transitData.route.safety?.overall_safety || 0.75,
-                instructions:
-                  stepType?.type === "transit"
-                    ? `Take ${stepType.trip_id?.split("_")[0] || "transit"}`
-                    : "Walk to stop",
-                transit_info: stepType?.type === "transit" ? stepType : null,
+                safety_score:
+                  transitData.route.safety?.overall_safety || 0.75,
+                instructions: "Transit route",
               });
             }
             setRouteSegments(segs);
@@ -1653,21 +2001,18 @@ export default function AccessibleMap() {
               hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
 
             setRouteInfo({
-              distance: `${totalMinutes} min`,
+              distance: `${totalMinutes} min transit`,
               duration: durationStr,
               total_minutes: totalMinutes,
-              transit_steps:
-                transitData.route.steps?.filter((s) => s.type === "transit")
-                  .length || 0,
-              walking_steps:
-                transitData.route.steps?.filter((s) => s.type === "walk")
-                  .length || 0,
+              transit_steps: steps.filter((s) => s.type === "transit").length,
+              walking_steps: steps.filter((s) => s.type === "walk").length,
             });
 
             const nr = [
               {
                 name: toVal,
-                address: geoData.results[0].address?.freeformAddress || toVal,
+                address:
+                  geoData.results[0].address?.freeformAddress || toVal,
                 type: "transit",
               },
               ...recents.filter((r) => r.name !== toVal),
@@ -1675,7 +2020,9 @@ export default function AccessibleMap() {
             setRecents(nr);
             localStorage.setItem("ar_recents", JSON.stringify(nr));
 
-            say(`Transit route found · ${durationStr}`);
+            say(
+              `Transit route found · ${durationStr} · ${steps.filter((s) => s.type === "transit").length} connections`,
+            );
             setShow3D(true);
             setTimeout(() => checkRouteForObstructions(uniqueCoords), 500);
             setIsLoading(false);
@@ -1691,6 +2038,8 @@ export default function AccessibleMap() {
           say("Transit service unavailable. Using walking route...");
         }
       }
+
+      // ── WALKING / WHEELCHAIR MODE ─────────────────────────────────────────────
 
       const routeRes = await fetch(
         "http://127.0.0.1:5000/api/calculate-route",
@@ -1719,6 +2068,9 @@ export default function AccessibleMap() {
       if (data.success && data.route?.coordinates?.length >= 2) {
         const coords = data.route.coordinates.map((c) => [c.lat, c.lng]);
         setRoutePath(coords);
+        setDest(coords[coords.length - 1]);
+        setRouteType("walking");
+        setTransitSegments([]); // clear any transit segments
 
         if (data.route.segments?.length > 0) {
           setRouteSegments(data.route.segments);
@@ -1735,7 +2087,51 @@ export default function AccessibleMap() {
           setRouteSegments(segs);
         }
 
-        setDest(coords[coords.length - 1]);
+        // Build turn-by-turn directions
+        const rawSteps = data.route.steps || [];
+        if (rawSteps.length > 0) {
+          const displaySteps = [
+            {
+              instruction: `Depart from ${data.route.start_address || "your location"}`,
+              travel_mode: "DEPART",
+              distance_meters: 0,
+              duration_seconds: 0,
+            },
+            ...rawSteps.map((s) => ({
+              ...s,
+              instruction: stripHtml(
+                s.instruction || s.maneuver?.instruction || "Continue",
+              ),
+              travel_mode: s.travel_mode || "WALKING",
+            })),
+            {
+              instruction: `Arrive at ${toVal}`,
+              travel_mode: "ARRIVE",
+              distance_meters: 0,
+              duration_seconds: 0,
+            },
+          ];
+          setRouteSteps(displaySteps);
+          setShowDirections(true);
+        } else {
+          // Minimal steps when backend returns none
+          setRouteSteps([
+            {
+              instruction: `Head towards ${toVal}`,
+              travel_mode: "WALKING",
+              distance_meters: data.route.distance_meters,
+              duration_seconds: data.route.duration_seconds,
+            },
+            {
+              instruction: `Arrive at ${toVal}`,
+              travel_mode: "ARRIVE",
+              distance_meters: 0,
+              duration_seconds: 0,
+            },
+          ]);
+          setShowDirections(true);
+        }
+
         setRouteInfo({
           distance: data.route.distance,
           duration: data.route.duration,
@@ -1795,6 +2191,8 @@ export default function AccessibleMap() {
   const hc = a11y.highContrast;
   const lt = a11y.largeText;
 
+  // ─── render ───────────────────────────────────────────────────────────────────
+
   return (
     <>
       <style>{CSS}</style>
@@ -1813,6 +2211,7 @@ export default function AccessibleMap() {
           {toast}
         </div>
 
+        {/* ── MAP ── */}
         <div className="map-wrap">
           <MapContainer
             center={validCenter}
@@ -1833,6 +2232,8 @@ export default function AccessibleMap() {
               attribution={mapTypes[mapType].attribution}
               url={mapTypes[mapType].url}
             />
+
+            {/* User position dot */}
             {isValidLatLngArray(loc) && (
               <CircleMarker
                 center={loc}
@@ -1851,6 +2252,8 @@ export default function AccessibleMap() {
                 </Popup>
               </CircleMarker>
             )}
+
+            {/* Destination marker */}
             {dest && isValidLatLngArray(dest) && (
               <Marker position={dest} icon={destinationIcon}>
                 <Popup>
@@ -1860,6 +2263,8 @@ export default function AccessibleMap() {
                 </Popup>
               </Marker>
             )}
+
+            {/* Construction zone markers */}
             {constructionZones.map((zone, idx) => (
               <ObstructionMarker
                 key={`cz-${idx}`}
@@ -1879,6 +2284,8 @@ export default function AccessibleMap() {
                 }
               />
             ))}
+
+            {/* Hazard markers */}
             {activeHazards.map((hazard, idx) => (
               <ObstructionMarker
                 key={`hz-${idx}`}
@@ -1894,7 +2301,8 @@ export default function AccessibleMap() {
                     <div style={{ fontSize: 11 }}>
                       <span
                         style={{
-                          color: hazard.severity > 0.7 ? "#ff7b6b" : "#ffb347",
+                          color:
+                            hazard.severity > 0.7 ? "#ff7b6b" : "#ffb347",
                         }}
                       >
                         ⚡ Severity: {Math.round(hazard.severity * 100)}%
@@ -1904,6 +2312,8 @@ export default function AccessibleMap() {
                 }
               />
             ))}
+
+            {/* Obstructed road segments from TomTom */}
             {obstructedRoads.map((seg, idx) => (
               <ObstructedRoadSegment
                 key={`road-${idx}`}
@@ -1911,7 +2321,69 @@ export default function AccessibleMap() {
                 zoomLevel={currentZoom}
               />
             ))}
-            {routeSegments.length > 0 ? (
+
+            {/* ── TRANSIT route: colour walking vs bus segments differently ── */}
+            {transitSegments.length > 0 ? (
+              transitSegments.map((seg, idx) => {
+                const isTransit = seg.type === "transit";
+                return (
+                  <React.Fragment key={`tseg-${idx}`}>
+                    {/* Shadow */}
+                    <Polyline
+                      positions={seg.coords}
+                      pathOptions={{
+                        color: "#000",
+                        weight: isTransit ? 12 : 8,
+                        opacity: 0.25,
+                        lineCap: "round",
+                        lineJoin: "round",
+                      }}
+                    />
+                    {/* Main line */}
+                    <Polyline
+                      positions={seg.coords}
+                      pathOptions={{
+                        color: isTransit ? "#4fc3f7" : "#8cd69c",
+                        weight: isTransit ? 7 : 5,
+                        opacity: 1,
+                        dashArray: isTransit ? undefined : "10,6",
+                        lineCap: "round",
+                        lineJoin: "round",
+                      }}
+                    >
+                      <Popup>
+                        <div style={{ fontFamily: "DM Sans,sans-serif" }}>
+                          {isTransit ? (
+                            <>
+                              <Bus
+                                size={12}
+                                style={{
+                                  verticalAlign: "middle",
+                                  color: "#4fc3f7",
+                                }}
+                              />{" "}
+                              <strong>Transit segment</strong>
+                            </>
+                          ) : (
+                            <>
+                              <Footprints
+                                size={12}
+                                style={{
+                                  verticalAlign: "middle",
+                                  color: "#8cd69c",
+                                }}
+                              />{" "}
+                              <strong>Walking segment</strong>
+                            </>
+                          )}
+                        </div>
+                      </Popup>
+                    </Polyline>
+                  </React.Fragment>
+                );
+              })
+            ) : routeSegments.length > 0 ? (
+              /* Walking route with safety colouring and obstruction detection */
               routeSegments.map((seg, idx) => {
                 let hasObs = false,
                   obsDesc = null;
@@ -1993,7 +2465,8 @@ export default function AccessibleMap() {
                         <div>
                           <strong>Segment {idx + 1}</strong>
                           <br />
-                          Safety: {Math.round((seg.safety_score || 0.7) * 100)}%
+                          Safety:{" "}
+                          {Math.round((seg.safety_score || 0.7) * 100)}%
                           <br />
                           {hasObs && obsDesc && (
                             <div style={{ color: "#ff7b6b" }}>
@@ -2008,6 +2481,7 @@ export default function AccessibleMap() {
                 );
               })
             ) : routePath.length >= 2 ? (
+              /* Fallback plain route */
               <>
                 <Polyline
                   positions={routePath}
@@ -2042,6 +2516,8 @@ export default function AccessibleMap() {
                 />
               </>
             ) : null}
+
+            {/* Alternative routes overlay */}
             {alternativeRoutes.map(
               (alt, idx) =>
                 alt.waypoints?.length > 0 && (
@@ -2070,6 +2546,7 @@ export default function AccessibleMap() {
           </MapContainer>
         </div>
 
+        {/* ── 3D WALK VIEW ── */}
         <div
           className={`view3d-panel${show3D && routePath.length > 0 ? "" : " hidden"}`}
         >
@@ -2105,13 +2582,13 @@ export default function AccessibleMap() {
             <X size={12} />
           </button>
         </div>
-
         {routePath.length > 0 && !show3D && (
           <button className="view3d-toggle" onClick={() => setShow3D(true)}>
             <Play size={12} /> 3D Walk View
           </button>
         )}
 
+        {/* ── NAVIGATION RAIL ── */}
         <nav className="rail" role="navigation" aria-label="Main navigation">
           <div className="r-logo" aria-hidden="true">
             <Accessibility size={20} />
@@ -2167,6 +2644,7 @@ export default function AccessibleMap() {
           </button>
         </nav>
 
+        {/* ── SIDE PANEL ── */}
         <aside
           ref={panelRef}
           className={`panel${panel ? " open" : ""}`}
@@ -2194,7 +2672,11 @@ export default function AccessibleMap() {
                 <div>
                   <div className="p-sec">Pinned</div>
                   <div
-                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
                   >
                     {SAVED_PLACES.map((d) => (
                       <button
@@ -2229,7 +2711,11 @@ export default function AccessibleMap() {
                 <div>
                   <div className="p-sec">Nearby in Pittsburgh</div>
                   <div
-                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
                   >
                     {NEARBY_PITTSBURGH.map((d) => (
                       <button
@@ -2257,6 +2743,7 @@ export default function AccessibleMap() {
                 </div>
               </>
             )}
+
             {panel === "recents" && (
               <div>
                 <div className="p-sec">Recent</div>
@@ -2268,7 +2755,11 @@ export default function AccessibleMap() {
                   </div>
                 ) : (
                   <div
-                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
                   >
                     {recents.map((r, i) => (
                       <button
@@ -2296,6 +2787,7 @@ export default function AccessibleMap() {
                 )}
               </div>
             )}
+
             {panel === "a11y" && (
               <>
                 <div>
@@ -2322,7 +2814,11 @@ export default function AccessibleMap() {
                 <div>
                   <div className="p-sec">Map Style</div>
                   <div
-                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
                   >
                     {Object.entries(mapTypes).map(([k, v]) => {
                       const MIcon = MAP_TYPE_ICONS[k] || Layers;
@@ -2379,6 +2875,7 @@ export default function AccessibleMap() {
           </div>
         </aside>
 
+        {/* ── SEARCH / ROUTE PLANNER CARD ── */}
         <div className="sc" role="search" aria-label="Route planner">
           <div className="sc-head">
             <Route size={16} style={{ color: "var(--wood)", flexShrink: 0 }} />
@@ -2387,6 +2884,7 @@ export default function AccessibleMap() {
             </div>
           </div>
           <div className="sc-inputs">
+            {/* From input */}
             <div className="ac">
               <div className="rr">
                 <span className="rr-dot rr-dot-g" />
@@ -2469,10 +2967,13 @@ export default function AccessibleMap() {
                 </div>
               )}
             </div>
+
             <div className="ri-conn">
               <div className="ri-conn-line" />
               <span className="ri-conn-lbl">to</span>
             </div>
+
+            {/* To input */}
             <div className="ac">
               <div className="rr">
                 <span className="rr-dot rr-dot-r" />
@@ -2568,6 +3069,8 @@ export default function AccessibleMap() {
               )}
             </div>
           </div>
+
+          {/* Mode buttons */}
           <div className="sc-modes" role="radiogroup">
             {[
               { id: "walk", Icon: PersonStanding, l: "Walk" },
@@ -2579,12 +3082,7 @@ export default function AccessibleMap() {
                 className={`mp${mode === t.id ? " on" : ""}`}
                 onClick={() => {
                   setMode(t.id);
-                  setRoutePath([]);
-                  setRouteSegments([]);
-                  setDest(null);
-                  setRouteInfo(null);
-                  setAlternativeRoutes([]);
-                  setShow3D(false);
+                  clearRoute();
                   say(`${t.l} mode`);
                 }}
               >
@@ -2595,6 +3093,7 @@ export default function AccessibleMap() {
               </button>
             ))}
           </div>
+
           <button
             className="sc-find"
             onClick={calcRoute}
@@ -2610,6 +3109,7 @@ export default function AccessibleMap() {
               </>
             )}
           </button>
+
           <button
             className="sc-leg-btn"
             onClick={() => setLegendOpen((o) => !o)}
@@ -2637,6 +3137,17 @@ export default function AccessibleMap() {
                   color: "#ff7b6b",
                   label: "Unsafe Route (0-39%)",
                   type: "line",
+                },
+                {
+                  color: "#4fc3f7",
+                  label: "Transit (Bus) Segment",
+                  type: "line",
+                },
+                {
+                  color: "#8cd69c",
+                  label: "Walking Segment",
+                  type: "line",
+                  dash: true,
                 },
                 {
                   color: "#ff7b6b",
@@ -2684,6 +3195,7 @@ export default function AccessibleMap() {
           )}
         </div>
 
+        {/* ── MAP TYPE BAR ── */}
         <div className="mt-bar" role="radiogroup">
           {Object.entries(mapTypes).map(([k, v]) => {
             const MIcon = MAP_TYPE_ICONS[k] || Layers;
@@ -2703,6 +3215,7 @@ export default function AccessibleMap() {
           })}
         </div>
 
+        {/* ── ZOOM CONTROLS ── */}
         <div className="mctrl">
           <button
             className="mc"
@@ -2733,6 +3246,16 @@ export default function AccessibleMap() {
           </button>
         </div>
 
+        {/* ── DIRECTIONS PANEL (new feature) ── */}
+        {showDirections && routeSteps.length > 0 && (
+          <DirectionsPanel
+            steps={routeSteps}
+            onClose={() => setShowDirections(false)}
+            routeType={routeType}
+          />
+        )}
+
+        {/* ── ROUTE INFO BAR ── */}
         {routeInfo && (
           <div className="rbar" role="region" aria-label="Route information">
             <div className="rs">
@@ -2762,6 +3285,14 @@ export default function AccessibleMap() {
                 </div>
               </>
             )}
+            {/* Directions toggle button (new feature) */}
+            <div className="rs-d" />
+            <button
+              className={`rs-dir-btn${showDirections ? " on" : ""}`}
+              onClick={() => setShowDirections((v) => !v)}
+            >
+              <List size={13} /> {showDirections ? "Hide" : "Directions"}
+            </button>
             {mode === "transit" && (
               <>
                 <div className="rs-d" />
@@ -2770,23 +3301,13 @@ export default function AccessibleMap() {
                 </button>
               </>
             )}
-            <button
-              className="rs-cl"
-              onClick={() => {
-                setRoutePath([]);
-                setRouteSegments([]);
-                setDest(null);
-                setRouteInfo(null);
-                setShowRouteAlert(false);
-                setAlternativeRoutes([]);
-                setShow3D(false);
-              }}
-            >
+            <button className="rs-cl" onClick={clearRoute}>
               Clear
             </button>
           </div>
         )}
 
+        {/* ── ROUTE ALERT OVERLAY ── */}
         {showRouteAlert && routeAlert && (
           <div
             style={{
@@ -2897,6 +3418,7 @@ export default function AccessibleMap() {
           </div>
         )}
 
+        {/* ── TRANSIT INFO MODAL ── */}
         {showTransitInfo && transitInfo && (
           <div
             style={{
@@ -2944,7 +3466,7 @@ export default function AccessibleMap() {
                       marginBottom: 8,
                     }}
                   >
-                    Option {idx + 1}: {route.duration_minutes} min
+                    Option {idx + 1}: {route.duration_str || `${route.duration_minutes} min`}
                   </div>
                   <div
                     style={{
@@ -2953,7 +3475,7 @@ export default function AccessibleMap() {
                       marginBottom: 8,
                     }}
                   >
-                    Walk: {route.walking_minutes} min • Ride:{" "}
+                    🚶 Walk: {route.walking_minutes} min · 🚌 Ride:{" "}
                     {route.transit_minutes} min
                   </div>
                   {route.transit_lines.map((line, li) => (
@@ -2961,15 +3483,51 @@ export default function AccessibleMap() {
                       key={li}
                       style={{
                         background: "var(--inset)",
-                        padding: 8,
-                        borderRadius: 8,
-                        marginBottom: 6,
+                        padding: "10px 12px",
+                        borderRadius: 10,
+                        marginBottom: 8,
+                        border: "1px solid rgba(79,195,247,0.2)",
                       }}
                     >
-                      <strong style={{ color: "var(--wood)" }}>
-                        {line.line}
-                      </strong>{" "}
-                      - {line.vehicle}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          marginBottom: 4,
+                        }}
+                      >
+                        <Bus size={14} color="#4fc3f7" />
+                        <strong style={{ color: "#4fc3f7" }}>{line.line}</strong>
+                        <span style={{ fontSize: 11, color: "var(--txt2)" }}>
+                          {line.vehicle}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--txt2)" }}>
+                        <span>
+                          From:{" "}
+                          <strong style={{ color: "var(--txt)" }}>
+                            {line.from_stop}
+                          </strong>
+                        </span>
+                        <br />
+                        <span>
+                          To:{" "}
+                          <strong style={{ color: "var(--txt)" }}>
+                            {line.to_stop}
+                          </strong>
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: "var(--txt3)",
+                          marginTop: 4,
+                        }}
+                      >
+                        Departs {line.departure_time} · Arrives{" "}
+                        {line.arrival_time}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2993,6 +3551,7 @@ export default function AccessibleMap() {
           </div>
         )}
 
+        {/* ── TOAST NOTIFICATION ── */}
         <div
           className={`toast${toast ? " vis" : ""}`}
           role="status"

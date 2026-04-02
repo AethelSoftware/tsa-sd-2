@@ -3007,3 +3007,523 @@ RuntimeError: The session is unavailable because no secret key was set.  Set the
 2026-04-01 11:21:37,373 - __main__ - INFO - TomTom returned 75 incidents
 2026-04-01 11:21:37,374 - __main__ - INFO - Parsed 55 construction zones, 20 hazards from TomTom
 2026-04-01 11:21:37,377 - werkzeug - INFO - 127.0.0.1 - - [01/Apr/2026 11:21:37] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:46:04,753 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-02 10:46:08,472 - gtfs_loader - INFO - Loading stops...
+2026-04-02 10:46:08,692 - gtfs_loader - INFO - Loading trips...
+2026-04-02 10:46:09,203 - gtfs_loader - INFO - Loading stop times (this may take a moment)...
+2026-04-02 10:46:09,282 - gtfs_loader - INFO - Processing stop times chunk 1...
+2026-04-02 10:46:11,032 - gtfs_loader - INFO - Processing stop times chunk 2...
+2026-04-02 10:46:12,792 - gtfs_loader - INFO - Processing stop times chunk 3...
+2026-04-02 10:46:14,563 - gtfs_loader - INFO - Processing stop times chunk 4...
+2026-04-02 10:46:16,335 - gtfs_loader - INFO - Processing stop times chunk 5...
+2026-04-02 10:46:18,059 - gtfs_loader - INFO - Processing stop times chunk 6...
+2026-04-02 10:46:19,822 - gtfs_loader - INFO - Processing stop times chunk 7...
+2026-04-02 10:46:21,605 - gtfs_loader - INFO - Processing stop times chunk 8...
+2026-04-02 10:46:23,325 - gtfs_loader - INFO - Processing stop times chunk 9...
+2026-04-02 10:46:50,977 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-02 10:46:51,484 - gtfs_loader - INFO - Loading stops...
+2026-04-02 10:46:51,708 - gtfs_loader - INFO - Loading trips...
+2026-04-02 10:46:52,210 - gtfs_loader - INFO - Loading stop times (this may take a moment)...
+2026-04-02 10:46:52,289 - gtfs_loader - INFO - Processing stop times chunk 1...
+2026-04-02 10:46:54,049 - gtfs_loader - INFO - Processing stop times chunk 2...
+2026-04-02 10:46:55,829 - gtfs_loader - INFO - Processing stop times chunk 3...
+2026-04-02 10:46:57,682 - gtfs_loader - INFO - Processing stop times chunk 4...
+2026-04-02 10:46:59,672 - gtfs_loader - INFO - Processing stop times chunk 5...
+2026-04-02 10:47:01,902 - gtfs_loader - INFO - Processing stop times chunk 6...
+2026-04-02 10:47:03,767 - gtfs_loader - INFO - Processing stop times chunk 7...
+2026-04-02 10:47:05,682 - gtfs_loader - INFO - Processing stop times chunk 8...
+2026-04-02 10:47:07,408 - gtfs_loader - INFO - Processing stop times chunk 9...
+2026-04-02 10:47:09,207 - gtfs_loader - INFO - Processing stop times chunk 10...
+2026-04-02 10:47:11,165 - gtfs_loader - INFO - Processing stop times chunk 11...
+2026-04-02 10:47:12,959 - gtfs_loader - INFO - Processing stop times chunk 12...
+2026-04-02 10:47:14,717 - gtfs_loader - INFO - Processing stop times chunk 13...
+2026-04-02 10:47:16,611 - gtfs_loader - INFO - Processing stop times chunk 14...
+2026-04-02 10:47:18,424 - gtfs_loader - INFO - Processing stop times chunk 15...
+2026-04-02 10:47:20,217 - gtfs_loader - INFO - Processing stop times chunk 16...
+2026-04-02 10:47:22,257 - gtfs_loader - INFO - Processing stop times chunk 17...
+2026-04-02 10:47:23,643 - gtfs_loader - INFO - Sorting stop times...
+2026-04-02 10:47:23,733 - gtfs_loader - INFO - Loading calendar...
+2026-04-02 10:47:23,740 - gtfs_loader - INFO - Loaded GTFS data: 6424 stops, 15826 trips, 15826 trips with stop times
+2026-04-02 10:47:23,744 - transit_router - INFO - Building trip cache...
+2026-04-02 10:47:23,844 - transit_router - INFO - Cached 15826 trips
+2026-04-02 10:47:23,844 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-02 10:47:23,853 - __main__ - INFO - Safety AI loaded successfully
+2026-04-02 10:49:03,229 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-04-02 10:49:03,229 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-04-02 10:49:03,246 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-04-02 10:49:03,246 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-04-02 10:49:06,011 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:49:06] "GET /api/hello HTTP/1.1" 200 -
+2026-04-02 10:49:20,273 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:49:20] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-04-02 10:49:25,466 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:49:25] "[32mGET /api/callback?state=n2BSRRwiA1EksGfNOGFbuo1v9UFSd1&iss=https://accounts.google.com&code=4/0Aci98E8HjE9Ie-f_iuVGoA8cB-lXhnja_faYuZd_tYVP3M6T7P9NRhoxQQ0IEK5GKYPHWQ&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+openid&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-04-02 10:49:25,824 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:49:25] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:49:25,825 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:49:25] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:49:25,827 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 10:49:25,827 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 10:49:25,828 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 10:49:25,829 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 10:49:26,044 - __main__ - INFO - TomTom returned 76 incidents
+2026-04-02 10:49:26,045 - __main__ - INFO - Parsed 59 construction zones, 17 hazards from TomTom
+2026-04-02 10:49:26,049 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:49:26] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:49:26,058 - __main__ - INFO - TomTom returned 76 incidents
+2026-04-02 10:49:26,059 - __main__ - INFO - Parsed 59 construction zones, 17 hazards from TomTom
+2026-04-02 10:49:26,061 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:49:26] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:49:32,056 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:49:32] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:49:32,059 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.46375679506762,-80.02791996005962 to 40.643756795067624,-79.78791996005961
+2026-04-02 10:49:32,059 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.46375679506762,-80.02791996005962 to 40.643756795067624,-79.78791996005961
+2026-04-02 10:49:32,168 - __main__ - INFO - TomTom returned 11 incidents
+2026-04-02 10:49:32,169 - __main__ - INFO - Parsed 7 construction zones, 4 hazards from TomTom
+2026-04-02 10:49:32,172 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:49:32] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:49:46,830 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:49:46] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-02 10:49:46,833 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:49:46] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 10:49:46,860 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:49:46] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-04-02 10:49:46,987 - __main__ - INFO - Attempting TomTom route from 40.55375679506762,-79.90791996005962 to 40.562311,-79.855292
+2026-04-02 10:49:46,987 - tomtom_router - INFO - Calculating TomTom route from 40.55375679506762,-79.90791996005962 to 40.562311,-79.855292
+2026-04-02 10:49:47,130 - tomtom_router - INFO - TomTom returned 1 route(s)
+2026-04-02 10:49:47,135 - __main__ - INFO - TomTom route successful
+2026-04-02 10:49:47,646 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-04-02 10:49:47,662 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:49:47] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-04-02 10:49:48,244 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:49:48] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-04-02 10:49:48,247 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:49:48] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-04-02 10:50:00,360 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:50:00] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-02 10:50:00,364 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:50:00] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 10:50:04,990 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:50:04] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 10:50:15,151 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:50:15] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-02 10:50:15,155 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:50:15] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 10:50:15,194 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:50:15] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-04-02 10:50:15,319 - __main__ - INFO - Attempting TomTom route from 40.55375679506762,-79.90791996005962 to 40.562311,-79.855292
+2026-04-02 10:50:15,320 - tomtom_router - INFO - Calculating TomTom route from 40.55375679506762,-79.90791996005962 to 40.562311,-79.855292
+2026-04-02 10:50:15,433 - tomtom_router - INFO - TomTom returned 1 route(s)
+2026-04-02 10:50:15,444 - __main__ - INFO - TomTom route successful
+2026-04-02 10:50:15,802 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-04-02 10:50:15,809 - __main__ - INFO - Using cached route result
+2026-04-02 10:50:15,814 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:50:15] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-04-02 10:50:16,321 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:50:16] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-04-02 10:50:16,323 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:50:16] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-04-02 10:51:00,898 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:51:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:51:00,906 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:51:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:51:00,920 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 10:51:00,922 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 10:51:00,922 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 10:51:00,923 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 10:51:01,075 - __main__ - INFO - TomTom returned 79 incidents
+2026-04-02 10:51:01,077 - __main__ - INFO - TomTom returned 79 incidents
+2026-04-02 10:51:01,078 - __main__ - INFO - Parsed 59 construction zones, 20 hazards from TomTom
+2026-04-02 10:51:01,078 - __main__ - INFO - Parsed 59 construction zones, 20 hazards from TomTom
+2026-04-02 10:51:01,085 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:51:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:51:01,088 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:51:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:52:44,926 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:52:44] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-02 10:52:44,932 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:52:44] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 10:52:46,250 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:52:46] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 10:52:46,411 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:52:46] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 10:52:46,571 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:52:46] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 10:52:49,362 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:52:49] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 10:52:51,051 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:52:51] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-02 10:52:51,052 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:52:51] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 10:54:32,878 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:54:32] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:54:32,883 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.46375679506762,-80.02791996005962 to 40.643756795067624,-79.78791996005961
+2026-04-02 10:54:32,883 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.46375679506762,-80.02791996005962 to 40.643756795067624,-79.78791996005961
+2026-04-02 10:54:33,113 - __main__ - INFO - TomTom returned 9 incidents
+2026-04-02 10:54:33,114 - __main__ - INFO - Parsed 7 construction zones, 2 hazards from TomTom
+2026-04-02 10:54:33,116 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:54:33] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:56:00,930 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:56:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:56:00,933 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 10:56:00,933 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 10:56:00,960 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 10:56:00,960 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 10:56:01,086 - __main__ - INFO - TomTom returned 80 incidents
+2026-04-02 10:56:01,086 - __main__ - INFO - Parsed 59 construction zones, 21 hazards from TomTom
+2026-04-02 10:56:01,089 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:56:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:56:01,107 - __main__ - INFO - TomTom returned 80 incidents
+2026-04-02 10:56:01,107 - __main__ - INFO - Parsed 59 construction zones, 21 hazards from TomTom
+2026-04-02 10:56:01,109 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:56:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:58:29,939 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:58:29] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-04-02 10:59:19,007 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:59:19] "[32mGET /api/callback?state=zArxOi4qLqyMA8gua3Iy0hExRZAKnp&iss=https://accounts.google.com&code=4/0Aci98E-Gl0u8jt-83SFmzsQAo0ZDLw3OP0J45cVKAPLgoLDqoQ4eKj3ClYLBFNx5AyQIrw&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+openid+https://www.googleapis.com/auth/userinfo.email&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-04-02 10:59:19,410 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:59:19] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:59:19,415 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:59:19] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:59:19,417 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 10:59:19,420 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 10:59:19,420 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 10:59:19,422 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 10:59:19,622 - __main__ - INFO - TomTom returned 78 incidents
+2026-04-02 10:59:19,624 - __main__ - INFO - TomTom returned 78 incidents
+2026-04-02 10:59:19,625 - __main__ - INFO - Parsed 59 construction zones, 19 hazards from TomTom
+2026-04-02 10:59:19,627 - __main__ - INFO - Parsed 59 construction zones, 19 hazards from TomTom
+2026-04-02 10:59:19,631 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:59:19] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:59:19,634 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:59:19] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:59:32,867 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:59:32] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 10:59:32,873 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.46375679506762,-80.02791996005962 to 40.643756795067624,-79.78791996005961
+2026-04-02 10:59:32,874 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.46375679506762,-80.02791996005962 to 40.643756795067624,-79.78791996005961
+2026-04-02 10:59:32,986 - __main__ - INFO - TomTom returned 8 incidents
+2026-04-02 10:59:32,986 - __main__ - INFO - Parsed 7 construction zones, 1 hazards from TomTom
+2026-04-02 10:59:32,990 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 10:59:32] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:01:00,939 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:01:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:01:00,944 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:01:00,944 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:01:00,951 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:01:00,951 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:01:01,155 - __main__ - INFO - TomTom returned 75 incidents
+2026-04-02 11:01:01,156 - __main__ - INFO - Parsed 59 construction zones, 16 hazards from TomTom
+2026-04-02 11:01:01,159 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:01:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:01:01,165 - __main__ - INFO - TomTom returned 75 incidents
+2026-04-02 11:01:01,165 - __main__ - INFO - Parsed 59 construction zones, 16 hazards from TomTom
+2026-04-02 11:01:01,170 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:01:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:04:19,866 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:04:19] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:04:19,870 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:04:19,870 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:04:20,094 - __main__ - INFO - TomTom returned 78 incidents
+2026-04-02 11:04:20,095 - __main__ - INFO - Parsed 59 construction zones, 19 hazards from TomTom
+2026-04-02 11:04:20,099 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:04:20] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:04:32,863 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:04:32] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:04:32,865 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.46375679506762,-80.02791996005962 to 40.643756795067624,-79.78791996005961
+2026-04-02 11:04:32,865 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.46375679506762,-80.02791996005962 to 40.643756795067624,-79.78791996005961
+2026-04-02 11:04:32,963 - __main__ - INFO - TomTom returned 12 incidents
+2026-04-02 11:04:32,964 - __main__ - INFO - Parsed 7 construction zones, 5 hazards from TomTom
+2026-04-02 11:04:32,967 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:04:32] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:06:00,901 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:06:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:06:00,905 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:06:00,905 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:06:00,931 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:06:00,931 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:06:01,135 - __main__ - INFO - TomTom returned 79 incidents
+2026-04-02 11:06:01,139 - __main__ - INFO - Parsed 59 construction zones, 20 hazards from TomTom
+2026-04-02 11:06:01,146 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:06:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:06:01,150 - __main__ - INFO - TomTom returned 79 incidents
+2026-04-02 11:06:01,150 - __main__ - INFO - Parsed 59 construction zones, 20 hazards from TomTom
+2026-04-02 11:06:01,153 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:06:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:09:19,874 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:09:19] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:09:19,880 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:09:19,880 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:09:20,107 - __main__ - INFO - TomTom returned 83 incidents
+2026-04-02 11:09:20,108 - __main__ - INFO - Parsed 60 construction zones, 23 hazards from TomTom
+2026-04-02 11:09:20,113 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:09:20] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:09:32,869 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:09:32] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:09:32,873 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.46375679506762,-80.02791996005962 to 40.643756795067624,-79.78791996005961
+2026-04-02 11:09:32,873 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.46375679506762,-80.02791996005962 to 40.643756795067624,-79.78791996005961
+2026-04-02 11:09:32,976 - __main__ - INFO - TomTom returned 16 incidents
+2026-04-02 11:09:32,977 - __main__ - INFO - Parsed 7 construction zones, 9 hazards from TomTom
+2026-04-02 11:09:32,981 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:09:32] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:11:00,897 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:11:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:11:00,898 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:11:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:11:00,900 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:11:00,901 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:11:00,901 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:11:00,901 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:11:01,050 - __main__ - INFO - TomTom returned 88 incidents
+2026-04-02 11:11:01,052 - __main__ - INFO - Parsed 60 construction zones, 28 hazards from TomTom
+2026-04-02 11:11:01,055 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:11:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:11:01,058 - __main__ - INFO - TomTom returned 88 incidents
+2026-04-02 11:11:01,059 - __main__ - INFO - Parsed 60 construction zones, 28 hazards from TomTom
+2026-04-02 11:11:01,061 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:11:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:14:19,853 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:14:19] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:14:19,858 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:14:19,858 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:14:20,016 - __main__ - INFO - TomTom returned 86 incidents
+2026-04-02 11:14:20,017 - __main__ - INFO - Parsed 61 construction zones, 25 hazards from TomTom
+2026-04-02 11:14:20,019 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:14:20] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:14:32,842 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:14:32] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:14:32,847 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.46375679506762,-80.02791996005962 to 40.643756795067624,-79.78791996005961
+2026-04-02 11:14:32,847 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.46375679506762,-80.02791996005962 to 40.643756795067624,-79.78791996005961
+2026-04-02 11:14:32,950 - __main__ - INFO - TomTom returned 15 incidents
+2026-04-02 11:14:32,950 - __main__ - INFO - Parsed 6 construction zones, 9 hazards from TomTom
+2026-04-02 11:14:32,952 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:14:32] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:16:00,890 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:16:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:16:00,892 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:16:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:16:00,895 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:16:00,895 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:16:00,897 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:16:00,898 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:16:01,051 - __main__ - INFO - TomTom returned 82 incidents
+2026-04-02 11:16:01,053 - __main__ - INFO - Parsed 61 construction zones, 21 hazards from TomTom
+2026-04-02 11:16:01,056 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:16:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:16:01,057 - __main__ - INFO - TomTom returned 82 incidents
+2026-04-02 11:16:01,059 - __main__ - INFO - Parsed 61 construction zones, 21 hazards from TomTom
+2026-04-02 11:16:01,062 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:16:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:19:19,838 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:19:19] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:19:19,843 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:19:19,843 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:19:19,989 - __main__ - INFO - TomTom returned 79 incidents
+2026-04-02 11:19:19,989 - __main__ - INFO - Parsed 61 construction zones, 18 hazards from TomTom
+2026-04-02 11:19:19,992 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:19:19] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:19:24,827 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:19:24,828 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:19:24,846 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:19:24,846 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:19:24,993 - __main__ - INFO - TomTom returned 79 incidents
+2026-04-02 11:19:24,994 - __main__ - INFO - Parsed 61 construction zones, 18 hazards from TomTom
+2026-04-02 11:19:24,997 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:19:24] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:19:25,001 - __main__ - INFO - TomTom returned 79 incidents
+2026-04-02 11:19:25,001 - __main__ - INFO - Parsed 61 construction zones, 18 hazards from TomTom
+2026-04-02 11:19:25,003 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:19:25] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:19:26,733 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:19:26] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:19:26,736 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.46378724279202,-80.02810636045777 to 40.64378724279203,-79.78810636045776
+2026-04-02 11:19:26,736 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.46378724279202,-80.02810636045777 to 40.64378724279203,-79.78810636045776
+2026-04-02 11:19:26,842 - __main__ - INFO - TomTom returned 12 incidents
+2026-04-02 11:19:26,842 - __main__ - INFO - Parsed 6 construction zones, 6 hazards from TomTom
+2026-04-02 11:19:26,846 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:19:26] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:19:36,458 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:19:36] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-02 11:19:36,461 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:19:36] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 11:19:36,494 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:19:36] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-04-02 11:19:36,597 - __main__ - INFO - Attempting TomTom route from 40.553787242792026,-79.90810636045777 to 40.48809,-79.894321
+2026-04-02 11:19:36,599 - tomtom_router - INFO - Calculating TomTom route from 40.553787242792026,-79.90810636045777 to 40.48809,-79.894321
+2026-04-02 11:19:36,729 - tomtom_router - INFO - TomTom returned 1 route(s)
+2026-04-02 11:19:36,735 - __main__ - INFO - TomTom route successful
+2026-04-02 11:19:37,263 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-04-02 11:19:37,282 - __main__ - INFO - Using cached route result
+2026-04-02 11:19:37,287 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:19:37] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-04-02 11:19:37,864 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:19:37] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-04-02 11:19:37,869 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:19:37] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-04-02 11:19:51,564 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:19:51] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-02 11:19:51,568 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:19:51] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 11:20:46,487 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:20:46] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-02 11:20:46,491 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:20:46] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 11:20:47,532 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:20:47] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 11:20:47,713 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:20:47] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 11:20:47,889 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:20:47] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 11:20:58,837 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:20:58] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-02 11:20:58,841 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:20:58] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 11:21:00,853 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:21:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:21:00,855 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:21:00] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:21:00,856 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:21:00,857 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:21:00,857 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:21:00,857 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:21:01,032 - __main__ - INFO - TomTom returned 82 incidents
+2026-04-02 11:21:01,033 - __main__ - INFO - Parsed 61 construction zones, 21 hazards from TomTom
+2026-04-02 11:21:01,035 - __main__ - INFO - TomTom returned 82 incidents
+2026-04-02 11:21:01,037 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:21:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:21:01,039 - __main__ - INFO - Parsed 61 construction zones, 21 hazards from TomTom
+2026-04-02 11:21:01,041 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:21:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:21:03,838 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:21:03] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 11:23:31,390 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:23:31] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-02 11:23:31,395 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:23:31] "[31m[1mPOST /api/transit-route HTTP/1.1[0m" 400 -
+2026-04-02 11:42:47,252 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-02 11:42:47,593 - gtfs_loader - INFO - Loading stops...
+2026-04-02 11:42:47,724 - gtfs_loader - INFO - Loading trips...
+2026-04-02 11:42:48,021 - gtfs_loader - INFO - Loading stop times (this may take a moment)...
+2026-04-02 11:42:48,068 - gtfs_loader - INFO - Processing stop times chunk 1...
+2026-04-02 11:42:49,107 - gtfs_loader - INFO - Processing stop times chunk 2...
+2026-04-02 11:42:50,374 - gtfs_loader - INFO - Processing stop times chunk 3...
+2026-04-02 11:42:51,550 - gtfs_loader - INFO - Processing stop times chunk 4...
+2026-04-02 11:42:52,642 - gtfs_loader - INFO - Processing stop times chunk 5...
+2026-04-02 11:42:53,706 - gtfs_loader - INFO - Processing stop times chunk 6...
+2026-04-02 11:42:54,878 - gtfs_loader - INFO - Processing stop times chunk 7...
+2026-04-02 11:42:56,150 - gtfs_loader - INFO - Processing stop times chunk 8...
+2026-04-02 11:42:57,341 - gtfs_loader - INFO - Processing stop times chunk 9...
+2026-04-02 11:42:59,014 - gtfs_loader - INFO - Processing stop times chunk 10...
+2026-04-02 11:43:00,158 - gtfs_loader - INFO - Processing stop times chunk 11...
+2026-04-02 11:43:01,193 - gtfs_loader - INFO - Processing stop times chunk 12...
+2026-04-02 11:43:02,226 - gtfs_loader - INFO - Processing stop times chunk 13...
+2026-04-02 11:43:03,828 - gtfs_loader - INFO - Processing stop times chunk 14...
+2026-04-02 11:43:05,176 - gtfs_loader - INFO - Processing stop times chunk 15...
+2026-04-02 11:43:06,350 - gtfs_loader - INFO - Processing stop times chunk 16...
+2026-04-02 11:43:07,689 - gtfs_loader - INFO - Processing stop times chunk 17...
+2026-04-02 11:43:08,580 - gtfs_loader - INFO - Sorting stop times...
+2026-04-02 11:43:08,633 - gtfs_loader - INFO - Loading calendar...
+2026-04-02 11:43:08,634 - gtfs_loader - INFO - Loaded GTFS data: 6424 stops, 15826 trips, 15826 trips with stop times
+2026-04-02 11:43:08,637 - transit_router - INFO - Building trip cache...
+2026-04-02 11:43:08,698 - transit_router - INFO - Cached 15826 trips
+2026-04-02 11:43:08,698 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-02 11:43:08,701 - __main__ - INFO - Safety AI loaded successfully
+2026-04-02 11:44:06,368 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-04-02 11:44:06,369 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-04-02 11:44:06,384 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-04-02 11:44:06,384 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-04-02 11:44:08,927 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:44:08] "GET /api/hello HTTP/1.1" 200 -
+2026-04-02 11:44:13,945 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:44:13] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-04-02 11:44:16,300 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:44:16] "[32mGET /api/callback?state=jRIHiFypsL99PE2OhYA5GEOQW4ogUt&iss=https://accounts.google.com&code=4/0Aci98E_rxfpnC8W_nJuyhirlMns_8OsDfKhGi97XmvYCEjh-Gv_Uz16V3_DqsE8kaFBr7Q&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-04-02 11:44:16,562 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:44:16] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:44:16,563 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:44:16] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:44:16,565 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:44:16,565 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:44:16,576 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:44:16,579 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:44:16,793 - __main__ - INFO - TomTom returned 88 incidents
+2026-04-02 11:44:16,796 - __main__ - INFO - Parsed 61 construction zones, 27 hazards from TomTom
+2026-04-02 11:44:16,798 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:44:16] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:44:16,801 - __main__ - INFO - TomTom returned 88 incidents
+2026-04-02 11:44:16,801 - __main__ - INFO - Parsed 61 construction zones, 27 hazards from TomTom
+2026-04-02 11:44:16,802 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:44:16] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:44:32,223 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:44:32] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-02 11:44:32,229 - transit_router - INFO - 
+============================================================
+2026-04-02 11:44:32,229 - transit_router - INFO - TRANSIT ROUTE SEARCH
+2026-04-02 11:44:32,229 - transit_router - INFO - From: (40.4885, -79.8982)
+2026-04-02 11:44:32,229 - transit_router - INFO - To: (40.4460, -80.0167)
+2026-04-02 11:44:32,229 - transit_router - INFO - Departure: 2026-04-02 15:44:32
+2026-04-02 11:44:32,229 - transit_router - INFO - Time window: 60 minutes
+2026-04-02 11:44:32,229 - transit_router - INFO - ============================================================
+2026-04-02 11:44:32,246 - transit_router - INFO - 
+📍 START STOPS (within 1000.0m):
+2026-04-02 11:44:32,247 - transit_router - INFO -   • FREEPORT RD + DELAFIELD AVE - 76m away
+2026-04-02 11:44:32,247 - transit_router - INFO -   • FREEPORT RD + VIRGINIA AVE FS - 119m away
+2026-04-02 11:44:32,247 - transit_router - INFO -   • FREEPORT RD + BRILLIANT AVE FS - 220m away
+2026-04-02 11:44:32,247 - transit_router - INFO -   • FREEPORT RD + BRILLIANT AVE - 240m away
+2026-04-02 11:44:32,248 - transit_router - INFO -   • FREEPORT RD + ST MARGARETS DR - 255m away
+2026-04-02 11:44:32,248 - transit_router - INFO -   • WATERWORKS MALL + GIANT EAGLE - 370m away
+2026-04-02 11:44:32,248 - transit_router - INFO -   • WATERWORKS MALL + GIANT EAGLE - 374m away
+2026-04-02 11:44:32,248 - transit_router - INFO -   • FREEPORT RD + EASTERN AVE - 437m away
+2026-04-02 11:44:32,248 - transit_router - INFO -   • FREEPORT RD + EASTERN AVE - 475m away
+2026-04-02 11:44:32,248 - transit_router - INFO -   • WATERWORKS MALL + MARSHALLS - 521m away
+2026-04-02 11:44:32,248 - transit_router - INFO - 
+📍 DESTINATION STOPS:
+2026-04-02 11:44:32,248 - transit_router - INFO -   • ALLEGHENY AVE + REEDSDALE FS - 222m away
+2026-04-02 11:44:32,248 - transit_router - INFO -   • ALLEGHENY STATION - 228m away
+2026-04-02 11:44:32,248 - transit_router - INFO -   • ALLEGHENY STATION BAY 1 - 278m away
+2026-04-02 11:44:32,248 - transit_router - INFO -   • ALLEGHENY STATION BAY 2 - 290m away
+2026-04-02 11:44:32,248 - transit_router - INFO -   • REEDSDALE ST + BOYCE - 335m away
+2026-04-02 11:44:32,248 - transit_router - INFO -   • RIDGE AVE + ALLEGHENY - 429m away
+2026-04-02 11:44:32,248 - transit_router - INFO -   • RIDGE AVE + GALVESTON - 480m away
+2026-04-02 11:44:32,248 - transit_router - INFO -   • RIDGE AVE + BRIGHTON (CCAC) - 524m away
+2026-04-02 11:44:32,248 - transit_router - INFO -   • NORTH SIDE STATION - 572m away
+2026-04-02 11:44:32,248 - transit_router - INFO -   • BRIGHTON RD + RIDGE (CCAC) - 585m away
+2026-04-02 11:44:32,248 - transit_router - INFO - 
+🚌 CHECKING DEPARTURES FROM START STOPS (next 60 min):
+2026-04-02 11:44:32,263 - transit_router - INFO -   FREEPORT RD + DELAFIELD AVE: 9 departures found
+2026-04-02 11:44:32,264 - transit_router - INFO -     → 15:46 (wait 1 min) - Trip 7240020 to FREEPORT RD + VIRGINIA AVE FS
+2026-04-02 11:44:32,264 - transit_router - INFO -     → 15:53 (wait 9 min) - Trip 7823020 to FREEPORT RD + VIRGINIA AVE FS
+2026-04-02 11:44:32,264 - transit_router - INFO -     → 15:57 (wait 12 min) - Trip 12205020 to FREEPORT RD + VIRGINIA AVE FS
+2026-04-02 11:44:32,264 - transit_router - INFO -     → 16:10 (wait 25 min) - Trip 5898020 to FREEPORT RD + VIRGINIA AVE FS
+2026-04-02 11:44:32,264 - transit_router - INFO -     → 16:11 (wait 26 min) - Trip 13773020 to FREEPORT RD + VIRGINIA AVE FS
+2026-04-02 11:44:32,267 - transit_router - INFO -   FREEPORT RD + VIRGINIA AVE FS: 9 departures found
+2026-04-02 11:44:32,268 - transit_router - INFO -     → 15:46 (wait 2 min) - Trip 7240020 to FREEPORT RD + BRILLIANT AVE
+2026-04-02 11:44:32,268 - transit_router - INFO -     → 15:54 (wait 9 min) - Trip 7823020 to FREEPORT RD + BRILLIANT AVE
+2026-04-02 11:44:32,268 - transit_router - INFO -     → 15:57 (wait 13 min) - Trip 12205020 to FREEPORT RD + BRILLIANT AVE
+2026-04-02 11:44:32,269 - transit_router - INFO -     → 16:10 (wait 26 min) - Trip 5898020 to FREEPORT RD + BRILLIANT AVE
+2026-04-02 11:44:32,269 - transit_router - INFO -     → 16:11 (wait 27 min) - Trip 13773020 to FREEPORT RD + BRILLIANT AVE
+2026-04-02 11:44:32,311 - transit_router - INFO -   FREEPORT RD + BRILLIANT AVE FS: 7 departures found
+2026-04-02 11:44:32,311 - transit_router - INFO -     → 15:53 (wait 8 min) - Trip 5510020 to FREEPORT RD + ST MARGARETS DR
+2026-04-02 11:44:32,311 - transit_router - INFO -     → 15:56 (wait 11 min) - Trip 2839020 to FREEPORT RD + ST MARGARETS DR
+2026-04-02 11:44:32,311 - transit_router - INFO -     → 16:09 (wait 24 min) - Trip 5078020 to FREEPORT RD + ST MARGARETS DR
+2026-04-02 11:44:32,311 - transit_router - INFO -     → 16:12 (wait 27 min) - Trip 12570020 to FREEPORT RD + ST MARGARETS DR
+2026-04-02 11:44:32,311 - transit_router - INFO -     → 16:21 (wait 36 min) - Trip 1961020 to FREEPORT RD + ST MARGARETS DR
+2026-04-02 11:44:32,312 - transit_router - INFO -   FREEPORT RD + BRILLIANT AVE: 9 departures found
+2026-04-02 11:44:32,312 - transit_router - INFO -     → 15:47 (wait 2 min) - Trip 7240020 to FREEPORT RD + EASTERN AVE
+2026-04-02 11:44:32,312 - transit_router - INFO -     → 15:54 (wait 9 min) - Trip 7823020 to FREEPORT RD + EASTERN AVE
+2026-04-02 11:44:32,312 - transit_router - INFO -     → 15:58 (wait 13 min) - Trip 12205020 to FREEPORT RD + EASTERN AVE
+2026-04-02 11:44:32,312 - transit_router - INFO -     → 16:11 (wait 26 min) - Trip 5898020 to FREEPORT RD + EASTERN AVE
+2026-04-02 11:44:32,312 - transit_router - INFO -     → 16:12 (wait 27 min) - Trip 13773020 to FREEPORT RD + EASTERN AVE
+2026-04-02 11:44:32,313 - transit_router - INFO -   FREEPORT RD + ST MARGARETS DR: 8 departures found
+2026-04-02 11:44:32,313 - transit_router - INFO -     → 15:45 (wait 1 min) - Trip 11200020 to WATERWORKS MALL + GIANT EAGLE
+2026-04-02 11:44:32,313 - transit_router - INFO -     → 15:54 (wait 9 min) - Trip 5510020 to WATERWORKS MALL + GIANT EAGLE
+2026-04-02 11:44:32,313 - transit_router - INFO -     → 15:57 (wait 13 min) - Trip 2839020 to WATERWORKS MALL + GIANT EAGLE
+2026-04-02 11:44:32,313 - transit_router - INFO -     → 16:10 (wait 26 min) - Trip 5078020 to WATERWORKS MALL + GIANT EAGLE
+2026-04-02 11:44:32,313 - transit_router - INFO -     → 16:13 (wait 28 min) - Trip 12570020 to WATERWORKS MALL + GIANT EAGLE
+2026-04-02 11:44:32,316 - transit_router - INFO - 
+🔍 SEARCHING FOR ROUTE...
+2026-04-02 11:44:43,197 - transit_router - INFO - ✓ Found route to destination via NORTH SIDE STATION
+2026-04-02 11:44:43,399 - transit_router - INFO - ✓ Found route to destination via ALLEGHENY STATION
+2026-04-02 11:44:44,050 - transit_router - INFO - ✓ Found route to destination via W CARSON ST + DUQUESNE INCLINE
+2026-04-02 11:44:44,050 - transit_router - INFO - Search completed: 11781 iterations, 3 routes found
+2026-04-02 11:44:44,050 - transit_router - INFO - 
+✅ ROUTE FOUND!
+2026-04-02 11:44:44,050 - transit_router - INFO - Total time: 144.2 minutes
+2026-04-02 11:44:44,050 - transit_router - INFO - Steps:
+2026-04-02 11:44:44,050 - transit_router - INFO -   1. 🚶 Walk to GATEWAY STATION
+2026-04-02 11:44:44,050 - transit_router - INFO -   2. 🚌 Take bus 1074400020 from GATEWAY STATION to ALLEGHENY STATION
+2026-04-02 11:44:44,054 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:44:44] "POST /api/transit-route HTTP/1.1" 200 -
+2026-04-02 11:44:45,443 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:44:45] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-04-02 11:44:45,446 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:44:45] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-04-02 11:44:59,494 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:44:59] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-02 11:44:59,498 - transit_router - INFO - 
+============================================================
+2026-04-02 11:44:59,498 - transit_router - INFO - TRANSIT ROUTE SEARCH
+2026-04-02 11:44:59,498 - transit_router - INFO - From: (40.4885, -79.8982)
+2026-04-02 11:44:59,498 - transit_router - INFO - To: (40.4460, -80.0167)
+2026-04-02 11:44:59,498 - transit_router - INFO - Departure: 2026-04-02 15:44:59
+2026-04-02 11:44:59,498 - transit_router - INFO - Time window: 60 minutes
+2026-04-02 11:44:59,498 - transit_router - INFO - ============================================================
+2026-04-02 11:44:59,512 - transit_router - INFO - 
+📍 START STOPS (within 1000.0m):
+2026-04-02 11:44:59,513 - transit_router - INFO -   • FREEPORT RD + DELAFIELD AVE - 76m away
+2026-04-02 11:44:59,513 - transit_router - INFO -   • FREEPORT RD + VIRGINIA AVE FS - 119m away
+2026-04-02 11:44:59,513 - transit_router - INFO -   • FREEPORT RD + BRILLIANT AVE FS - 220m away
+2026-04-02 11:44:59,513 - transit_router - INFO -   • FREEPORT RD + BRILLIANT AVE - 240m away
+2026-04-02 11:44:59,513 - transit_router - INFO -   • FREEPORT RD + ST MARGARETS DR - 255m away
+2026-04-02 11:44:59,513 - transit_router - INFO -   • WATERWORKS MALL + GIANT EAGLE - 370m away
+2026-04-02 11:44:59,513 - transit_router - INFO -   • WATERWORKS MALL + GIANT EAGLE - 374m away
+2026-04-02 11:44:59,513 - transit_router - INFO -   • FREEPORT RD + EASTERN AVE - 437m away
+2026-04-02 11:44:59,513 - transit_router - INFO -   • FREEPORT RD + EASTERN AVE - 475m away
+2026-04-02 11:44:59,513 - transit_router - INFO -   • WATERWORKS MALL + MARSHALLS - 521m away
+2026-04-02 11:44:59,513 - transit_router - INFO - 
+📍 DESTINATION STOPS:
+2026-04-02 11:44:59,514 - transit_router - INFO -   • ALLEGHENY AVE + REEDSDALE FS - 222m away
+2026-04-02 11:44:59,514 - transit_router - INFO -   • ALLEGHENY STATION - 228m away
+2026-04-02 11:44:59,514 - transit_router - INFO -   • ALLEGHENY STATION BAY 1 - 278m away
+2026-04-02 11:44:59,514 - transit_router - INFO -   • ALLEGHENY STATION BAY 2 - 290m away
+2026-04-02 11:44:59,514 - transit_router - INFO -   • REEDSDALE ST + BOYCE - 335m away
+2026-04-02 11:44:59,514 - transit_router - INFO -   • RIDGE AVE + ALLEGHENY - 429m away
+2026-04-02 11:44:59,514 - transit_router - INFO -   • RIDGE AVE + GALVESTON - 480m away
+2026-04-02 11:44:59,514 - transit_router - INFO -   • RIDGE AVE + BRIGHTON (CCAC) - 524m away
+2026-04-02 11:44:59,514 - transit_router - INFO -   • NORTH SIDE STATION - 572m away
+2026-04-02 11:44:59,515 - transit_router - INFO -   • BRIGHTON RD + RIDGE (CCAC) - 585m away
+2026-04-02 11:44:59,515 - transit_router - INFO - 
+🚌 CHECKING DEPARTURES FROM START STOPS (next 60 min):
+2026-04-02 11:44:59,553 - transit_router - INFO -   FREEPORT RD + DELAFIELD AVE: 9 departures found
+2026-04-02 11:44:59,553 - transit_router - INFO -     → 15:46 (wait 1 min) - Trip 7240020 to FREEPORT RD + VIRGINIA AVE FS
+2026-04-02 11:44:59,554 - transit_router - INFO -     → 15:53 (wait 8 min) - Trip 7823020 to FREEPORT RD + VIRGINIA AVE FS
+2026-04-02 11:44:59,554 - transit_router - INFO -     → 15:57 (wait 12 min) - Trip 12205020 to FREEPORT RD + VIRGINIA AVE FS
+2026-04-02 11:44:59,554 - transit_router - INFO -     → 16:10 (wait 25 min) - Trip 5898020 to FREEPORT RD + VIRGINIA AVE FS
+2026-04-02 11:44:59,554 - transit_router - INFO -     → 16:11 (wait 26 min) - Trip 13773020 to FREEPORT RD + VIRGINIA AVE FS
+2026-04-02 11:44:59,555 - transit_router - INFO -   FREEPORT RD + VIRGINIA AVE FS: 9 departures found
+2026-04-02 11:44:59,555 - transit_router - INFO -     → 15:46 (wait 1 min) - Trip 7240020 to FREEPORT RD + BRILLIANT AVE
+2026-04-02 11:44:59,555 - transit_router - INFO -     → 15:54 (wait 9 min) - Trip 7823020 to FREEPORT RD + BRILLIANT AVE
+2026-04-02 11:44:59,555 - transit_router - INFO -     → 15:57 (wait 12 min) - Trip 12205020 to FREEPORT RD + BRILLIANT AVE
+2026-04-02 11:44:59,555 - transit_router - INFO -     → 16:10 (wait 25 min) - Trip 5898020 to FREEPORT RD + BRILLIANT AVE
+2026-04-02 11:44:59,555 - transit_router - INFO -     → 16:11 (wait 26 min) - Trip 13773020 to FREEPORT RD + BRILLIANT AVE
+2026-04-02 11:44:59,577 - transit_router - INFO -   FREEPORT RD + BRILLIANT AVE FS: 7 departures found
+2026-04-02 11:44:59,577 - transit_router - INFO -     → 15:53 (wait 8 min) - Trip 5510020 to FREEPORT RD + ST MARGARETS DR
+2026-04-02 11:44:59,577 - transit_router - INFO -     → 15:56 (wait 11 min) - Trip 2839020 to FREEPORT RD + ST MARGARETS DR
+2026-04-02 11:44:59,577 - transit_router - INFO -     → 16:09 (wait 24 min) - Trip 5078020 to FREEPORT RD + ST MARGARETS DR
+2026-04-02 11:44:59,577 - transit_router - INFO -     → 16:12 (wait 27 min) - Trip 12570020 to FREEPORT RD + ST MARGARETS DR
+2026-04-02 11:44:59,577 - transit_router - INFO -     → 16:21 (wait 36 min) - Trip 1961020 to FREEPORT RD + ST MARGARETS DR
+2026-04-02 11:44:59,578 - transit_router - INFO -   FREEPORT RD + BRILLIANT AVE: 9 departures found
+2026-04-02 11:44:59,578 - transit_router - INFO -     → 15:47 (wait 2 min) - Trip 7240020 to FREEPORT RD + EASTERN AVE
+2026-04-02 11:44:59,578 - transit_router - INFO -     → 15:54 (wait 9 min) - Trip 7823020 to FREEPORT RD + EASTERN AVE
+2026-04-02 11:44:59,578 - transit_router - INFO -     → 15:58 (wait 13 min) - Trip 12205020 to FREEPORT RD + EASTERN AVE
+2026-04-02 11:44:59,578 - transit_router - INFO -     → 16:11 (wait 26 min) - Trip 5898020 to FREEPORT RD + EASTERN AVE
+2026-04-02 11:44:59,578 - transit_router - INFO -     → 16:12 (wait 27 min) - Trip 13773020 to FREEPORT RD + EASTERN AVE
+2026-04-02 11:44:59,578 - transit_router - INFO -   FREEPORT RD + ST MARGARETS DR: 8 departures found
+2026-04-02 11:44:59,579 - transit_router - INFO -     → 15:45 (wait 0 min) - Trip 11200020 to WATERWORKS MALL + GIANT EAGLE
+2026-04-02 11:44:59,579 - transit_router - INFO -     → 15:54 (wait 9 min) - Trip 5510020 to WATERWORKS MALL + GIANT EAGLE
+2026-04-02 11:44:59,579 - transit_router - INFO -     → 15:57 (wait 12 min) - Trip 2839020 to WATERWORKS MALL + GIANT EAGLE
+2026-04-02 11:44:59,579 - transit_router - INFO -     → 16:10 (wait 25 min) - Trip 5078020 to WATERWORKS MALL + GIANT EAGLE
+2026-04-02 11:44:59,579 - transit_router - INFO -     → 16:13 (wait 28 min) - Trip 12570020 to WATERWORKS MALL + GIANT EAGLE
+2026-04-02 11:44:59,579 - transit_router - INFO - 
+🔍 SEARCHING FOR ROUTE...
+2026-04-02 11:45:01,144 - transit_router - INFO - ✓ Found route to destination via NORTH SIDE STATION
+2026-04-02 11:45:01,217 - transit_router - INFO - ✓ Found route to destination via ALLEGHENY STATION
+2026-04-02 11:45:01,420 - transit_router - INFO - ✓ Found route to destination via W CARSON ST + DUQUESNE INCLINE
+2026-04-02 11:45:01,420 - transit_router - INFO - Search completed: 11666 iterations, 3 routes found
+2026-04-02 11:45:01,420 - transit_router - INFO - 
+✅ ROUTE FOUND!
+2026-04-02 11:45:01,420 - transit_router - INFO - Total time: 143.7 minutes
+2026-04-02 11:45:01,420 - transit_router - INFO - Steps:
+2026-04-02 11:45:01,420 - transit_router - INFO -   1. 🚶 Walk to GATEWAY STATION
+2026-04-02 11:45:01,420 - transit_router - INFO -   2. 🚌 Take bus 1074400020 from GATEWAY STATION to ALLEGHENY STATION
+2026-04-02 11:45:01,426 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:45:01] "POST /api/transit-route HTTP/1.1" 200 -
+2026-04-02 11:47:19,901 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:47:19] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:47:19,907 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:47:19] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:47:19,908 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:47:19,909 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:47:19,912 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:47:19,912 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:47:20,052 - __main__ - INFO - TomTom returned 82 incidents
+2026-04-02 11:47:20,054 - __main__ - INFO - Parsed 61 construction zones, 21 hazards from TomTom
+2026-04-02 11:47:20,057 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:47:20] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:47:20,059 - __main__ - INFO - TomTom returned 82 incidents
+2026-04-02 11:47:20,059 - __main__ - INFO - Parsed 61 construction zones, 21 hazards from TomTom
+2026-04-02 11:47:20,061 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:47:20] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:47:30,807 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:47:30] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:47:30,808 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:47:30] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:47:30,810 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:47:30,810 - __main__ - INFO - Using radius-based bbox (10000.0m): 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:47:30,810 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:47:30,811 - __main__ - INFO - Fetching TomTom incidents for bbox: 40.382,-80.06 to 40.562000000000005,-79.82
+2026-04-02 11:47:30,971 - __main__ - INFO - TomTom returned 82 incidents
+2026-04-02 11:47:30,971 - __main__ - INFO - Parsed 61 construction zones, 21 hazards from TomTom
+2026-04-02 11:47:30,973 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:47:30] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-02 11:47:30,980 - __main__ - INFO - TomTom returned 82 incidents
+2026-04-02 11:47:30,981 - __main__ - INFO - Parsed 61 construction zones, 21 hazards from TomTom
+2026-04-02 11:47:30,982 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:47:30] "POST /api/area-obstructions HTTP/1.1" 200 -
