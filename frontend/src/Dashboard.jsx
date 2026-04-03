@@ -1431,7 +1431,7 @@ export default function AccessibleMap() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-// Fetch area obstructions (enhanced with 911 emergencies)
+// Fetch area obstructions with bounding box covering entire Pittsburgh region
 useEffect(() => {
   const fetchAreaObstructions = async () => {
     try {
@@ -1439,10 +1439,13 @@ useEffect(() => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          lat: loc[0], 
-          lng: loc[1], 
-          radius: 10000,
-          include_emergencies: true  // Include 911 emergencies
+          use_custom_bbox: true,
+          min_lat: 40.2,   // South of Pittsburgh (Washington County border)
+          max_lat: 40.8,   // North of Pittsburgh (Butler County border)
+          min_lng: -80.8,  // Ohio border (East Liverpool area)
+          max_lng: -79.5,  // East of Pittsburgh (Monroeville area)
+          include_emergencies: true,
+          include_news: true
         }),
       });
       const data = await res.json();
@@ -1464,22 +1467,21 @@ useEffect(() => {
               ) {
                 return { ...item, lat, lng };
               }
-              console.warn("Filtered out invalid obstruction:", item);
               return null;
             })
             .filter(Boolean);
 
         setConstructionZones(sanitize(data.construction_zones));
         
-        // Separate 911 emergencies from regular hazards
+        // Separate news hazards from regular hazards
         const allHazards = sanitize(data.hazards || []);
-        const emergencies911Data = allHazards.filter(h => h.source === '911_dispatch');
-        const regularHazards = allHazards.filter(h => h.source !== '911_dispatch');
+        const newsHazards = allHazards.filter(h => h.source === 'news_api');
+        const regularHazards = allHazards.filter(h => h.source !== 'news_api');
         
         setActiveHazards(regularHazards);
-        setEmergencies911(emergencies911Data);  // Make sure you have this state declared
+        setEmergencies911(newsHazards);
         
-        console.log(`Loaded ${regularHazards.length} hazards, ${emergencies911Data.length} 911 emergencies`);
+        console.log(`Loaded ${regularHazards.length} regular hazards, ${newsHazards.length} news hazards, ${data.construction_zones?.length || 0} construction zones`);
       }
     } catch (error) {
       console.error("Error fetching obstructions:", error);

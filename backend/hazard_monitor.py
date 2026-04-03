@@ -330,7 +330,7 @@ class HazardMonitor:
                             hazard_type='weather',
                             latitude=40.4406,  # Pittsburgh
                             longitude=-79.9959,
-                            radius_meters=10000,  # 10km radius
+                            radius_meters=50000,  # 10km radius
                             severity=0.6,
                             description=f"FEMA: {record.get('incidentType', 'Disaster')} - {record.get('declarationTitle', '')}",
                             start_time=declaration_date,

@@ -90,7 +90,7 @@ class TomTomRouter:
                     conflicts = self._count_obstruction_conflicts(route['points'], obstruction_zones)
                     # Score: fewer conflicts = better. Tie-break on shorter distance.
                     # A clean route (0 conflicts) always wins over a dirty one
-                    score = (1000 - conflicts * 100) - (route['distance_meters'] / 10000)
+                    score = (1000 - conflicts * 100) - (route['distance_meters'] / 50000)
                     
                     logger.info(f"  Route {i+1}: {conflicts} conflicts, {route['distance_meters']:.0f}m, score={score:.1f}")
                     
