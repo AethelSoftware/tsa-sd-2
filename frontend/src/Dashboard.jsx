@@ -301,11 +301,6 @@ const mapTypes = {
     url: `https://{s}.api.tomtom.com/map/1/tile/sat/main/{z}/{x}/{y}.jpg?key=${TOMTOM_API_KEY}`,
     attribution: "© TomTom",
   },
-  night: {
-    name: "Night",
-    url: `https://{s}.api.tomtom.com/map/1/tile/night/main/{z}/{x}/{y}.png?key=${TOMTOM_API_KEY}`,
-    attribution: "© TomTom",
-  },
 };
 
 const ChangeView = React.memo(({ center, zoom, routeBounds }) => {
@@ -765,7 +760,6 @@ const MAP_TYPE_ICONS = {
   openstreetmap: Layers,
   tomtom: MapPin,
   satellite: Navigation,
-  night: Layers,
 };
 
 function getCatIcon(cat) {
@@ -1528,68 +1522,93 @@ useEffect(() => {
   return () => clearInterval(interval);
 }, [loc]);
 
-  // Fetch road incidents from TomTom
-  useEffect(() => {
-    const fetchRoads = async () => {
-      try {
-        const bbox = `${loc[1] - 0.08},${loc[0] - 0.08},${loc[1] + 0.08},${loc[0] + 0.08}`;
-        const url = `https://api.tomtom.com/traffic/services/5/incidentDetails?key=${TOMTOM_API_KEY}&bbox=${bbox}&fields={incidents{geometry{type,coordinates},properties{iconCategory,events{description},from,to,startTime,endTime}}}`;
-        const data = await (await fetch(url)).json();
-        if (data.incidents?.length > 0) {
-          const segs = data.incidents
-            .filter((i) =>
-              [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14].includes(
-                i.properties.iconCategory,
-              ),
-            )
-            .map((inc) => {
-              const coords = inc.geometry.coordinates;
-              let coordinates = [];
-              if (inc.geometry.type === "Point")
-                coordinates = [[coords[1], coords[0]]];
-              else if (inc.geometry.type === "LineString")
-                coordinates = coords.map((c) => [c[1], c[0]]);
-              let label = "⚠️ HAZARD",
-                color = "rgba(255,140,70,0.95)",
-                borderColor = "#ffaa66";
-              if ([7, 8, 9].includes(inc.properties.iconCategory)) {
-                label = "🚧 CONSTRUCTION";
-                color = "rgba(255,100,80,0.95)";
-                borderColor = "#ff6b6b";
-              } else if (inc.properties.iconCategory === 1) {
-                label = "⚠️ ACCIDENT";
-                color = "rgba(255,80,70,0.95)";
-                borderColor = "#ff5555";
-              } else if (inc.properties.iconCategory === 6) {
-                label = "🚗 JAM";
-                color = "rgba(255,180,70,0.95)";
-                borderColor = "#ffcc66";
-              }
-              return {
-                id: inc.id,
-                name:
-                  `${inc.properties.from || ""} to ${inc.properties.to || ""}`.trim() ||
-                  "Road Segment",
-                coordinates,
-                label,
-                color,
-                borderColor,
-                description:
-                  inc.properties.events?.[0]?.description || "Road incident",
-                fromStreet: inc.properties.from || "",
-                toStreet: inc.properties.to || "",
-                startTime: inc.properties.startTime,
-                endTime: inc.properties.endTime,
-              };
-            })
-            .filter((s) => s.coordinates.length > 0);
-          setObstructedRoads(segs);
-        }
-      } catch {}
-    };
-    fetchRoads();
-  }, [loc]);
-
+useEffect(() => {
+  const fetchRoads = async () => {
+    try {
+      // Use the FULL Pittsburgh region bounding box (same as area obstructions)
+      const minLat = 40.2;
+      const maxLat = 40.8;
+      const minLng = -80.8;
+      const maxLng = -79.5;
+      const bbox = `${minLng},${minLat},${maxLng},${maxLat}`;
+      
+      console.log('Fetching TomTom road incidents for region:', bbox);
+      
+      const url = `https://api.tomtom.com/traffic/services/5/incidentDetails?key=${TOMTOM_API_KEY}&bbox=${bbox}&fields={incidents{geometry{type,coordinates},properties{iconCategory,events{description},from,to,startTime,endTime}}}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        console.error('TomTom API error:', response.status);
+        return;
+      }
+      
+      const data = await response.json();
+      
+      if (data.incidents?.length > 0) {
+        console.log(`Found ${data.incidents.length} TomTom incidents`);
+        
+        const segs = data.incidents
+          .filter((i) =>
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14].includes(
+              i.properties.iconCategory,
+            ),
+          )
+          .map((inc) => {
+            const coords = inc.geometry.coordinates;
+            let coordinates = [];
+            
+            if (inc.geometry.type === "Point") {
+              coordinates = [[coords[1], coords[0]]];
+            } else if (inc.geometry.type === "LineString") {
+              coordinates = coords.map((c) => [c[1], c[0]]);
+            }
+            
+            let label = "⚠️ HAZARD";
+            let color = "rgba(255,140,70,0.95)";
+            let borderColor = "#ffaa66";
+            
+            if ([7, 8, 9].includes(inc.properties.iconCategory)) {
+              label = "🚧 CONSTRUCTION";
+              color = "rgba(255,100,80,0.95)";
+              borderColor = "#ff6b6b";
+            } else if (inc.properties.iconCategory === 1) {
+              label = "⚠️ ACCIDENT";
+              color = "rgba(255,80,70,0.95)";
+              borderColor = "#ff5555";
+            } else if (inc.properties.iconCategory === 6) {
+              label = "🚗 JAM";
+              color = "rgba(255,180,70,0.95)";
+              borderColor = "#ffcc66";
+            }
+            
+            return {
+              id: inc.id,
+              name: `${inc.properties.from || ""} to ${inc.properties.to || ""}`.trim() || "Road Segment",
+              coordinates,
+              label,
+              color,
+              borderColor,
+              description: inc.properties.events?.[0]?.description || "Road incident",
+              fromStreet: inc.properties.from || "",
+              toStreet: inc.properties.to || "",
+              startTime: inc.properties.startTime,
+              endTime: inc.properties.endTime,
+            };
+          })
+          .filter((s) => s.coordinates.length > 0);
+        
+        console.log(`Created ${segs.length} road segment overlays`);
+        setObstructedRoads(segs);
+      } else {
+        console.log('No TomTom incidents found in region');
+      }
+    } catch (error) {
+      console.error("Error fetching TomTom road incidents:", error);
+    }
+  };
+  
+  fetchRoads();
+}, []); // Empty dependency array - fetch once on mount for full region coverage
   // ─── search ──────────────────────────────────────────────────────────────────
 
   // REPLACE your searchPlaces function with this optimized version
