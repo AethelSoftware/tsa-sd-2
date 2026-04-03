@@ -768,24 +768,9 @@ def add_model_endpoints(app):
     
     @app.route("/api/transit-route", methods=['POST'])
     def get_transit_route():
-        """
-        Get transit route using GTFS data
-        Expected JSON:
-        {
-            "start_lat": 40.4406,
-            "start_lng": -79.9959,
-            "end_lat": 40.4445,
-            "end_lng": -80.0000,
-            "start_time": "2024-01-15T08:30:00",  # ISO format
-            "max_walk_distance": 1000  # optional, meters
-        }
-        """
         try:
             if not transit_router:
-                return jsonify({
-                    'success': False, 
-                    'error': 'GTFS transit router not initialized. Please ensure GTFS.zip is in the backend folder.'
-                }), 503
+                return jsonify({'success': False, 'error': 'GTFS transit router not initialized'}), 503
             
             data = request.json
             if not data:
@@ -798,18 +783,12 @@ def add_model_endpoints(app):
             start_time_str = data.get('start_time')
             max_walk = float(data.get('max_walk_distance', 1000))
             
-            if not all([start_lat, start_lng, end_lat, end_lng, start_time_str]):
-                return jsonify({'success': False, 'error': 'Missing required parameters'}), 400
-            
-            # Robust date parsing using dateutil if available
+            # Parse date...
             try:
                 if HAS_DATEUTIL:
-                    # dateutil handles Z, milliseconds, and timezones natively
                     start_time = date_parser.parse(start_time_str)
                 else:
-                    # Fallback: replace Z with +00:00 and handle microseconds
                     cleaned = start_time_str.replace('Z', '+00:00')
-                    # Keep only first 6 decimal places for microseconds (Python's limit)
                     if '.' in cleaned and '+' in cleaned:
                         parts = cleaned.split('.')
                         micro_sec = parts[1].split('+')[0][:6]
@@ -817,34 +796,68 @@ def add_model_endpoints(app):
                         cleaned = f"{parts[0]}.{micro_sec}+{tz}"
                     start_time = datetime.fromisoformat(cleaned)
             except Exception as e:
-                logger.error(f"Date parsing error: {e} for string: {start_time_str}")
-                return jsonify({
-                    'success': False, 
-                    'error': f'Invalid start_time format. Use ISO format (YYYY-MM-DDTHH:MM:SS). Got: {start_time_str}'
-                }), 400
+                logger.error(f"Date parsing error: {e}")
+                return jsonify({'success': False, 'error': f'Invalid start_time format'}), 400
             
             # Find transit route
-            route = transit_router.find_route(
-                start_lat, start_lng,
-                end_lat, end_lng,
-                start_time,
-                max_walk
-            )
+            route = transit_router.find_route(start_lat, start_lng, end_lat, end_lng, start_time, max_walk)
             
             if not route:
-                return jsonify({'success': False, 'error': 'No transit route found'}), 404
+                # Return a helpful message instead of 404
+                return jsonify({
+                    'success': False, 
+                    'error': 'No transit route found. Try a different destination or time.',
+                    'suggestion': 'Try walking mode or a different location'
+                }), 404
             
-            # Add safety analysis to the route
+            # Add walking leg to destination if missing
+            steps = route.get('steps', [])
+            if steps and steps[-1].get('type') == 'transit':
+                last_stop_coords = steps[-1].get('end_location')
+                if last_stop_coords:
+                    dist_to_dest = haversine_distance(
+                        last_stop_coords['lat'], last_stop_coords['lon'],
+                        end_lat, end_lng
+                    )
+                    if dist_to_dest <= max_walk:
+                        walk_duration = dist_to_dest / 1.4
+                        walk_step = {
+                            'type': 'walk',
+                            'from_stop': steps[-1].get('end_stop', 'stop'),
+                            'to_stop': 'destination',
+                            'to_location': {'lat': end_lat, 'lon': end_lng},
+                            'distance_meters': dist_to_dest,
+                            'duration_seconds': walk_duration,
+                            'instruction': f"Walk to your destination ({fmt_dist(dist_to_dest)})"
+                        }
+                        steps.append(walk_step)
+                        route['steps'] = steps
+                        route['total_time_seconds'] = route.get('total_time_seconds', 0) + walk_duration
+                        route['total_distance_meters'] = route.get('total_distance_meters', 0) + dist_to_dest
+            
+            # Ensure stop names are human-readable
+            for step in route.get('steps', []):
+                if step.get('type') == 'transit':
+                    if 'start_stop_id' in step and 'start_stop_name' not in step:
+                        step['start_stop_name'] = step.get('start_stop', step['start_stop_id'])
+                    if 'end_stop_id' in step and 'end_stop_name' not in step:
+                        step['end_stop_name'] = step.get('end_stop', step['end_stop_id'])
+                    if 'route_short_name' not in step and 'trip_id' in step:
+                        parts = step['trip_id'].split('_')
+                        step['route_short_name'] = parts[0] if parts else 'Bus'
+            
+            # Add safety
             safety_ai_instance = get_safety_ai_instance()
             safety_dict = {'overall_safety': 0.7, 'risk_level': 'medium', 'recommendations': []}
             
             if safety_ai_instance and safety_ai_instance.is_trained and route.get('steps'):
                 try:
-                    # Extract coordinates from steps
                     route_coords = []
                     for step in route.get('steps', []):
                         if 'location' in step:
                             route_coords.append({'lat': step['location']['lat'], 'lng': step['location']['lon']})
+                        elif 'to_location' in step:
+                            route_coords.append({'lat': step['to_location']['lat'], 'lng': step['to_location']['lon']})
                     
                     if route_coords:
                         safety_result = safety_ai_instance.calculate_route_safety(route_coords)
@@ -854,14 +867,11 @@ def add_model_endpoints(app):
                             'recommendations': safety_result.get('recommendations', [])
                         }
                 except Exception as e:
-                    logger.warning(f"Safety calculation for transit route failed: {e}")
+                    logger.warning(f"Safety calculation failed: {e}")
             
             route['safety'] = safety_dict
             
-            return jsonify({
-                'success': True,
-                'route': route
-            })
+            return jsonify({'success': True, 'route': route})
             
         except Exception as e:
             logger.error(f"Error in transit routing: {e}", exc_info=True)
@@ -1112,18 +1122,46 @@ def add_model_endpoints(app):
                     logger.warning(f"Google Maps transit API failed: {e}")
                     error_messages.append(f"Google Transit: {str(e)}")
             
-            # TRY 3: TomTom API (for pedestrian routes) - IMPROVED WITH STEP-BY-STEP INSTRUCTIONS
+                        # TRY 3: TomTom API (for pedestrian routes) - WITH HAZARD AVOIDANCE
             if not route_result and tomtom_router and tomtom_router.api_key and travel_mode != 'transit':
                 try:
-                    # Fetch current obstructions to avoid
-                    current_obstructions = []
+                    # ====================================================================
+                    # FETCH HAZARDS FROM WPRDC CRIME DATA (NEWS HAZARD FETCHER)
+                    # ====================================================================
+                    from news_hazard_fetcher import get_news_fetcher
+                    news_fetcher = get_news_fetcher()
+                    
+                    # Get hazards near the route area (midpoint with buffer)
+                    mid_lat = (float(start_lat) + float(end_lat)) / 2
+                    mid_lng = (float(start_lng) + float(end_lng)) / 2
+                    route_length = haversine_distance(float(start_lat), float(start_lng), float(end_lat), float(end_lng))
+                    search_radius = max(2000, min(5000, route_length / 2))  # 2-5km radius
+                    
+                    logger.info(f"Fetching hazards within {search_radius}m of route midpoint")
+                    hazards = news_fetcher.get_hazards_in_area(mid_lat, mid_lng, radius_meters=search_radius)
+                    
+                    # Convert to obstruction zones format
+                    obstruction_zones = []
+                    for hazard in hazards:
+                        obstruction_zones.append({
+                            'lat': hazard['lat'],
+                            'lng': hazard['lng'],
+                            'radius': hazard.get('radius', 100),
+                            'severity': hazard.get('severity', 0.7),
+                            'type': hazard.get('type', 'hazard'),
+                            'description': hazard.get('description', 'Hazard area')
+                        })
+                    
+                    logger.info(f"Found {len(obstruction_zones)} crime/hazard zones to avoid")
+                    
+                    # ====================================================================
+                    # ALSO FETCH TOMTOM CONSTRUCTION ZONES
+                    # ====================================================================
                     try:
                         tomtom_key = os.getenv('TOMTOM_API_KEY') or tomtom_router.api_key
-                        km = 2.0
+                        km = 3.0  # Larger radius to catch more obstructions
                         d_lat = km * 0.009
                         d_lng = km * 0.012
-                        mid_lat = (float(start_lat) + float(end_lat)) / 2
-                        mid_lng = (float(start_lng) + float(end_lng)) / 2
                         fields_param = "{incidents{type,geometry{type,coordinates},properties{iconCategory}}}"
                         inc_url = (
                             f"https://api.tomtom.com/traffic/services/5/incidentDetails"
@@ -1144,74 +1182,40 @@ def add_model_endpoints(app):
                                     if coords:
                                         g_type = geom.get('type', 'Point')
                                         if g_type == 'Point':
-                                            current_obstructions.append({
-                                                'lat': coords[1], 'lng': coords[0], 'radius': 50
+                                            obstruction_zones.append({
+                                                'lat': coords[1], 'lng': coords[0], 'radius': 50,
+                                                'severity': 0.8, 'type': 'construction',
+                                                'description': 'Construction zone'
                                             })
                                         elif g_type == 'LineString' and len(coords) > 0:
                                             mid = coords[len(coords) // 2]
-                                            current_obstructions.append({
-                                                'lat': mid[1], 'lng': mid[0], 'radius': 50
+                                            obstruction_zones.append({
+                                                'lat': mid[1], 'lng': mid[0], 'radius': 50,
+                                                'severity': 0.8, 'type': 'construction',
+                                                'description': 'Construction zone'
                                             })
-                            if current_obstructions:
-                                logger.info(f"Found {len(current_obstructions)} obstructions to avoid in route")
+                            logger.info(f"Added {len(obstruction_zones) - len(hazards)} construction zones to avoidance list")
                     except Exception as obs_err:
-                        logger.warning(f"Failed to fetch obstructions for route avoidance: {obs_err}")
+                        logger.warning(f"Failed to fetch construction zones: {obs_err}")
                     
-                    # Use direct TomTom API call with instructionsType=text to get turn-by-turn directions
-                    tomtom_key = os.getenv('TOMTOM_API_KEY') or tomtom_router.api_key
+                    # ====================================================================
+                    # CALL TOMTOM ROUTER WITH OBSTRUCTION ZONES
+                    # ====================================================================
+                    if obstruction_zones:
+                        logger.info(f"Routing with {len(obstruction_zones)} total hazards to avoid")
                     
-                    # Build the route URL with instructions
-                    route_url = (
-                        f"https://api.tomtom.com/routing/1/calculateRoute/"
-                        f"{start_lat},{start_lng}:{end_lat},{end_lng}/json"
-                        f"?key={tomtom_key}"
-                        f"&travelMode=pedestrian"
-                        f"&instructionsType=text"  # CRITICAL: Get text instructions
-                        f"&routeType=fastest"
-                        f"&traffic=false"
-                        f"&avoid=unpavedRoads"
+                    # Use the enhanced TomTom router with hazard avoidance
+                    route_result = tomtom_router.calculate_route(
+                        float(start_lat), float(start_lng),
+                        float(end_lat), float(end_lng),
+                        travel_mode='pedestrian',
+                        accessibility_needs=accessibility_needs if accessibility_needs else None,
+                        obstruction_zones=obstruction_zones if obstruction_zones else None
                     )
                     
-                    logger.info(f"Calculating TomTom route with instructions from {start_lat},{start_lng} to {end_lat},{end_lng}")
-                    route_response = requests.get(route_url, timeout=15)
-                    
-                    if route_response.status_code == 200:
-                        route_data = route_response.json()
-                        routes = route_data.get('routes', [])
-                        
-                        if routes:
-                            leg = routes[0]['legs'][0]
-                            points = [[p['latitude'], p['longitude']] for p in leg['points']]
-                            distance_meters = leg['summary']['lengthInMeters']
-                            duration_seconds = leg['summary']['travelTimeInSeconds']
-                            
-                            # Extract turn-by-turn instructions
-                            instructions = []
-                            for maneuver in leg.get('maneuvers', []):
-                                instructions.append({
-                                    'instruction': maneuver.get('instruction', 'Continue'),
-                                    'distance': fmt_dist(maneuver.get('lengthInMeters', 0)),
-                                    'distance_meters': maneuver.get('lengthInMeters', 0),
-                                    'duration': fmt_duration(maneuver.get('travelTimeInSeconds', 0)),
-                                    'duration_seconds': maneuver.get('travelTimeInSeconds', 0),
-                                    'travel_mode': 'WALKING',
-                                    'maneuver_type': maneuver.get('type', '')
-                                })
-                            
-                            route_result = {
-                                'points': points,
-                                'distance_meters': distance_meters,
-                                'duration_seconds': duration_seconds,
-                                'instructions': instructions,
-                                'segments': [],
-                                'raw_response': route_data
-                            }
-                            provider_used = "TomTom"
-                            logger.info(f"TomTom route successful with {len(instructions)} turn-by-turn steps")
-                        else:
-                            logger.warning("TomTom returned no routes")
-                    else:
-                        logger.warning(f"TomTom API returned {route_response.status_code}: {route_response.text[:200]}")
+                    if route_result:
+                        provider_used = "TomTom (Hazard Avoidance)"
+                        logger.info(f"TomTom route with hazard avoidance successful")
                         
                 except Exception as e:
                     logger.warning(f"TomTom API failed: {e}")

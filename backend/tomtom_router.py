@@ -1,5 +1,5 @@
 """
-Real route calculation using TomTom API with proper turn-by-turn navigation.
+Real route calculation using TomTom API with proper turn-by-turn navigation and hazard avoidance.
 """
 
 import os
@@ -12,7 +12,7 @@ import math
 logger = logging.getLogger(__name__)
 
 class TomTomRouter:
-    """Handle routing with TomTom API for realistic pedestrian routes"""
+    """Handle routing with TomTom API for realistic pedestrian routes with hazard avoidance"""
     
     def __init__(self, api_key: str = None):
         self.api_key = api_key or os.getenv('TOMTOM_API_KEY', 'pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM')
@@ -34,6 +34,31 @@ class TomTomRouter:
             
             origin = f"{start_lat},{start_lng}"
             destination = f"{dest_lat},{dest_lng}"
+            
+            # If we have hazards, try to get multiple route alternatives
+            if obstruction_zones and len(obstruction_zones) > 0:
+                logger.info(f"Attempting to route around {len(obstruction_zones)} hazard zones")
+                return self._get_safest_route_with_alternatives(
+                    start_lat, start_lng, dest_lat, dest_lng,
+                    travel_mode, accessibility_needs, obstruction_zones
+                )
+            
+            # No hazards - get standard route
+            return self._get_standard_route(
+                start_lat, start_lng, dest_lat, dest_lng,
+                travel_mode, accessibility_needs
+            )
+            
+        except Exception as e:
+            logger.error(f"Error calculating route: {e}")
+            return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
+    
+    def _get_safest_route_with_alternatives(self, start_lat, start_lng, dest_lat, dest_lng,
+                                            travel_mode, accessibility_needs, hazard_zones):
+        """Get multiple route alternatives and pick the safest one"""
+        try:
+            origin = f"{start_lat},{start_lng}"
+            destination = f"{dest_lat},{dest_lng}"
             url = f"{self.base_url}/calculateRoute/{origin}:{destination}/json"
             
             params = {
@@ -44,131 +69,238 @@ class TomTomRouter:
                 'instructionsType': 'text',
                 'language': 'en-US',
                 'routeRepresentation': 'polyline',
-                'computeTravelTimeFor': 'none',
-                'avoid': 'unpavedRoads',
+                'maxAlternatives': 3,
+                'alternativeType': 'anyRoute',
             }
-            
-            # Request alternatives if we have obstructions to dodge
-            if obstruction_zones and len(obstruction_zones) > 0:
-                params['maxAlternatives'] = 5
-                params['alternativeType'] = 'anyRoute'
             
             if accessibility_needs:
                 if 'wheelchair' in accessibility_needs:
                     params['hilliness'] = 'normal'
-                if 'blind' in accessibility_needs:
-                    params['avoid'] = params.get('avoid', '') + ',tollRoads,motorways'
             
-            logger.info(f"Calculating TomTom route from {origin} to {destination}")
+            response = requests.get(url, params=params, timeout=15)
             
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            data = response.json()
-            
-            if 'routes' not in data or not data['routes']:
-                return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
-            
-            all_routes = data['routes']
-            logger.info(f"TomTom returned {len(all_routes)} route(s)")
-            
-            # Process all routes
-            processed_routes = []
-            for route in all_routes:
-                processed = self._process_route(route, start_lat, start_lng, dest_lat, dest_lng)
-                if processed and processed.get('points') and len(processed['points']) > 1:
-                    processed_routes.append(processed)
-            
-            if not processed_routes:
-                return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
-            
-            # If we have obstructions, score each route and pick the best
-            if obstruction_zones and len(obstruction_zones) > 0:
-                best_route = None
-                best_score = -1
-                
-                for i, route in enumerate(processed_routes):
-                    conflicts = self._count_obstruction_conflicts(route['points'], obstruction_zones)
-                    # Score: fewer conflicts = better. Tie-break on shorter distance.
-                    # A clean route (0 conflicts) always wins over a dirty one
-                    score = (1000 - conflicts * 100) - (route['distance_meters'] / 50000)
+            if response.status_code == 200:
+                data = response.json()
+                if 'routes' in data and data['routes']:
+                    all_routes = []
+                    for route in data['routes']:
+                        processed = self._process_route(route, start_lat, start_lng, dest_lat, dest_lng)
+                        if processed:
+                            # Calculate hazard score for this route
+                            hazard_score = self._calculate_hazard_score(processed['points'], hazard_zones)
+                            processed['hazard_score'] = hazard_score
+                            all_routes.append(processed)
                     
-                    logger.info(f"  Route {i+1}: {conflicts} conflicts, {route['distance_meters']:.0f}m, score={score:.1f}")
-                    
-                    if score > best_score:
-                        best_score = score
-                        best_route = route
-                        best_route['obstruction_conflicts'] = conflicts
-                
-                if best_route:
-                    if best_route.get('obstruction_conflicts', 0) > 0:
-                        logger.warning(f"Best route still has {best_route['obstruction_conflicts']} conflict(s) - no clean alternative available")
-                    else:
-                        logger.info("Found clean route avoiding all obstructions")
-                    
-                    if accessibility_needs:
-                        best_route = self._add_accessibility_features(best_route, accessibility_needs)
-                    return best_route
-            
-            # No obstructions or no alternatives needed - return first route
-            result = processed_routes[0]
-            if accessibility_needs:
-                result = self._add_accessibility_features(result, accessibility_needs)
-            return result
-            
-        except requests.exceptions.HTTPError as e:
-            if hasattr(e, 'response') and e.response and e.response.status_code == 400:
-                logger.warning(f"TomTom 400 error - retrying with minimal params")
-                try:
-                    retry_params = {
-                        'key': self.api_key,
-                        'travelMode': 'pedestrian',
-                        'routeType': 'shortest',
-                        'instructionsType': 'text',
-                        'language': 'en-US',
-                    }
-                    url = f"{self.base_url}/calculateRoute/{origin}:{destination}/json"
-                    response = requests.get(url, params=retry_params, timeout=10)
-                    response.raise_for_status()
-                    data = response.json()
-                    if 'routes' in data and data['routes']:
-                        processed = self._process_route(data['routes'][0], start_lat, start_lng, dest_lat, dest_lng)
+                    if all_routes:
+                        # Sort by hazard score (lower is better), then by distance
+                        all_routes.sort(key=lambda r: (r.get('hazard_score', 999), r.get('distance_meters', 999)))
+                        best_route = all_routes[0]
+                        
+                        if best_route.get('hazard_score', 0) > 0:
+                            logger.warning(f"Best route still has hazard score {best_route.get('hazard_score', 0):.2f}")
+                        else:
+                            logger.info("Selected route avoids all hazards!")
+                        
+                        # Try to add a detour if the best route still has hazards
+                        if best_route.get('hazard_score', 0) > 5:
+                            logger.info("Attempting to find detour around hazards...")
+                            detour = self._find_detour_route(
+                                start_lat, start_lng, dest_lat, dest_lng,
+                                best_route['points'], hazard_zones,
+                                travel_mode, accessibility_needs
+                            )
+                            if detour:
+                                return detour
+                        
                         if accessibility_needs:
-                            processed = self._add_accessibility_features(processed, accessibility_needs)
-                        logger.info("TomTom route successful (simplified)")
-                        return processed
-                except Exception as e2:
-                    logger.warning(f"Simplified request also failed: {e2}")
-            else:
-                logger.error(f"TomTom API request failed: {e}")
-            return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
+                            best_route = self._add_accessibility_features(best_route, accessibility_needs)
+                        return best_route
+            
+            # Fallback to standard route
+            return self._get_standard_route(start_lat, start_lng, dest_lat, dest_lng, travel_mode, accessibility_needs)
+            
         except Exception as e:
-            logger.error(f"Error calculating route: {e}")
+            logger.error(f"Error getting safest route: {e}")
             return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
     
-    def _count_obstruction_conflicts(self, route_points: List[Tuple], 
-                                      obstruction_zones: List[Dict]) -> int:
-        """Count how many obstruction zones the route passes through"""
-        conflicts = 0
-        for zone in obstruction_zones:
+    def _get_standard_route(self, start_lat, start_lng, dest_lat, dest_lng,
+                           travel_mode, accessibility_needs):
+        """Get a standard route from TomTom"""
+        try:
+            origin = f"{start_lat},{start_lng}"
+            destination = f"{dest_lat},{dest_lng}"
+            url = f"{self.base_url}/calculateRoute/{origin}:{destination}/json"
+            
+            params = {
+                'key': self.api_key,
+                'travelMode': travel_mode,
+                'routeType': 'fastest',
+                'traffic': 'false',
+                'instructionsType': 'text',
+                'language': 'en-US',
+                'routeRepresentation': 'polyline',
+            }
+            
+            if accessibility_needs:
+                if 'wheelchair' in accessibility_needs:
+                    params['hilliness'] = 'normal'
+            
+            response = requests.get(url, params=params, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if 'routes' in data and data['routes']:
+                    route = self._process_route(data['routes'][0], start_lat, start_lng, dest_lat, dest_lng)
+                    if accessibility_needs:
+                        route = self._add_accessibility_features(route, accessibility_needs)
+                    return route
+            
+            return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
+            
+        except Exception as e:
+            logger.error(f"Error getting standard route: {e}")
+            return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
+    
+    def _find_detour_route(self, start_lat, start_lng, dest_lat, dest_lng,
+                          original_points, hazard_zones, travel_mode, accessibility_needs):
+        """Find a detour route by adding waypoints to avoid hazards"""
+        try:
+            # Find the centroid of hazards near the route
+            hazardous_lats = []
+            hazardous_lngs = []
+            
+            for hazard in hazard_zones:
+                h_lat = hazard.get('lat')
+                h_lng = hazard.get('lng')
+                if h_lat and h_lng:
+                    # Check if hazard is near the route
+                    min_dist = float('inf')
+                    for point in original_points:
+                        dist = self._haversine_distance(point[0], point[1], h_lat, h_lng)
+                        min_dist = min(min_dist, dist)
+                    if min_dist < 500:  # Within 500m of route
+                        hazardous_lats.append(h_lat)
+                        hazardous_lngs.append(h_lng)
+            
+            if not hazardous_lats:
+                return None
+            
+            # Calculate detour point (offset from hazard cluster)
+            center_lat = sum(hazardous_lats) / len(hazardous_lats)
+            center_lng = sum(hazardous_lngs) / len(hazardous_lngs)
+            
+            # Determine direction perpendicular to route
+            start_to_end_lat = dest_lat - start_lat
+            start_to_end_lng = dest_lng - start_lng
+            
+            # Perpendicular direction
+            perp_lat = -start_to_end_lng
+            perp_lng = start_to_end_lat
+            norm = math.sqrt(perp_lat**2 + perp_lng**2)
+            if norm > 0:
+                perp_lat /= norm
+                perp_lng /= norm
+            
+            # Try detours at different distances
+            for dist in [200, 400, 600]:
+                offset_deg = dist / 111000
+                
+                for direction in [-1, 1]:
+                    waypoint_lat = center_lat + (perp_lat * offset_deg * direction)
+                    waypoint_lng = center_lng + (perp_lng * offset_deg * direction)
+                    
+                    # Build route with waypoint
+                    waypoint = f"{waypoint_lat},{waypoint_lng}"
+                    via_points = [waypoint]
+                    
+                    detour = self._get_route_with_via_points(
+                        start_lat, start_lng, dest_lat, dest_lng,
+                        via_points, travel_mode, accessibility_needs
+                    )
+                    
+                    if detour:
+                        new_score = self._calculate_hazard_score(detour['points'], hazard_zones)
+                        if new_score < 5:
+                            logger.info(f"Found detour with {dist}m offset, hazard score: {new_score:.2f}")
+                            return detour
+            
+            return None
+            
+        except Exception as e:
+            logger.debug(f"Detour calculation failed: {e}")
+            return None
+    
+    def _get_route_with_via_points(self, start_lat, start_lng, dest_lat, dest_lng,
+                                   via_points, travel_mode, accessibility_needs):
+        """Get a route with via points (waypoints)"""
+        try:
+            origin = f"{start_lat},{start_lng}"
+            destination = f"{dest_lat},{dest_lng}"
+            via_str = ":".join(via_points)
+            
+            url = f"{self.base_url}/calculateRoute/{origin}:{via_str}:{destination}/json"
+            
+            params = {
+                'key': self.api_key,
+                'travelMode': travel_mode,
+                'routeType': 'fastest',
+                'traffic': 'false',
+                'instructionsType': 'text',
+                'language': 'en-US',
+                'routeRepresentation': 'polyline',
+            }
+            
+            if accessibility_needs:
+                if 'wheelchair' in accessibility_needs:
+                    params['hilliness'] = 'normal'
+            
+            response = requests.get(url, params=params, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if 'routes' in data and data['routes']:
+                    return self._process_route(data['routes'][0], start_lat, start_lng, dest_lat, dest_lng)
+            
+            return None
+            
+        except Exception as e:
+            logger.debug(f"Route with via points failed: {e}")
+            return None
+    
+    def _calculate_hazard_score(self, route_points: List[Tuple], hazard_zones: List[Dict]) -> float:
+        """Calculate a hazard score for a route. Lower score = safer route."""
+        if not hazard_zones:
+            return 0.0
+        
+        total_score = 0.0
+        
+        for zone in hazard_zones:
             z_lat = zone.get('lat')
             z_lng = zone.get('lng')
             z_radius = zone.get('radius', 50)
+            z_severity = zone.get('severity', 0.5)
+            
             if z_lat is None or z_lng is None:
                 continue
             
+            min_distance = float('inf')
             for point in route_points:
                 dist = self._haversine_distance(point[0], point[1], z_lat, z_lng)
-                if dist < z_radius + 20:
-                    conflicts += 1
+                min_distance = min(min_distance, dist)
+                if min_distance < 10:
                     break
+            
+            if min_distance < 200:  # Within 200m of hazard
+                distance_factor = max(0, (200 - min_distance) / 200)
+                hazard_contribution = distance_factor * z_severity * 10
+                total_score += hazard_contribution
         
-        return conflicts
+        return total_score
     
     def _process_route(self, route: Dict, start_lat: float, start_lng: float,
                       dest_lat: float, dest_lng: float) -> Dict:
         """Process TomTom route response into our format"""
         
-        # Extract route summary
         summary = route.get('summary', {})
         legs = route.get('legs', [])
         
@@ -182,26 +314,21 @@ class TomTomRouter:
         points = leg.get('points', {})
         
         if 'encodedPolyline' in points:
-            # Decode TomTom polyline
             encoded = points['encodedPolyline']
             try:
-                # TomTom uses a custom polyline format, try to decode it
                 route_points = self._decode_tomtom_polyline(encoded)
             except Exception as e:
                 logger.warning(f"Failed to decode polyline: {e}")
-                # Fallback to start and end points
                 route_points = [(start_lat, start_lng), (dest_lat, dest_lng)]
         else:
-            # Try alternative format
             for point in leg.get('points', []):
                 if 'latitude' in point and 'longitude' in point:
                     route_points.append((point['latitude'], point['longitude']))
         
-        # If we still don't have points, create a simple line
         if not route_points or len(route_points) < 2:
             route_points = self._generate_intermediate_points(start_lat, start_lng, dest_lat, dest_lng)
         
-        # Extract guidance instructions
+        # Extract instructions
         instructions = []
         guidance = leg.get('guidance', {}).get('instructions', [])
         
@@ -214,36 +341,25 @@ class TomTomRouter:
                     'type': instr.get('maneuver', 'continue'),
                     'point_index': instr.get('pointIndex', 0)
                 }
-                
-                # Add point if available
-                if instr.get('point') and 'latitude' in instr['point'] and 'longitude' in instr['point']:
-                    instruction['point'] = {
-                        'lat': instr['point']['latitude'],
-                        'lng': instr['point']['longitude']
-                    }
-                
                 instructions.append(instruction)
         
-        # Calculate segments for safety analysis
+        # Calculate segments
         segments = []
         if route_points and len(route_points) > 1:
             for i in range(len(route_points) - 1):
                 start_point = route_points[i]
                 end_point = route_points[i + 1]
-                
-                # Calculate segment distance using haversine
                 distance = self._haversine_distance(start_point[0], start_point[1], 
                                                    end_point[0], end_point[1])
-                
                 segments.append({
                     'start': {'lat': start_point[0], 'lng': start_point[1]},
                     'end': {'lat': end_point[0], 'lng': end_point[1]},
                     'distance': distance,
-                    'duration': distance / 1.4,  # Average walking speed 1.4 m/s
+                    'duration': distance / 1.4,
                     'index': i
                 })
         
-        # Calculate bounding box
+        # Calculate bounds
         if route_points:
             lats = [p[0] for p in route_points]
             lngs = [p[1] for p in route_points]
@@ -261,10 +377,8 @@ class TomTomRouter:
                 'west': min(start_lng, dest_lng)
             }
         
-        # Get distance and duration
         distance_meters = summary.get('lengthInMeters', 0)
         if distance_meters == 0 and route_points:
-            # Calculate approximate distance
             distance_meters = 0
             for i in range(len(route_points) - 1):
                 distance_meters += self._haversine_distance(
@@ -289,46 +403,26 @@ class TomTomRouter:
         }
     
     def _add_accessibility_features(self, route: Dict, needs: List[str]) -> Dict:
-        """Add accessibility features to route based on user needs"""
+        """Add accessibility features to route"""
         features = []
-        
         if 'wheelchair' in needs:
-            features.extend([
-                'elevator_access',
-                'ramp_access',
-                'wide_pathways',
-                'smooth_surfaces',
-                'accessible_crossings'
-            ])
-        
+            features.extend(['elevator_access', 'ramp_access', 'wide_pathways', 'smooth_surfaces'])
         if 'blind' in needs:
-            features.extend([
-                'tactile_paving',
-                'audible_signals',
-                'clear_wayfinding',
-                'consistent_width',
-                'obstacle_free'
-            ])
-        
+            features.extend(['tactile_paving', 'audible_signals', 'clear_wayfinding'])
         if 'deaf' in needs:
-            features.extend([
-                'visual_signals',
-                'clear_sightlines',
-                'vibration_alerts'
-            ])
+            features.extend(['visual_signals', 'clear_sightlines', 'vibration_alerts'])
         
         route['accessibility_features'] = features
         return route
     
     def _decode_tomtom_polyline(self, encoded: str) -> List[Tuple[float, float]]:
-        """Decode TomTom's custom polyline format"""
+        """Decode TomTom polyline"""
         points = []
         index = 0
         lat = 0
         lng = 0
         
         while index < len(encoded):
-            # Decode latitude
             b = 0
             shift = 0
             result = 0
@@ -341,7 +435,6 @@ class TomTomRouter:
                 if b < 0x20:
                     break
             
-            # Two's complement if negative
             if result & 1:
                 dlat = ~(result >> 1)
             else:
@@ -349,7 +442,6 @@ class TomTomRouter:
             
             lat += dlat
             
-            # Decode longitude
             shift = 0
             result = 0
             
@@ -361,43 +453,35 @@ class TomTomRouter:
                 if b < 0x20:
                     break
             
-            # Two's complement if negative
             if result & 1:
                 dlng = ~(result >> 1)
             else:
                 dlng = result >> 1
             
             lng += dlng
-            
             points.append((lat * 1e-5, lng * 1e-5))
         
         return points
     
     def _haversine_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-        """Calculate distance between two points using Haversine formula"""
-        R = 6371000  # Earth's radius in meters
-        
+        """Calculate distance using Haversine formula"""
+        R = 6371000
         phi1 = math.radians(lat1)
         phi2 = math.radians(lat2)
-        delta_phi = math.radians(lat2 - lat1)
-        delta_lambda = math.radians(lon2 - lon1)
+        dphi = math.radians(lat2 - lat1)
+        dlambda = math.radians(lon2 - lon1)
         
-        a = math.sin(delta_phi/2) * math.sin(delta_phi/2) + \
-            math.cos(phi1) * math.cos(phi2) * \
-            math.sin(delta_lambda/2) * math.sin(delta_lambda/2)
-        
+        a = math.sin(dphi/2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda/2)**2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-        
         return R * c
     
     def _generate_intermediate_points(self, start_lat: float, start_lng: float,
                                      dest_lat: float, dest_lng: float, 
                                      num_points: int = 10) -> List[Tuple[float, float]]:
-        """Generate intermediate points for a simple straight line route"""
+        """Generate intermediate points for fallback route"""
         points = []
         for i in range(num_points + 1):
             t = i / num_points
-            # Add slight curve to make it look natural
             lat = start_lat + (dest_lat - start_lat) * t + math.sin(t * math.pi) * 0.0005
             lng = start_lng + (dest_lng - start_lng) * t + math.cos(t * math.pi) * 0.0005
             points.append((lat, lng))
@@ -405,10 +489,8 @@ class TomTomRouter:
     
     def _generate_fallback_route(self, start_lat: float, start_lng: float,
                                 dest_lat: float, dest_lng: float) -> Dict:
-        """Generate a fallback route when API fails"""
+        """Generate fallback route"""
         distance = self._haversine_distance(start_lat, start_lng, dest_lat, dest_lng)
-        
-        # Create intermediate points for a more natural route
         points = self._generate_intermediate_points(start_lat, start_lng, dest_lat, dest_lng, num_points=20)
         
         segments = []
@@ -423,47 +505,13 @@ class TomTomRouter:
                 'index': i
             })
         
-        # Determine cardinal direction for instruction
-        delta_lat = dest_lat - start_lat
-        delta_lng = dest_lng - start_lng
-        bearing = math.degrees(math.atan2(delta_lng, delta_lat))
-        if bearing < 0:
-            bearing += 360
-        
-        if 45 <= bearing < 135:
-            direction = "east"
-        elif 135 <= bearing < 225:
-            direction = "south"
-        elif 225 <= bearing < 315:
-            direction = "west"
-        else:
-            direction = "north"
-        
         return {
             'points': points,
             'segments': segments,
             'distance_meters': distance,
             'duration_seconds': distance / 1.4,
-            'instructions': [
-                {
-                    'instruction': f"Head {direction} towards your destination",
-                    'distance': distance / 2,
-                    'duration': distance / 2.8,
-                    'type': 'depart',
-                    'point_index': 0
-                },
-                {
-                    'instruction': "Continue straight",
-                    'distance': distance / 2,
-                    'duration': distance / 2.8,
-                    'type': 'continue',
-                    'point_index': len(points) - 1
-                }
-            ],
-            'summary': {
-                'lengthInMeters': distance,
-                'travelTimeInSeconds': distance / 1.4
-            },
+            'instructions': [],
+            'summary': {'lengthInMeters': distance, 'travelTimeInSeconds': distance / 1.4},
             'bounds': {
                 'north': max(start_lat, dest_lat),
                 'south': min(start_lat, dest_lat),
@@ -481,11 +529,7 @@ class TomTomRouter:
         """Convert coordinates to address"""
         try:
             url = f"{self.search_url}/reverseGeocode/{lat},{lng}.json"
-            params = {
-                'key': self.api_key,
-                'language': 'en-US'
-            }
-            
+            params = {'key': self.api_key, 'language': 'en-US'}
             response = requests.get(url, params=params, timeout=5)
             response.raise_for_status()
             data = response.json()
@@ -502,7 +546,6 @@ class TomTomRouter:
                     return f"{municipality}, {country}"
             
             return f"{lat:.4f}, {lng:.4f}"
-            
         except Exception as e:
             logger.error(f"Reverse geocode failed: {e}")
             return f"{lat:.4f}, {lng:.4f}"
@@ -512,12 +555,7 @@ class TomTomRouter:
         """Search for places by name"""
         try:
             url = f"{self.search_url}/search/{query}.json"
-            params = {
-                'key': self.api_key,
-                'limit': 10,
-                'language': 'en-US',
-                'typeahead': True
-            }
+            params = {'key': self.api_key, 'limit': 10, 'language': 'en-US', 'typeahead': True}
             
             if lat and lng:
                 params['lat'] = lat
@@ -540,7 +578,6 @@ class TomTomRouter:
                 })
             
             return results
-            
         except Exception as e:
             logger.error(f"Place search failed: {e}")
             return []
