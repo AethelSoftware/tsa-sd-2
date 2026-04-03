@@ -1215,6 +1215,8 @@ export default function AccessibleMap() {
   const [fromSuggLoad, setFromSuggLoad] = useState(false);
   const [fromHiIdx, setFromHiIdx] = useState(-1);
 
+  const [emergencies911, setEmergencies911] = useState([]);
+
   // Add this after your state declarations
   const memoizedSuggItems = useMemo(() => {
     return sugg.map((s, i) => {
@@ -1429,59 +1431,64 @@ export default function AccessibleMap() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch area obstructions (enhanced from old version with proper sanitization)
-  useEffect(() => {
-    const fetchAreaObstructions = async () => {
-      try {
-        const res = await fetch("http://127.0.0.1:5000/api/area-obstructions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ lat: loc[0], lng: loc[1], radius: 10000 }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          const sanitize = (arr) =>
-            (arr || [])
-              .map((item) => {
-                let lat =
-                  item.lat ?? item.latitude ?? item.position?.lat ?? null;
-                let lng =
-                  item.lng ??
-                  item.longitude ??
-                  item.lon ??
-                  item.position?.lng ??
-                  null;
-                if (lat !== null) lat = Number(lat);
-                if (lng !== null) lng = Number(lng);
-                if (
-                  lat !== null &&
-                  lng !== null &&
-                  !isNaN(lat) &&
-                  !isNaN(lng) &&
-                  isFinite(lat) &&
-                  isFinite(lng)
-                ) {
-                  return { ...item, lat, lng };
-                }
-                console.warn("Filtered out invalid obstruction:", item);
-                return null;
-              })
-              .filter(Boolean);
+// Fetch area obstructions (enhanced with 911 emergencies)
+useEffect(() => {
+  const fetchAreaObstructions = async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:5000/api/area-obstructions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          lat: loc[0], 
+          lng: loc[1], 
+          radius: 10000,
+          include_emergencies: true  // Include 911 emergencies
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const sanitize = (arr) =>
+          (arr || [])
+            .map((item) => {
+              let lat = item.lat ?? item.latitude ?? item.position?.lat ?? null;
+              let lng = item.lng ?? item.longitude ?? item.lon ?? item.position?.lng ?? null;
+              if (lat !== null) lat = Number(lat);
+              if (lng !== null) lng = Number(lng);
+              if (
+                lat !== null &&
+                lng !== null &&
+                !isNaN(lat) &&
+                !isNaN(lng) &&
+                isFinite(lat) &&
+                isFinite(lng)
+              ) {
+                return { ...item, lat, lng };
+              }
+              console.warn("Filtered out invalid obstruction:", item);
+              return null;
+            })
+            .filter(Boolean);
 
-          setConstructionZones(sanitize(data.construction_zones));
-          setActiveHazards(sanitize(data.hazards));
-          console.log(
-            `Loaded ${sanitize(data.construction_zones).length} valid zones and ${sanitize(data.hazards).length} valid hazards`,
-          );
-        }
-      } catch (error) {
-        console.error("Error fetching obstructions:", error);
+        setConstructionZones(sanitize(data.construction_zones));
+        
+        // Separate 911 emergencies from regular hazards
+        const allHazards = sanitize(data.hazards || []);
+        const emergencies911Data = allHazards.filter(h => h.source === '911_dispatch');
+        const regularHazards = allHazards.filter(h => h.source !== '911_dispatch');
+        
+        setActiveHazards(regularHazards);
+        setEmergencies911(emergencies911Data);  // Make sure you have this state declared
+        
+        console.log(`Loaded ${regularHazards.length} hazards, ${emergencies911Data.length} 911 emergencies`);
       }
-    };
-    fetchAreaObstructions();
-    const interval = setInterval(fetchAreaObstructions, 300000);
-    return () => clearInterval(interval);
-  }, [loc]);
+    } catch (error) {
+      console.error("Error fetching obstructions:", error);
+    }
+  };
+  fetchAreaObstructions();
+  const interval = setInterval(fetchAreaObstructions, 300000);
+  return () => clearInterval(interval);
+}, [loc]);
 
   // Fetch road incidents from TomTom
   useEffect(() => {
@@ -1683,7 +1690,10 @@ export default function AccessibleMap() {
       const res = await fetch("http://127.0.0.1:5000/api/check-obstructions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ route_coords: routeCoords }),
+        body: JSON.stringify({ 
+          route_coords: routeCoords,
+          include_emergencies: true  // NEW
+        }),
       });
       const data = await res.json();
       if (data.success && data.obstructions) {
@@ -1701,7 +1711,7 @@ export default function AccessibleMap() {
               return null;
             })
             .filter((z) => z !== null);
-
+  
           setConstructionZones((prev) => {
             const existing = new Set(prev.map((z) => `${z.lat},${z.lng}`));
             return [
@@ -1710,8 +1720,8 @@ export default function AccessibleMap() {
             ];
           });
         }
-
-        // Safely process hazards
+  
+        // Process hazards (including 911 emergencies)
         if (data.obstructions.hazards?.length > 0) {
           const validHazards = data.obstructions.hazards
             .map((hazard) => {
@@ -1725,20 +1735,33 @@ export default function AccessibleMap() {
               return null;
             })
             .filter((h) => h !== null);
-
+  
+          // Separate 911 emergencies
+          const newEmergencies = validHazards.filter(h => h.source === '911_dispatch');
+          const newRegularHazards = validHazards.filter(h => h.source !== '911_dispatch');
+          
+          setEmergencies911(prev => {
+            const existing = new Set(prev.map(e => `${e.lat},${e.lng}`));
+            return [...prev, ...newEmergencies.filter(e => !existing.has(`${e.lat},${e.lng}`))];
+          });
+          
           setActiveHazards((prev) => {
             const existing = new Set(prev.map((h) => `${h.lat},${h.lng}`));
             return [
               ...prev,
-              ...validHazards.filter((h) => !existing.has(`${h.lat},${h.lng}`)),
+              ...newRegularHazards.filter((h) => !existing.has(`${h.lat},${h.lng}`)),
             ];
           });
         }
-
+  
         if (data.obstructions.has_obstruction) {
+          const emergencyCount = data.obstructions.hazards?.filter(h => h.source === '911_dispatch').length || 0;
+          const message = emergencyCount > 0 
+            ? `⚠ ${emergencyCount} active 911 emergency(s) near your route!`
+            : "⚠ Obstruction near your route!";
           setRouteAlert({
             type: "obstruction",
-            message: "⚠ Obstruction near your route!",
+            message: message,
           });
           setShowRouteAlert(true);
         }
@@ -2568,6 +2591,82 @@ export default function AccessibleMap() {
                 zoomLevel={currentZoom}
               />
             ))}
+
+            {/* ── 911 EMERGENCY MARKERS ── */}
+{emergencies911.map((emergency, idx) => (
+  <Marker
+    key={`emergency-${idx}`}
+    position={[emergency.lat, emergency.lng]}
+    icon={makeLucideIcon(
+      emergency.type === 'accident' ? CarFront :
+      emergency.type === 'fire' ? Flame :
+      emergency.type === 'medical' ? Stethoscope :
+      emergency.type === 'hazardous' ? TriangleAlert :
+      emergency.type === 'rescue' ? Siren :
+      ShieldAlert,
+      emergency.severity > 0.7 ? "#ff4444" : "#ff8844",
+      "#ff0000",
+      Math.min(42, Math.max(28, 28 + ((currentZoom - 12) / 6) * 14))
+    )}
+  >
+    <Popup>
+      <div style={{ fontFamily: "DM Sans,sans-serif", minWidth: 200 }}>
+        <div style={{ 
+          display: "flex", 
+          alignItems: "center", 
+          gap: 10, 
+          marginBottom: 12,
+          paddingBottom: 8,
+          borderBottom: "1px solid rgba(255,68,68,0.3)"
+        }}>
+          {emergency.type === 'accident' && <CarFront size={18} color="#ff4444" />}
+          {emergency.type === 'fire' && <Flame size={18} color="#ff4444" />}
+          {emergency.type === 'medical' && <Stethoscope size={18} color="#ff4444" />}
+          {emergency.type === 'hazardous' && <TriangleAlert size={18} color="#ff8844" />}
+          {emergency.type === 'rescue' && <Siren size={18} color="#ff4444" />}
+          {!emergency.type && <ShieldAlert size={18} color="#ff4444" />}
+          <strong style={{ color: "#ff6666", fontSize: 14 }}>
+            🚨 911 EMERGENCY
+          </strong>
+        </div>
+        <div style={{ fontSize: 13, fontWeight: "bold", color: "#fff", marginBottom: 6 }}>
+          {emergency.description || `${emergency.type?.toUpperCase()} incident`}
+        </div>
+        <div style={{ fontSize: 11, color: "#e0c8b0", marginBottom: 4 }}>
+          {emergency.subtype && (
+            <span style={{ display: "inline-block", marginRight: 12 }}>
+              📋 {emergency.subtype}
+            </span>
+          )}
+          {emergency.severity && (
+            <span>
+              ⚡ Severity: {Math.round(emergency.severity * 100)}%
+            </span>
+          )}
+        </div>
+        {emergency.timestamp && (
+          <div style={{ fontSize: 10, color: "#b09878", marginTop: 6 }}>
+            🕒 Reported: {new Date(emergency.timestamp).toLocaleString()}
+          </div>
+        )}
+        {emergency.distance_meters && (
+          <div style={{ fontSize: 10, color: "#b09878" }}>
+            📍 {emergency.distance_meters.toFixed(0)}m from center
+          </div>
+        )}
+        <div style={{ 
+          fontSize: 10, 
+          color: "#ff8888", 
+          marginTop: 8,
+          paddingTop: 6,
+          borderTop: "1px solid rgba(255,68,68,0.2)"
+        }}>
+          ⚠️ Active emergency response in area
+        </div>
+      </div>
+    </Popup>
+  </Marker>
+))}
 
             {/* ── TRANSIT route: colour walking vs bus segments differently ── */}
             {transitSegments.length > 0 ? (
@@ -3451,57 +3550,88 @@ export default function AccessibleMap() {
         )}
 
         {/* ── ROUTE INFO BAR ── */}
-        {routeInfo && (
-          <div className="rbar" role="region" aria-label="Route information">
-            <div className="rs">
-              <div className="rs-v">{routeInfo.distance}</div>
-              <div className="rs-l">Distance</div>
-            </div>
-            <div className="rs-d" />
-            <div className="rs">
-              <div className="rs-v">{routeInfo.duration}</div>
-              <div className="rs-l">Est. Time</div>
-            </div>
-            <div className="rs-d" />
-            <div className="rs">
-              <div className="rs-v" style={{ color: "var(--green)" }}>
-                <Accessibility size={16} />
-              </div>
-              <div className="rs-l">Accessible</div>
-            </div>
-            {constructionZones.length > 0 && (
-              <>
-                <div className="rs-d" />
-                <div className="rs">
-                  <div className="rs-v" style={{ color: "#ff7b6b" }}>
-                    <Construction size={14} /> {constructionZones.length}
-                  </div>
-                  <div className="rs-l">Obstructions</div>
-                </div>
-              </>
-            )}
-            {/* Directions toggle button (new feature) */}
-            <div className="rs-d" />
-            <button
-              className={`rs-dir-btn${showDirections ? " on" : ""}`}
-              onClick={() => setShowDirections((v) => !v)}
-            >
-              <List size={13} /> {showDirections ? "Hide" : "Directions"}
-            </button>
-            {mode === "transit" && (
-              <>
-                <div className="rs-d" />
-                <button className="rs-bus" onClick={getTransitInfo}>
-                  <Bus size={14} /> Bus Info
-                </button>
-              </>
-            )}
-            <button className="rs-cl" onClick={clearRoute}>
-              Clear
-            </button>
+{routeInfo && (
+  <div className="rbar" role="region" aria-label="Route information">
+    <div className="rs">
+      <div className="rs-v">{routeInfo.distance}</div>
+      <div className="rs-l">Distance</div>
+    </div>
+    <div className="rs-d" />
+    <div className="rs">
+      <div className="rs-v">{routeInfo.duration}</div>
+      <div className="rs-l">Est. Time</div>
+    </div>
+    <div className="rs-d" />
+    <div className="rs">
+      <div className="rs-v" style={{ color: "var(--green)" }}>
+        <Accessibility size={16} />
+      </div>
+      <div className="rs-l">Accessible</div>
+    </div>
+    
+    {constructionZones.length > 0 && (
+      <>
+        <div className="rs-d" />
+        <div className="rs">
+          <div className="rs-v" style={{ color: "#ff7b6b" }}>
+            <Construction size={14} /> {constructionZones.length}
           </div>
-        )}
+          <div className="rs-l">Obstructions</div>
+        </div>
+      </>
+    )}
 
+    {/* Show emergency count if present - ADD THIS BLOCK */}
+    {emergencies911.filter(e => {
+      if (!routePath.length) return false;
+      let minDist = Infinity;
+      for (const point of routePath) {
+        const dist = haversineDistance(point[0], point[1], e.lat, e.lng);
+        minDist = Math.min(minDist, dist);
+      }
+      return minDist < 500;
+    }).length > 0 && (
+      <>
+        <div className="rs-d" />
+        <div className="rs">
+          <div className="rs-v" style={{ color: "#ff4444" }}>
+            <Siren size={14} /> {emergencies911.filter(e => {
+              let minDist = Infinity;
+              for (const point of routePath) {
+                const dist = haversineDistance(point[0], point[1], e.lat, e.lng);
+                minDist = Math.min(minDist, dist);
+              }
+              return minDist < 500;
+            }).length}
+          </div>
+          <div className="rs-l">Emergencies</div>
+        </div>
+      </>
+    )}
+
+    {/* Directions toggle button */}
+    <div className="rs-d" />
+    <button
+      className={`rs-dir-btn${showDirections ? " on" : ""}`}
+      onClick={() => setShowDirections((v) => !v)}
+    >
+      <List size={13} /> {showDirections ? "Hide" : "Directions"}
+    </button>
+    
+    {mode === "transit" && (
+      <>
+        <div className="rs-d" />
+        <button className="rs-bus" onClick={getTransitInfo}>
+          <Bus size={14} /> Bus Info
+        </button>
+      </>
+    )}
+    
+    <button className="rs-cl" onClick={clearRoute}>
+      Clear
+    </button>
+  </div>
+)}
         {/* ── ROUTE ALERT OVERLAY ── */}
         {showRouteAlert && routeAlert && (
           <div

@@ -8,7 +8,7 @@ import sys
 import time
 import argparse
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 import uuid
 import math
@@ -31,6 +31,9 @@ import numpy as np
 import requests
 from vector_db import VectorDB
 from session_manager import SessionManager
+
+from emergency_data_fetcher import get_emergency_fetcher
+from news_hazard_fetcher import get_news_fetcher
 
 # Try to import dateutil for robust date parsing
 try:
@@ -1485,27 +1488,35 @@ def add_model_endpoints(app):
 
     @app.route("/api/area-obstructions", methods=['POST'])
     def get_area_obstructions():
-        """Get real obstructions in a specific area using TomTom Traffic Incidents API"""
+        """Get real obstructions using TomTom Traffic API, 911 emergencies, and News API"""
         try:
             data = request.json
             lat = float(data.get('lat', 40.4406))
             lng = float(data.get('lng', -79.9959))
             radius = float(data.get('radius', 2000))
             
-            # NEW: Allow custom bounding box to override radius calculation
+            # Allow custom bounding box to override radius calculation
             use_custom_bbox = data.get('use_custom_bbox', False)
             custom_min_lat = data.get('min_lat')
             custom_max_lat = data.get('max_lat')
             custom_min_lng = data.get('min_lng')
             custom_max_lng = data.get('max_lng')
             
+            # Options to include different data sources
+            include_emergencies = data.get('include_emergencies', True)
+            include_news = data.get('include_news', True)  # NEW: News API toggle
+            
             construction_zones = []
             hazards = []
+            emergencies_911 = []
+            news_hazards = []  # NEW: Store news-based hazards separately
 
+            # ====================================================================
+            # PART 1: FETCH TOMTOM TRAFFIC INCIDENTS
+            # ====================================================================
             tomtom_key = os.getenv('TOMTOM_API_KEY') or (tomtom_router.api_key if tomtom_router else None)
             if tomtom_key:
                 try:
-                    # Use custom bounding box if provided, otherwise calculate from radius
                     if use_custom_bbox and all([custom_min_lat, custom_max_lat, custom_min_lng, custom_max_lng]):
                         min_lat = custom_min_lat
                         max_lat = custom_max_lat
@@ -1513,18 +1524,15 @@ def add_model_endpoints(app):
                         max_lng = custom_max_lng
                         logger.info(f"Using custom bounding box: {min_lat},{min_lng} to {max_lat},{max_lng}")
                     else:
-                        # Original radius-based calculation
                         km = radius / 1000.0
                         delta_lat = km * 0.009
                         delta_lng = km * 0.012
-
                         min_lat = lat - delta_lat
                         max_lat = lat + delta_lat
                         min_lng = lng - delta_lng
                         max_lng = lng + delta_lng
                         logger.info(f"Using radius-based bbox ({radius}m): {min_lat},{min_lng} to {max_lat},{max_lng}")
 
-                    # IMPORTANT: fields param must NOT be in an f-string or Python eats the braces
                     fields_param = "{incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}"
 
                     incidents_url = (
@@ -1543,9 +1551,6 @@ def add_model_endpoints(app):
                         incidents_data = resp.json()
                         incidents = incidents_data.get('incidents', [])
                         logger.info(f"TomTom returned {len(incidents)} incidents")
-
-                        if len(incidents) == 0:
-                            logger.info(f"TomTom response (first 500 chars): {resp.text[:500]}")
 
                         construction_categories = {7, 8, 9}
                         hazard_categories = {1, 2, 3, 4, 5, 10, 11, 14}
@@ -1590,7 +1595,8 @@ def add_model_endpoints(app):
                                     'distance_meters': round(distance, 1),
                                     'icon_category': icon_cat,
                                     'start_time': props.get('startTime', ''),
-                                    'end_time': props.get('endTime', '')
+                                    'end_time': props.get('endTime', ''),
+                                    'source': 'tomtom'
                                 })
                             elif icon_cat in hazard_categories:
                                 magnitude = props.get('magnitudeOfDelay', 0)
@@ -1603,7 +1609,8 @@ def add_model_endpoints(app):
                                     'description': description,
                                     'severity': severity,
                                     'distance_meters': round(distance, 1),
-                                    'icon_category': icon_cat
+                                    'icon_category': icon_cat,
+                                    'source': 'tomtom'
                                 })
                             else:
                                 hazards.append({
@@ -1614,7 +1621,8 @@ def add_model_endpoints(app):
                                     'description': description,
                                     'severity': 0.4,
                                     'distance_meters': round(distance, 1),
-                                    'icon_category': icon_cat
+                                    'icon_category': icon_cat,
+                                    'source': 'tomtom'
                                 })
 
                         logger.info(f"Parsed {len(construction_zones)} construction zones, {len(hazards)} hazards from TomTom")
@@ -1624,20 +1632,105 @@ def add_model_endpoints(app):
                 except Exception as e:
                     logger.error(f"TomTom incidents API error: {e}", exc_info=True)
 
+            # ====================================================================
+            # PART 2: FETCH 911 EMERGENCIES (if available)
+            # ====================================================================
+            if include_emergencies:
+                try:
+                    from emergency_data_fetcher import get_emergency_fetcher
+                    fetcher = get_emergency_fetcher()
+                    area_emergencies = fetcher.get_emergencies_in_area(lat, lng, radius)
+                    logger.info(f"Found {len(area_emergencies)} active 911 emergencies in area")
+                    
+                    for emergency in area_emergencies:
+                        subtype = emergency.get('subtype', 'emergency')
+                        severity = emergency.get('severity', 0.5)
+                        
+                        emergency_hazard = {
+                            'lat': emergency['lat'],
+                            'lng': emergency['lng'],
+                            'radius': emergency['radius'],
+                            'type': subtype,
+                            'description': emergency['description'],
+                            'severity': severity,
+                            'distance_meters': emergency.get('distance_meters', 0),
+                            'source': '911_dispatch',
+                            'timestamp': emergency.get('timestamp', ''),
+                            'is_active': emergency.get('is_active', True),
+                            'category': 'emergency'
+                        }
+                        
+                        emergencies_911.append(emergency_hazard)
+                        hazards.append(emergency_hazard)
+                        
+                except ImportError as e:
+                    logger.warning(f"Emergency data fetcher not available: {e}")
+                except Exception as e:
+                    logger.error(f"Failed to fetch 911 emergencies: {e}", exc_info=True)
+
+            # ====================================================================
+            # PART 3: FETCH NEWS-BASED HAZARDS (NEW)
+            # ====================================================================
+            if include_news:
+                try:
+                    from news_hazard_fetcher import get_news_fetcher
+                    news_fetcher = get_news_fetcher()
+                    news_hazards_list = news_fetcher.get_hazards_in_area(lat, lng, radius)
+                    logger.info(f"Found {len(news_hazards_list)} news-based hazards in area")
+                    
+                    for news_hazard in news_hazards_list:
+                        news_formatted = {
+                            'lat': news_hazard['lat'],
+                            'lng': news_hazard['lng'],
+                            'radius': 100,  # Default radius for news hazards
+                            'type': news_hazard['type'],
+                            'description': news_hazard['description'],
+                            'severity': news_hazard['severity'],
+                            'distance_meters': news_hazard.get('distance_meters', 0),
+                            'source': 'news_api',
+                            'title': news_hazard.get('title', ''),
+                            'url': news_hazard.get('url', ''),
+                            'publisher': news_hazard.get('publisher', ''),
+                            'published_date': news_hazard.get('published_date', ''),
+                            'location_name': news_hazard.get('location_name', ''),
+                            'category': 'news_hazard'
+                        }
+                        news_hazards.append(news_formatted)
+                        hazards.append(news_formatted)
+                        
+                except ImportError as e:
+                    logger.warning(f"News hazard fetcher not available: {e}")
+                except Exception as e:
+                    logger.error(f"Failed to fetch news hazards: {e}", exc_info=True)
+
+            # ====================================================================
+            # PART 4: PREPARE RESPONSE
+            # ====================================================================
+            
+            if use_custom_bbox and all([custom_min_lat, custom_max_lat, custom_min_lng, custom_max_lng]):
+                response_bbox = {
+                    'min_lat': custom_min_lat,
+                    'max_lat': custom_max_lat,
+                    'min_lng': custom_min_lng,
+                    'max_lng': custom_max_lng
+                }
+            else:
+                response_bbox = None
+
             return jsonify({
                 'success': True,
                 'construction_zones': construction_zones,
                 'hazards': hazards,
+                'emergencies_911': emergencies_911,
+                'news_hazards': news_hazards,  # NEW: Separate news hazards list
                 'area_center': {'lat': lat, 'lng': lng},
                 'radius_meters': radius if not use_custom_bbox else None,
-                'bounding_box': {
-                    'min_lat': min_lat,
-                    'max_lat': max_lat,
-                    'min_lng': min_lng,
-                    'max_lng': max_lng
-                } if use_custom_bbox else None,
-                'source': 'tomtom_incidents' if (construction_zones or hazards) else 'none',
-                'total_incidents': len(construction_zones) + len(hazards)
+                'bounding_box': response_bbox,
+                'source': 'tomtom_incidents_911_news',
+                'total_incidents': len(construction_zones) + len(hazards),
+                'total_911_emergencies': len(emergencies_911),
+                'total_news_hazards': len(news_hazards),
+                'timestamp': datetime.now().isoformat()
             })
 
         except Exception as e:
@@ -1646,6 +1739,33 @@ def add_model_endpoints(app):
                 'success': False,
                 'error': str(e)
             }), 500
+        
+    @app.route("/api/news-hazards", methods=['GET', 'POST'])
+    def get_news_hazards_endpoint():
+        """Get hazards from recent news articles"""
+        try:
+            data = request.json or {}
+            lat = data.get('lat')
+            lng = data.get('lng')
+            radius = data.get('radius', 1000)
+            
+            from news_hazard_fetcher import get_news_fetcher
+            fetcher = get_news_fetcher()
+            
+            if lat and lng:
+                hazards = fetcher.get_hazards_in_area(lat, lng, radius)
+            else:
+                hazards = fetcher.fetch_hazards()
+            
+            return jsonify({
+                'success': True,
+                'hazards': hazards,
+                'count': len(hazards),
+                'source': 'gnews_api'
+            })
+        except Exception as e:
+            logger.error(f"Error fetching news hazards: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
         
     @app.route("/api/route-alternatives", methods=['POST', 'GET', 'OPTIONS'])
     def get_route_alternatives():
@@ -1723,11 +1843,62 @@ def add_model_endpoints(app):
                 'success': False,
                 'error': str(e)
             }), 500
+
+    @app.route("/api/emergencies", methods=['GET'])
+    def get_emergencies():
+        """Get all active emergencies"""
+        try:
+            fetcher = get_emergency_fetcher()
+            lat = request.args.get('lat', type=float)
+            lng = request.args.get('lng', type=float)
+            radius = request.args.get('radius', 1000, type=float)
+            
+            if lat and lng:
+                emergencies = fetcher.get_emergencies_in_area(lat, lng, radius)
+            else:
+                emergencies = fetcher.emergencies
+            
+            return jsonify({
+                'success': True,
+                'emergencies': emergencies,
+                'stats': fetcher.get_summary_stats()
+            })
+        except Exception as e:
+            logger.error(f"Error fetching emergencies: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route("/api/emergencies/refresh", methods=['POST'])
+    def refresh_emergencies():
+        """Force refresh emergency data"""
+        try:
+            fetcher = get_emergency_fetcher()
+            emergencies = fetcher.fetch_all_data(force_refresh=True)
+            return jsonify({
+                'success': True,
+                'message': f'Refreshed {len(emergencies)} emergencies',
+                'emergencies': emergencies
+            })
+        except Exception as e:
+            logger.error(f"Error refreshing emergencies: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route("/api/emergencies/stats", methods=['GET'])
+    def get_emergency_stats():
+        """Get summary statistics of emergencies"""
+        try:
+            fetcher = get_emergency_fetcher()
+            return jsonify({
+                'success': True,
+                'stats': fetcher.get_summary_stats()
+            })
+        except Exception as e:
+            logger.error(f"Error getting emergency stats: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
     
     @app.route("/api/check-obstructions", methods=['POST', 'GET', 'OPTIONS'])
     def check_obstructions():
-        """Check for obstructions along a route"""
-        # Handle OPTIONS preflight
+        """Check for obstructions along a route including TomTom and 911 emergencies"""
+        # Handle OPTIONS preflight (same as before)
         if request.method == 'OPTIONS':
             response = jsonify({'success': True})
             response.headers.add('Access-Control-Allow-Origin', '*')
@@ -1744,6 +1915,7 @@ def add_model_endpoints(app):
                 }), 400
                 
             route_coords = data.get('route_coords', [])
+            include_emergencies = data.get('include_emergencies', True)  # New flag
             
             if not route_coords:
                 return jsonify({
@@ -1751,24 +1923,16 @@ def add_model_endpoints(app):
                     'error': 'No route coordinates provided'
                 }), 400
             
-            # Handle different coordinate formats
+            # Handle different coordinate formats (same as before)
             waypoints = []
             for coord in route_coords:
-                # Check if coord is a dictionary with lat/lng
                 if isinstance(coord, dict):
                     if 'lat' in coord and 'lng' in coord:
                         waypoints.append((coord['lat'], coord['lng']))
                     elif 'latitude' in coord and 'longitude' in coord:
                         waypoints.append((coord['latitude'], coord['longitude']))
-                    else:
-                        logger.warning(f"Unknown coordinate format: {coord}")
-                        continue
-                # Check if coord is a list/tuple of two values
                 elif isinstance(coord, (list, tuple)) and len(coord) >= 2:
                     waypoints.append((coord[0], coord[1]))
-                else:
-                    logger.warning(f"Unsupported coordinate type: {type(coord)}")
-                    continue
             
             if not waypoints:
                 return jsonify({
@@ -1776,27 +1940,45 @@ def add_model_endpoints(app):
                     'error': 'No valid coordinates found'
                 }), 400
             
-            # Use the global tracker instance
+            # Get obstructions from existing tracker
             global tracker_instance
             
             if tracker_instance is None:
                 try:
                     from real_time_tracker import RealTimeTracker
                     tracker_instance = RealTimeTracker(None, None)
-                    logger.warning("Created temporary tracker for obstruction checking")
-                except ImportError as e:
-                    logger.warning(f"RealTimeTracker not available: {e}")
-                    return jsonify({
-                        'success': True,
-                        'obstructions': {
-                            'has_obstruction': False,
-                            'construction_zones': [],
-                            'hazards': []
-                        }
-                    })
+                except ImportError:
+                    tracker_instance = None
             
-            # Check obstructions
-            obstructions = tracker_instance.check_route_obstructions(waypoints)
+            obstructions = {'has_obstruction': False, 'construction_zones': [], 'hazards': []}
+            
+            if tracker_instance:
+                obstructions = tracker_instance.check_route_obstructions(waypoints)
+            
+            # NEW: Get 911 emergencies along the route
+            if include_emergencies:
+                try:
+                    fetcher = get_emergency_fetcher()
+                    route_emergencies = fetcher.get_emergencies_on_route(waypoints, buffer_meters=200)
+                    
+                    # Add emergencies to hazards
+                    for emergency in route_emergencies:
+                        hazard = {
+                            'type': emergency['subtype'],
+                            'description': f"911 Dispatch: {emergency['description']}",
+                            'severity': emergency['severity'],
+                            'location': {'lat': emergency['lat'], 'lng': emergency['lng']},
+                            'distance_meters': emergency.get('distance_meters', 0),
+                            'source': '911_dispatch'
+                        }
+                        obstructions['hazards'].append(hazard)
+                    
+                    if route_emergencies:
+                        obstructions['has_obstruction'] = True
+                        logger.info(f"Found {len(route_emergencies)} emergencies near route")
+                        
+                except Exception as e:
+                    logger.warning(f"Failed to get route emergencies: {e}")
             
             # Format for frontend
             formatted_obstructions = {
@@ -1816,7 +1998,8 @@ def add_model_endpoints(app):
                 formatted_obstructions['hazards'].append({
                     'type': hazard.get('type', 'hazard'),
                     'description': hazard.get('description', 'Unknown hazard'),
-                    'severity': hazard.get('severity', 0.5)
+                    'severity': hazard.get('severity', 0.5),
+                    'source': hazard.get('source', 'unknown')
                 })
             
             return jsonify({
@@ -2524,6 +2707,29 @@ def main():
         logger.error(f"Error initializing RealTimeTracker: {e}")
         tracker_instance = None
     
+    # ============================================================================
+    # NEW: INITIALIZE EMERGENCY DATA FETCHER
+    # ============================================================================
+    try:
+        from emergency_data_fetcher import get_emergency_fetcher
+        emergency_fetcher = get_emergency_fetcher()
+        logger.info("✅ Emergency data fetcher initialized successfully")
+        
+        # Get initial stats
+        stats = emergency_fetcher.get_summary_stats()
+        if stats['total'] > 0:
+            print(f"\n📢 911 Emergency Monitor Active")
+            print(f"   Active emergencies: {stats['total']}")
+            print(f"   Last update: {stats.get('last_update', 'N/A')}")
+            print(f"   Types: {', '.join([f'{k}: {v}' for k, v in stats['by_type'].items()])}")
+    except ImportError as e:
+        logger.warning(f"⚠️ Emergency data fetcher not available: {e}")
+        print("\n⚠️ 911 Emergency data fetcher not available - install pandas and apscheduler")
+        print("   Run: pip install pandas apscheduler")
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize emergency data fetcher: {e}")
+        print(f"\n❌ Failed to initialize 911 emergency data: {e}")
+    
     # Add model endpoints
     app = add_model_endpoints(app)
     
@@ -2563,6 +2769,22 @@ def main():
 
         if np.linalg.norm(updated_coords - old_coords) > 5:
             session_state.update_location(new_lat, new_lng)
+            
+            # NEW: Check for nearby emergencies when user moves significantly
+            try:
+                from emergency_data_fetcher import get_emergency_fetcher
+                fetcher = get_emergency_fetcher()
+                nearby_emergencies = fetcher.get_emergencies_in_area(new_lat, new_lng, radius_meters=500)
+                
+                if nearby_emergencies:
+                    socketio.emit('nearby_emergencies', {
+                        'count': len(nearby_emergencies),
+                        'emergencies': nearby_emergencies,
+                        'user_location': {'lat': new_lat, 'lng': new_lng}
+                    }, room=request.sid)
+                    logger.info(f"User {session_id} has {len(nearby_emergencies)} nearby emergencies")
+            except Exception as e:
+                logger.debug(f"Could not check nearby emergencies: {e}")
     
     # Serve frontend
     @app.route('/', defaults={'path': ''})
@@ -2578,8 +2800,9 @@ def main():
         browser_thread = threading.Thread(target=open_browser, daemon=True)
         browser_thread.start()
     
-    # Create models directory
+    # Create necessary directories
     os.makedirs('models', exist_ok=True)
+    os.makedirs('cache', exist_ok=True)  # NEW: Create cache directory for emergency data
     
     # Start combined server
     print("\n" + "="*60)
@@ -2600,6 +2823,18 @@ def main():
     if transit_router:
         print(f"GTFS Status: ✅ Loaded with {len(transit_router.gtfs.stops)} stops, {len(transit_router.gtfs.trips)} trips")
     
+    # NEW: Print emergency monitor status
+    try:
+        from emergency_data_fetcher import get_emergency_fetcher
+        fetcher = get_emergency_fetcher()
+        stats = fetcher.get_summary_stats()
+        if stats['total'] > 0:
+            print(f"911 Monitor: ✅ Active with {stats['total']} current emergencies")
+        else:
+            print(f"911 Monitor: ✅ Active (no active emergencies at this time)")
+    except:
+        print(f"911 Monitor: ⚠️ Not available")
+    
     print("="*60)
     print("Press Ctrl+C to stop the server")
     print("="*60 + "\n")
@@ -2612,7 +2847,18 @@ def main():
                     use_reloader=False,
                     allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
-        print("\n\nServer stopped by user")
+        print("\n\n🛑 Server stopped by user")
+        
+        # NEW: Clean shutdown for emergency fetcher
+        try:
+            from emergency_data_fetcher import get_emergency_fetcher
+            fetcher = get_emergency_fetcher()
+            if hasattr(fetcher, 'scheduler') and fetcher.scheduler:
+                fetcher.scheduler.shutdown()
+                print("✅ Emergency fetcher shutdown gracefully")
+        except:
+            pass
+            
     except Exception as e:
         logger.error(f"Server error: {e}", exc_info=True)
         print(f"\n❌ Server error: {e}")
