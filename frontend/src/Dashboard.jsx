@@ -1435,6 +1435,7 @@ export default function AccessibleMap() {
 useEffect(() => {
   const fetchAreaObstructions = async () => {
     try {
+      console.log('🔄 Fetching area obstructions...');
       const res = await fetch("http://127.0.0.1:5000/api/area-obstructions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1449,6 +1450,14 @@ useEffect(() => {
         }),
       });
       const data = await res.json();
+      
+      console.log('📡 API RESPONSE SUMMARY:');
+      console.log('  - Success:', data.success);
+      console.log('  - Construction zones:', data.construction_zones?.length || 0);
+      console.log('  - Total hazards:', data.hazards?.length || 0);
+      console.log('  - News hazards:', data.news_hazards?.length || 0);
+      console.log('  - 911 emergencies:', data.emergencies_911?.length || 0);
+      
       if (data.success) {
         const sanitize = (arr) =>
           (arr || [])
@@ -1473,15 +1482,42 @@ useEffect(() => {
 
         setConstructionZones(sanitize(data.construction_zones));
         
-        // Separate news hazards from regular hazards
+        // Get ALL hazards from the response
         const allHazards = sanitize(data.hazards || []);
+        
+        // Separate by source for different styling
         const newsHazards = allHazards.filter(h => h.source === 'news_api');
-        const regularHazards = allHazards.filter(h => h.source !== 'news_api');
+        const arrestHazards = allHazards.filter(h => h.source === 'arrest_data');
+        const tomtomHazards = allHazards.filter(h => h.source === 'tomtom');
+        const otherHazards = allHazards.filter(h => 
+          h.source !== 'news_api' && 
+          h.source !== 'arrest_data' && 
+          h.source !== 'tomtom'
+        );
         
-        setActiveHazards(regularHazards);
-        setEmergencies911(newsHazards);
+        // For emergencies911 (red markers) - combine news AND arrest data
+        const emergencyMarkers = [...newsHazards, ...arrestHazards];
+        setEmergencies911(emergencyMarkers);
         
-        console.log(`Loaded ${regularHazards.length} regular hazards, ${newsHazards.length} news hazards, ${data.construction_zones?.length || 0} construction zones`);
+        // Regular hazards (yellow/orange markers) - tomtom + other
+        setActiveHazards([...tomtomHazards, ...otherHazards]);
+        
+        console.log('📊 HAZARD BREAKDOWN:');
+        console.log(`  - News hazards: ${newsHazards.length}`);
+        console.log(`  - Arrest hazards: ${arrestHazards.length}`);
+        console.log(`  - TomTom hazards: ${tomtomHazards.length}`);
+        console.log(`  - Construction zones: ${data.construction_zones?.length || 0}`);
+        console.log(`  - Total emergency markers (red): ${emergencyMarkers.length}`);
+        
+        // Debug: Show locations of emergency markers
+        if (emergencyMarkers.length > 0) {
+          console.log('📍 EMERGENCY MARKER LOCATIONS:');
+          emergencyMarkers.forEach((e, i) => {
+            console.log(`  ${i+1}. ${e.type} - Lat: ${e.lat}, Lng: ${e.lng} - ${e.location_name || 'Unknown location'}`);
+          });
+        } else {
+          console.log('⚠️ NO EMERGENCY MARKERS - Check if news_hazards or arrest_hazards have data');
+        }
       }
     } catch (error) {
       console.error("Error fetching obstructions:", error);
