@@ -2929,7 +2929,7 @@ useEffect(() => {
           </MapContainer>
         </div>
 
-        {/* ── 3D WALK VIEW ── */}
+        {/* ── 3D WALK VIEW ── 
         <div
           className={`view3d-panel${show3D && routePath.length > 0 ? "" : " hidden"}`}
         >
@@ -2983,6 +2983,8 @@ useEffect(() => {
             <X size={12} />
           </button>
         </div>
+        */}
+
         {routePath.length > 0 && !show3D && (
           <button className="view3d-toggle" onClick={() => setShow3D(true)}>
             <Play size={12} /> 3D Walk View

@@ -37,10 +37,20 @@ class TomTomRouter:
             
             # If we have hazards, try to get multiple route alternatives
             if obstruction_zones and len(obstruction_zones) > 0:
+                # Check if destination is in a hazard zone
+                dest_in_hazard = self._is_point_in_hazard_zone(dest_lat, dest_lng, obstruction_zones)
+                start_in_hazard = self._is_point_in_hazard_zone(start_lat, start_lng, obstruction_zones)
+                
+                if dest_in_hazard:
+                    logger.warning("Destination is in a hazard zone - cannot avoid completely, will approach safely")
+                if start_in_hazard:
+                    logger.warning("Start location is in a hazard zone")
+                
                 logger.info(f"Attempting to route around {len(obstruction_zones)} hazard zones")
                 return self._get_safest_route_with_alternatives(
                     start_lat, start_lng, dest_lat, dest_lng,
-                    travel_mode, accessibility_needs, obstruction_zones
+                    travel_mode, accessibility_needs, obstruction_zones,
+                    dest_in_hazard, start_in_hazard
                 )
             
             # No hazards - get standard route
@@ -53,8 +63,21 @@ class TomTomRouter:
             logger.error(f"Error calculating route: {e}")
             return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
     
+    def _is_point_in_hazard_zone(self, lat: float, lng: float, hazard_zones: List[Dict]) -> bool:
+        """Check if a point is within any hazard zone"""
+        for zone in hazard_zones:
+            z_lat = zone.get('lat')
+            z_lng = zone.get('lng')
+            z_radius = zone.get('radius', 100)
+            if z_lat and z_lng:
+                dist = self._haversine_distance(lat, lng, z_lat, z_lng)
+                if dist < z_radius:
+                    return True
+        return False
+    
     def _get_safest_route_with_alternatives(self, start_lat, start_lng, dest_lat, dest_lng,
-                                            travel_mode, accessibility_needs, hazard_zones):
+                                            travel_mode, accessibility_needs, hazard_zones,
+                                            dest_in_hazard=False, start_in_hazard=False):
         """Get multiple route alternatives and pick the safest one"""
         try:
             origin = f"{start_lat},{start_lng}"
@@ -87,7 +110,11 @@ class TomTomRouter:
                         processed = self._process_route(route, start_lat, start_lng, dest_lat, dest_lng)
                         if processed:
                             # Calculate hazard score for this route
-                            hazard_score = self._calculate_hazard_score(processed['points'], hazard_zones)
+                            hazard_score = self._calculate_hazard_score(
+                                processed['points'], hazard_zones, 
+                                dest_in_hazard=dest_in_hazard, 
+                                dest_coords=(dest_lat, dest_lng)
+                            )
                             processed['hazard_score'] = hazard_score
                             all_routes.append(processed)
                     
@@ -98,19 +125,10 @@ class TomTomRouter:
                         
                         if best_route.get('hazard_score', 0) > 0:
                             logger.warning(f"Best route still has hazard score {best_route.get('hazard_score', 0):.2f}")
+                            if dest_in_hazard:
+                                logger.info("Destination is in hazard zone - this is the best approach possible")
                         else:
                             logger.info("Selected route avoids all hazards!")
-                        
-                        # Try to add a detour if the best route still has hazards
-                        if best_route.get('hazard_score', 0) > 5:
-                            logger.info("Attempting to find detour around hazards...")
-                            detour = self._find_detour_route(
-                                start_lat, start_lng, dest_lat, dest_lng,
-                                best_route['points'], hazard_zones,
-                                travel_mode, accessibility_needs
-                            )
-                            if detour:
-                                return detour
                         
                         if accessibility_needs:
                             best_route = self._add_accessibility_features(best_route, accessibility_needs)
@@ -161,114 +179,13 @@ class TomTomRouter:
             logger.error(f"Error getting standard route: {e}")
             return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
     
-    def _find_detour_route(self, start_lat, start_lng, dest_lat, dest_lng,
-                          original_points, hazard_zones, travel_mode, accessibility_needs):
-        """Find a detour route by adding waypoints to avoid hazards"""
-        try:
-            # Find the centroid of hazards near the route
-            hazardous_lats = []
-            hazardous_lngs = []
-            
-            for hazard in hazard_zones:
-                h_lat = hazard.get('lat')
-                h_lng = hazard.get('lng')
-                if h_lat and h_lng:
-                    # Check if hazard is near the route
-                    min_dist = float('inf')
-                    for point in original_points:
-                        dist = self._haversine_distance(point[0], point[1], h_lat, h_lng)
-                        min_dist = min(min_dist, dist)
-                    if min_dist < 500:  # Within 500m of route
-                        hazardous_lats.append(h_lat)
-                        hazardous_lngs.append(h_lng)
-            
-            if not hazardous_lats:
-                return None
-            
-            # Calculate detour point (offset from hazard cluster)
-            center_lat = sum(hazardous_lats) / len(hazardous_lats)
-            center_lng = sum(hazardous_lngs) / len(hazardous_lngs)
-            
-            # Determine direction perpendicular to route
-            start_to_end_lat = dest_lat - start_lat
-            start_to_end_lng = dest_lng - start_lng
-            
-            # Perpendicular direction
-            perp_lat = -start_to_end_lng
-            perp_lng = start_to_end_lat
-            norm = math.sqrt(perp_lat**2 + perp_lng**2)
-            if norm > 0:
-                perp_lat /= norm
-                perp_lng /= norm
-            
-            # Try detours at different distances
-            for dist in [200, 400, 600]:
-                offset_deg = dist / 111000
-                
-                for direction in [-1, 1]:
-                    waypoint_lat = center_lat + (perp_lat * offset_deg * direction)
-                    waypoint_lng = center_lng + (perp_lng * offset_deg * direction)
-                    
-                    # Build route with waypoint
-                    waypoint = f"{waypoint_lat},{waypoint_lng}"
-                    via_points = [waypoint]
-                    
-                    detour = self._get_route_with_via_points(
-                        start_lat, start_lng, dest_lat, dest_lng,
-                        via_points, travel_mode, accessibility_needs
-                    )
-                    
-                    if detour:
-                        new_score = self._calculate_hazard_score(detour['points'], hazard_zones)
-                        if new_score < 5:
-                            logger.info(f"Found detour with {dist}m offset, hazard score: {new_score:.2f}")
-                            return detour
-            
-            return None
-            
-        except Exception as e:
-            logger.debug(f"Detour calculation failed: {e}")
-            return None
-    
-    def _get_route_with_via_points(self, start_lat, start_lng, dest_lat, dest_lng,
-                                   via_points, travel_mode, accessibility_needs):
-        """Get a route with via points (waypoints)"""
-        try:
-            origin = f"{start_lat},{start_lng}"
-            destination = f"{dest_lat},{dest_lng}"
-            via_str = ":".join(via_points)
-            
-            url = f"{self.base_url}/calculateRoute/{origin}:{via_str}:{destination}/json"
-            
-            params = {
-                'key': self.api_key,
-                'travelMode': travel_mode,
-                'routeType': 'fastest',
-                'traffic': 'false',
-                'instructionsType': 'text',
-                'language': 'en-US',
-                'routeRepresentation': 'polyline',
-            }
-            
-            if accessibility_needs:
-                if 'wheelchair' in accessibility_needs:
-                    params['hilliness'] = 'normal'
-            
-            response = requests.get(url, params=params, timeout=15)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if 'routes' in data and data['routes']:
-                    return self._process_route(data['routes'][0], start_lat, start_lng, dest_lat, dest_lng)
-            
-            return None
-            
-        except Exception as e:
-            logger.debug(f"Route with via points failed: {e}")
-            return None
-    
-    def _calculate_hazard_score(self, route_points: List[Tuple], hazard_zones: List[Dict]) -> float:
-        """Calculate a hazard score for a route. Lower score = safer route."""
+    def _calculate_hazard_score(self, route_points: List[Tuple], hazard_zones: List[Dict], 
+                                dest_in_hazard=False, dest_coords=None) -> float:
+        """
+        Calculate a hazard score for a route.
+        Lower score = safer route.
+        If destination is in hazard, we don't penalize the final approach as heavily.
+        """
         if not hazard_zones:
             return 0.0
         
@@ -284,14 +201,29 @@ class TomTomRouter:
                 continue
             
             min_distance = float('inf')
-            for point in route_points:
-                dist = self._haversine_distance(point[0], point[1], z_lat, z_lng)
-                min_distance = min(min_distance, dist)
-                if min_distance < 10:
-                    break
+            min_point_index = -1
             
-            if min_distance < 200:  # Within 200m of hazard
+            for i, point in enumerate(route_points):
+                dist = self._haversine_distance(point[0], point[1], z_lat, z_lng)
+                if dist < min_distance:
+                    min_distance = dist
+                    min_point_index = i
+            
+            # If destination is in hazard zone, don't penalize the last 100m of the route
+            if dest_in_hazard and dest_coords:
+                # Check if the close approach is near the destination
+                dist_to_dest = self._haversine_distance(route_points[min_point_index][0], 
+                                                        route_points[min_point_index][1],
+                                                        dest_coords[0], dest_coords[1])
+                if dist_to_dest < 200:
+                    # This hazard is near the destination - reduce penalty
+                    distance_factor = max(0, (200 - min_distance) / 200) * 0.3  # 70% reduction
+                else:
+                    distance_factor = max(0, (200 - min_distance) / 200)
+            else:
                 distance_factor = max(0, (200 - min_distance) / 200)
+            
+            if min_distance < 200:
                 hazard_contribution = distance_factor * z_severity * 10
                 total_score += hazard_contribution
         
