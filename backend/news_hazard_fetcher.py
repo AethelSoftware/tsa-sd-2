@@ -1,19 +1,63 @@
 """
-News Hazard Fetcher for Pittsburgh - Using GNews API with API Key
+News Hazard Fetcher for Pittsburgh - Multi-API with Rotation and Caching
+Supports: GNews API, NewsData.io API, TheNewsAPI
 """
 
 import os
 import re
 import logging
 import requests
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
-# GNews API configuration
-GNEWS_API_KEY = "a75ef0e7d2d4ed9b928d8d721387ee42"
-GNEWS_BASE_URL = "https://gnews.io/api/v4"
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+
+# --- API Keys for Rotation ---
+# Add your actual API keys here (remove the placeholder comments)
+API_CONFIGS = [
+    {
+        'name': 'GNews',
+        'url': 'https://gnews.io/api/v4/search',
+        'key_param': 'apikey',
+        'keys': [
+            "a75ef0e7d2d4ed9b928d8d721387ee42",  # Your GNews key
+            # Add more GNews keys here if you have multiple accounts
+        ]
+    },
+    {
+        'name': 'NewsData',
+        'url': 'https://newsdata.io/api/1/news',
+        'key_param': 'apikey',
+        'keys': [
+            "pub_650a9ab0f3164569b74c778f83589ba9",  # Replace with your NewsData.io key
+        ]
+    },
+    {
+        'name': 'TheNewsAPI',
+        'url': 'https://api.thenewsapi.com/v1/news/all',
+        'key_param': 'api_token',
+        'keys': [
+            "QHi6uqDFhbArmzMvfZ1ZNhiCzubnq7ZJ4Y7jSlMm",  # Replace with your TheNewsAPI key
+        ]
+    }
+]
+
+# --- Caching ---
+CACHE_DURATION = 300  # Cache results for 5 minutes (in seconds)
+
+# --- Search Queries (Optimized) ---
+# Combined queries to reduce the number of API calls
+HAZARD_QUERIES = {
+    'accident': ['"car accident" Pittsburgh OR "crash" Pittsburgh OR "vehicle collision" Pittsburgh'],
+    'fire': ['"fire" Pittsburgh OR "house fire" Pittsburgh OR "building fire" Pittsburgh'],
+    'crime': ['"shooting" Pittsburgh OR "robbery" Pittsburgh OR "assault" Pittsburgh'],
+    'hazard': ['"road closed" Pittsburgh OR "gas leak" Pittsburgh OR "police activity" Pittsburgh'],
+}
 
 # Pittsburgh neighborhoods with coordinates
 PITTSBURGH_NEIGHBORHOODS = {
@@ -28,72 +72,146 @@ PITTSBURGH_NEIGHBORHOODS = {
     'squirrel hill': (40.4370, -79.9250),
 }
 
+# ============================================================================
+# NEWS HAZARD FETCHER CLASS
+# ============================================================================
+
 class NewsHazardFetcher:
     def __init__(self):
-        self.api_key = GNEWS_API_KEY
-        if not self.api_key:
-            logger.warning("GNEWS_API_KEY not set in environment variables")
-        logger.info("News Hazard Fetcher initialized with GNews API")
-    
-    def _make_request(self, endpoint: str, params: Dict) -> Optional[Dict]:
-        """Make a request to the GNews API"""
-        if not self.api_key:
-            return None
+        # Flatten all API keys into a list of (service_name, url, key_param, api_key)
+        self.api_endpoints = []
+        for config in API_CONFIGS:
+            for api_key in config['keys']:
+                if api_key and not api_key.startswith('YOUR_'):
+                    self.api_endpoints.append({
+                        'name': config['name'],
+                        'url': config['url'],
+                        'key_param': config['key_param'],
+                        'key': api_key
+                    })
         
-        url = f"{GNEWS_BASE_URL}/{endpoint}"
-        params['apikey'] = self.api_key
+        if not self.api_endpoints:
+            logger.error("No valid API keys found! Please add at least one API key to API_CONFIGS.")
+        else:
+            logger.info(f"News Hazard Fetcher initialized with {len(self.api_endpoints)} API key(s) across {len(API_CONFIGS)} service(s)")
         
-        try:
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            logger.error(f"GNews API request failed: {e}")
-            return None
+        # Cache storage
+        self.cache = []
+        self.last_cache_time = None
+        self.current_api_index = 0  # For round-robin rotation
+        
+        logger.info(f"Cache duration: {CACHE_DURATION}s")
+
+    def _make_request_with_rotation(self, params: Dict, original_query: str) -> Optional[Dict]:
+        """
+        Try to make a request, rotating through ALL available API keys from ALL services.
+        Uses round-robin to distribute load across multiple services.
+        """
+        # Try each API endpoint in rotation
+        for attempt in range(len(self.api_endpoints)):
+            endpoint = self.api_endpoints[self.current_api_index]
+            self.current_api_index = (self.current_api_index + 1) % len(self.api_endpoints)
+            
+            try:
+                # Build URL with service-specific parameters
+                url = endpoint['url']
+                request_params = params.copy()
+                request_params[endpoint['key_param']] = endpoint['key']
+                
+                # Service-specific parameter adjustments
+                if endpoint['name'] == 'NewsData':
+                    # NewsData.io uses 'q' for search, but we need to add 'country' and 'language'
+                    request_params['country'] = 'us'
+                    request_params['language'] = 'en'
+                elif endpoint['name'] == 'TheNewsAPI':
+                    # TheNewsAPI uses 'search' instead of 'q'
+                    request_params['search'] = request_params.pop('q')
+                    request_params['language'] = 'en'
+                    request_params['limit'] = 5
+                
+                logger.debug(f"Attempting request with {endpoint['name']} (key {attempt+1}/{len(self.api_endpoints)}) for: {original_query}")
+                response = requests.get(url, params=request_params, timeout=10)
+                
+                if response.status_code == 200:
+                    return self._parse_response(response.json(), endpoint['name'])
+                elif response.status_code == 429:
+                    logger.warning(f"{endpoint['name']} API key hit rate limit. Trying next key/service...")
+                    continue
+                else:
+                    logger.warning(f"{endpoint['name']} API returned {response.status_code}: {response.text[:100]}")
+                    continue
+                    
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Request failed for {endpoint['name']}: {e}")
+                continue
+        
+        logger.error(f"All API keys/services exhausted for query: {original_query}")
+        return None
     
+    def _parse_response(self, data: Dict, service_name: str) -> Optional[Dict]:
+        """Parse response from different API services into a common format"""
+        articles = []
+        
+        if service_name == 'GNews':
+            # GNews format: {'articles': [...]}
+            articles = data.get('articles', [])
+            # Convert to standard format
+            return {'articles': articles}
+            
+        elif service_name == 'NewsData':
+            # NewsData.io format: {'results': [...]}
+            results = data.get('results', [])
+            # Convert to GNews-compatible format
+            articles = []
+            for item in results:
+                articles.append({
+                    'title': item.get('title', ''),
+                    'description': item.get('description', ''),
+                    'url': item.get('link', ''),
+                    'source': {'name': item.get('source_id', 'Unknown')},
+                    'publishedAt': item.get('pubDate', ''),
+                })
+            return {'articles': articles}
+            
+        elif service_name == 'TheNewsAPI':
+            # TheNewsAPI format: {'data': [...]}
+            results = data.get('data', [])
+            articles = []
+            for item in results:
+                articles.append({
+                    'title': item.get('title', ''),
+                    'description': item.get('description', ''),
+                    'url': item.get('url', ''),
+                    'source': {'name': item.get('source', 'Unknown')},
+                    'publishedAt': item.get('published_at', ''),
+                })
+            return {'articles': articles}
+        
+        return data
+
     def fetch_hazards(self) -> List[Dict[str, Any]]:
-        """Fetch hazard-related news articles using GNews API"""
+        """Fetch hazard-related news articles using cached data or fresh API call."""
+        # 1. Return cached data if it's still fresh
+        if self.last_cache_time and (datetime.now() - self.last_cache_time).seconds < CACHE_DURATION:
+            logger.info(f"Returning {len(self.cache)} cached hazards (cache age: {(datetime.now() - self.last_cache_time).seconds}s)")
+            return self.cache
+        
+        # 2. Cache is stale or empty, fetch new data
+        logger.info("Cache expired or empty. Fetching fresh hazards from APIs...")
         all_hazards = []
         
-        # Define search queries for different hazard types
-        hazard_queries = {
-            'accident': [
-                '"car accident" Pittsburgh',
-                '"crash" Pittsburgh',
-                '"vehicle collision" Pittsburgh',
-            ],
-            'fire': [
-                '"fire" Pittsburgh',
-                '"house fire" Pittsburgh',
-                '"building fire" Pittsburgh',
-            ],
-            'crime': [
-                '"shooting" Pittsburgh',
-                '"robbery" Pittsburgh',
-                '"assault" Pittsburgh',
-            ],
-            'hazard': [
-                '"road closed" Pittsburgh',
-                '"gas leak" Pittsburgh',
-                '"police activity" Pittsburgh',
-            ]
-        }
-        
-        for hazard_type, queries in hazard_queries.items():
+        for hazard_type, queries in HAZARD_QUERIES.items():
             for query in queries:
                 try:
-                    logger.info(f"Searching GNews for: {query}")
+                    logger.info(f"Searching for: {query}")
                     
-                    # Make API request
                     params = {
                         'q': query,
                         'lang': 'en',
-                        'country': 'us',
-                        'max': 5,  # Max 5 articles per query
-                        'sortby': 'publishedAt',  # Most recent first
+                        'max': 5,
                     }
                     
-                    data = self._make_request('search', params)
+                    data = self._make_request_with_rotation(params, query)
                     
                     if not data or 'articles' not in data:
                         logger.debug(f"No results for query: {query}")
@@ -103,13 +221,9 @@ class NewsHazardFetcher:
                     logger.info(f"Found {len(articles)} articles for {query}")
                     
                     for article in articles:
-                        # Extract location from article
                         location = self.extract_location_from_article(article)
-                        
                         if location:
-                            # Calculate severity based on article content
                             severity = self.calculate_severity(article, hazard_type)
-                            
                             hazard = {
                                 'type': hazard_type,
                                 'description': article.get('title', '')[:200],
@@ -132,10 +246,13 @@ class NewsHazardFetcher:
                     logger.error(f"Error fetching {query}: {e}")
                     continue
         
-        # Remove duplicates
-        unique_hazards = self.deduplicate_hazards(all_hazards)
-        logger.info(f"Total unique hazards found: {len(unique_hazards)}")
-        return unique_hazards
+        # 3. Update cache and return
+        self.cache = self.deduplicate_hazards(all_hazards)
+        self.last_cache_time = datetime.now()
+        logger.info(f"Cache updated. Total unique hazards found: {len(self.cache)}")
+        return self.cache
+    
+    # --- The following helper methods remain unchanged from your original code ---
     
     def extract_location_from_article(self, article: Dict) -> Optional[Dict]:
         """Extract location from article title and description"""
@@ -143,31 +260,19 @@ class NewsHazardFetcher:
         description = article.get('description', '')
         text = f"{title} {description}".lower()
         
-        # Check neighborhoods
         for neighborhood, coords in PITTSBURGH_NEIGHBORHOODS.items():
             if neighborhood in text:
-                return {
-                    'lat': coords[0],
-                    'lng': coords[1],
-                    'name': f"{neighborhood.title()} neighborhood"
-                }
+                return {'lat': coords[0], 'lng': coords[1], 'name': f"{neighborhood.title()} neighborhood"}
         
-        # Check for Pittsburgh landmarks
         landmarks = {
             'waterfront': (40.4100, -79.9200),
             'station square': (40.4320, -80.0050),
             'market square': (40.4400, -79.9990),
         }
-        
         for landmark, coords in landmarks.items():
             if landmark in text:
-                return {
-                    'lat': coords[0],
-                    'lng': coords[1],
-                    'name': landmark.title()
-                }
+                return {'lat': coords[0], 'lng': coords[1], 'name': landmark.title()}
         
-        # Default to downtown Pittsburgh
         return {'lat': 40.4406, 'lng': -79.9959, 'name': 'Downtown Pittsburgh'}
     
     def calculate_severity(self, article: Dict, hazard_type: str) -> float:
@@ -176,9 +281,7 @@ class NewsHazardFetcher:
         description = article.get('description', '').lower()
         full_text = f"{title} {description}"
         
-        # High severity keywords
         high_keywords = ['fatal', 'death', 'killed', 'critical', 'explosion', 'multi-car']
-        # Medium severity keywords
         medium_keywords = ['injury', 'injured', 'hospital', 'collision', 'structure fire']
         
         if any(word in full_text for word in high_keywords):
@@ -186,7 +289,6 @@ class NewsHazardFetcher:
         elif any(word in full_text for word in medium_keywords):
             return 0.7
         
-        # Default severity by type
         severity_map = {'accident': 0.6, 'fire': 0.8, 'crime': 0.7, 'hazard': 0.5}
         return severity_map.get(hazard_type, 0.5)
     
