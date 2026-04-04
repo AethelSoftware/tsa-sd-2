@@ -76,7 +76,6 @@ import {
 } from "lucide-react";
 import { renderToStaticMarkup } from "react-dom/server";
 import VoiceAccessibilityModal from './VoiceAccessibilityModal';
-
 // Lazy load 3D view to reduce initial bundle size
 const Walking3DView = lazy(() => import("./Walking3DView"));
 

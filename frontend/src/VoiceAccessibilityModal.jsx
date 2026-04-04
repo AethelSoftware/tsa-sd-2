@@ -402,6 +402,7 @@ export default function VoiceAccessibilityModal({
   const [audioLevel, setAudioLevel] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
   const [speechRecognitionAvailable, setSpeechRecognitionAvailable] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
   
   const stateRef = useRef(STATES.IDLE);
   const retryCountRef = useRef(0);
@@ -413,6 +414,7 @@ export default function VoiceAccessibilityModal({
   const audioContextForLevelRef = useRef(null);
   const analyserRef = useRef(null);
   const animFrameRef = useRef(null);
+  const handleNavigationCommandRef = useRef(null);
   
   useEffect(() => { stateRef.current = state; }, [state]);
   useEffect(() => { retryCountRef.current = retryCount; }, [retryCount]);
@@ -421,7 +423,7 @@ export default function VoiceAccessibilityModal({
   
   const {
     sessionId, partialTranscript, finalTranscript, setFinalTranscript,
-    startRecording, stopRecording, isConnected, voskReady, errorMessage,
+    startRecording, stopRecording, isConnected, voskReady,
   } = useVoiceSocket('http://127.0.0.1:5000');
   
   // ── TTS ─────────────────────────────────────────────────────────────────────
@@ -602,73 +604,6 @@ export default function VoiceAccessibilityModal({
     if (partialTranscript) setDisplayTranscript(partialTranscript + '...');
   }, [partialTranscript]);
   
-  // ── Wake word detection (Web Speech API) ───────────────────────────────────
-  
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setSpeechRecognitionAvailable(false);
-      return;
-    }
-    setSpeechRecognitionAvailable(true);
-    
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-    recognition.maxAlternatives = 3;
-    recognitionRef.current = recognition;
-    
-    recognition.onresult = (event) => {
-      if (!['IDLE', 'NAVIGATING'].includes(stateRef.current)) return;
-      
-      const results = Array.from(event.results);
-      const allText = results
-        .flatMap(r => Array.from(r))
-        .map(alt => alt.transcript.toLowerCase())
-        .join(' ');
-      
-      if (stateRef.current === 'IDLE' && allText.includes('tryver')) {
-        playChime(440, 660);
-        recognition.stop();
-        setState(STATES.GREETING);
-        return;
-      }
-      
-      const finalResult = results[results.length - 1];
-      if (stateRef.current === 'NAVIGATING' && finalResult.isFinal) {
-        handleNavigationCommand(allText);
-      }
-    };
-    
-    recognition.onerror = (e) => {
-      if (e.error === 'not-allowed') {
-        // Permission denied – fallback to tap button
-      }
-      if (e.error !== 'no-speech' && e.error !== 'aborted') {
-        setTimeout(() => {
-          if (['IDLE', 'NAVIGATING'].includes(stateRef.current)) {
-            try { recognition.start(); } catch(err) {}
-          }
-        }, 1500);
-      }
-    };
-    
-    recognition.onend = () => {
-      setTimeout(() => {
-        if (['IDLE', 'NAVIGATING'].includes(stateRef.current)) {
-          try { recognition.start(); } catch(err) {}
-        }
-      }, 500);
-    };
-    
-    try { recognition.start(); } catch(e) {}
-    
-    return () => {
-      try { recognition.stop(); } catch(e) {}
-    };
-  }, [playChime]);
-  
   // ── Navigation command handler ──────────────────────────────────────────────
   
   const handleNavigationCommand = useCallback((text) => {
@@ -775,6 +710,79 @@ export default function VoiceAccessibilityModal({
     
     speak("I didn't understand that. You can say: directions, next step, repeat, how far, how long, route ID, or stop.");
   }, [speak]);
+  
+  handleNavigationCommandRef.current = handleNavigationCommand;
+  
+  // ── Wake word detection (Web Speech API) ───────────────────────────────────
+  
+  useEffect(() => {
+    if (!isVisible) return;
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setSpeechRecognitionAvailable(false);
+      return;
+    }
+    setSpeechRecognitionAvailable(true);
+    
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    recognition.maxAlternatives = 3;
+    recognitionRef.current = recognition;
+    
+    recognition.onresult = (event) => {
+      if (!['IDLE', 'NAVIGATING'].includes(stateRef.current)) return;
+      
+      const results = Array.from(event.results);
+      const allText = results
+        .flatMap(r => Array.from(r))
+        .map(alt => alt.transcript.toLowerCase())
+        .join(' ');
+      
+      if (stateRef.current === 'IDLE' && allText.includes('tryver')) {
+        playChime(440, 660);
+        recognition.stop();
+        setState(STATES.GREETING);
+        return;
+      }
+      
+      const finalResult = results[results.length - 1];
+      if (stateRef.current === 'NAVIGATING' && finalResult.isFinal) {
+        if (handleNavigationCommandRef.current) {
+          handleNavigationCommandRef.current(allText);
+        }
+      }
+    };
+    
+    recognition.onerror = (e) => {
+      if (e.error === 'not-allowed') {
+        setErrorMessage("Microphone permission denied. Please allow microphone access.");
+      }
+      if (e.error !== 'no-speech' && e.error !== 'aborted') {
+        setTimeout(() => {
+          if (['IDLE', 'NAVIGATING'].includes(stateRef.current) && isVisible) {
+            try { recognition.start(); } catch(err) {}
+          }
+        }, 1500);
+      }
+    };
+    
+    recognition.onend = () => {
+      setTimeout(() => {
+        if (['IDLE', 'NAVIGATING'].includes(stateRef.current) && isVisible) {
+          try { recognition.start(); } catch(err) {}
+        }
+      }, 500);
+    };
+    
+    // DO NOT start automatically - wait for user gesture on the button
+    
+    return () => {
+      try { recognition.stop(); } catch(e) {}
+    };
+  }, [isVisible, playChime]);
   
   // ── State machine handlers ─────────────────────────────────────────────────
   
@@ -988,23 +996,25 @@ export default function VoiceAccessibilityModal({
         setCurrentStepIndex(0);
         currentStepRef.current = 0;
         
-        onRouteCalculated({
-          success: true,
-          route: {
-            coordinates: (data.route_coords || []).map(p => ({
-              lat: Array.isArray(p) ? p[0] : p.lat,
-              lng: Array.isArray(p) ? p[1] : p.lng,
-            })),
-            steps: data.steps || [],
-            distance: data.distance,
-            duration: data.duration,
-            safety: data.safety,
-            start_address: data.start_address,
-            end_address: data.end_address,
-            travel_mode: data.travel_mode,
-          },
-          provider: data.provider,
-        });
+        if (onRouteCalculated) {
+          onRouteCalculated({
+            success: true,
+            route: {
+              coordinates: (data.route_coords || []).map(p => ({
+                lat: Array.isArray(p) ? p[0] : p.lat,
+                lng: Array.isArray(p) ? p[1] : p.lng,
+              })),
+              steps: data.steps || [],
+              distance: data.distance,
+              duration: data.duration,
+              safety: data.safety,
+              start_address: data.start_address,
+              end_address: data.end_address,
+              travel_mode: data.travel_mode,
+            },
+            provider: data.provider,
+          });
+        }
         
         const routeIdSpoken = data.route_id.replace(/-/g, ' dash ');
         const numSteps = (data.steps || []).length;
@@ -1380,6 +1390,10 @@ export default function VoiceAccessibilityModal({
               if (voskReady) {
                 playChime(440, 660);
                 setState(STATES.GREETING);
+                // Start wake word detection explicitly after user gesture
+                if (recognitionRef.current) {
+                  try { recognitionRef.current.start(); } catch(e) {}
+                }
               } else {
                 speak("Voice recognition is not set up. Please install the Vosk model. Check the server console for instructions.");
               }
