@@ -2,6 +2,7 @@
 Transit Router using GTFS data with shape-based geometry
 Supports multiple alternatives, walking legs, transfers, and progressive stop discovery.
 """
+# transit_router.py
 from typing import List, Dict, Tuple, Optional
 from datetime import datetime, timedelta
 import heapq
@@ -11,6 +12,8 @@ from gtfs_loader import GTFSLoader, Stop
 import math
 import zipfile
 import pandas as pd
+import os
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +49,9 @@ class TransitRouter:
         # Trip stop cache
         self._trip_stop_cache: Dict[str, List[Tuple[str, int]]] = {}
         self._build_trip_cache()
+        
+        # Cache for walking route results
+        self._walk_route_cache: Dict[str, List[Tuple[float, float]]] = {}
     
     def _load_shapes(self):
         """Load shapes.txt for bus route geometry"""
@@ -159,6 +165,149 @@ class TransitRouter:
         a = math.sin(dphi/2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlam/2)**2
         return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     
+    def _path_distance(self, pts: List[Tuple[float, float]]) -> float:
+        """Sum of haversine distances along a path."""
+        total = 0.0
+        for i in range(len(pts) - 1):
+            total += self._haversine(pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1])
+        return total
+    
+    def _decode_tomtom_polyline(self, encoded: str) -> List[Tuple[float, float]]:
+        """Decode Google/TomTom encoded polyline to (lat, lon) tuples."""
+        points = []
+        index = 0
+        lat = 0
+        lng = 0
+        while index < len(encoded):
+            result = 0
+            shift = 0
+            while True:
+                b = ord(encoded[index]) - 63
+                index += 1
+                result |= (b & 0x1f) << shift
+                shift += 5
+                if b < 0x20:
+                    break
+            dlat = ~(result >> 1) if result & 1 else result >> 1
+            lat += dlat
+            result = 0
+            shift = 0
+            while True:
+                b = ord(encoded[index]) - 63
+                index += 1
+                result |= (b & 0x1f) << shift
+                shift += 5
+                if b < 0x20:
+                    break
+            dlng = ~(result >> 1) if result & 1 else result >> 1
+            lng += dlng
+            points.append((lat * 1e-5, lng * 1e-5))
+        return points
+    
+    def _route_walking_leg(self, from_lat: float, from_lon: float,
+                           to_lat: float, to_lon: float) -> List[Tuple[float, float]]:
+        """
+        Get real pedestrian route between two points using road network.
+        Tries TomTom first, then OSRM public demo, then straight line fallback.
+        Returns list of (lat, lon) tuples.
+        """
+        # Cache check
+        cache_key = f"{from_lat:.5f},{from_lon:.5f}|{to_lat:.5f},{to_lon:.5f}"
+        if cache_key in self._walk_route_cache:
+            return self._walk_route_cache[cache_key]
+        
+        straight_dist = self._haversine(from_lat, from_lon, to_lat, to_lon)
+        
+        # Very short legs (< 50m) are fine as straight line
+        if straight_dist < 50:
+            pts = [(from_lat, from_lon), (to_lat, to_lon)]
+            self._walk_route_cache[cache_key] = pts
+            return pts
+        
+        # ── ATTEMPT 1: TomTom pedestrian routing ──────────────────────────────────
+        tomtom_key = os.getenv('TOMTOM_API_KEY', 'pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM')
+        if tomtom_key:
+            try:
+                url = (
+                    f"https://api.tomtom.com/routing/1/calculateRoute/"
+                    f"{from_lat},{from_lon}:{to_lat},{to_lon}/json"
+                )
+                params = {
+                    'key': tomtom_key,
+                    'travelMode': 'pedestrian',
+                    'routeRepresentation': 'polyline',
+                    'computeTravelTimeFor': 'none',
+                }
+                resp = requests.get(url, params=params, timeout=8)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    routes = data.get('routes', [])
+                    if routes:
+                        legs = routes[0].get('legs', [])
+                        if legs:
+                            raw_points = legs[0].get('points', [])
+                            if isinstance(raw_points, dict) and 'encodedPolyline' in raw_points:
+                                pts = self._decode_tomtom_polyline(raw_points['encodedPolyline'])
+                            elif isinstance(raw_points, list) and raw_points:
+                                pts = [(p['latitude'], p['longitude']) for p in raw_points]
+                            else:
+                                pts = []
+                            if len(pts) >= 2:
+                                routed_dist = self._path_distance(pts)
+                                logger.info(f"TomTom walk leg: {len(pts)} pts, straight {straight_dist:.0f}m → routed {routed_dist:.0f}m")
+                                self._walk_route_cache[cache_key] = pts
+                                return pts
+            except Exception as e:
+                logger.warning(f"TomTom walk routing failed: {e}")
+        
+        # ── ATTEMPT 2: OSRM public demo (free, OpenStreetMap-based) ──────────────
+        try:
+            # OSRM uses lng,lat order (NOT lat,lng!)
+            osrm_url = (
+                f"https://router.project-osrm.org/route/v1/foot/"
+                f"{from_lon},{from_lat};{to_lon},{to_lat}"
+            )
+            params = {
+                'overview': 'full',
+                'geometries': 'geojson'
+            }
+            headers = {'User-Agent': 'TryverSafetyApp/1.0 (Pittsburgh Transit Routing)'}
+            resp = requests.get(osrm_url, params=params, headers=headers, timeout=8)
+            if resp.status_code == 200:
+                data = resp.json()
+                routes = data.get('routes', [])
+                if routes:
+                    # GeoJSON coordinates are [lon, lat] — must flip to (lat, lon)
+                    coords = routes[0]['geometry']['coordinates']
+                    pts = [(c[1], c[0]) for c in coords]  # flip lon,lat → lat,lon
+                    if len(pts) >= 2:
+                        routed_dist = self._path_distance(pts)
+                        logger.info(f"OSRM walk leg: {len(pts)} pts, straight {straight_dist:.0f}m → routed {routed_dist:.0f}m")
+                        self._walk_route_cache[cache_key] = pts
+                        return pts
+        except Exception as e:
+            logger.warning(f"OSRM walk routing failed: {e}")
+        
+        # ── FALLBACK: Straight line ───────────────────────────────────────────────
+        # Log a warning if the straight line is likely to cross water (heuristic)
+        ALLEGHENY_RIVER_LAT = (40.443, 40.448)  # rough lat band for river crossing
+        crosses_allegheny = (
+            (min(from_lat, to_lat) < ALLEGHENY_RIVER_LAT[0] and
+             max(from_lat, to_lat) > ALLEGHENY_RIVER_LAT[1])
+        )
+        if straight_dist > 300 and crosses_allegheny:
+            logger.error(
+                f"WALK LEG FALLBACK MAY CROSS RIVER: {from_lat},{from_lon} → {to_lat},{to_lon} "
+                f"({straight_dist:.0f}m straight). Both routing APIs failed. "
+                "Walking segment will show as straight line — consider adding a bridge waypoint."
+            )
+        elif straight_dist > 300:
+            logger.warning(f"Walk leg fallback to straight line: {straight_dist:.0f}m. Both APIs failed.")
+        
+        pts = [(from_lat, from_lon), (to_lat, to_lon)]
+        self._walk_route_cache[cache_key] = pts
+        return pts
+    
     def _find_stops_with_expansion(self, lat: float, lon: float, initial_radius: float = 800) -> List[Tuple[Stop, float]]:
         """Find stops with progressive radius expansion for suburban areas"""
         for radius in [initial_radius, 1500, 3000, 5000, 8000]:
@@ -200,7 +349,7 @@ class TransitRouter:
         best_times = {}  # key: (stop_id, trip_id, transfers)
         counter = 0      # monotonic counter to avoid comparing None trip_id
         
-        # Push initial walking states from start to each start stop
+        # Push initial walking states from origin to each start stop
         for stop, distance in start_stops:
             walk_time = distance / self.walking_speed
             arrival = start_time + timedelta(seconds=walk_time)
@@ -400,16 +549,18 @@ class TransitRouter:
         if first_transit and first_transit.from_stop_id:
             first_stop = self.gtfs.stops.get(first_transit.from_stop_id)
             if first_stop:
-                dist = self._haversine(start_lat, start_lon, first_stop.lat, first_stop.lon)
+                # Get routed path instead of straight line
+                routed_pts = self._route_walking_leg(start_lat, start_lon, first_stop.lat, first_stop.lon)
+                distance_m = self._path_distance(routed_pts)
                 steps.append({
                     'type': 'walk',
                     'from_location': {'lat': start_lat, 'lon': start_lon},
                     'to_stop': self.gtfs.get_stop_name(first_stop.stop_id),
                     'to_stop_id': first_stop.stop_id,
                     'to_location': {'lat': first_stop.lat, 'lon': first_stop.lon},
-                    'distance_meters': round(dist),
-                    'duration_seconds': round(dist / self.walking_speed),
-                    'path_geometry': [[start_lat, start_lon], [first_stop.lat, first_stop.lon]]
+                    'distance_meters': round(distance_m),
+                    'duration_seconds': round(distance_m / self.walking_speed),
+                    'path_geometry': [[lat, lon] for lat, lon in routed_pts]
                 })
         
         # Process transit legs and transfer walks
@@ -473,16 +624,18 @@ class TransitRouter:
                     from_stop = self.gtfs.stops.get(state.node_id)
                     to_stop = self.gtfs.stops.get(next_transit.from_stop_id)
                     if from_stop and to_stop and from_stop.stop_id != to_stop.stop_id:
-                        dist = self._haversine(from_stop.lat, from_stop.lon, to_stop.lat, to_stop.lon)
+                        # Get routed path instead of straight line
+                        routed_pts = self._route_walking_leg(from_stop.lat, from_stop.lon, to_stop.lat, to_stop.lon)
+                        distance_m = self._path_distance(routed_pts)
                         steps.append({
                             'type': 'walk',
                             'from_stop': self.gtfs.get_stop_name(from_stop.stop_id),
                             'to_stop': self.gtfs.get_stop_name(to_stop.stop_id),
                             'from_location': {'lat': from_stop.lat, 'lon': from_stop.lon},
                             'to_location': {'lat': to_stop.lat, 'lon': to_stop.lon},
-                            'distance_meters': round(dist),
-                            'duration_seconds': round(dist / self.walking_speed),
-                            'path_geometry': [[from_stop.lat, from_stop.lon], [to_stop.lat, to_stop.lon]]
+                            'distance_meters': round(distance_m),
+                            'duration_seconds': round(distance_m / self.walking_speed),
+                            'path_geometry': [[lat, lon] for lat, lon in routed_pts]
                         })
                 i += 1
             else:
@@ -493,16 +646,18 @@ class TransitRouter:
         if last_transit and last_transit.to_stop_id:
             last_stop = self.gtfs.stops.get(last_transit.to_stop_id)
             if last_stop:
-                dist = self._haversine(last_stop.lat, last_stop.lon, end_lat, end_lon)
+                # Get routed path instead of straight line
+                routed_pts = self._route_walking_leg(last_stop.lat, last_stop.lon, end_lat, end_lon)
+                distance_m = self._path_distance(routed_pts)
                 steps.append({
                     'type': 'walk',
                     'from_stop': self.gtfs.get_stop_name(last_stop.stop_id),
                     'from_location': {'lat': last_stop.lat, 'lon': last_stop.lon},
                     'to_stop': 'Your Destination',
                     'to_location': {'lat': end_lat, 'lon': end_lon},
-                    'distance_meters': round(dist),
-                    'duration_seconds': round(dist / self.walking_speed),
-                    'path_geometry': [[last_stop.lat, last_stop.lon], [end_lat, end_lon]]
+                    'distance_meters': round(distance_m),
+                    'duration_seconds': round(distance_m / self.walking_speed),
+                    'path_geometry': [[lat, lon] for lat, lon in routed_pts]
                 })
         
         return steps
