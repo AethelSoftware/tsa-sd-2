@@ -4291,3 +4291,131 @@ TypeError: '<' not supported between instances of 'str' and 'NoneType'
 2026-04-04 12:34:22,654 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
  * Running on http://127.0.0.1:5000
 2026-04-04 12:34:22,655 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-04-04 13:32:00,259 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-04 13:32:30,789 - gtfs_loader - INFO - Loaded GTFS: 6424 stops, 15826 trips, 15826 trip patterns, 5 service exceptions
+2026-04-04 13:32:44,142 - transit_router - INFO - Loaded 305 shapes
+2026-04-04 13:32:44,597 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-04 13:32:44,616 - transit_router - INFO - Loaded 101 routes
+2026-04-04 13:32:44,782 - transit_router - INFO - Cached 15826 trips
+2026-04-04 13:32:44,783 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-04 13:32:44,786 - __main__ - INFO - Safety AI loaded successfully
+2026-04-04 13:33:09,305 - voice_handler - INFO - Vosk imported successfully
+2026-04-04 13:33:09,307 - voice_handler - INFO - Voice handler initialized successfully
+2026-04-04 13:33:09,307 - __main__ - INFO - Voice handler registered successfully
+2026-04-04 13:33:09,312 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-04-04 13:33:09,312 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-04-04 13:33:09,312 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-04-04 13:33:09,312 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-04-04 13:33:09,328 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-04-04 13:33:09,328 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-04-04 13:33:11,881 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:33:11] "GET /api/hello HTTP/1.1" 200 -
+2026-04-04 13:33:27,438 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:33:27] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-04-04 13:33:31,262 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:33:31] "[32mGET /api/callback?state=gDAMgYx6siJSaJYJaVkjAAp27QUNUE&iss=https://accounts.google.com&code=4/0Aci98E8yxbYuq_rGMav1v4B4nyzEtbBAH8aK2uJ0QYXJG8y1nUDWdLJmBaaFvTApHqkTQQ&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+openid+https://www.googleapis.com/auth/userinfo.email&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-04-04 13:33:32,253 - voice_handler - INFO - Loading Vosk model from /Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/vosk-model (this takes a few seconds)...
+2026-04-04 13:33:32,257 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:33:32] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 13:33:32,260 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:33:32] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 13:33:32,262 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 13:33:32,262 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 13:33:32,384 - __main__ - INFO - Websocket connected: uKtj_7Uxo863vwe0AAAC
+2026-04-04 13:33:32,389 - socketio.server - INFO - received event "voice_start_session" from uKtj_7Uxo863vwe0AAAC [/]
+2026-04-04 13:33:32,752 - voice_handler - INFO - Vosk model loaded successfully
+2026-04-04 13:33:32,753 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:33:32] "GET /api/voice/status HTTP/1.1" 200 -
+2026-04-04 13:33:32,756 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:33:32] "GET /api/voice/status HTTP/1.1" 200 -
+2026-04-04 13:33:32,807 - __main__ - INFO - TomTom returned 237 incidents
+2026-04-04 13:33:32,808 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 13:33:32,859 - socketio.server - INFO - emitting event "voice_session_created" to uKtj_7Uxo863vwe0AAAC [/]
+2026-04-04 13:33:32,859 - voice_handler - INFO - Voice session created: vs-1775324012-9815 for socket uKtj_7Uxo863vwe0AAAC
+2026-04-04 13:33:32,888 - __main__ - INFO - TomTom returned 237 incidents
+2026-04-04 13:33:32,889 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 13:33:33,483 - news_hazard_fetcher - WARNING - PulsePoint agency fetch returned 401
+2026-04-04 13:33:33,483 - news_hazard_fetcher - WARNING - PulsePoint agency fetch returned 401
+2026-04-04 13:33:33,485 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-04-04 13:33:33,486 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-04-04 13:33:33,486 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-04-04 13:33:33,486 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-04-04 13:33:33,486 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-04-04 13:33:33,486 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-04-04 13:33:33,486 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 13:33:33,486 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 13:33:33,486 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 13:33:33,486 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 13:33:58,226 - __main__ - INFO - Client disconnected: uKtj_7Uxo863vwe0AAAC
+2026-04-04 13:33:58,430 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:33:58] "GET /api/voice/status HTTP/1.1" 200 -
+2026-04-04 13:33:58,494 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:33:58] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 13:33:58,513 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:33:58] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 13:33:58,520 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:33:58] "[35m[1mGET /socket.io/?EIO=4&transport=websocket HTTP/1.1[0m" 500 -
+2026-04-04 13:33:58,522 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:33:58] "GET /api/voice/status HTTP/1.1" 200 -
+2026-04-04 13:33:58,571 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 13:33:58,574 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 13:33:58,582 - __main__ - INFO - Websocket connected: HuSqGZNM8RAJmm1vAAAF
+2026-04-04 13:33:58,604 - werkzeug - ERROR - Error on request:
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/werkzeug/serving.py", line 370, in run_wsgi
+    execute(self.server.app)
+  File "/opt/homebrew/lib/python3.10/site-packages/werkzeug/serving.py", line 336, in execute
+    write(b"")
+  File "/opt/homebrew/lib/python3.10/site-packages/werkzeug/serving.py", line 261, in write
+    assert status_set is not None, "write() before start_response"
+AssertionError: write() before start_response
+2026-04-04 13:33:58,725 - socketio.server - INFO - received event "voice_start_session" from HuSqGZNM8RAJmm1vAAAF [/]
+2026-04-04 13:33:58,845 - socketio.server - INFO - emitting event "voice_session_created" to HuSqGZNM8RAJmm1vAAAF [/]
+2026-04-04 13:33:58,850 - voice_handler - INFO - Voice session created: vs-1775324038-4561 for socket HuSqGZNM8RAJmm1vAAAF
+2026-04-04 13:33:59,277 - __main__ - INFO - TomTom returned 237 incidents
+2026-04-04 13:33:59,284 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 13:33:59,292 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 13:33:59,298 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 13:33:59,366 - __main__ - INFO - TomTom returned 237 incidents
+2026-04-04 13:33:59,372 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 13:33:59,375 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 13:33:59,378 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 13:34:31,044 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 13:34:31,632 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 13:34:36,781 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 13:34:36,815 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 13:34:36,902 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 13:34:36,931 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 13:34:36,940 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 13:34:36,953 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 13:34:36,965 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 13:34:36,975 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:34:36] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 13:34:37,047 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 13:34:37,053 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 13:34:37,082 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 13:34:37,088 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 13:34:37,092 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 13:34:37,097 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 13:34:37,098 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 13:34:37,113 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:34:37] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 13:34:57,837 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:34:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 13:34:57,864 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 13:34:58,615 - __main__ - INFO - TomTom returned 232 incidents
+2026-04-04 13:34:58,624 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 13:34:58,632 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 13:34:58,635 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 13:34:58,648 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:34:58] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 13:35:06,093 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 13:35:09,735 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 13:35:09,741 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 13:35:09,773 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 13:35:09,779 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 13:35:09,783 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 13:35:09,788 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 13:35:09,795 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 13:35:09,814 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:35:09] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 13:35:15,238 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 13:35:17,371 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 13:35:17,371 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 13:35:17,398 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 13:35:17,398 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 13:35:17,399 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 13:35:17,399 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 13:35:17,400 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 13:35:17,405 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:35:17] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 13:35:41,844 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:35:41] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 13:35:41,849 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 13:35:42,439 - __main__ - INFO - TomTom returned 236 incidents
+2026-04-04 13:35:42,441 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 13:35:42,441 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 13:35:42,442 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 13:35:42,448 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 13:35:42] "POST /api/area-obstructions HTTP/1.1" 200 -

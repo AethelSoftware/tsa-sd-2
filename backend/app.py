@@ -2691,6 +2691,15 @@ def main():
                        logger=True,
                        engineio_logger=args.debug)
     
+    try:
+        from voice_handler import init_voice_handler
+        init_voice_handler(app, socketio)
+        logger.info("Voice handler registered successfully")
+    except Exception as e:
+        logger.warning(f"Voice handler failed to initialize (non-critical): {e}")
+        logger.warning("Voice features will be unavailable. See voice_handler.py for setup.")
+    
+    
     # Initialize the RealTimeTracker with valid parameters
     try:
         from real_time_tracker import RealTimeTracker

@@ -72,8 +72,10 @@ import {
   Flag,
   Footprints,
   List,
+  Mic,
 } from "lucide-react";
 import { renderToStaticMarkup } from "react-dom/server";
+import VoiceAccessibilityModal from './VoiceAccessibilityModal';
 
 // Lazy load 3D view to reduce initial bundle size
 const Walking3DView = lazy(() => import("./Walking3DView"));
@@ -1010,7 +1012,6 @@ const ObstructionMarker = React.memo(
 const DirectionsPanel = React.memo(({ steps, onClose, routeType }) => {
   if (!steps || steps.length === 0) return null;
 
-  // Helper to clean stop names - PRT names are already Title-Cased, just trim
   const cleanStopName = (name) => {
     if (!name) return "stop";
     return name.trim();
@@ -1045,7 +1046,6 @@ const DirectionsPanel = React.memo(({ steps, onClose, routeType }) => {
             step.travel_mode === "WALKING" ||
             step.travel_mode === "WALK";
 
-          // Build a cleaner instruction
           let instruction = "";
           if (isFirst) {
             instruction = "Depart from your location";
@@ -1261,7 +1261,10 @@ export default function AccessibleMap() {
   const [showDirections, setShowDirections] = useState(false);
   const [routeType, setRouteType] = useState("walking");
   const [transitSegments, setTransitSegments] = useState([]);
-  const [transitAlternatives, setTransitAlternatives] = useState([]); // NEW
+  const [transitAlternatives, setTransitAlternatives] = useState([]);
+
+  // ── Voice modal state ──
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
 
   const debRef = useRef(null);
   const destRef = useRef(null);
@@ -1487,7 +1490,7 @@ export default function AccessibleMap() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch area obstructions with bounding box covering entire Pittsburgh region
+  // Fetch area obstructions
   useEffect(() => {
     const fetchAreaObstructions = async () => {
       try {
@@ -2210,11 +2213,9 @@ export default function AccessibleMap() {
             const bestRoute = transitData.best_route;
             const allRoutes = transitData.routes || [bestRoute];
             
-            // Build primary transitSegments from bestRoute.steps
             const primarySegments = buildTransitSegments(bestRoute.steps);
             setTransitSegments(primarySegments);
             
-            // Build alternative routes for map (dotted polylines)
             const alts = allRoutes.slice(1).map((alt, idx) => ({
               coords: extractCoordsFromSteps(alt.steps),
               route_summary: alt.route_summary,
@@ -2224,18 +2225,15 @@ export default function AccessibleMap() {
             }));
             setTransitAlternatives(alts);
             
-            // allCoords for map bounds
             const allCoords = primarySegments.flatMap(s => s.coords);
             setRoutePath(allCoords);
             setDest([destCoords.lat, destCoords.lng]);
             setRouteType("transit");
             
-            // Build display steps for directions panel
             const displaySteps = buildDisplayStepsFromTransit(bestRoute.steps);
             setRouteSteps(displaySteps);
             setShowDirections(true);
             
-            // Route info
             const totalMinutes = Math.round(bestRoute.total_time_seconds / 60);
             const hours = Math.floor(totalMinutes / 60);
             const mins = totalMinutes % 60;
@@ -2249,7 +2247,6 @@ export default function AccessibleMap() {
               walking_steps: bestRoute.steps.filter(s => s.type === 'walk').length,
             });
             
-            // Save to recents
             const nr = [
               {
                 name: toVal,
@@ -3003,6 +3000,17 @@ export default function AccessibleMap() {
           >
             <Settings size={18} />
             <span className="r-lbl">Access</span>
+          </button>
+          {/* ── VOICE NAVIGATION BUTTON ── */}
+          <button
+            className={`r-btn${showVoiceModal ? " on" : ""}`}
+            onClick={() => setShowVoiceModal(true)}
+            data-tip="Voice Navigation"
+            aria-label="Voice navigation"
+            aria-pressed={showVoiceModal}
+          >
+            <Mic size={18} />
+            <span className="r-lbl">Voice</span>
           </button>
           <div className="r-space" aria-hidden="true" />
           <button
@@ -3894,6 +3902,30 @@ export default function AccessibleMap() {
         >
           {toast}
         </div>
+
+        {/* ── VOICE ACCESSIBILITY MODAL ── */}
+        <VoiceAccessibilityModal
+          isVisible={showVoiceModal}
+          onVisibilityChange={setShowVoiceModal}
+          onDismiss={() => setShowVoiceModal(false)}
+          onRouteCalculated={(routeData) => {
+            if (routeData.success && routeData.route.coordinates?.length >= 2) {
+              const coords = routeData.route.coordinates.map(c => [c.lat, c.lng]);
+              setRoutePath(coords);
+              setDest(coords[coords.length - 1]);
+              setRouteType(routeData.route.travel_mode === 'transit' ? 'transit' : 'walking');
+              setRouteSteps(routeData.route.steps || []);
+              setShowDirections(true);
+              setRouteInfo({
+                distance: routeData.route.distance,
+                duration: routeData.route.duration,
+                type: routeData.route.travel_mode,
+              });
+              setShow3D(true);
+            }
+          }}
+          userLocation={loc}
+        />
       </div>
     </>
   );
