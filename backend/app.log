@@ -4272,3 +4272,7 @@ TypeError: '<' not supported between instances of 'str' and 'NoneType'
 2026-04-04 09:58:27,262 - __main__ - INFO - Found 42 news-based hazards in area
 2026-04-04 09:58:27,266 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 09:58:27] "POST /api/area-obstructions HTTP/1.1" 200 -
 2026-04-04 09:58:29,540 - tomtom_router - WARNING - OSRM request timed out
+2026-04-04 09:58:30,208 - tomtom_router - WARNING - Best route still has hazard score 26.37
+2026-04-04 09:58:30,210 - __main__ - INFO - TomTom route with hazard avoidance successful
+2026-04-04 09:58:31,335 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-04-04 09:58:31,347 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 09:58:31] "POST /api/calculate-route HTTP/1.1" 200 -
