@@ -3527,3 +3527,256 @@ RuntimeError: The session is unavailable because no secret key was set.  Set the
 2026-04-02 11:47:30,980 - __main__ - INFO - TomTom returned 82 incidents
 2026-04-02 11:47:30,981 - __main__ - INFO - Parsed 61 construction zones, 21 hazards from TomTom
 2026-04-02 11:47:30,982 - werkzeug - INFO - 127.0.0.1 - - [02/Apr/2026 11:47:30] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 06:51:54,953 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-04 06:56:08,299 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-04 06:57:06,409 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-04 06:57:37,360 - gtfs_loader - INFO - Loaded GTFS: 6424 stops, 15826 trips, 15826 trip patterns, 5 service exceptions
+2026-04-04 06:57:50,728 - transit_router - INFO - Loaded 305 shapes
+2026-04-04 06:57:51,166 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-04 06:57:51,279 - transit_router - INFO - Cached 15826 trips
+2026-04-04 06:57:51,279 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-04 06:57:51,283 - __main__ - INFO - Safety AI loaded successfully
+2026-04-04 06:57:56,105 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-04-04 06:57:56,105 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-04-04 06:57:56,105 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-04-04 06:57:56,105 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-04-04 06:57:56,121 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-04-04 06:57:56,121 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-04-04 06:57:58,603 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 06:57:58] "GET /api/hello HTTP/1.1" 200 -
+2026-04-04 06:57:58,629 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 06:57:58] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-04-04 06:58:44,844 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 06:58:44] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-04-04 06:58:47,306 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 06:58:47] "[32mGET /api/callback?state=42hdhvPWZmWas7S0UL5hfBrgzP0yaM&iss=https://accounts.google.com&code=4/0Aci98E8SlzoHbxTSpUcilWB4J_0Abkj8Vni12FaaxM12mqJQZ71TzIaN9NF7YF5PEXA1CQ&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+openid+https://www.googleapis.com/auth/userinfo.email&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-04-04 06:58:48,055 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 06:58:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 06:58:48,057 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 06:58:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 06:58:48,059 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 06:58:48,060 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 06:58:48,374 - __main__ - INFO - TomTom returned 192 incidents
+2026-04-04 06:58:48,376 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 06:58:48,383 - __main__ - INFO - TomTom returned 192 incidents
+2026-04-04 06:58:48,384 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 06:58:48,765 - news_hazard_fetcher - WARNING - PulsePoint agency fetch returned 401
+2026-04-04 06:58:48,769 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-04-04 06:58:48,769 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-04-04 06:58:48,769 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-04-04 06:58:48,769 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 06:58:48,769 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 06:58:48,773 - news_hazard_fetcher - WARNING - PulsePoint agency fetch returned 401
+2026-04-04 06:58:48,777 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-04-04 06:58:48,777 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-04-04 06:58:48,777 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-04-04 06:58:48,778 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 06:58:48,778 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 06:59:33,158 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 06:59:33,158 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 06:59:37,346 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 06:59:37,359 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 06:59:37,398 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 06:59:37,398 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 06:59:37,398 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 06:59:37,398 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 06:59:37,399 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 06:59:37,414 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 06:59:37,414 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 06:59:37,414 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 06:59:37,414 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 06:59:37,417 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 06:59:37,420 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 06:59:37] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 06:59:37,420 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 06:59:37,421 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 06:59:37,425 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 06:59:37] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 07:00:27,199 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:00:27] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-04 07:00:27,207 - transit_router - INFO - Transit routing from (40.4885,-79.8982) to (40.4545,-79.9376)
+2026-04-04 07:00:27,225 - transit_router - INFO - Found 17 stops within 1000.0m
+2026-04-04 07:00:27,236 - transit_router - INFO - Found 118 stops within 1000.0m
+2026-04-04 07:00:27,270 - __main__ - ERROR - Error in transit routing: '<' not supported between instances of 'str' and 'NoneType'
+Traceback (most recent call last):
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 862, in get_transit_route
+    routes = transit_router.find_route(
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/transit_router.py", line 178, in find_route
+    current_time, current_node, current_trip, transfers, current_state = heapq.heappop(pq)
+TypeError: '<' not supported between instances of 'str' and 'NoneType'
+2026-04-04 07:00:27,272 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:00:27] "[35m[1mPOST /api/transit-route HTTP/1.1[0m" 500 -
+2026-04-04 07:00:27,275 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:00:27] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-04-04 07:00:27,276 - __main__ - INFO - Fetching hazards within 2521.210959640412m of route midpoint
+2026-04-04 07:00:27,276 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 07:00:27,277 - __main__ - INFO - Found 19 crime/hazard zones to avoid
+2026-04-04 07:00:27,394 - __main__ - INFO - Added 2 construction zones to avoidance list
+2026-04-04 07:00:27,394 - __main__ - INFO - Routing with 21 total hazards to avoid
+2026-04-04 07:00:27,394 - tomtom_router - INFO - Attempting to route around 21 hazard zones
+2026-04-04 07:00:27,577 - tomtom_router - INFO - Selected route avoids all hazards!
+2026-04-04 07:00:27,579 - __main__ - INFO - TomTom route with hazard avoidance successful
+2026-04-04 07:00:28,079 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-04-04 07:00:28,091 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:00:28] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-04-04 07:00:28,649 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:00:28] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-04-04 07:00:28,652 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:00:28] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-04-04 07:01:31,577 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:31] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-04-04 07:01:31,580 - __main__ - INFO - Fetching hazards within 2521.210959640412m of route midpoint
+2026-04-04 07:01:31,580 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 07:01:31,581 - __main__ - INFO - Found 19 crime/hazard zones to avoid
+2026-04-04 07:01:31,696 - __main__ - INFO - Added 2 construction zones to avoidance list
+2026-04-04 07:01:31,696 - __main__ - INFO - Routing with 21 total hazards to avoid
+2026-04-04 07:01:31,696 - tomtom_router - INFO - Attempting to route around 21 hazard zones
+2026-04-04 07:01:31,901 - __main__ - INFO - TomTom route with hazard avoidance successful
+2026-04-04 07:01:32,297 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-04-04 07:01:32,300 - __main__ - INFO - Using cached route result
+2026-04-04 07:01:32,306 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:32] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-04-04 07:01:32,981 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:32] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-04-04 07:01:32,987 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:32] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-04-04 07:01:43,154 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:43] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-04 07:01:43,167 - transit_router - INFO - Transit routing from (40.4885,-79.8982) to (40.4545,-79.9376)
+2026-04-04 07:01:43,274 - transit_router - INFO - Found 17 stops within 1000.0m
+2026-04-04 07:01:43,295 - transit_router - INFO - Found 118 stops within 1000.0m
+2026-04-04 07:01:43,415 - __main__ - ERROR - Error in transit routing: '<' not supported between instances of 'NoneType' and 'str'
+Traceback (most recent call last):
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 862, in get_transit_route
+    routes = transit_router.find_route(
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/transit_router.py", line 178, in find_route
+    current_time, current_node, current_trip, transfers, current_state = heapq.heappop(pq)
+TypeError: '<' not supported between instances of 'NoneType' and 'str'
+2026-04-04 07:01:43,420 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:43] "[35m[1mPOST /api/transit-route HTTP/1.1[0m" 500 -
+2026-04-04 07:01:43,470 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:43] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-04-04 07:01:43,529 - __main__ - INFO - Fetching hazards within 2521.210959640412m of route midpoint
+2026-04-04 07:01:43,529 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 07:01:43,531 - __main__ - INFO - Found 19 crime/hazard zones to avoid
+2026-04-04 07:01:43,679 - __main__ - INFO - Added 2 construction zones to avoidance list
+2026-04-04 07:01:43,680 - __main__ - INFO - Routing with 21 total hazards to avoid
+2026-04-04 07:01:43,681 - tomtom_router - INFO - Attempting to route around 21 hazard zones
+2026-04-04 07:01:43,905 - tomtom_router - INFO - Selected route avoids all hazards!
+2026-04-04 07:01:43,908 - __main__ - INFO - TomTom route with hazard avoidance successful
+2026-04-04 07:01:44,393 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-04-04 07:01:44,397 - __main__ - INFO - Using cached route result
+2026-04-04 07:01:44,403 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:44] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-04-04 07:01:45,118 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:45] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-04-04 07:01:45,122 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:45] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-04-04 07:01:49,954 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:49] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-04 07:01:49,957 - transit_router - INFO - Transit routing from (40.4885,-79.8982) to (40.4545,-79.9376)
+2026-04-04 07:01:49,973 - transit_router - INFO - Found 17 stops within 1000.0m
+2026-04-04 07:01:49,984 - transit_router - INFO - Found 118 stops within 1000.0m
+2026-04-04 07:01:49,994 - __main__ - ERROR - Error in transit routing: '<' not supported between instances of 'NoneType' and 'str'
+Traceback (most recent call last):
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 862, in get_transit_route
+    routes = transit_router.find_route(
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/transit_router.py", line 178, in find_route
+    current_time, current_node, current_trip, transfers, current_state = heapq.heappop(pq)
+TypeError: '<' not supported between instances of 'NoneType' and 'str'
+2026-04-04 07:01:49,995 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:49] "[35m[1mPOST /api/transit-route HTTP/1.1[0m" 500 -
+2026-04-04 07:01:50,166 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:50] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-04-04 07:01:50,179 - __main__ - INFO - Fetching hazards within 2521.210959640412m of route midpoint
+2026-04-04 07:01:50,180 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 07:01:50,180 - __main__ - INFO - Found 19 crime/hazard zones to avoid
+2026-04-04 07:01:50,309 - __main__ - INFO - Added 2 construction zones to avoidance list
+2026-04-04 07:01:50,309 - __main__ - INFO - Routing with 21 total hazards to avoid
+2026-04-04 07:01:50,310 - tomtom_router - INFO - Attempting to route around 21 hazard zones
+2026-04-04 07:01:50,494 - tomtom_router - INFO - Selected route avoids all hazards!
+2026-04-04 07:01:50,497 - __main__ - INFO - TomTom route with hazard avoidance successful
+2026-04-04 07:01:50,870 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-04-04 07:01:50,873 - __main__ - INFO - Using cached route result
+2026-04-04 07:01:50,880 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:50] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-04-04 07:01:51,497 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:51] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-04-04 07:01:51,501 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:51] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-04-04 07:01:56,277 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:56] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-04 07:01:56,279 - transit_router - INFO - Transit routing from (40.4885,-79.8982) to (40.4545,-79.9376)
+2026-04-04 07:01:56,295 - transit_router - INFO - Found 17 stops within 1000.0m
+2026-04-04 07:01:56,307 - transit_router - INFO - Found 118 stops within 1000.0m
+2026-04-04 07:01:56,313 - __main__ - ERROR - Error in transit routing: '<' not supported between instances of 'NoneType' and 'str'
+Traceback (most recent call last):
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 862, in get_transit_route
+    routes = transit_router.find_route(
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/transit_router.py", line 178, in find_route
+    current_time, current_node, current_trip, transfers, current_state = heapq.heappop(pq)
+TypeError: '<' not supported between instances of 'NoneType' and 'str'
+2026-04-04 07:01:56,314 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:56] "[35m[1mPOST /api/transit-route HTTP/1.1[0m" 500 -
+2026-04-04 07:01:56,471 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:56] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-04-04 07:01:56,475 - __main__ - INFO - Fetching hazards within 2521.210959640412m of route midpoint
+2026-04-04 07:01:56,475 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 07:01:56,476 - __main__ - INFO - Found 19 crime/hazard zones to avoid
+2026-04-04 07:01:56,596 - __main__ - INFO - Added 2 construction zones to avoidance list
+2026-04-04 07:01:56,597 - __main__ - INFO - Routing with 21 total hazards to avoid
+2026-04-04 07:01:56,597 - tomtom_router - INFO - Attempting to route around 21 hazard zones
+2026-04-04 07:01:56,817 - tomtom_router - INFO - Selected route avoids all hazards!
+2026-04-04 07:01:56,820 - __main__ - INFO - TomTom route with hazard avoidance successful
+2026-04-04 07:01:57,169 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-04-04 07:01:57,172 - __main__ - INFO - Using cached route result
+2026-04-04 07:01:57,180 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:57] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-04-04 07:01:57,989 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:57] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-04-04 07:01:57,992 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:01:57] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-04-04 07:03:48,694 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:03:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 07:03:48,699 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 07:03:48,933 - __main__ - INFO - TomTom returned 190 incidents
+2026-04-04 07:03:48,935 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 07:03:48,935 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 07:03:48,935 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 07:03:48,940 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:03:48] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 07:05:19,389 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:05:19] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-04 07:05:19,396 - transit_router - INFO - Transit routing from (40.4885,-79.8982) to (40.4545,-79.9376)
+2026-04-04 07:05:19,425 - transit_router - INFO - Found 17 stops within 1000.0m
+2026-04-04 07:05:19,441 - transit_router - INFO - Found 118 stops within 1000.0m
+2026-04-04 07:05:19,454 - __main__ - ERROR - Error in transit routing: '<' not supported between instances of 'str' and 'NoneType'
+Traceback (most recent call last):
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 862, in get_transit_route
+    routes = transit_router.find_route(
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/transit_router.py", line 178, in find_route
+    num_alternatives: int = 3) -> Optional[List[Dict]]:
+TypeError: '<' not supported between instances of 'str' and 'NoneType'
+2026-04-04 07:05:19,457 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:05:19] "[35m[1mPOST /api/transit-route HTTP/1.1[0m" 500 -
+2026-04-04 07:05:19,620 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:05:19] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-04-04 07:05:19,623 - __main__ - INFO - Fetching hazards within 2521.210959640412m of route midpoint
+2026-04-04 07:05:19,623 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 07:05:19,624 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 07:05:57,247 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 07:06:01,230 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 07:06:01,230 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 07:06:01,274 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 07:06:01,274 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 07:06:01,275 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 07:06:01,275 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 07:06:01,276 - __main__ - INFO - Found 19 crime/hazard zones to avoid
+2026-04-04 07:06:01,463 - __main__ - INFO - Added 2 construction zones to avoidance list
+2026-04-04 07:06:01,463 - __main__ - INFO - Routing with 21 total hazards to avoid
+2026-04-04 07:06:01,464 - tomtom_router - INFO - Attempting to route around 21 hazard zones
+2026-04-04 07:06:01,652 - tomtom_router - INFO - Selected route avoids all hazards!
+2026-04-04 07:06:01,654 - __main__ - INFO - TomTom route with hazard avoidance successful
+2026-04-04 07:06:02,100 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-04-04 07:06:02,103 - __main__ - INFO - Using cached route result
+2026-04-04 07:06:02,110 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:06:02] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-04-04 07:06:02,626 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:06:02] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-04-04 07:06:02,630 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:06:02] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-04-04 07:08:29,906 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:08:29] "[33mGET / HTTP/1.1[0m" 404 -
+2026-04-04 07:08:48,699 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:08:48] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 07:08:48,702 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 07:08:48,937 - __main__ - INFO - TomTom returned 191 incidents
+2026-04-04 07:08:48,939 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 07:08:48,939 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 07:08:48,940 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 07:08:48,944 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:08:48] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 07:09:50,331 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-04 07:10:21,063 - gtfs_loader - INFO - Loaded GTFS: 6424 stops, 15826 trips, 15826 trip patterns, 5 service exceptions
+2026-04-04 07:10:34,424 - transit_router - INFO - Loaded 305 shapes
+2026-04-04 07:10:34,878 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-04 07:10:34,895 - transit_router - INFO - Loaded 101 routes
+2026-04-04 07:10:35,054 - transit_router - INFO - Cached 15826 trips
+2026-04-04 07:10:35,054 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-04 07:10:35,058 - __main__ - INFO - Safety AI loaded successfully
+2026-04-04 07:10:36,560 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-04-04 07:10:36,560 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-04-04 07:10:36,560 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-04-04 07:10:36,560 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-04-04 07:10:36,577 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-04-04 07:10:36,577 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-04-04 07:10:39,012 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:10:39] "GET /api/hello HTTP/1.1" 200 -
+2026-04-04 07:10:44,739 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:10:44] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-04 07:10:44,744 - transit_router - INFO - Transit routing from (40.4885,-79.8982) to (40.4545,-79.9376)
+2026-04-04 07:10:44,762 - transit_router - INFO - Found 17 stops within 1000.0m
+2026-04-04 07:10:44,779 - transit_router - INFO - Found 118 stops within 1000.0m
+2026-04-04 07:10:46,509 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:10:46] "POST /api/transit-route HTTP/1.1" 200 -
+2026-04-04 07:10:47,024 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:10:47] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-04-04 07:10:47,029 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:10:47] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-04-04 07:11:08,181 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:11:08] "OPTIONS /api/transit-route HTTP/1.1" 200 -
+2026-04-04 07:11:08,184 - transit_router - INFO - Transit routing from (40.5537,-79.9079) to (40.4545,-79.9376)
+2026-04-04 07:11:08,247 - transit_router - INFO - Found 362 stops within 8000m
+2026-04-04 07:11:08,256 - transit_router - INFO - Found 118 stops within 1000.0m
+2026-04-04 07:11:10,378 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:11:10] "POST /api/transit-route HTTP/1.1" 200 -
+2026-04-04 07:11:11,044 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:11:11] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-04-04 07:11:11,047 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 07:11:11] "POST /api/check-obstructions HTTP/1.1" 200 -

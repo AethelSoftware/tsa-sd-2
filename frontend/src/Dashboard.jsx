@@ -1,3 +1,4 @@
+// Dashboard.jsx
 import React, {
   useState,
   useRef,
@@ -157,7 +158,7 @@ function getValidCoordinates(obj) {
 function makeLucideIcon(IconComponent, color, borderColor, size = 30) {
   const innerSize = Math.max(12, size * 0.55);
   const svg = renderToStaticMarkup(
-    <IconComponent size={innerSize} color={color} strokeWidth={2.2} />,
+    <IconComponent size={innerSize} color={color} strokeWidth={2.2} />
   );
   const html = `<div style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;background:rgba(16,8,3,0.92);border:${Math.max(1, size / 20)}px solid ${borderColor};border-radius:${Math.max(6, size / 4)}px;box-shadow:0 2px 8px rgba(0,0,0,0.45);backdrop-filter:blur(4px);cursor:pointer;">${svg}</div>`;
   return L.divIcon({
@@ -198,44 +199,44 @@ function pointToSegmentDistanceMeters(point, segStart, segEnd) {
   const δ13 = Math.acos(
     clamp(
       Math.sin(φ1) * Math.sin(φp) +
-        Math.cos(φ1) * Math.cos(φp) * Math.cos(λp - λ1),
-    ),
+        Math.cos(φ1) * Math.cos(φp) * Math.cos(λp - λ1)
+    )
   );
   const δ23 = Math.acos(
     clamp(
       Math.sin(φ2) * Math.sin(φp) +
-        Math.cos(φ2) * Math.cos(φp) * Math.cos(λp - λ2),
-    ),
+        Math.cos(φ2) * Math.cos(φp) * Math.cos(λp - λ2)
+    )
   );
   const δ12 = Math.acos(
     clamp(
       Math.sin(φ1) * Math.sin(φ2) +
-        Math.cos(φ1) * Math.cos(φ2) * Math.cos(λ2 - λ1),
-    ),
+        Math.cos(φ1) * Math.cos(φ2) * Math.cos(λ2 - λ1)
+    )
   );
   if (δ13 > δ12 + 1e-10 && δ23 > δ12 + 1e-10)
     return Math.min(
       haversineDistance(s1Lat, s1Lng, pLat, pLng),
-      haversineDistance(s2Lat, s2Lng, pLat, pLng),
+      haversineDistance(s2Lat, s2Lng, pLat, pLng)
     );
   const θ12 = Math.acos(
     clamp(
       (Math.sin(φ2) - Math.sin(φ1) * Math.cos(δ12)) /
-        (Math.cos(φ1) * Math.sin(δ12)),
-    ),
+        (Math.cos(φ1) * Math.sin(δ12))
+    )
   );
   const θ13 = Math.acos(
     clamp(
       (Math.sin(φp) - Math.sin(φ1) * Math.cos(δ13)) /
-        (Math.cos(φ1) * Math.sin(δ13)),
-    ),
+        (Math.cos(φ1) * Math.sin(δ13))
+    )
   );
   const δxt = Math.asin(clamp(Math.sin(δ13) * Math.sin(θ13 - θ12)));
   const distance = Math.abs(δxt) * 6371000;
   return isNaN(distance)
     ? Math.min(
         haversineDistance(s1Lat, s1Lng, pLat, pLng),
-        haversineDistance(s2Lat, s2Lng, pLat, pLng),
+        haversineDistance(s2Lat, s2Lng, pLat, pLng)
       )
     : distance;
 }
@@ -1009,15 +1010,10 @@ const ObstructionMarker = React.memo(
 const DirectionsPanel = React.memo(({ steps, onClose, routeType }) => {
   if (!steps || steps.length === 0) return null;
 
-  // Helper to clean stop names (remove address numbers, etc.)
+  // Helper to clean stop names - PRT names are already Title-Cased, just trim
   const cleanStopName = (name) => {
     if (!name) return "stop";
-    // Remove patterns like " + #2238" or " at 123 Main St"
-    let cleaned = name.replace(/\s+\+\s+#\d+/, "");
-    cleaned = cleaned.replace(/\s+at\s+.+$/, "");
-    // Remove trailing numbers like "FREEPORT RD 2238"
-    cleaned = cleaned.replace(/\s+\d+$/, "");
-    return cleaned;
+    return name.trim();
   };
 
   return (
@@ -1056,25 +1052,20 @@ const DirectionsPanel = React.memo(({ steps, onClose, routeType }) => {
           } else if (isLast) {
             instruction = `Arrive at ${step.instruction?.replace("Arrive at ", "") || "your destination"}`;
           } else if (isTransit) {
-            const routeName =
-              step.route_short_name ||
-              step.transit_line ||
-              step.trip_id?.split("_")[0] ||
-              "Bus";
-            const fromStop = cleanStopName(
-              step.departure_stop || step.start_stop || "stop",
-            );
-            const toStop = cleanStopName(
-              step.arrival_stop || step.end_stop || "next stop",
-            );
-            instruction = `Take Bus ${routeName} from ${fromStop} to ${toStop}`;
+            const routeName = step.route_short_name || "";
+            const routeLong = step.route_long_name || "";
+            const fromStop = cleanStopName(step.departure_stop || step.start_stop || "stop");
+            const toStop = cleanStopName(step.arrival_stop || step.end_stop || "next stop");
+            const label = routeLong ? `Bus ${routeName} (${routeLong})` : `Bus ${routeName}`;
+            instruction = `Take ${label} from ${fromStop} to ${toStop}`;
           } else if (isWalk) {
-            const toStop = cleanStopName(
-              step.to_stop ||
-                step.instruction?.replace("Walk to ", "") ||
-                "next stop",
-            );
-            instruction = `Walk to ${toStop}`;
+            const dist = step.distance_meters 
+              ? (step.distance_meters < 1000 
+                  ? `${Math.round(step.distance_meters)} m` 
+                  : `${(step.distance_meters/1000).toFixed(1)} km`)
+              : "";
+            const toName = cleanStopName(step.to_stop || step.instruction?.replace("Walk to ", "") || "next stop");
+            instruction = `Walk ${dist ? `${dist} ` : ''}to ${toName}`;
           } else {
             instruction = stripHtml(step.instruction || "Continue");
           }
@@ -1121,7 +1112,7 @@ const DirectionsPanel = React.memo(({ steps, onClose, routeType }) => {
                   {isTransit && (
                     <span className="transit-badge">
                       <Bus size={9} />
-                      {step.route_short_name || step.transit_line || "Bus"}
+                      {step.route_short_name || "Bus"}
                     </span>
                   )}
                   {isWalk && !isFirst && !isLast && (
@@ -1138,6 +1129,79 @@ const DirectionsPanel = React.memo(({ steps, onClose, routeType }) => {
     </div>
   );
 });
+
+// ─── Helper functions for transit routing ───────────────────────────────────
+
+function buildTransitSegments(steps) {
+  const segments = [];
+  for (const step of steps) {
+    const geom = step.path_geometry || [];
+    if (geom.length === 0) continue;
+    const coords = geom.map(pt => 
+      Array.isArray(pt) ? [pt[0], pt[1]] : [pt.lat, pt.lon || pt.lng]
+    );
+    segments.push({
+      coords,
+      type: step.type,
+      line: step.route_short_name || '',
+      route_long_name: step.route_long_name || '',
+    });
+  }
+  return segments;
+}
+
+function extractCoordsFromSteps(steps) {
+  const pts = [];
+  for (const step of steps) {
+    const geom = step.path_geometry || [];
+    for (const pt of geom) {
+      const lat = Array.isArray(pt) ? pt[0] : pt.lat;
+      const lon = Array.isArray(pt) ? pt[1] : (pt.lon || pt.lng);
+      if (lat && lon) pts.push([lat, lon]);
+    }
+  }
+  return pts;
+}
+
+function buildDisplayStepsFromTransit(steps) {
+  const display = [];
+  for (const step of steps) {
+    if (step.type === 'walk') {
+      const toName = step.to_stop || 'next stop';
+      const dist = step.distance_meters || 0;
+      const dur = step.duration_seconds || 0;
+      display.push({
+        type: 'walk',
+        travel_mode: 'WALKING',
+        instruction: `Walk ${dist ? `${dist < 1000 ? `${Math.round(dist)} m` : `${(dist/1000).toFixed(1)} km`} ` : ''}to ${toName}`,
+        distance_meters: dist,
+        duration_seconds: dur,
+        distance: dist < 1000 ? `${Math.round(dist)} m` : `${(dist/1000).toFixed(1)} km`,
+        duration: dur >= 60 ? `${Math.round(dur/60)} min` : `${dur} sec`,
+        path_geometry: step.path_geometry || [],
+      });
+    } else if (step.type === 'transit') {
+      const routeName = step.route_short_name || '';
+      const routeLong = step.route_long_name || '';
+      const fromStop = step.start_stop || '';
+      const toStop = step.end_stop || '';
+      const label = routeLong ? `Bus ${routeName} (${routeLong})` : `Bus ${routeName}`;
+      display.push({
+        type: 'transit',
+        travel_mode: 'TRANSIT',
+        instruction: `Take ${label} from ${fromStop} to ${toStop}`,
+        route_short_name: routeName,
+        route_long_name: routeLong,
+        departure_stop: fromStop,
+        arrival_stop: toStop,
+        duration_seconds: step.duration_seconds || 0,
+        duration: step.duration_seconds >= 60 ? `${Math.round(step.duration_seconds/60)} min` : `${step.duration_seconds} sec`,
+        path_geometry: step.path_geometry || [],
+      });
+    }
+  }
+  return display;
+}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -1192,11 +1256,12 @@ export default function AccessibleMap() {
   const [walkerIdx, setWalkerIdx] = useState(0);
   const walkerIntervalRef = useRef(null);
 
-  // ── Directions state (from new version) ──
+  // ── Directions state ──
   const [routeSteps, setRouteSteps] = useState([]);
   const [showDirections, setShowDirections] = useState(false);
-  const [routeType, setRouteType] = useState("walking"); // "walking" | "transit"
-  const [transitSegments, setTransitSegments] = useState([]); // [{coords, type:'walk'|'transit', line}]
+  const [routeType, setRouteType] = useState("walking");
+  const [transitSegments, setTransitSegments] = useState([]);
+  const [transitAlternatives, setTransitAlternatives] = useState([]); // NEW
 
   const debRef = useRef(null);
   const destRef = useRef(null);
@@ -1211,7 +1276,6 @@ export default function AccessibleMap() {
 
   const [emergencies911, setEmergencies911] = useState([]);
 
-  // Add this after your state declarations
   const memoizedSuggItems = useMemo(() => {
     return sugg.map((s, i) => {
       const CIcon = getCatIcon(s.category);
@@ -1272,7 +1336,6 @@ export default function AccessibleMap() {
     });
   }, [fromSugg, fromHiIdx]);
 
-  // Add throttle function at the top of your component (inside, after useState)
   const throttledSetZoom = useCallback(
     throttle((newZoom) => {
       setZoom(newZoom);
@@ -1318,7 +1381,6 @@ export default function AccessibleMap() {
     });
   }, []);
 
-  // Debug logging (kept from old version)
   useEffect(() => {
     if (constructionZones.length > 0) {
       console.log("First construction zone:", constructionZones[0]);
@@ -1425,193 +1487,176 @@ export default function AccessibleMap() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-// Fetch area obstructions with bounding box covering entire Pittsburgh region
-useEffect(() => {
-  const fetchAreaObstructions = async () => {
-    try {
-      console.log('🔄 Fetching area obstructions...');
-      const res = await fetch("http://127.0.0.1:5000/api/area-obstructions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          use_custom_bbox: true,
-          min_lat: 40.2,   // South of Pittsburgh (Washington County border)
-          max_lat: 40.8,   // North of Pittsburgh (Butler County border)
-          min_lng: -80.8,  // Ohio border (East Liverpool area)
-          max_lng: -79.5,  // East of Pittsburgh (Monroeville area)
-          include_emergencies: true,
-          include_news: true
-        }),
-      });
-      const data = await res.json();
-      
-      console.log('📡 API RESPONSE SUMMARY:');
-      console.log('  - Success:', data.success);
-      console.log('  - Construction zones:', data.construction_zones?.length || 0);
-      console.log('  - Total hazards:', data.hazards?.length || 0);
-      console.log('  - News hazards:', data.news_hazards?.length || 0);
-      console.log('  - 911 emergencies:', data.emergencies_911?.length || 0);
-      
-      if (data.success) {
-        const sanitize = (arr) =>
-          (arr || [])
-            .map((item) => {
-              let lat = item.lat ?? item.latitude ?? item.position?.lat ?? null;
-              let lng = item.lng ?? item.longitude ?? item.lon ?? item.position?.lng ?? null;
-              if (lat !== null) lat = Number(lat);
-              if (lng !== null) lng = Number(lng);
-              if (
-                lat !== null &&
-                lng !== null &&
-                !isNaN(lat) &&
-                !isNaN(lng) &&
-                isFinite(lat) &&
-                isFinite(lng)
-              ) {
-                return { ...item, lat, lng };
-              }
-              return null;
-            })
-            .filter(Boolean);
+  // Fetch area obstructions with bounding box covering entire Pittsburgh region
+  useEffect(() => {
+    const fetchAreaObstructions = async () => {
+      try {
+        console.log('🔄 Fetching area obstructions...');
+        const res = await fetch("http://127.0.0.1:5000/api/area-obstructions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            use_custom_bbox: true,
+            min_lat: 40.2,
+            max_lat: 40.8,
+            min_lng: -80.8,
+            max_lng: -79.5,
+            include_emergencies: true,
+            include_news: true
+          }),
+        });
+        const data = await res.json();
+        
+        console.log('📡 API RESPONSE SUMMARY:');
+        console.log('  - Success:', data.success);
+        console.log('  - Construction zones:', data.construction_zones?.length || 0);
+        console.log('  - Total hazards:', data.hazards?.length || 0);
+        console.log('  - News hazards:', data.news_hazards?.length || 0);
+        console.log('  - 911 emergencies:', data.emergencies_911?.length || 0);
+        
+        if (data.success) {
+          const sanitize = (arr) =>
+            (arr || [])
+              .map((item) => {
+                let lat = item.lat ?? item.latitude ?? item.position?.lat ?? null;
+                let lng = item.lng ?? item.longitude ?? item.lon ?? item.position?.lng ?? null;
+                if (lat !== null) lat = Number(lat);
+                if (lng !== null) lng = Number(lng);
+                if (
+                  lat !== null &&
+                  lng !== null &&
+                  !isNaN(lat) &&
+                  !isNaN(lng) &&
+                  isFinite(lat) &&
+                  isFinite(lng)
+                ) {
+                  return { ...item, lat, lng };
+                }
+                return null;
+              })
+              .filter(Boolean);
 
-        setConstructionZones(sanitize(data.construction_zones));
-        
-        // Get ALL hazards from the response
-        const allHazards = sanitize(data.hazards || []);
-        
-        // Separate by source for different styling
-        const newsHazards = allHazards.filter(h => h.source === 'news_api');
-        const arrestHazards = allHazards.filter(h => h.source === 'arrest_data');
-        const tomtomHazards = allHazards.filter(h => h.source === 'tomtom');
-        const otherHazards = allHazards.filter(h => 
-          h.source !== 'news_api' && 
-          h.source !== 'arrest_data' && 
-          h.source !== 'tomtom'
-        );
-        
-        // For emergencies911 (red markers) - combine news AND arrest data
-        const emergencyMarkers = [...newsHazards, ...arrestHazards];
-        setEmergencies911(emergencyMarkers);
-        
-        // Regular hazards (yellow/orange markers) - tomtom + other
-        setActiveHazards([...tomtomHazards, ...otherHazards]);
-        
-        console.log('📊 HAZARD BREAKDOWN:');
-        console.log(`  - News hazards: ${newsHazards.length}`);
-        console.log(`  - Arrest hazards: ${arrestHazards.length}`);
-        console.log(`  - TomTom hazards: ${tomtomHazards.length}`);
-        console.log(`  - Construction zones: ${data.construction_zones?.length || 0}`);
-        console.log(`  - Total emergency markers (red): ${emergencyMarkers.length}`);
-        
-        // Debug: Show locations of emergency markers
-        if (emergencyMarkers.length > 0) {
-          console.log('📍 EMERGENCY MARKER LOCATIONS:');
-          emergencyMarkers.forEach((e, i) => {
-            console.log(`  ${i+1}. ${e.type} - Lat: ${e.lat}, Lng: ${e.lng} - ${e.location_name || 'Unknown location'}`);
-          });
-        } else {
-          console.log('⚠️ NO EMERGENCY MARKERS - Check if news_hazards or arrest_hazards have data');
+          setConstructionZones(sanitize(data.construction_zones));
+          
+          const allHazards = sanitize(data.hazards || []);
+          const newsHazards = allHazards.filter(h => h.source === 'news_api');
+          const arrestHazards = allHazards.filter(h => h.source === 'arrest_data');
+          const tomtomHazards = allHazards.filter(h => h.source === 'tomtom');
+          const otherHazards = allHazards.filter(h => 
+            h.source !== 'news_api' && 
+            h.source !== 'arrest_data' && 
+            h.source !== 'tomtom'
+          );
+          
+          const emergencyMarkers = [...newsHazards, ...arrestHazards];
+          setEmergencies911(emergencyMarkers);
+          setActiveHazards([...tomtomHazards, ...otherHazards]);
+          
+          console.log('📊 HAZARD BREAKDOWN:');
+          console.log(`  - News hazards: ${newsHazards.length}`);
+          console.log(`  - Arrest hazards: ${arrestHazards.length}`);
+          console.log(`  - TomTom hazards: ${tomtomHazards.length}`);
+          console.log(`  - Construction zones: ${data.construction_zones?.length || 0}`);
+          console.log(`  - Total emergency markers (red): ${emergencyMarkers.length}`);
         }
+      } catch (error) {
+        console.error("Error fetching obstructions:", error);
       }
-    } catch (error) {
-      console.error("Error fetching obstructions:", error);
-    }
-  };
-  fetchAreaObstructions();
-  const interval = setInterval(fetchAreaObstructions, 300000);
-  return () => clearInterval(interval);
-}, [loc]);
+    };
+    fetchAreaObstructions();
+    const interval = setInterval(fetchAreaObstructions, 300000);
+    return () => clearInterval(interval);
+  }, [loc]);
 
-useEffect(() => {
-  const fetchRoads = async () => {
-    try {
-      // Use the FULL Pittsburgh region bounding box (same as area obstructions)
-      const minLat = 40.2;
-      const maxLat = 40.8;
-      const minLng = -80.8;
-      const maxLng = -79.5;
-      const bbox = `${minLng},${minLat},${maxLng},${maxLat}`;
-      
-      console.log('Fetching TomTom road incidents for region:', bbox);
-      
-      const url = `https://api.tomtom.com/traffic/services/5/incidentDetails?key=${TOMTOM_API_KEY}&bbox=${bbox}&fields={incidents{geometry{type,coordinates},properties{iconCategory,events{description},from,to,startTime,endTime}}}`;
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        console.error('TomTom API error:', response.status);
-        return;
-      }
-      
-      const data = await response.json();
-      
-      if (data.incidents?.length > 0) {
-        console.log(`Found ${data.incidents.length} TomTom incidents`);
+  useEffect(() => {
+    const fetchRoads = async () => {
+      try {
+        const minLat = 40.2;
+        const maxLat = 40.8;
+        const minLng = -80.8;
+        const maxLng = -79.5;
+        const bbox = `${minLng},${minLat},${maxLng},${maxLat}`;
         
-        const segs = data.incidents
-          .filter((i) =>
-            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14].includes(
-              i.properties.iconCategory,
-            ),
-          )
-          .map((inc) => {
-            const coords = inc.geometry.coordinates;
-            let coordinates = [];
-            
-            if (inc.geometry.type === "Point") {
-              coordinates = [[coords[1], coords[0]]];
-            } else if (inc.geometry.type === "LineString") {
-              coordinates = coords.map((c) => [c[1], c[0]]);
-            }
-            
-            let label = "⚠️ HAZARD";
-            let color = "rgba(255,140,70,0.95)";
-            let borderColor = "#ffaa66";
-            
-            if ([7, 8, 9].includes(inc.properties.iconCategory)) {
-              label = "🚧 CONSTRUCTION";
-              color = "rgba(255,100,80,0.95)";
-              borderColor = "#ff6b6b";
-            } else if (inc.properties.iconCategory === 1) {
-              label = "⚠️ ACCIDENT";
-              color = "rgba(255,80,70,0.95)";
-              borderColor = "#ff5555";
-            } else if (inc.properties.iconCategory === 6) {
-              label = "🚗 JAM";
-              color = "rgba(255,180,70,0.95)";
-              borderColor = "#ffcc66";
-            }
-            
-            return {
-              id: inc.id,
-              name: `${inc.properties.from || ""} to ${inc.properties.to || ""}`.trim() || "Road Segment",
-              coordinates,
-              label,
-              color,
-              borderColor,
-              description: inc.properties.events?.[0]?.description || "Road incident",
-              fromStreet: inc.properties.from || "",
-              toStreet: inc.properties.to || "",
-              startTime: inc.properties.startTime,
-              endTime: inc.properties.endTime,
-            };
-          })
-          .filter((s) => s.coordinates.length > 0);
+        console.log('Fetching TomTom road incidents for region:', bbox);
         
-        console.log(`Created ${segs.length} road segment overlays`);
-        setObstructedRoads(segs);
-      } else {
-        console.log('No TomTom incidents found in region');
+        const url = `https://api.tomtom.com/traffic/services/5/incidentDetails?key=${TOMTOM_API_KEY}&bbox=${bbox}&fields={incidents{geometry{type,coordinates},properties{iconCategory,events{description},from,to,startTime,endTime}}}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          console.error('TomTom API error:', response.status);
+          return;
+        }
+        
+        const data = await response.json();
+        
+        if (data.incidents?.length > 0) {
+          console.log(`Found ${data.incidents.length} TomTom incidents`);
+          
+          const segs = data.incidents
+            .filter((i) =>
+              [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14].includes(
+                i.properties.iconCategory,
+              ),
+            )
+            .map((inc) => {
+              const coords = inc.geometry.coordinates;
+              let coordinates = [];
+              
+              if (inc.geometry.type === "Point") {
+                coordinates = [[coords[1], coords[0]]];
+              } else if (inc.geometry.type === "LineString") {
+                coordinates = coords.map((c) => [c[1], c[0]]);
+              }
+              
+              let label = "⚠️ HAZARD";
+              let color = "rgba(255,140,70,0.95)";
+              let borderColor = "#ffaa66";
+              
+              if ([7, 8, 9].includes(inc.properties.iconCategory)) {
+                label = "🚧 CONSTRUCTION";
+                color = "rgba(255,100,80,0.95)";
+                borderColor = "#ff6b6b";
+              } else if (inc.properties.iconCategory === 1) {
+                label = "⚠️ ACCIDENT";
+                color = "rgba(255,80,70,0.95)";
+                borderColor = "#ff5555";
+              } else if (inc.properties.iconCategory === 6) {
+                label = "🚗 JAM";
+                color = "rgba(255,180,70,0.95)";
+                borderColor = "#ffcc66";
+              }
+              
+              return {
+                id: inc.id,
+                name: `${inc.properties.from || ""} to ${inc.properties.to || ""}`.trim() || "Road Segment",
+                coordinates,
+                label,
+                color,
+                borderColor,
+                description: inc.properties.events?.[0]?.description || "Road incident",
+                fromStreet: inc.properties.from || "",
+                toStreet: inc.properties.to || "",
+                startTime: inc.properties.startTime,
+                endTime: inc.properties.endTime,
+              };
+            })
+            .filter((s) => s.coordinates.length > 0);
+          
+          console.log(`Created ${segs.length} road segment overlays`);
+          setObstructedRoads(segs);
+        } else {
+          console.log('No TomTom incidents found in region');
+        }
+      } catch (error) {
+        console.error("Error fetching TomTom road incidents:", error);
       }
-    } catch (error) {
-      console.error("Error fetching TomTom road incidents:", error);
-    }
-  };
-  
-  fetchRoads();
-}, []); // Empty dependency array - fetch once on mount for full region coverage
+    };
+    
+    fetchRoads();
+  }, []);
+
   // ─── search ──────────────────────────────────────────────────────────────────
 
-  // REPLACE your searchPlaces function with this optimized version
   const searchPlaces = useCallback(
     (q) => {
       if (debRef.current) clearTimeout(debRef.current);
@@ -1749,12 +1794,11 @@ useEffect(() => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           route_coords: routeCoords,
-          include_emergencies: true  // NEW
+          include_emergencies: true
         }),
       });
       const data = await res.json();
       if (data.success && data.obstructions) {
-        // Safely process construction zones
         if (data.obstructions.construction_zones?.length > 0) {
           const validZones = data.obstructions.construction_zones
             .map((zone) => {
@@ -1778,7 +1822,6 @@ useEffect(() => {
           });
         }
   
-        // Process hazards (including 911 emergencies)
         if (data.obstructions.hazards?.length > 0) {
           const validHazards = data.obstructions.hazards
             .map((hazard) => {
@@ -1793,7 +1836,6 @@ useEffect(() => {
             })
             .filter((h) => h !== null);
   
-          // Separate 911 emergencies
           const newEmergencies = validHazards.filter(h => h.source === '911_dispatch');
           const newRegularHazards = validHazards.filter(h => h.source !== '911_dispatch');
           
@@ -1912,27 +1954,19 @@ useEffect(() => {
 
       const data = await res.json();
 
-      if (data.success && data.route) {
-        const transitSteps =
-          data.route.steps?.filter((s) => s.type === "transit") || [];
-        const walkingSteps =
-          data.route.steps?.filter((s) => s.type === "walk") || [];
+      if (data.success && data.best_route) {
+        const bestRoute = data.best_route;
+        const transitSteps = bestRoute.steps?.filter((s) => s.type === "transit") || [];
+        const walkingSteps = bestRoute.steps?.filter((s) => s.type === "walk") || [];
 
-        // Helper function to clean stop names (remove address numbers and patterns)
         const cleanStopName = (name) => {
           if (!name || name === "Stop" || name === "stop") return name;
-          // Remove patterns like " + #2238" or " + 2238"
           let cleaned = name.replace(/\s+\+\s*#?\d+/, "");
-          // Remove " at " and everything after
           cleaned = cleaned.replace(/\s+at\s+.+$/, "");
-          // Remove trailing numbers like "FREEPORT RD 2238"
           cleaned = cleaned.replace(/\s+\d+$/, "");
-          // Remove "FREEPORT RD + #2238" pattern
           cleaned = cleaned.replace(/\s+\+\s+#\d+/, "");
-          // Remove "STOP #" patterns
           cleaned = cleaned.replace(/STOP\s+#\d+\s*-\s*/i, "");
           cleaned = cleaned.replace(/STOP\s+#\d+/i, "");
-          // Capitalize first letter of each word
           cleaned = cleaned
             .split(" ")
             .map(
@@ -1943,14 +1977,11 @@ useEffect(() => {
           return cleaned.trim() || name;
         };
 
-        // Helper to get user-friendly route name
         const getRouteName = (step) => {
-          // Priority order: route_short_name > route_long_name > route_id > trip_id
           if (step.route_short_name && step.route_short_name !== "") {
             return step.route_short_name;
           }
           if (step.route_long_name && step.route_long_name !== "") {
-            // Shorten long route names
             const shortName = step.route_long_name
               .replace(/Bus|Line|Route/i, "")
               .trim();
@@ -1962,7 +1993,6 @@ useEffect(() => {
             return step.route_id;
           }
           if (step.trip_id) {
-            // Try to extract route number from trip_id (e.g., "4035020" -> try to map, but fallback)
             const possibleRoute = step.trip_id.split("_")[0];
             if (possibleRoute && !possibleRoute.match(/^\d{7,}$/)) {
               return possibleRoute;
@@ -1971,7 +2001,6 @@ useEffect(() => {
           return "Bus";
         };
 
-        // Group transit steps by route line
         const tripsByLine = new Map();
         transitSteps.forEach((step) => {
           const routeName = getRouteName(step);
@@ -2043,15 +2072,14 @@ useEffect(() => {
           }),
         );
 
-        const totalMinutes = Math.round(data.route.total_time_seconds / 60);
+        const totalMinutes = Math.round(bestRoute.total_time_seconds / 60);
         const hours = Math.floor(totalMinutes / 60);
         const mins = totalMinutes % 60;
         const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
 
-        // Calculate estimated walking and transit times
         let walkingSeconds = 0;
         let transitSeconds = 0;
-        data.route.steps?.forEach((step) => {
+        bestRoute.steps?.forEach((step) => {
           if (step.type === "walk" && step.duration_seconds) {
             walkingSeconds += step.duration_seconds;
           } else if (step.type === "transit" && step.duration_seconds) {
@@ -2066,9 +2094,9 @@ useEffect(() => {
             walking_minutes: Math.round(walkingSeconds / 60),
             transit_minutes: Math.round(transitSeconds / 60),
             transit_lines: transitLines,
-            total_steps: data.route.steps?.length || 0,
-            arrival_time: data.route.arrival_time
-              ? new Date(data.route.arrival_time).toLocaleTimeString([], {
+            total_steps: bestRoute.steps?.length || 0,
+            arrival_time: bestRoute.arrival_time
+              ? new Date(bestRoute.arrival_time).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
                 })
@@ -2081,7 +2109,6 @@ useEffect(() => {
         ]);
         setShowTransitInfo(true);
 
-        // Create a user-friendly summary message
         const routeSummary = transitLines.map((l) => l.line).join(" → ");
         say(
           `Found ${transitSteps.length} transit connection(s) · ${durationStr} · ${routeSummary}`,
@@ -2094,6 +2121,7 @@ useEffect(() => {
       say("Could not fetch transit information");
     }
   };
+  
   // ─── clear route ──────────────────────────────────────────────────────────────
 
   const clearRoute = () => {
@@ -2107,6 +2135,7 @@ useEffect(() => {
     setRouteSteps([]);
     setShowDirections(false);
     setTransitSegments([]);
+    setTransitAlternatives([]);
   };
 
   // ─── main route calc ──────────────────────────────────────────────────────────
@@ -2119,10 +2148,10 @@ useEffect(() => {
     setIsLoading(true);
     say("Finding your safe, accessible route…");
 
-    // Reset directions state
     setRouteSteps([]);
     setShowDirections(false);
     setTransitSegments([]);
+    setTransitAlternatives([]);
 
     try {
       const geoData = await (
@@ -2177,159 +2206,50 @@ useEffect(() => {
 
           const transitData = await transitRes.json();
 
-          if (transitData.success && transitData.route) {
-            const steps = transitData.route.steps || [];
-
-            // Build segments using path_geometry from backend (SHAPES FROM GTFS!)
-            const allCoords = [];
-            const segments = [];
-
-            steps.forEach((step) => {
-              if (
-                step.type === "transit" &&
-                step.path_geometry &&
-                step.path_geometry.length > 0
-              ) {
-                // USE THE SHAPE GEOMETRY FROM GTFS shapes.txt!
-                const segCoords = step.path_geometry;
-                segments.push({
-                  coords: segCoords,
-                  type: "transit",
-                  line: step.route_short_name || "Bus",
-                  route_short_name: step.route_short_name,
-                });
-                segCoords.forEach((c) => {
-                  if (c[0] && c[1]) allCoords.push(c);
-                });
-                console.log(
-                  `Added transit segment with ${segCoords.length} points from shapes.txt`,
-                );
-              } else if (step.type === "transit") {
-                // Fallback for transit without geometry - use start/end points
-                const segCoords = [];
-                if (step.start_location) {
-                  segCoords.push([
-                    step.start_location.lat,
-                    step.start_location.lng || step.start_location.lon,
-                  ]);
-                }
-                if (step.end_location) {
-                  segCoords.push([
-                    step.end_location.lat,
-                    step.end_location.lng || step.end_location.lon,
-                  ]);
-                }
-                if (segCoords.length > 0) {
-                  segments.push({
-                    coords: segCoords,
-                    type: "transit",
-                    line: step.route_short_name || "Bus",
-                    route_short_name: step.route_short_name,
-                  });
-                  segCoords.forEach((c) => {
-                    if (c[0] && c[1]) allCoords.push(c);
-                  });
-                }
-              } else if (step.type === "walk" && step.to_location) {
-                // Walking segments - will be handled separately
-                // Just add the point for bounds
-                if (step.to_location) {
-                  allCoords.push([step.to_location.lat, step.to_location.lon]);
-                }
-              }
-            });
-
-            // Add start and end points if not already included
-            if (allCoords.length === 0) {
-              allCoords.push(
-                [startCoords.lat, startCoords.lng],
-                [destCoords.lat, destCoords.lng],
-              );
-            }
-
-            // Dedupe coordinates for bounds
-            const uniqueCoords = allCoords.filter((c, i, arr) => {
-              if (i === 0) return true;
-              const prev = arr[i - 1];
-              return !(prev[0] === c[0] && prev[1] === c[1]);
-            });
-
-            setRoutePath(uniqueCoords);
+          if (transitData.success && transitData.best_route) {
+            const bestRoute = transitData.best_route;
+            const allRoutes = transitData.routes || [bestRoute];
+            
+            // Build primary transitSegments from bestRoute.steps
+            const primarySegments = buildTransitSegments(bestRoute.steps);
+            setTransitSegments(primarySegments);
+            
+            // Build alternative routes for map (dotted polylines)
+            const alts = allRoutes.slice(1).map((alt, idx) => ({
+              coords: extractCoordsFromSteps(alt.steps),
+              route_summary: alt.route_summary,
+              safety: alt.safety?.overall_safety || 0.7,
+              total_time_seconds: alt.total_time_seconds,
+              index: idx + 1
+            }));
+            setTransitAlternatives(alts);
+            
+            // allCoords for map bounds
+            const allCoords = primarySegments.flatMap(s => s.coords);
+            setRoutePath(allCoords);
             setDest([destCoords.lat, destCoords.lng]);
-            setTransitSegments(segments);
             setRouteType("transit");
-
+            
             // Build display steps for directions panel
-            const displaySteps = [];
-            displaySteps.push({
-              instruction: "Depart from your location",
-              type: "walk",
-              travel_mode: "WALKING",
-            });
-
-            steps.forEach((step) => {
-              if (step.type === "transit") {
-                const routeName =
-                  step.route_short_name || step.trip_id?.split("_")[0] || "Bus";
-                const startStopName = step.start_stop || "stop";
-                const endStopName = step.end_stop || "next stop";
-
-                displaySteps.push({
-                  ...step,
-                  instruction: `Take Bus ${routeName} from ${startStopName} to ${endStopName}`,
-                  travel_mode: "TRANSIT",
-                  transit_line: routeName,
-                  departure_stop: startStopName,
-                  arrival_stop: endStopName,
-                  route_short_name: routeName,
-                });
-              } else if (step.type === "walk") {
-                const toStopName = step.to_stop || "next stop";
-                displaySteps.push({
-                  ...step,
-                  instruction: `Walk to ${toStopName}`,
-                  travel_mode: "WALKING",
-                });
-              }
-            });
-
-            displaySteps.push({
-              instruction: `Arrive at ${toVal}`,
-              type: "arrive",
-              travel_mode: "ARRIVE",
-            });
-
+            const displaySteps = buildDisplayStepsFromTransit(bestRoute.steps);
             setRouteSteps(displaySteps);
             setShowDirections(true);
-
-            // Build segments for safety colouring (fallback)
-            const segs = [];
-            for (let i = 0; i < uniqueCoords.length - 1; i++) {
-              segs.push({
-                start: uniqueCoords[i],
-                end: uniqueCoords[i + 1],
-                safety_score: transitData.route.safety?.overall_safety || 0.75,
-                instructions: "Transit route",
-              });
-            }
-            setRouteSegments(segs);
-
-            const totalMinutes = Math.round(
-              transitData.route.total_time_seconds / 60,
-            );
+            
+            // Route info
+            const totalMinutes = Math.round(bestRoute.total_time_seconds / 60);
             const hours = Math.floor(totalMinutes / 60);
             const mins = totalMinutes % 60;
-            const durationStr =
-              hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
-
+            const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
+            
             setRouteInfo({
-              distance: `${totalMinutes} min transit`,
+              distance: `${(bestRoute.total_distance_meters / 1000).toFixed(1)} km`,
               duration: durationStr,
               total_minutes: totalMinutes,
-              transit_steps: steps.filter((s) => s.type === "transit").length,
-              walking_steps: steps.filter((s) => s.type === "walk").length,
+              transit_steps: bestRoute.steps.filter(s => s.type === 'transit').length,
+              walking_steps: bestRoute.steps.filter(s => s.type === 'walk').length,
             });
-
+            
+            // Save to recents
             const nr = [
               {
                 name: toVal,
@@ -2340,19 +2260,18 @@ useEffect(() => {
             ].slice(0, 6);
             setRecents(nr);
             localStorage.setItem("ar_recents", JSON.stringify(nr));
-
-            // Show user-friendly summary
-            const routeSummary = steps
+            
+            const routeSummary = bestRoute.steps
               .filter((s) => s.type === "transit")
               .map((s) => s.route_short_name || "Bus")
               .join(" → ");
-
+            
             say(
-              `Transit route found · ${durationStr} · ${routeSummary || `${steps.filter((s) => s.type === "transit").length} connections`}`,
+              `Transit route found · ${durationStr} · ${routeSummary || `${bestRoute.steps.filter((s) => s.type === "transit").length} connections`}`,
             );
-
+            
             setShow3D(true);
-            setTimeout(() => checkRouteForObstructions(uniqueCoords), 500);
+            setTimeout(() => checkRouteForObstructions(allCoords), 500);
             setIsLoading(false);
             return;
           } else {
@@ -2399,6 +2318,7 @@ useEffect(() => {
         setDest(coords[coords.length - 1]);
         setRouteType("walking");
         setTransitSegments([]);
+        setTransitAlternatives([]);
 
         if (data.route.segments?.length > 0) {
           setRouteSegments(data.route.segments);
@@ -2415,7 +2335,6 @@ useEffect(() => {
           setRouteSegments(segs);
         }
 
-        // Build turn-by-turn directions
         const rawSteps = data.route.steps || [];
         if (rawSteps.length > 0) {
           const displaySteps = [
@@ -2650,80 +2569,80 @@ useEffect(() => {
             ))}
 
             {/* ── 911 EMERGENCY MARKERS ── */}
-{emergencies911.map((emergency, idx) => (
-  <Marker
-    key={`emergency-${idx}`}
-    position={[emergency.lat, emergency.lng]}
-    icon={makeLucideIcon(
-      emergency.type === 'accident' ? CarFront :
-      emergency.type === 'fire' ? Flame :
-      emergency.type === 'medical' ? Stethoscope :
-      emergency.type === 'hazardous' ? TriangleAlert :
-      emergency.type === 'rescue' ? Siren :
-      ShieldAlert,
-      emergency.severity > 0.7 ? "#ff4444" : "#ff8844",
-      "#ff0000",
-      Math.min(42, Math.max(28, 28 + ((currentZoom - 12) / 6) * 14))
-    )}
-  >
-    <Popup>
-      <div style={{ fontFamily: "DM Sans,sans-serif", minWidth: 200 }}>
-        <div style={{ 
-          display: "flex", 
-          alignItems: "center", 
-          gap: 10, 
-          marginBottom: 12,
-          paddingBottom: 8,
-          borderBottom: "1px solid rgba(255,68,68,0.3)"
-        }}>
-          {emergency.type === 'accident' && <CarFront size={18} color="#ff4444" />}
-          {emergency.type === 'fire' && <Flame size={18} color="#ff4444" />}
-          {emergency.type === 'medical' && <Stethoscope size={18} color="#ff4444" />}
-          {emergency.type === 'hazardous' && <TriangleAlert size={18} color="#ff8844" />}
-          {emergency.type === 'rescue' && <Siren size={18} color="#ff4444" />}
-          {!emergency.type && <ShieldAlert size={18} color="#ff4444" />}
-          <strong style={{ color: "#ff6666", fontSize: 14 }}>
-            🚨 911 EMERGENCY
-          </strong>
-        </div>
-        <div style={{ fontSize: 13, fontWeight: "bold", color: "#fff", marginBottom: 6 }}>
-          {emergency.description || `${emergency.type?.toUpperCase()} incident`}
-        </div>
-        <div style={{ fontSize: 11, color: "#e0c8b0", marginBottom: 4 }}>
-          {emergency.subtype && (
-            <span style={{ display: "inline-block", marginRight: 12 }}>
-              📋 {emergency.subtype}
-            </span>
-          )}
-          {emergency.severity && (
-            <span>
-              ⚡ Severity: {Math.round(emergency.severity * 100)}%
-            </span>
-          )}
-        </div>
-        {emergency.timestamp && (
-          <div style={{ fontSize: 10, color: "#b09878", marginTop: 6 }}>
-            🕒 Reported: {new Date(emergency.timestamp).toLocaleString()}
-          </div>
-        )}
-        {emergency.distance_meters && (
-          <div style={{ fontSize: 10, color: "#b09878" }}>
-            📍 {emergency.distance_meters.toFixed(0)}m from center
-          </div>
-        )}
-        <div style={{ 
-          fontSize: 10, 
-          color: "#ff8888", 
-          marginTop: 8,
-          paddingTop: 6,
-          borderTop: "1px solid rgba(255,68,68,0.2)"
-        }}>
-          ⚠️ Active emergency response in area
-        </div>
-      </div>
-    </Popup>
-  </Marker>
-))}
+            {emergencies911.map((emergency, idx) => (
+              <Marker
+                key={`emergency-${idx}`}
+                position={[emergency.lat, emergency.lng]}
+                icon={makeLucideIcon(
+                  emergency.type === 'accident' ? CarFront :
+                  emergency.type === 'fire' ? Flame :
+                  emergency.type === 'medical' ? Stethoscope :
+                  emergency.type === 'hazardous' ? TriangleAlert :
+                  emergency.type === 'rescue' ? Siren :
+                  ShieldAlert,
+                  emergency.severity > 0.7 ? "#ff4444" : "#ff8844",
+                  "#ff0000",
+                  Math.min(42, Math.max(28, 28 + ((currentZoom - 12) / 6) * 14))
+                )}
+              >
+                <Popup>
+                  <div style={{ fontFamily: "DM Sans,sans-serif", minWidth: 200 }}>
+                    <div style={{ 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: 10, 
+                      marginBottom: 12,
+                      paddingBottom: 8,
+                      borderBottom: "1px solid rgba(255,68,68,0.3)"
+                    }}>
+                      {emergency.type === 'accident' && <CarFront size={18} color="#ff4444" />}
+                      {emergency.type === 'fire' && <Flame size={18} color="#ff4444" />}
+                      {emergency.type === 'medical' && <Stethoscope size={18} color="#ff4444" />}
+                      {emergency.type === 'hazardous' && <TriangleAlert size={18} color="#ff8844" />}
+                      {emergency.type === 'rescue' && <Siren size={18} color="#ff4444" />}
+                      {!emergency.type && <ShieldAlert size={18} color="#ff4444" />}
+                      <strong style={{ color: "#ff6666", fontSize: 14 }}>
+                        🚨 911 EMERGENCY
+                      </strong>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: "bold", color: "#fff", marginBottom: 6 }}>
+                      {emergency.description || `${emergency.type?.toUpperCase()} incident`}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#e0c8b0", marginBottom: 4 }}>
+                      {emergency.subtype && (
+                        <span style={{ display: "inline-block", marginRight: 12 }}>
+                          📋 {emergency.subtype}
+                        </span>
+                      )}
+                      {emergency.severity && (
+                        <span>
+                          ⚡ Severity: {Math.round(emergency.severity * 100)}%
+                        </span>
+                      )}
+                    </div>
+                    {emergency.timestamp && (
+                      <div style={{ fontSize: 10, color: "#b09878", marginTop: 6 }}>
+                        🕒 Reported: {new Date(emergency.timestamp).toLocaleString()}
+                      </div>
+                    )}
+                    {emergency.distance_meters && (
+                      <div style={{ fontSize: 10, color: "#b09878" }}>
+                        📍 {emergency.distance_meters.toFixed(0)}m from center
+                      </div>
+                    )}
+                    <div style={{ 
+                      fontSize: 10, 
+                      color: "#ff8888", 
+                      marginTop: 8,
+                      paddingTop: 6,
+                      borderTop: "1px solid rgba(255,68,68,0.2)"
+                    }}>
+                      ⚠️ Active emergency response in area
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
 
             {/* ── TRANSIT route: colour walking vs bus segments differently ── */}
             {transitSegments.length > 0 ? (
@@ -2945,10 +2864,40 @@ useEffect(() => {
                   </Polyline>
                 ),
             )}
+
+            {/* ── TRANSIT ALTERNATIVE ROUTES (dotted) ── */}
+            {transitAlternatives.map((alt, altIdx) => (
+              alt.coords.length > 1 && (
+                <Polyline
+                  key={`transit-alt-${altIdx}`}
+                  positions={alt.coords}
+                  pathOptions={{
+                    color: '#e8a870',
+                    weight: 3,
+                    opacity: 0.55,
+                    dashArray: '8,7',
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                  }}
+                >
+                  <Popup>
+                    <div style={{ fontFamily: 'DM Sans,sans-serif' }}>
+                      <strong>Alternative {alt.index}</strong><br />
+                      {alt.route_summary}<br />
+                      <small style={{ color: '#b09878' }}>
+                        {Math.round(alt.total_time_seconds / 60)} min · 
+                        Safety: {Math.round((alt.safety || 0.7) * 100)}%
+                      </small>
+                    </div>
+                  </Popup>
+                </Polyline>
+              )
+            ))}
           </MapContainer>
         </div>
 
-        {/* ── 3D WALK VIEW ── 
+        {/* ── 3D WALK VIEW ── (commented out for performance) */}
+        {/*
         <div
           className={`view3d-panel${show3D && routePath.length > 0 ? "" : " hidden"}`}
         >
@@ -3599,7 +3548,7 @@ useEffect(() => {
           </button>
         </div>
 
-        {/* ── DIRECTIONS PANEL (new feature) ── */}
+        {/* ── DIRECTIONS PANEL ── */}
         {showDirections && routeSteps.length > 0 && (
           <DirectionsPanel
             steps={routeSteps}
@@ -3609,88 +3558,87 @@ useEffect(() => {
         )}
 
         {/* ── ROUTE INFO BAR ── */}
-{routeInfo && (
-  <div className="rbar" role="region" aria-label="Route information">
-    <div className="rs">
-      <div className="rs-v">{routeInfo.distance}</div>
-      <div className="rs-l">Distance</div>
-    </div>
-    <div className="rs-d" />
-    <div className="rs">
-      <div className="rs-v">{routeInfo.duration}</div>
-      <div className="rs-l">Est. Time</div>
-    </div>
-    <div className="rs-d" />
-    <div className="rs">
-      <div className="rs-v" style={{ color: "var(--green)" }}>
-        <Accessibility size={16} />
-      </div>
-      <div className="rs-l">Accessible</div>
-    </div>
-    
-    {constructionZones.length > 0 && (
-      <>
-        <div className="rs-d" />
-        <div className="rs">
-          <div className="rs-v" style={{ color: "#ff7b6b" }}>
-            <Construction size={14} /> {constructionZones.length}
-          </div>
-          <div className="rs-l">Obstructions</div>
-        </div>
-      </>
-    )}
+        {routeInfo && (
+          <div className="rbar" role="region" aria-label="Route information">
+            <div className="rs">
+              <div className="rs-v">{routeInfo.distance}</div>
+              <div className="rs-l">Distance</div>
+            </div>
+            <div className="rs-d" />
+            <div className="rs">
+              <div className="rs-v">{routeInfo.duration}</div>
+              <div className="rs-l">Est. Time</div>
+            </div>
+            <div className="rs-d" />
+            <div className="rs">
+              <div className="rs-v" style={{ color: "var(--green)" }}>
+                <Accessibility size={16} />
+              </div>
+              <div className="rs-l">Accessible</div>
+            </div>
+            
+            {constructionZones.length > 0 && (
+              <>
+                <div className="rs-d" />
+                <div className="rs">
+                  <div className="rs-v" style={{ color: "#ff7b6b" }}>
+                    <Construction size={14} /> {constructionZones.length}
+                  </div>
+                  <div className="rs-l">Obstructions</div>
+                </div>
+              </>
+            )}
 
-    {/* Show emergency count if present - ADD THIS BLOCK */}
-    {emergencies911.filter(e => {
-      if (!routePath.length) return false;
-      let minDist = Infinity;
-      for (const point of routePath) {
-        const dist = haversineDistance(point[0], point[1], e.lat, e.lng);
-        minDist = Math.min(minDist, dist);
-      }
-      return minDist < 500;
-    }).length > 0 && (
-      <>
-        <div className="rs-d" />
-        <div className="rs">
-          <div className="rs-v" style={{ color: "#ff4444" }}>
-            <Siren size={14} /> {emergencies911.filter(e => {
+            {emergencies911.filter(e => {
+              if (!routePath.length) return false;
               let minDist = Infinity;
               for (const point of routePath) {
                 const dist = haversineDistance(point[0], point[1], e.lat, e.lng);
                 minDist = Math.min(minDist, dist);
               }
               return minDist < 500;
-            }).length}
-          </div>
-          <div className="rs-l">Emergencies</div>
-        </div>
-      </>
-    )}
+            }).length > 0 && (
+              <>
+                <div className="rs-d" />
+                <div className="rs">
+                  <div className="rs-v" style={{ color: "#ff4444" }}>
+                    <Siren size={14} /> {emergencies911.filter(e => {
+                      let minDist = Infinity;
+                      for (const point of routePath) {
+                        const dist = haversineDistance(point[0], point[1], e.lat, e.lng);
+                        minDist = Math.min(minDist, dist);
+                      }
+                      return minDist < 500;
+                    }).length}
+                  </div>
+                  <div className="rs-l">Emergencies</div>
+                </div>
+              </>
+            )}
 
-    {/* Directions toggle button */}
-    <div className="rs-d" />
-    <button
-      className={`rs-dir-btn${showDirections ? " on" : ""}`}
-      onClick={() => setShowDirections((v) => !v)}
-    >
-      <List size={13} /> {showDirections ? "Hide" : "Directions"}
-    </button>
-    
-    {mode === "transit" && (
-      <>
-        <div className="rs-d" />
-        <button className="rs-bus" onClick={getTransitInfo}>
-          <Bus size={14} /> Bus Info
-        </button>
-      </>
-    )}
-    
-    <button className="rs-cl" onClick={clearRoute}>
-      Clear
-    </button>
-  </div>
-)}
+            <div className="rs-d" />
+            <button
+              className={`rs-dir-btn${showDirections ? " on" : ""}`}
+              onClick={() => setShowDirections((v) => !v)}
+            >
+              <List size={13} /> {showDirections ? "Hide" : "Directions"}
+            </button>
+            
+            {mode === "transit" && (
+              <>
+                <div className="rs-d" />
+                <button className="rs-bus" onClick={getTransitInfo}>
+                  <Bus size={14} /> Bus Info
+                </button>
+              </>
+            )}
+            
+            <button className="rs-cl" onClick={clearRoute}>
+              Clear
+            </button>
+          </div>
+        )}
+        
         {/* ── ROUTE ALERT OVERLAY ── */}
         {showRouteAlert && routeAlert && (
           <div
