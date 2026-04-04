@@ -4276,3 +4276,18 @@ TypeError: '<' not supported between instances of 'str' and 'NoneType'
 2026-04-04 09:58:30,210 - __main__ - INFO - TomTom route with hazard avoidance successful
 2026-04-04 09:58:31,335 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
 2026-04-04 09:58:31,347 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 09:58:31] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-04-04 12:13:06,563 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-04 12:13:38,312 - gtfs_loader - INFO - Loaded GTFS: 6424 stops, 15826 trips, 15826 trip patterns, 5 service exceptions
+2026-04-04 12:13:51,826 - transit_router - INFO - Loaded 305 shapes
+2026-04-04 12:13:52,279 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-04 12:13:52,297 - transit_router - INFO - Loaded 101 routes
+2026-04-04 12:13:52,434 - transit_router - INFO - Cached 15826 trips
+2026-04-04 12:13:52,435 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-04 12:13:52,440 - __main__ - INFO - Safety AI loaded successfully
+2026-04-04 12:34:22,629 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-04-04 12:34:22,630 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-04-04 12:34:22,631 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-04-04 12:34:22,631 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-04-04 12:34:22,654 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-04-04 12:34:22,655 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
