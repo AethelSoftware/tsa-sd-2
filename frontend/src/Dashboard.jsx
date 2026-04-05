@@ -75,7 +75,7 @@ import {
   Mic,
 } from "lucide-react";
 import { renderToStaticMarkup } from "react-dom/server";
-import VoiceAccessibilityModal from './VoiceAccessibilityModal';
+import VoiceAccessibilityModal from "./VoiceAccessibilityModal";
 // Lazy load 3D view to reduce initial bundle size
 const Walking3DView = lazy(() => import("./Walking3DView"));
 
@@ -159,7 +159,7 @@ function getValidCoordinates(obj) {
 function makeLucideIcon(IconComponent, color, borderColor, size = 30) {
   const innerSize = Math.max(12, size * 0.55);
   const svg = renderToStaticMarkup(
-    <IconComponent size={innerSize} color={color} strokeWidth={2.2} />
+    <IconComponent size={innerSize} color={color} strokeWidth={2.2} />,
   );
   const html = `<div style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;background:rgba(16,8,3,0.92);border:${Math.max(1, size / 20)}px solid ${borderColor};border-radius:${Math.max(6, size / 4)}px;box-shadow:0 2px 8px rgba(0,0,0,0.45);backdrop-filter:blur(4px);cursor:pointer;">${svg}</div>`;
   return L.divIcon({
@@ -200,44 +200,44 @@ function pointToSegmentDistanceMeters(point, segStart, segEnd) {
   const δ13 = Math.acos(
     clamp(
       Math.sin(φ1) * Math.sin(φp) +
-        Math.cos(φ1) * Math.cos(φp) * Math.cos(λp - λ1)
-    )
+        Math.cos(φ1) * Math.cos(φp) * Math.cos(λp - λ1),
+    ),
   );
   const δ23 = Math.acos(
     clamp(
       Math.sin(φ2) * Math.sin(φp) +
-        Math.cos(φ2) * Math.cos(φp) * Math.cos(λp - λ2)
-    )
+        Math.cos(φ2) * Math.cos(φp) * Math.cos(λp - λ2),
+    ),
   );
   const δ12 = Math.acos(
     clamp(
       Math.sin(φ1) * Math.sin(φ2) +
-        Math.cos(φ1) * Math.cos(φ2) * Math.cos(λ2 - λ1)
-    )
+        Math.cos(φ1) * Math.cos(φ2) * Math.cos(λ2 - λ1),
+    ),
   );
   if (δ13 > δ12 + 1e-10 && δ23 > δ12 + 1e-10)
     return Math.min(
       haversineDistance(s1Lat, s1Lng, pLat, pLng),
-      haversineDistance(s2Lat, s2Lng, pLat, pLng)
+      haversineDistance(s2Lat, s2Lng, pLat, pLng),
     );
   const θ12 = Math.acos(
     clamp(
       (Math.sin(φ2) - Math.sin(φ1) * Math.cos(δ12)) /
-        (Math.cos(φ1) * Math.sin(δ12))
-    )
+        (Math.cos(φ1) * Math.sin(δ12)),
+    ),
   );
   const θ13 = Math.acos(
     clamp(
       (Math.sin(φp) - Math.sin(φ1) * Math.cos(δ13)) /
-        (Math.cos(φ1) * Math.sin(δ13))
-    )
+        (Math.cos(φ1) * Math.sin(δ13)),
+    ),
   );
   const δxt = Math.asin(clamp(Math.sin(δ13) * Math.sin(θ13 - θ12)));
   const distance = Math.abs(δxt) * 6371000;
   return isNaN(distance)
     ? Math.min(
         haversineDistance(s1Lat, s1Lng, pLat, pLng),
-        haversineDistance(s2Lat, s2Lng, pLat, pLng)
+        haversineDistance(s2Lat, s2Lng, pLat, pLng),
       )
     : distance;
 }
@@ -663,6 +663,86 @@ const CSS = `
     box-shadow: var(--sh-w);
   }
   .view3d-toggle:hover { background: var(--wood-dim); }
+
+  /* ── New 3D Navigation Panel Styles ── */
+  .nav-3d-panel {
+    position: fixed;
+    z-index: 45;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 18px 56px rgba(0,0,0,0.72), 0 4px 18px rgba(0,0,0,0.4);
+    border: 1px solid rgba(232,168,112,0.22);
+    transition: all 0.3s cubic-bezier(.4,0,.2,1);
+    background: #110a04;
+  }
+  @media (min-width: 1024px) {
+    .nav-3d-panel {
+      bottom: 90px;
+      right: 60px;
+      width: 520px;
+      height: 330px;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .nav-3d-panel {
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 280px;
+      border-radius: 16px 16px 0 0;
+    }
+  }
+  @media (max-width: 767px) {
+    .nav-3d-panel {
+      inset: 0;
+      border-radius: 0;
+      z-index: 100;
+    }
+  }
+  .nav-3d-panel.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+  }
+  .rs-3d-btn {
+    background: var(--blue-dim);
+    border: 1px solid var(--blue);
+    border-radius: 8px;
+    padding: 5px 10px;
+    color: var(--blue);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .rs-3d-btn:hover { background: rgba(79,195,247,0.25); }
+  .rs-3d-btn.on {
+    background: var(--wood-g);
+    border-color: var(--wood);
+    color: #fff;
+  }
+  @keyframes arrival-pulse {
+    0% { transform: scale(0.5); opacity: 1; }
+    100% { transform: scale(3); opacity: 0; }
+  }
+  .arrival-ring {
+    position: absolute;
+    inset: 0;
+    border: 3px solid #14b8a6;
+    border-radius: 50%;
+    animation: arrival-pulse 1.5s ease-out infinite;
+    pointer-events: none;
+  }
+  @keyframes step-slide-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hud-instruction-main.new-step {
+    animation: step-slide-in 0.25s ease forwards;
+  }
 `;
 
 // ─── constants ────────────────────────────────────────────────────────────────
@@ -1053,18 +1133,28 @@ const DirectionsPanel = React.memo(({ steps, onClose, routeType }) => {
           } else if (isTransit) {
             const routeName = step.route_short_name || "";
             const routeLong = step.route_long_name || "";
-            const fromStop = cleanStopName(step.departure_stop || step.start_stop || "stop");
-            const toStop = cleanStopName(step.arrival_stop || step.end_stop || "next stop");
-            const label = routeLong ? `Bus ${routeName} (${routeLong})` : `Bus ${routeName}`;
+            const fromStop = cleanStopName(
+              step.departure_stop || step.start_stop || "stop",
+            );
+            const toStop = cleanStopName(
+              step.arrival_stop || step.end_stop || "next stop",
+            );
+            const label = routeLong
+              ? `Bus ${routeName} (${routeLong})`
+              : `Bus ${routeName}`;
             instruction = `Take ${label} from ${fromStop} to ${toStop}`;
           } else if (isWalk) {
-            const dist = step.distance_meters 
-              ? (step.distance_meters < 1000 
-                  ? `${Math.round(step.distance_meters)} m` 
-                  : `${(step.distance_meters/1000).toFixed(1)} km`)
+            const dist = step.distance_meters
+              ? step.distance_meters < 1000
+                ? `${Math.round(step.distance_meters)} m`
+                : `${(step.distance_meters / 1000).toFixed(1)} km`
               : "";
-            const toName = cleanStopName(step.to_stop || step.instruction?.replace("Walk to ", "") || "next stop");
-            instruction = `Walk ${dist ? `${dist} ` : ''}to ${toName}`;
+            const toName = cleanStopName(
+              step.to_stop ||
+                step.instruction?.replace("Walk to ", "") ||
+                "next stop",
+            );
+            instruction = `Walk ${dist ? `${dist} ` : ""}to ${toName}`;
           } else {
             instruction = stripHtml(step.instruction || "Continue");
           }
@@ -1136,14 +1226,14 @@ function buildTransitSegments(steps) {
   for (const step of steps) {
     const geom = step.path_geometry || [];
     if (geom.length === 0) continue;
-    const coords = geom.map(pt => 
-      Array.isArray(pt) ? [pt[0], pt[1]] : [pt.lat, pt.lon || pt.lng]
+    const coords = geom.map((pt) =>
+      Array.isArray(pt) ? [pt[0], pt[1]] : [pt.lat, pt.lon || pt.lng],
     );
     segments.push({
       coords,
       type: step.type,
-      line: step.route_short_name || '',
-      route_long_name: step.route_long_name || '',
+      line: step.route_short_name || "",
+      route_long_name: step.route_long_name || "",
     });
   }
   return segments;
@@ -1155,7 +1245,7 @@ function extractCoordsFromSteps(steps) {
     const geom = step.path_geometry || [];
     for (const pt of geom) {
       const lat = Array.isArray(pt) ? pt[0] : pt.lat;
-      const lon = Array.isArray(pt) ? pt[1] : (pt.lon || pt.lng);
+      const lon = Array.isArray(pt) ? pt[1] : pt.lon || pt.lng;
       if (lat && lon) pts.push([lat, lon]);
     }
   }
@@ -1165,36 +1255,44 @@ function extractCoordsFromSteps(steps) {
 function buildDisplayStepsFromTransit(steps) {
   const display = [];
   for (const step of steps) {
-    if (step.type === 'walk') {
-      const toName = step.to_stop || 'next stop';
+    if (step.type === "walk") {
+      const toName = step.to_stop || "next stop";
       const dist = step.distance_meters || 0;
       const dur = step.duration_seconds || 0;
       display.push({
-        type: 'walk',
-        travel_mode: 'WALKING',
-        instruction: `Walk ${dist ? `${dist < 1000 ? `${Math.round(dist)} m` : `${(dist/1000).toFixed(1)} km`} ` : ''}to ${toName}`,
+        type: "walk",
+        travel_mode: "WALKING",
+        instruction: `Walk ${dist ? `${dist < 1000 ? `${Math.round(dist)} m` : `${(dist / 1000).toFixed(1)} km`} ` : ""}to ${toName}`,
         distance_meters: dist,
         duration_seconds: dur,
-        distance: dist < 1000 ? `${Math.round(dist)} m` : `${(dist/1000).toFixed(1)} km`,
-        duration: dur >= 60 ? `${Math.round(dur/60)} min` : `${dur} sec`,
+        distance:
+          dist < 1000
+            ? `${Math.round(dist)} m`
+            : `${(dist / 1000).toFixed(1)} km`,
+        duration: dur >= 60 ? `${Math.round(dur / 60)} min` : `${dur} sec`,
         path_geometry: step.path_geometry || [],
       });
-    } else if (step.type === 'transit') {
-      const routeName = step.route_short_name || '';
-      const routeLong = step.route_long_name || '';
-      const fromStop = step.start_stop || '';
-      const toStop = step.end_stop || '';
-      const label = routeLong ? `Bus ${routeName} (${routeLong})` : `Bus ${routeName}`;
+    } else if (step.type === "transit") {
+      const routeName = step.route_short_name || "";
+      const routeLong = step.route_long_name || "";
+      const fromStop = step.start_stop || "";
+      const toStop = step.end_stop || "";
+      const label = routeLong
+        ? `Bus ${routeName} (${routeLong})`
+        : `Bus ${routeName}`;
       display.push({
-        type: 'transit',
-        travel_mode: 'TRANSIT',
+        type: "transit",
+        travel_mode: "TRANSIT",
         instruction: `Take ${label} from ${fromStop} to ${toStop}`,
         route_short_name: routeName,
         route_long_name: routeLong,
         departure_stop: fromStop,
         arrival_stop: toStop,
         duration_seconds: step.duration_seconds || 0,
-        duration: step.duration_seconds >= 60 ? `${Math.round(step.duration_seconds/60)} min` : `${step.duration_seconds} sec`,
+        duration:
+          step.duration_seconds >= 60
+            ? `${Math.round(step.duration_seconds / 60)} min`
+            : `${step.duration_seconds} sec`,
         path_geometry: step.path_geometry || [],
       });
     }
@@ -1202,7 +1300,22 @@ function buildDisplayStepsFromTransit(steps) {
   return display;
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ================== GPS AND NAVIGATION STATE (NEW) ==================
+function smoothGPSCoordinate(newValue, history, alpha = 0.3) {
+  if (history.length === 0) return newValue;
+  const lastSmoothed = history[history.length - 1];
+  return alpha * newValue + (1 - alpha) * lastSmoothed;
+}
+
+function calculateBearing(lat1, lng1, lat2, lng2) {
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δλ = ((lng2 - lng1) * Math.PI) / 180;
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x =
+    Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
 
 export default function AccessibleMap() {
   const [mapType, setMapType] = useState("openstreetmap");
@@ -1255,6 +1368,18 @@ export default function AccessibleMap() {
   const [walkerIdx, setWalkerIdx] = useState(0);
   const walkerIntervalRef = useRef(null);
 
+  // ── NEW GPS/NAVIGATION STATE ──
+  const gpsWatchIdRef = useRef(null);
+  const lastGPSPosition = useRef(null);
+  const gpsPositionHistory = useRef([]);
+  const [navigationActive, setNavigationActive] = useState(false);
+  const [walkerHeading, setWalkerHeading] = useState(0);
+  const [navigationState, setNavigationState] = useState("idle");
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [distanceToNextTurn, setDistanceToNextTurn] = useState(null);
+  const [remainingTotalDistance, setRemainingTotalDistance] = useState(0);
+  const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState(0);
+
   // ── Directions state ──
   const [routeSteps, setRouteSteps] = useState([]);
   const [showDirections, setShowDirections] = useState(false);
@@ -1264,6 +1389,9 @@ export default function AccessibleMap() {
 
   // ── Voice modal state ──
   const [showVoiceModal, setShowVoiceModal] = useState(false);
+
+  // ── Search panel collapse state ──
+  const [searchPanelCollapsed, setSearchPanelCollapsed] = useState(false);
 
   const debRef = useRef(null);
   const destRef = useRef(null);
@@ -1449,7 +1577,7 @@ export default function AccessibleMap() {
     );
   }, [routeSegments]);
 
-  // Walker animation
+  // Walker animation (kept for compatibility but replaced by GPS)
   useEffect(() => {
     if (walkerIntervalRef.current) clearInterval(walkerIntervalRef.current);
     if (routePath.length < 2) {
@@ -1467,6 +1595,214 @@ export default function AccessibleMap() {
     }, 1200);
     return () => clearInterval(walkerIntervalRef.current);
   }, [routePath]);
+
+  // ── NEW GPS FUNCTIONS ──
+  const advanceStepIfNeeded = useCallback(
+    (currentLat, currentLng) => {
+      if (!routeSteps || routeSteps.length === 0) return;
+      if (currentStepIndex >= routeSteps.length - 1) return;
+      const STEP_ADVANCE_RADIUS = 20;
+      const stepFraction = (currentStepIndex + 1) / routeSteps.length;
+      const waypointIdx = Math.min(
+        Math.floor(stepFraction * routePath.length),
+        routePath.length - 1,
+      );
+      if (waypointIdx < routePath.length) {
+        const waypoint = routePath[waypointIdx];
+        const distToWaypoint = haversineDistance(
+          currentLat,
+          currentLng,
+          waypoint[0],
+          waypoint[1],
+        );
+        if (distToWaypoint < STEP_ADVANCE_RADIUS) {
+          setCurrentStepIndex((prev) =>
+            Math.min(prev + 1, routeSteps.length - 1),
+          );
+          const newStep = routeSteps[currentStepIndex + 1];
+          if (newStep) say(newStep.instruction || "");
+        }
+      }
+    },
+    [routeSteps, currentStepIndex, routePath, say],
+  );
+
+  const updateRemainingNavigation = useCallback(
+    (currentLat, currentLng) => {
+      if (!routePath || routePath.length === 0) return;
+      let minDist = Infinity;
+      let closestIdx = 0;
+      for (let i = 0; i < routePath.length; i++) {
+        const d = haversineDistance(
+          currentLat,
+          currentLng,
+          routePath[i][0],
+          routePath[i][1],
+        );
+        if (d < minDist) {
+          minDist = d;
+          closestIdx = i;
+        }
+      }
+      let remaining = 0;
+      for (let i = closestIdx; i < routePath.length - 1; i++) {
+        remaining += haversineDistance(
+          routePath[i][0],
+          routePath[i][1],
+          routePath[i + 1][0],
+          routePath[i + 1][1],
+        );
+      }
+      setRemainingTotalDistance(remaining);
+      setEstimatedTimeRemaining(remaining / 1.4);
+      const nextStepWaypointIdx = Math.min(
+        Math.floor(
+          ((currentStepIndex + 1) / routeSteps.length) * routePath.length,
+        ),
+        routePath.length - 1,
+      );
+      if (nextStepWaypointIdx < routePath.length) {
+        let distToNext = 0;
+        for (
+          let i = closestIdx;
+          i < nextStepWaypointIdx && i < routePath.length - 1;
+          i++
+        ) {
+          distToNext += haversineDistance(
+            routePath[i][0],
+            routePath[i][1],
+            routePath[i + 1][0],
+            routePath[i + 1][1],
+          );
+        }
+        setDistanceToNextTurn(distToNext);
+      }
+    },
+    [routePath, currentStepIndex, routeSteps],
+  );
+
+  const handleGPSUpdate = useCallback(
+    (position) => {
+      const rawLat = position.coords.latitude;
+      const rawLng = position.coords.longitude;
+      const timestamp = position.timestamp;
+      const MIN_MOVEMENT_METERS = 1.5;
+      const GPS_UPDATE_THROTTLE_MS = 500;
+
+      if (lastGPSPosition.current) {
+        const timeDelta = timestamp - lastGPSPosition.current.timestamp;
+        if (timeDelta < GPS_UPDATE_THROTTLE_MS) return;
+        const dist = haversineDistance(
+          lastGPSPosition.current.lat,
+          lastGPSPosition.current.lng,
+          rawLat,
+          rawLng,
+        );
+        if (dist < MIN_MOVEMENT_METERS) return;
+      }
+
+      const historyLats = gpsPositionHistory.current.map((h) => h.lat);
+      const historyLngs = gpsPositionHistory.current.map((h) => h.lng);
+      const smoothedLat = smoothGPSCoordinate(rawLat, historyLats);
+      const smoothedLng = smoothGPSCoordinate(rawLng, historyLngs);
+
+      gpsPositionHistory.current.push({
+        lat: smoothedLat,
+        lng: smoothedLng,
+        timestamp,
+      });
+      if (gpsPositionHistory.current.length > 5)
+        gpsPositionHistory.current.shift();
+
+      if (lastGPSPosition.current) {
+        const heading = calculateBearing(
+          lastGPSPosition.current.lat,
+          lastGPSPosition.current.lng,
+          smoothedLat,
+          smoothedLng,
+        );
+        setWalkerHeading(heading);
+      }
+
+      const speed = position.coords.speed || 0;
+      if (speed < 0.3) {
+        setNavigationState((prev) =>
+          prev === "arrived" ? "arrived" : "stopped",
+        );
+      } else {
+        setNavigationState("walking");
+      }
+
+      setWalkerPosition([smoothedLat, smoothedLng]);
+      lastGPSPosition.current = {
+        lat: smoothedLat,
+        lng: smoothedLng,
+        timestamp,
+      };
+
+      if (dest) {
+        const distToDest = haversineDistance(
+          smoothedLat,
+          smoothedLng,
+          dest[0],
+          dest[1],
+        );
+        if (distToDest < 15) {
+          setNavigationState("arrived");
+          stopNavigation();
+          say("You have arrived at your destination!");
+        }
+      }
+
+      advanceStepIfNeeded(smoothedLat, smoothedLng);
+      updateRemainingNavigation(smoothedLat, smoothedLng);
+    },
+    [dest, advanceStepIfNeeded, updateRemainingNavigation, say],
+  );
+
+  const handleGPSError = useCallback(
+    (error) => {
+      console.error("GPS error:", error);
+      say("Unable to get GPS location. Please check permissions.");
+    },
+    [say],
+  );
+
+  const startNavigation = useCallback(
+    (routeCoords) => {
+      setNavigationActive(true);
+      setNavigationState("walking");
+      setCurrentStepIndex(0);
+      if (navigator.geolocation) {
+        if (gpsWatchIdRef.current)
+          navigator.geolocation.clearWatch(gpsWatchIdRef.current);
+        gpsWatchIdRef.current = navigator.geolocation.watchPosition(
+          handleGPSUpdate,
+          handleGPSError,
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 },
+        );
+      }
+    },
+    [handleGPSUpdate, handleGPSError],
+  );
+
+  const stopNavigation = useCallback(() => {
+    if (gpsWatchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(gpsWatchIdRef.current);
+      gpsWatchIdRef.current = null;
+    }
+    setNavigationActive(false);
+    setNavigationState("idle");
+    gpsPositionHistory.current = [];
+    lastGPSPosition.current = null;
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopNavigation();
+    };
+  }, [stopNavigation]);
 
   // Click-outside handler
   useEffect(() => {
@@ -1493,35 +1829,44 @@ export default function AccessibleMap() {
   useEffect(() => {
     const fetchAreaObstructions = async () => {
       try {
-        console.log('🔄 Fetching area obstructions...');
+        console.log("🔄 Fetching area obstructions...");
         const res = await fetch("http://127.0.0.1:5000/api/area-obstructions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             use_custom_bbox: true,
             min_lat: 40.2,
             max_lat: 40.8,
             min_lng: -80.8,
             max_lng: -79.5,
             include_emergencies: true,
-            include_news: true
+            include_news: true,
           }),
         });
         const data = await res.json();
-        
-        console.log('📡 API RESPONSE SUMMARY:');
-        console.log('  - Success:', data.success);
-        console.log('  - Construction zones:', data.construction_zones?.length || 0);
-        console.log('  - Total hazards:', data.hazards?.length || 0);
-        console.log('  - News hazards:', data.news_hazards?.length || 0);
-        console.log('  - 911 emergencies:', data.emergencies_911?.length || 0);
-        
+
+        console.log("📡 API RESPONSE SUMMARY:");
+        console.log("  - Success:", data.success);
+        console.log(
+          "  - Construction zones:",
+          data.construction_zones?.length || 0,
+        );
+        console.log("  - Total hazards:", data.hazards?.length || 0);
+        console.log("  - News hazards:", data.news_hazards?.length || 0);
+        console.log("  - 911 emergencies:", data.emergencies_911?.length || 0);
+
         if (data.success) {
           const sanitize = (arr) =>
             (arr || [])
               .map((item) => {
-                let lat = item.lat ?? item.latitude ?? item.position?.lat ?? null;
-                let lng = item.lng ?? item.longitude ?? item.lon ?? item.position?.lng ?? null;
+                let lat =
+                  item.lat ?? item.latitude ?? item.position?.lat ?? null;
+                let lng =
+                  item.lng ??
+                  item.longitude ??
+                  item.lon ??
+                  item.position?.lng ??
+                  null;
                 if (lat !== null) lat = Number(lat);
                 if (lng !== null) lng = Number(lng);
                 if (
@@ -1539,27 +1884,34 @@ export default function AccessibleMap() {
               .filter(Boolean);
 
           setConstructionZones(sanitize(data.construction_zones));
-          
+
           const allHazards = sanitize(data.hazards || []);
-          const newsHazards = allHazards.filter(h => h.source === 'news_api');
-          const arrestHazards = allHazards.filter(h => h.source === 'arrest_data');
-          const tomtomHazards = allHazards.filter(h => h.source === 'tomtom');
-          const otherHazards = allHazards.filter(h => 
-            h.source !== 'news_api' && 
-            h.source !== 'arrest_data' && 
-            h.source !== 'tomtom'
+          const newsHazards = allHazards.filter((h) => h.source === "news_api");
+          const arrestHazards = allHazards.filter(
+            (h) => h.source === "arrest_data",
           );
-          
+          const tomtomHazards = allHazards.filter((h) => h.source === "tomtom");
+          const otherHazards = allHazards.filter(
+            (h) =>
+              h.source !== "news_api" &&
+              h.source !== "arrest_data" &&
+              h.source !== "tomtom",
+          );
+
           const emergencyMarkers = [...newsHazards, ...arrestHazards];
           setEmergencies911(emergencyMarkers);
           setActiveHazards([...tomtomHazards, ...otherHazards]);
-          
-          console.log('📊 HAZARD BREAKDOWN:');
+
+          console.log("📊 HAZARD BREAKDOWN:");
           console.log(`  - News hazards: ${newsHazards.length}`);
           console.log(`  - Arrest hazards: ${arrestHazards.length}`);
           console.log(`  - TomTom hazards: ${tomtomHazards.length}`);
-          console.log(`  - Construction zones: ${data.construction_zones?.length || 0}`);
-          console.log(`  - Total emergency markers (red): ${emergencyMarkers.length}`);
+          console.log(
+            `  - Construction zones: ${data.construction_zones?.length || 0}`,
+          );
+          console.log(
+            `  - Total emergency markers (red): ${emergencyMarkers.length}`,
+          );
         }
       } catch (error) {
         console.error("Error fetching obstructions:", error);
@@ -1578,22 +1930,22 @@ export default function AccessibleMap() {
         const minLng = -80.8;
         const maxLng = -79.5;
         const bbox = `${minLng},${minLat},${maxLng},${maxLat}`;
-        
-        console.log('Fetching TomTom road incidents for region:', bbox);
-        
+
+        console.log("Fetching TomTom road incidents for region:", bbox);
+
         const url = `https://api.tomtom.com/traffic/services/5/incidentDetails?key=${TOMTOM_API_KEY}&bbox=${bbox}&fields={incidents{geometry{type,coordinates},properties{iconCategory,events{description},from,to,startTime,endTime}}}`;
         const response = await fetch(url);
-        
+
         if (!response.ok) {
-          console.error('TomTom API error:', response.status);
+          console.error("TomTom API error:", response.status);
           return;
         }
-        
+
         const data = await response.json();
-        
+
         if (data.incidents?.length > 0) {
           console.log(`Found ${data.incidents.length} TomTom incidents`);
-          
+
           const segs = data.incidents
             .filter((i) =>
               [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14].includes(
@@ -1603,17 +1955,17 @@ export default function AccessibleMap() {
             .map((inc) => {
               const coords = inc.geometry.coordinates;
               let coordinates = [];
-              
+
               if (inc.geometry.type === "Point") {
                 coordinates = [[coords[1], coords[0]]];
               } else if (inc.geometry.type === "LineString") {
                 coordinates = coords.map((c) => [c[1], c[0]]);
               }
-              
+
               let label = "⚠️ HAZARD";
               let color = "rgba(255,140,70,0.95)";
               let borderColor = "#ffaa66";
-              
+
               if ([7, 8, 9].includes(inc.properties.iconCategory)) {
                 label = "🚧 CONSTRUCTION";
                 color = "rgba(255,100,80,0.95)";
@@ -1627,15 +1979,18 @@ export default function AccessibleMap() {
                 color = "rgba(255,180,70,0.95)";
                 borderColor = "#ffcc66";
               }
-              
+
               return {
                 id: inc.id,
-                name: `${inc.properties.from || ""} to ${inc.properties.to || ""}`.trim() || "Road Segment",
+                name:
+                  `${inc.properties.from || ""} to ${inc.properties.to || ""}`.trim() ||
+                  "Road Segment",
                 coordinates,
                 label,
                 color,
                 borderColor,
-                description: inc.properties.events?.[0]?.description || "Road incident",
+                description:
+                  inc.properties.events?.[0]?.description || "Road incident",
                 fromStreet: inc.properties.from || "",
                 toStreet: inc.properties.to || "",
                 startTime: inc.properties.startTime,
@@ -1643,17 +1998,17 @@ export default function AccessibleMap() {
               };
             })
             .filter((s) => s.coordinates.length > 0);
-          
+
           console.log(`Created ${segs.length} road segment overlays`);
           setObstructedRoads(segs);
         } else {
-          console.log('No TomTom incidents found in region');
+          console.log("No TomTom incidents found in region");
         }
       } catch (error) {
         console.error("Error fetching TomTom road incidents:", error);
       }
     };
-    
+
     fetchRoads();
   }, []);
 
@@ -1794,9 +2149,9 @@ export default function AccessibleMap() {
       const res = await fetch("http://127.0.0.1:5000/api/check-obstructions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           route_coords: routeCoords,
-          include_emergencies: true
+          include_emergencies: true,
         }),
       });
       const data = await res.json();
@@ -1814,7 +2169,7 @@ export default function AccessibleMap() {
               return null;
             })
             .filter((z) => z !== null);
-  
+
           setConstructionZones((prev) => {
             const existing = new Set(prev.map((z) => `${z.lat},${z.lng}`));
             return [
@@ -1823,7 +2178,7 @@ export default function AccessibleMap() {
             ];
           });
         }
-  
+
         if (data.obstructions.hazards?.length > 0) {
           const validHazards = data.obstructions.hazards
             .map((hazard) => {
@@ -1837,29 +2192,44 @@ export default function AccessibleMap() {
               return null;
             })
             .filter((h) => h !== null);
-  
-          const newEmergencies = validHazards.filter(h => h.source === '911_dispatch');
-          const newRegularHazards = validHazards.filter(h => h.source !== '911_dispatch');
-          
-          setEmergencies911(prev => {
-            const existing = new Set(prev.map(e => `${e.lat},${e.lng}`));
-            return [...prev, ...newEmergencies.filter(e => !existing.has(`${e.lat},${e.lng}`))];
+
+          const newEmergencies = validHazards.filter(
+            (h) => h.source === "911_dispatch",
+          );
+          const newRegularHazards = validHazards.filter(
+            (h) => h.source !== "911_dispatch",
+          );
+
+          setEmergencies911((prev) => {
+            const existing = new Set(prev.map((e) => `${e.lat},${e.lng}`));
+            return [
+              ...prev,
+              ...newEmergencies.filter(
+                (e) => !existing.has(`${e.lat},${e.lng}`),
+              ),
+            ];
           });
-          
+
           setActiveHazards((prev) => {
             const existing = new Set(prev.map((h) => `${h.lat},${h.lng}`));
             return [
               ...prev,
-              ...newRegularHazards.filter((h) => !existing.has(`${h.lat},${h.lng}`)),
+              ...newRegularHazards.filter(
+                (h) => !existing.has(`${h.lat},${h.lng}`),
+              ),
             ];
           });
         }
-  
+
         if (data.obstructions.has_obstruction) {
-          const emergencyCount = data.obstructions.hazards?.filter(h => h.source === '911_dispatch').length || 0;
-          const message = emergencyCount > 0 
-            ? `⚠ ${emergencyCount} active 911 emergency(s) near your route!`
-            : "⚠ Obstruction near your route!";
+          const emergencyCount =
+            data.obstructions.hazards?.filter(
+              (h) => h.source === "911_dispatch",
+            ).length || 0;
+          const message =
+            emergencyCount > 0
+              ? `⚠ ${emergencyCount} active 911 emergency(s) near your route!`
+              : "⚠ Obstruction near your route!";
           setRouteAlert({
             type: "obstruction",
             message: message,
@@ -1958,8 +2328,10 @@ export default function AccessibleMap() {
 
       if (data.success && data.best_route) {
         const bestRoute = data.best_route;
-        const transitSteps = bestRoute.steps?.filter((s) => s.type === "transit") || [];
-        const walkingSteps = bestRoute.steps?.filter((s) => s.type === "walk") || [];
+        const transitSteps =
+          bestRoute.steps?.filter((s) => s.type === "transit") || [];
+        const walkingSteps =
+          bestRoute.steps?.filter((s) => s.type === "walk") || [];
 
         const cleanStopName = (name) => {
           if (!name || name === "Stop" || name === "stop") return name;
@@ -2123,7 +2495,7 @@ export default function AccessibleMap() {
       say("Could not fetch transit information");
     }
   };
-  
+
   // ─── clear route ──────────────────────────────────────────────────────────────
 
   const clearRoute = () => {
@@ -2138,6 +2510,13 @@ export default function AccessibleMap() {
     setShowDirections(false);
     setTransitSegments([]);
     setTransitAlternatives([]);
+    stopNavigation();
+    setCurrentStepIndex(0);
+    setDistanceToNextTurn(null);
+    setRemainingTotalDistance(0);
+    setEstimatedTimeRemaining(0);
+    setWalkerHeading(0);
+    setNavigationState("idle");
   };
 
   // ─── main route calc ──────────────────────────────────────────────────────────
@@ -2211,41 +2590,44 @@ export default function AccessibleMap() {
           if (transitData.success && transitData.best_route) {
             const bestRoute = transitData.best_route;
             const allRoutes = transitData.routes || [bestRoute];
-            
+
             const primarySegments = buildTransitSegments(bestRoute.steps);
             setTransitSegments(primarySegments);
-            
+
             const alts = allRoutes.slice(1).map((alt, idx) => ({
               coords: extractCoordsFromSteps(alt.steps),
               route_summary: alt.route_summary,
               safety: alt.safety?.overall_safety || 0.7,
               total_time_seconds: alt.total_time_seconds,
-              index: idx + 1
+              index: idx + 1,
             }));
             setTransitAlternatives(alts);
-            
-            const allCoords = primarySegments.flatMap(s => s.coords);
+
+            const allCoords = primarySegments.flatMap((s) => s.coords);
             setRoutePath(allCoords);
             setDest([destCoords.lat, destCoords.lng]);
             setRouteType("transit");
-            
+
             const displaySteps = buildDisplayStepsFromTransit(bestRoute.steps);
             setRouteSteps(displaySteps);
             setShowDirections(true);
-            
+
             const totalMinutes = Math.round(bestRoute.total_time_seconds / 60);
             const hours = Math.floor(totalMinutes / 60);
             const mins = totalMinutes % 60;
-            const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
-            
+            const durationStr =
+              hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
+
             setRouteInfo({
               distance: `${(bestRoute.total_distance_meters / 1000).toFixed(1)} km`,
               duration: durationStr,
               total_minutes: totalMinutes,
-              transit_steps: bestRoute.steps.filter(s => s.type === 'transit').length,
-              walking_steps: bestRoute.steps.filter(s => s.type === 'walk').length,
+              transit_steps: bestRoute.steps.filter((s) => s.type === "transit")
+                .length,
+              walking_steps: bestRoute.steps.filter((s) => s.type === "walk")
+                .length,
             });
-            
+
             const nr = [
               {
                 name: toVal,
@@ -2256,18 +2638,22 @@ export default function AccessibleMap() {
             ].slice(0, 6);
             setRecents(nr);
             localStorage.setItem("ar_recents", JSON.stringify(nr));
-            
+
             const routeSummary = bestRoute.steps
               .filter((s) => s.type === "transit")
               .map((s) => s.route_short_name || "Bus")
               .join(" → ");
-            
+
             say(
               `Transit route found · ${durationStr} · ${routeSummary || `${bestRoute.steps.filter((s) => s.type === "transit").length} connections`}`,
             );
-            
+
             setShow3D(true);
             setTimeout(() => checkRouteForObstructions(allCoords), 500);
+            // Start navigation
+            setTimeout(() => {
+              startNavigation(allCoords);
+            }, 300);
             setIsLoading(false);
             return;
           } else {
@@ -2394,6 +2780,9 @@ export default function AccessibleMap() {
         say(`Route found · ${data.route.distance} · ${data.route.duration}`);
         setShow3D(true);
         setTimeout(() => checkRouteForObstructions(coords), 500);
+        setTimeout(() => {
+          startNavigation(coords);
+        }, 300);
       } else {
         say("Couldn't find a route. Try a different destination.");
       }
@@ -2570,43 +2959,83 @@ export default function AccessibleMap() {
                 key={`emergency-${idx}`}
                 position={[emergency.lat, emergency.lng]}
                 icon={makeLucideIcon(
-                  emergency.type === 'accident' ? CarFront :
-                  emergency.type === 'fire' ? Flame :
-                  emergency.type === 'medical' ? Stethoscope :
-                  emergency.type === 'hazardous' ? TriangleAlert :
-                  emergency.type === 'rescue' ? Siren :
-                  ShieldAlert,
+                  emergency.type === "accident"
+                    ? CarFront
+                    : emergency.type === "fire"
+                      ? Flame
+                      : emergency.type === "medical"
+                        ? Stethoscope
+                        : emergency.type === "hazardous"
+                          ? TriangleAlert
+                          : emergency.type === "rescue"
+                            ? Siren
+                            : ShieldAlert,
                   emergency.severity > 0.7 ? "#ff4444" : "#ff8844",
                   "#ff0000",
-                  Math.min(42, Math.max(28, 28 + ((currentZoom - 12) / 6) * 14))
+                  Math.min(
+                    42,
+                    Math.max(28, 28 + ((currentZoom - 12) / 6) * 14),
+                  ),
                 )}
               >
                 <Popup>
-                  <div style={{ fontFamily: "DM Sans,sans-serif", minWidth: 200 }}>
-                    <div style={{ 
-                      display: "flex", 
-                      alignItems: "center", 
-                      gap: 10, 
-                      marginBottom: 12,
-                      paddingBottom: 8,
-                      borderBottom: "1px solid rgba(255,68,68,0.3)"
-                    }}>
-                      {emergency.type === 'accident' && <CarFront size={18} color="#ff4444" />}
-                      {emergency.type === 'fire' && <Flame size={18} color="#ff4444" />}
-                      {emergency.type === 'medical' && <Stethoscope size={18} color="#ff4444" />}
-                      {emergency.type === 'hazardous' && <TriangleAlert size={18} color="#ff8844" />}
-                      {emergency.type === 'rescue' && <Siren size={18} color="#ff4444" />}
-                      {!emergency.type && <ShieldAlert size={18} color="#ff4444" />}
+                  <div
+                    style={{ fontFamily: "DM Sans,sans-serif", minWidth: 200 }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        marginBottom: 12,
+                        paddingBottom: 8,
+                        borderBottom: "1px solid rgba(255,68,68,0.3)",
+                      }}
+                    >
+                      {emergency.type === "accident" && (
+                        <CarFront size={18} color="#ff4444" />
+                      )}
+                      {emergency.type === "fire" && (
+                        <Flame size={18} color="#ff4444" />
+                      )}
+                      {emergency.type === "medical" && (
+                        <Stethoscope size={18} color="#ff4444" />
+                      )}
+                      {emergency.type === "hazardous" && (
+                        <TriangleAlert size={18} color="#ff8844" />
+                      )}
+                      {emergency.type === "rescue" && (
+                        <Siren size={18} color="#ff4444" />
+                      )}
+                      {!emergency.type && (
+                        <ShieldAlert size={18} color="#ff4444" />
+                      )}
                       <strong style={{ color: "#ff6666", fontSize: 14 }}>
                         🚨 911 EMERGENCY
                       </strong>
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: "bold", color: "#fff", marginBottom: 6 }}>
-                      {emergency.description || `${emergency.type?.toUpperCase()} incident`}
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "bold",
+                        color: "#fff",
+                        marginBottom: 6,
+                      }}
+                    >
+                      {emergency.description ||
+                        `${emergency.type?.toUpperCase()} incident`}
                     </div>
-                    <div style={{ fontSize: 11, color: "#e0c8b0", marginBottom: 4 }}>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: "#e0c8b0",
+                        marginBottom: 4,
+                      }}
+                    >
                       {emergency.subtype && (
-                        <span style={{ display: "inline-block", marginRight: 12 }}>
+                        <span
+                          style={{ display: "inline-block", marginRight: 12 }}
+                        >
                           📋 {emergency.subtype}
                         </span>
                       )}
@@ -2617,8 +3046,11 @@ export default function AccessibleMap() {
                       )}
                     </div>
                     {emergency.timestamp && (
-                      <div style={{ fontSize: 10, color: "#b09878", marginTop: 6 }}>
-                        🕒 Reported: {new Date(emergency.timestamp).toLocaleString()}
+                      <div
+                        style={{ fontSize: 10, color: "#b09878", marginTop: 6 }}
+                      >
+                        🕒 Reported:{" "}
+                        {new Date(emergency.timestamp).toLocaleString()}
                       </div>
                     )}
                     {emergency.distance_meters && (
@@ -2626,13 +3058,15 @@ export default function AccessibleMap() {
                         📍 {emergency.distance_meters.toFixed(0)}m from center
                       </div>
                     )}
-                    <div style={{ 
-                      fontSize: 10, 
-                      color: "#ff8888", 
-                      marginTop: 8,
-                      paddingTop: 6,
-                      borderTop: "1px solid rgba(255,68,68,0.2)"
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: "#ff8888",
+                        marginTop: 8,
+                        paddingTop: 6,
+                        borderTop: "1px solid rgba(255,68,68,0.2)",
+                      }}
+                    >
                       ⚠️ Active emergency response in area
                     </div>
                   </div>
@@ -2862,96 +3296,95 @@ export default function AccessibleMap() {
             )}
 
             {/* ── TRANSIT ALTERNATIVE ROUTES (dotted) ── */}
-            {transitAlternatives.map((alt, altIdx) => (
-              alt.coords.length > 1 && (
-                <Polyline
-                  key={`transit-alt-${altIdx}`}
-                  positions={alt.coords}
-                  pathOptions={{
-                    color: '#e8a870',
-                    weight: 3,
-                    opacity: 0.55,
-                    dashArray: '8,7',
-                    lineCap: 'round',
-                    lineJoin: 'round',
-                  }}
-                >
-                  <Popup>
-                    <div style={{ fontFamily: 'DM Sans,sans-serif' }}>
-                      <strong>Alternative {alt.index}</strong><br />
-                      {alt.route_summary}<br />
-                      <small style={{ color: '#b09878' }}>
-                        {Math.round(alt.total_time_seconds / 60)} min · 
-                        Safety: {Math.round((alt.safety || 0.7) * 100)}%
-                      </small>
-                    </div>
-                  </Popup>
-                </Polyline>
-              )
-            ))}
+            {transitAlternatives.map(
+              (alt, altIdx) =>
+                alt.coords.length > 1 && (
+                  <Polyline
+                    key={`transit-alt-${altIdx}`}
+                    positions={alt.coords}
+                    pathOptions={{
+                      color: "#e8a870",
+                      weight: 3,
+                      opacity: 0.55,
+                      dashArray: "8,7",
+                      lineCap: "round",
+                      lineJoin: "round",
+                    }}
+                  >
+                    <Popup>
+                      <div style={{ fontFamily: "DM Sans,sans-serif" }}>
+                        <strong>Alternative {alt.index}</strong>
+                        <br />
+                        {alt.route_summary}
+                        <br />
+                        <small style={{ color: "#b09878" }}>
+                          {Math.round(alt.total_time_seconds / 60)} min ·
+                          Safety: {Math.round((alt.safety || 0.7) * 100)}%
+                        </small>
+                      </div>
+                    </Popup>
+                  </Polyline>
+                ),
+            )}
           </MapContainer>
         </div>
 
-        {/* ── 3D WALK VIEW ── (commented out for performance) */}
-        {/*
-        <div
-          className={`view3d-panel${show3D && routePath.length > 0 ? "" : " hidden"}`}
-        >
-          <Suspense
-            fallback={
-              <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  background: "rgba(0,0,0,0.7)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "white",
+        {/* ── 3D WALK VIEW (New integrated panel) ── */}
+        {navigationActive && routePath.length > 0 && (
+          <div className="nav-3d-panel">
+            <Suspense
+              fallback={
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    background: "rgba(0,0,0,0.7)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                  }}
+                >
+                  Loading 3D View...
+                </div>
+              }
+            >
+              <Walking3DView
+                route={routePath}
+                routeSteps={routeSteps}
+                currentStepIndex={currentStepIndex}
+                distanceToNextTurn={distanceToNextTurn}
+                hazards={transformedHazards}
+                constructionZones={constructionZones}
+                emergencies={emergencies911}
+                userPosition={walkerPosition}
+                userHeading={walkerHeading}
+                navigationState={navigationState}
+                routeSafety={avgSafety}
+                remainingDistance={remainingTotalDistance}
+                estimatedTime={estimatedTimeRemaining}
+                routeType={routeType}
+                transitSegments={transitSegments}
+                testMode={process.env.NODE_ENV === "development"}
+                onTestPositionUpdate={(newPos) => {
+                  setWalkerPosition(newPos);
                 }}
-              >
-                Loading 3D View...
-              </div>
-            }
-          >
-            <Walking3DView
-              route={routePath}
-              hazards={transformedHazards}
-              userPosition={walkerPosition || loc}
-              navigationState={navState3D}
-              routeSafety={avgSafety}
-              remainingDistance={remainingDist3D}
-              estimatedTime={remainingDist3D / 1.4}
-              style={{ width: "100%", height: "100%" }}
-            />
-          </Suspense>
+                onClose={() => setShow3D(false)}
+                style={{ width: "100%", height: "100%" }}
+              />
+            </Suspense>
+          </div>
+        )}
+
+        {routePath.length > 0 && !navigationActive && !show3D && (
           <button
-            onClick={() => setShow3D(false)}
-            style={{
-              position: "absolute",
-              top: 8,
-              right: 8,
-              background: "rgba(0,0,0,0.5)",
-              border: "none",
-              borderRadius: 6,
-              width: 24,
-              height: 24,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              color: "#fff",
-              zIndex: 20,
+            className="view3d-toggle"
+            onClick={() => {
+              setShow3D(true);
+              startNavigation(routePath);
             }}
           >
-            <X size={12} />
-          </button>
-        </div>
-        */}
-
-        {routePath.length > 0 && !show3D && (
-          <button className="view3d-toggle" onClick={() => setShow3D(true)}>
-            <Play size={12} /> 3D Walk View
+            <Play size={12} /> Start Navigation
           </button>
         )}
 
@@ -3254,277 +3687,274 @@ export default function AccessibleMap() {
         </aside>
 
         {/* ── SEARCH / ROUTE PLANNER CARD ── */}
-        <div className="sc" role="search" aria-label="Route planner">
+        <div
+          className={`sc${searchPanelCollapsed ? " collapsed" : ""}`}
+          role="search"
+          aria-label="Route planner"
+        >
           <div className="sc-head">
             <Route size={16} style={{ color: "var(--wood)", flexShrink: 0 }} />
             <div className="sc-brand">
               Try<span>ver</span>
             </div>
+            <button
+              className="sc-collapse-btn"
+              onClick={() => setSearchPanelCollapsed(!searchPanelCollapsed)}
+              aria-label={
+                searchPanelCollapsed
+                  ? "Expand search panel"
+                  : "Collapse search panel"
+              }
+            >
+              {searchPanelCollapsed ? (
+                <ChevronUp size={14} />
+              ) : (
+                <ChevronDown size={14} />
+              )}
+            </button>
           </div>
-          <div className="sc-inputs">
-            {/* From input */}
-            <div className="ac">
-              <div className="rr">
-                <span className="rr-dot rr-dot-g" />
-                <input
-                  ref={fromRef}
-                  type="text"
-                  value={fromVal}
-                  onChange={(e) => {
-                    setFromVal(e.target.value);
-                    searchFromPlaces(e.target.value);
-                  }}
-                  className="ri"
-                  placeholder="Your starting point"
-                  aria-label="Starting location"
-                  onKeyDown={fromKD}
-                  onFocus={() => fromSugg.length > 0 && setFromSuggOpen(true)}
-                  autoComplete="off"
-                />
-                {fromSuggLoad && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      right: 34,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                    }}
-                  >
-                    <div className="spn" />
+
+          <div
+            className="sc-content"
+            style={{
+              maxHeight: searchPanelCollapsed ? 0 : "70vh",
+              overflowY: "auto",
+              transition: "max-height 0.2s ease",
+            }}
+          >
+            {!searchPanelCollapsed && (
+              <>
+                <div className="sc-inputs">
+                  {/* From input */}
+                  <div className="ac">
+                    <div className="rr">
+                      <span className="rr-dot rr-dot-g" />
+                      <input
+                        ref={fromRef}
+                        type="text"
+                        value={fromVal}
+                        onChange={(e) => {
+                          setFromVal(e.target.value);
+                          searchFromPlaces(e.target.value);
+                        }}
+                        className="ri"
+                        placeholder="Your starting point"
+                        aria-label="Starting location"
+                        onKeyDown={fromKD}
+                        onFocus={() =>
+                          fromSugg.length > 0 && setFromSuggOpen(true)
+                        }
+                        autoComplete="off"
+                      />
+                      {fromSuggLoad && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            right: 34,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                          }}
+                        >
+                          <div className="spn" />
+                        </div>
+                      )}
+                      <button
+                        className="ri-btn"
+                        onClick={getGPS}
+                        title="Use my location"
+                      >
+                        <Crosshair size={12} />
+                      </button>
+                    </div>
+                    {fromSuggOpen && (
+                      <div className="ac-drop" role="listbox">
+                        <div className="ac-hd">
+                          <MapPin size={10} /> Suggestions
+                        </div>
+                        {fromSuggLoad && fromSugg.length === 0 ? (
+                          <div className="ac-wait">
+                            <div className="spn" />
+                            Searching…
+                          </div>
+                        ) : (
+                          memoizedFromSuggItems
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
+
+                  <div className="ri-conn">
+                    <div className="ri-conn-line" />
+                    <span className="ri-conn-lbl">to</span>
+                  </div>
+
+                  {/* To input */}
+                  <div className="ac">
+                    <div className="rr">
+                      <span className="rr-dot rr-dot-r" />
+                      <input
+                        ref={destRef}
+                        type="text"
+                        value={toVal}
+                        onChange={(e) => {
+                          setToVal(e.target.value);
+                          searchPlaces(e.target.value);
+                        }}
+                        className="ri"
+                        placeholder="Address, place or business…"
+                        aria-label="Destination"
+                        onKeyDown={destKD}
+                        onFocus={() => sugg.length > 0 && setSuggOpen(true)}
+                        autoComplete="off"
+                      />
+                      {suggLoad && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            right: 9,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                          }}
+                        >
+                          <div className="spn" />
+                        </div>
+                      )}
+                      {toVal && !suggLoad && (
+                        <button
+                          className="ri-btn"
+                          tabIndex={-1}
+                          onClick={() => {
+                            setToVal("");
+                            setSugg([]);
+                            setSuggOpen(false);
+                            destRef.current?.focus();
+                          }}
+                        >
+                          <X size={11} />
+                        </button>
+                      )}
+                    </div>
+                    {suggOpen && (
+                      <div
+                        ref={suggRef}
+                        className="ac-drop"
+                        id="ac-list"
+                        role="listbox"
+                      >
+                        <div className="ac-hd">
+                          <MapPin size={10} /> Suggestions
+                        </div>
+                        {suggLoad && sugg.length === 0 ? (
+                          <div className="ac-wait">
+                            <div className="spn" />
+                            Searching…
+                          </div>
+                        ) : (
+                          memoizedSuggItems
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Mode buttons */}
+                <div className="sc-modes" role="radiogroup">
+                  {[
+                    { id: "walk", Icon: PersonStanding, l: "Walk" },
+                    { id: "transit", Icon: Bus, l: "Transit" },
+                    { id: "wheelchair", Icon: Accessibility, l: "Access" },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      className={`mp${mode === t.id ? " on" : ""}`}
+                      onClick={() => {
+                        setMode(t.id);
+                        clearRoute();
+                        say(`${t.l} mode`);
+                      }}
+                    >
+                      <span className="mp-i">
+                        <t.Icon size={18} />
+                      </span>
+                      <span className="mp-l">{t.l}</span>
+                    </button>
+                  ))}
+                </div>
+
                 <button
-                  className="ri-btn"
-                  onClick={getGPS}
-                  title="Use my location"
+                  className="sc-find"
+                  onClick={calcRoute}
+                  disabled={!toVal.trim() || isLoading}
                 >
-                  <Crosshair size={12} />
+                  {isLoading ? (
+                    <>
+                      <div className="spn2" /> Calculating…
+                    </>
+                  ) : (
+                    <>
+                      <Search size={15} /> Find Safe Route
+                    </>
+                  )}
                 </button>
-              </div>
-              {fromSuggOpen && (
-                <div className="ac-drop" role="listbox">
-                  <div className="ac-hd">
-                    <MapPin size={10} /> Suggestions
-                  </div>
-                  {fromSuggLoad && fromSugg.length === 0 ? (
-                    <div className="ac-wait">
-                      <div className="spn" />
-                      Searching…
-                    </div>
-                  ) : (
-                    memoizedFromSuggItems
-                  )}
-                </div>
-              )}
-            </div>
 
-            <div className="ri-conn">
-              <div className="ri-conn-line" />
-              <span className="ri-conn-lbl">to</span>
-            </div>
-
-            {/* To input */}
-            <div className="ac">
-              <div className="rr">
-                <span className="rr-dot rr-dot-r" />
-                <input
-                  ref={destRef}
-                  type="text"
-                  value={toVal}
-                  onChange={(e) => {
-                    setToVal(e.target.value);
-                    searchPlaces(e.target.value);
-                  }}
-                  className="ri"
-                  placeholder="Address, place or business…"
-                  aria-label="Destination"
-                  onKeyDown={destKD}
-                  onFocus={() => sugg.length > 0 && setSuggOpen(true)}
-                  autoComplete="off"
-                />
-                {suggLoad && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      right: 9,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                    }}
-                  >
-                    <div className="spn" />
-                  </div>
-                )}
-                {toVal && !suggLoad && (
-                  <button
-                    className="ri-btn"
-                    tabIndex={-1}
-                    onClick={() => {
-                      setToVal("");
-                      setSugg([]);
-                      setSuggOpen(false);
-                      destRef.current?.focus();
-                    }}
-                  >
-                    <X size={11} />
-                  </button>
-                )}
-              </div>
-              {suggOpen && (
-                <div
-                  ref={suggRef}
-                  className="ac-drop"
-                  id="ac-list"
-                  role="listbox"
-                >
-                  <div className="ac-hd">
-                    <MapPin size={10} /> Suggestions
-                  </div>
-                  {suggLoad && sugg.length === 0 ? (
-                    <div className="ac-wait">
-                      <div className="spn" />
-                      Searching…
-                    </div>
-                  ) : (
-                    memoizedSuggItems
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Mode buttons */}
-          <div className="sc-modes" role="radiogroup">
+                {/* Map Legend - Commented out for now */}
+                {/* <button className="sc-leg-btn" onClick={() => setLegendOpen((o) => !o)}>
+          <span className="sc-leg-lbl">Map Legend</span>
+          <ChevronDown size={13} className={`leg-chv${legendOpen ? " open" : ""}`} />
+        </button>
+        {legendOpen && (
+          <div className="sc-leg-body" role="list">
             {[
-              { id: "walk", Icon: PersonStanding, l: "Walk" },
-              { id: "transit", Icon: Bus, l: "Transit" },
-              { id: "wheelchair", Icon: Accessibility, l: "Access" },
-            ].map((t) => (
-              <button
-                key={t.id}
-                className={`mp${mode === t.id ? " on" : ""}`}
-                onClick={() => {
-                  setMode(t.id);
-                  clearRoute();
-                  say(`${t.l} mode`);
-                }}
-              >
-                <span className="mp-i">
-                  <t.Icon size={18} />
-                </span>
-                <span className="mp-l">{t.l}</span>
-              </button>
+              { color: "#8cd69c", label: "Safe Route (70-100%)", type: "line" },
+              { color: "#ffb347", label: "Caution Route (40-69%)", type: "line" },
+              { color: "#ff7b6b", label: "Unsafe Route (0-39%)", type: "line" },
+              { color: "#4fc3f7", label: "Transit (Bus) Segment", type: "line" },
+              { color: "#8cd69c", label: "Walking Segment", type: "line", dash: true },
+              { color: "#ff7b6b", label: "Construction Zone", type: "circle", dash: true },
+              { color: "#ffb347", label: "Hazard Area", type: "circle" },
+              { color: "#e8a870", label: "Alternative Route", type: "line", dash: true },
+            ].map((item) => (
+              <div key={item.label} className="leg-row" role="listitem">
+                {item.type === "circle" ? (
+                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: item.color, border: item.dash ? "1px dashed white" : "none", flexShrink: 0 }} />
+                ) : (
+                  <div style={{ width: 28, height: 3, borderRadius: 2, flexShrink: 0, background: item.dash ? `repeating-linear-gradient(90deg,${item.color} 0,${item.color} 6px,transparent 6px,transparent 10px)` : item.color }} />
+                )}
+                <span className="leg-lbl">{item.label}</span>
+              </div>
             ))}
           </div>
-
-          <button
-            className="sc-find"
-            onClick={calcRoute}
-            disabled={!toVal.trim() || isLoading}
-          >
-            {isLoading ? (
-              <>
-                <div className="spn2" /> Calculating…
-              </>
-            ) : (
-              <>
-                <Search size={15} /> Find Safe Route
+        )} */}
               </>
             )}
-          </button>
+          </div>
+        </div>
 
-          <button
-            className="sc-leg-btn"
-            onClick={() => setLegendOpen((o) => !o)}
+        {/* ── DIRECTIONS PANEL - ATTACHED DIRECTLY UNDER SEARCH PANEL ── */}
+        {showDirections && routeSteps.length > 0 && (
+          <div
+            className="directions-attached"
+            style={{
+              background: "var(--surface)",
+              borderTop: "1px solid var(--border)",
+              borderRadius: "0 0 20px 20px",
+              marginTop: "-8px",
+              marginLeft: "16px",
+              marginRight: "16px",
+              marginBottom: "16px",
+              maxHeight: "45vh",
+              overflowY: "auto",
+              boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
+              animation: "slideDown 0.3s ease",
+            }}
           >
-            <span className="sc-leg-lbl">Map Legend</span>
-            <ChevronDown
-              size={13}
-              className={`leg-chv${legendOpen ? " open" : ""}`}
-            />
-          </button>
-          {legendOpen && (
-            <div className="sc-leg-body" role="list">
-              {[
-                {
-                  color: "#8cd69c",
-                  label: "Safe Route (70-100%)",
-                  type: "line",
-                },
-                {
-                  color: "#ffb347",
-                  label: "Caution Route (40-69%)",
-                  type: "line",
-                },
-                {
-                  color: "#ff7b6b",
-                  label: "Unsafe Route (0-39%)",
-                  type: "line",
-                },
-                {
-                  color: "#4fc3f7",
-                  label: "Transit (Bus) Segment",
-                  type: "line",
-                },
-                {
-                  color: "#8cd69c",
-                  label: "Walking Segment",
-                  type: "line",
-                  dash: true,
-                },
-                {
-                  color: "#ff7b6b",
-                  label: "Construction Zone",
-                  type: "circle",
-                  dash: true,
-                },
-                { color: "#ffb347", label: "Hazard Area", type: "circle" },
-                {
-                  color: "#e8a870",
-                  label: "Alternative Route",
-                  type: "line",
-                  dash: true,
-                },
-              ].map((item) => (
-                <div key={item.label} className="leg-row" role="listitem">
-                  {item.type === "circle" ? (
-                    <div
-                      style={{
-                        width: 12,
-                        height: 12,
-                        borderRadius: "50%",
-                        background: item.color,
-                        border: item.dash ? "1px dashed white" : "none",
-                        flexShrink: 0,
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: 28,
-                        height: 3,
-                        borderRadius: 2,
-                        flexShrink: 0,
-                        background: item.dash
-                          ? `repeating-linear-gradient(90deg,${item.color} 0,${item.color} 6px,transparent 6px,transparent 10px)`
-                          : item.color,
-                      }}
-                    />
-                  )}
-                  <span className="leg-lbl">{item.label}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* ── DIRECTIONS PANEL ── */}
-          {showDirections && routeSteps.length > 0 && (
             <DirectionsPanel
               steps={routeSteps}
               onClose={() => setShowDirections(false)}
               routeType={routeType}
             />
-          )}
-        </div>
+          </div>
+        )}
 
         {/* ── MAP TYPE BAR ── */}
         <div className="mt-bar" role="radiogroup">
@@ -3546,6 +3976,34 @@ export default function AccessibleMap() {
           })}
         </div>
 
+        {/* Add this animation to your global CSS or style tag */}
+        <style>{`
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .directions-attached::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .directions-attached::-webkit-scrollbar-track {
+    background: var(--inset);
+    border-radius: 10px;
+  }
+  
+  .directions-attached::-webkit-scrollbar-thumb {
+    background: var(--wood);
+    border-radius: 10px;
+  }
+`}</style>
+
         {/* ── ZOOM CONTROLS ── */}
         <div className="mctrl">
           <button
@@ -3563,8 +4021,6 @@ export default function AccessibleMap() {
             <Minus size={16} />
           </button>
         </div>
-
-        
 
         {/* ── ROUTE INFO BAR ── */}
         {routeInfo && (
@@ -3585,7 +4041,7 @@ export default function AccessibleMap() {
               </div>
               <div className="rs-l">Accessible</div>
             </div>
-            
+
             {constructionZones.length > 0 && (
               <>
                 <div className="rs-d" />
@@ -3598,11 +4054,16 @@ export default function AccessibleMap() {
               </>
             )}
 
-            {emergencies911.filter(e => {
+            {emergencies911.filter((e) => {
               if (!routePath.length) return false;
               let minDist = Infinity;
               for (const point of routePath) {
-                const dist = haversineDistance(point[0], point[1], e.lat, e.lng);
+                const dist = haversineDistance(
+                  point[0],
+                  point[1],
+                  e.lat,
+                  e.lng,
+                );
                 minDist = Math.min(minDist, dist);
               }
               return minDist < 500;
@@ -3611,14 +4072,22 @@ export default function AccessibleMap() {
                 <div className="rs-d" />
                 <div className="rs">
                   <div className="rs-v" style={{ color: "#ff4444" }}>
-                    <Siren size={14} /> {emergencies911.filter(e => {
-                      let minDist = Infinity;
-                      for (const point of routePath) {
-                        const dist = haversineDistance(point[0], point[1], e.lat, e.lng);
-                        minDist = Math.min(minDist, dist);
-                      }
-                      return minDist < 500;
-                    }).length}
+                    <Siren size={14} />{" "}
+                    {
+                      emergencies911.filter((e) => {
+                        let minDist = Infinity;
+                        for (const point of routePath) {
+                          const dist = haversineDistance(
+                            point[0],
+                            point[1],
+                            e.lat,
+                            e.lng,
+                          );
+                          minDist = Math.min(minDist, dist);
+                        }
+                        return minDist < 500;
+                      }).length
+                    }
                   </div>
                   <div className="rs-l">Emergencies</div>
                 </div>
@@ -3632,7 +4101,7 @@ export default function AccessibleMap() {
             >
               <List size={13} /> {showDirections ? "Hide" : "Directions"}
             </button>
-            
+
             {mode === "transit" && (
               <>
                 <div className="rs-d" />
@@ -3641,13 +4110,34 @@ export default function AccessibleMap() {
                 </button>
               </>
             )}
-            
+
             <button className="rs-cl" onClick={clearRoute}>
               Clear
             </button>
+
+            {routePath.length > 0 && (
+              <>
+                <div className="rs-d" />
+                <button
+                  className={`rs-3d-btn${navigationActive ? " on" : ""}`}
+                  onClick={() => {
+                    if (navigationActive) {
+                      stopNavigation();
+                      setShow3D(false);
+                    } else {
+                      startNavigation(routePath);
+                      setShow3D(true);
+                    }
+                  }}
+                >
+                  <Navigation size={13} />
+                  {navigationActive ? "Stop Nav" : "Navigate"}
+                </button>
+              </>
+            )}
           </div>
         )}
-        
+
         {/* ── ROUTE ALERT OVERLAY ── */}
         {showRouteAlert && routeAlert && (
           <div
@@ -3911,10 +4401,17 @@ export default function AccessibleMap() {
           onDismiss={() => setShowVoiceModal(false)}
           onRouteCalculated={(routeData) => {
             if (routeData.success && routeData.route.coordinates?.length >= 2) {
-              const coords = routeData.route.coordinates.map(c => [c.lat, c.lng]);
+              const coords = routeData.route.coordinates.map((c) => [
+                c.lat,
+                c.lng,
+              ]);
               setRoutePath(coords);
               setDest(coords[coords.length - 1]);
-              setRouteType(routeData.route.travel_mode === 'transit' ? 'transit' : 'walking');
+              setRouteType(
+                routeData.route.travel_mode === "transit"
+                  ? "transit"
+                  : "walking",
+              );
               setRouteSteps(routeData.route.steps || []);
               setShowDirections(true);
               setRouteInfo({
@@ -3923,6 +4420,7 @@ export default function AccessibleMap() {
                 type: routeData.route.travel_mode,
               });
               setShow3D(true);
+              startNavigation(coords);
             }
           }}
           userLocation={loc}

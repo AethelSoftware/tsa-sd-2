@@ -2843,7 +2843,7 @@ def main():
         socketio.run(app,
                     host=args.host,
                     port=args.port,
-                    debug=args.debug,
+                    debug=True,
                     use_reloader=False,
                     allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:

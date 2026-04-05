@@ -1,830 +1,658 @@
-/**
- * Walking3DView.jsx — Tesla-vision style pedestrian nav
- *
- * What's new vs old version:
- *  1. userPosition drives the figure directly (real GPS from parent/Dashboard)
- *  2. "Advance" button + arrow keys move figure forward along route for testing
- *  3. Real OSM buildings fetched via Overpass API (neighborhood-accurate)
- *     — height determined by building:levels tag, fallback by area type
- *  4. No auto-simulation of position in this component at all
- *  5. Tesla-style: figure is always centred, camera follows from behind
- */
-
-import React, {
-  useRef,
-  useMemo,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import React, { useRef, useMemo, useCallback, useEffect, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { Html } from "@react-three/drei";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Geo ↔ World conversion
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Geo ↔ World helpers
+// ---------------------------------------------------------------------------
+const SCALE = 1 / 4; // 1 world unit = 4 meters
+const M_LAT = 111139;
+let _origin = null;
+let _mLng = null;
 
-const M_LAT = 111_139; // metres per degree latitude
-const SCALE = 1 / 6; // 1 world unit = 6 m  (bigger = more zoomed in)
-
-let ORIGIN = null; // set lazily from first route point
-
-function setOrigin(lat, lng) {
-  ORIGIN = {
-    lat,
-    lng,
-    mLng: M_LAT * Math.cos(lat * (Math.PI / 180)),
-  };
+function initOrigin(lat, lng) {
+  if (_origin) return;
+  _origin = { lat, lng };
+  _mLng = M_LAT * Math.cos(lat * (Math.PI / 180));
 }
 
-function geo2world(lat, lng) {
-  if (!ORIGIN) return new THREE.Vector3(0, 0, 0);
-  return new THREE.Vector3(
-    (lng - ORIGIN.lng) * ORIGIN.mLng * SCALE,
-    0,
-    -(lat - ORIGIN.lat) * M_LAT * SCALE,
-  );
+function geo2w(lat, lng) {
+  if (!_origin) return [0, 0];
+  return [
+    (lng - _origin.lng) * _mLng * SCALE,
+    -(lat - _origin.lat) * M_LAT * SCALE,
+  ];
 }
 
-function arr2world([lat, lng]) {
-  return geo2world(lat, lng);
-}
+// ---------------------------------------------------------------------------
+// Procedural city blocks (no network, instant, lightweight)
+// ---------------------------------------------------------------------------
+function ProceduralCity({ centerX, centerZ }) {
+  const meshRef = useRef();
+  const geometry = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    const positions = [];
+    const normals = [];
+    const colors = [];
+    const rng = (seed) => {
+      let s = seed;
+      return () => { s = (s * 16807 + 0) % 2147483647; return s / 2147483647; };
+    };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// OSM Building fetcher
-// ─────────────────────────────────────────────────────────────────────────────
+    const palette = [
+      [0.82, 0.78, 0.73], [0.78, 0.75, 0.71], [0.85, 0.81, 0.76],
+      [0.75, 0.77, 0.80], [0.80, 0.76, 0.72], [0.77, 0.74, 0.70],
+    ];
 
-async function fetchOSMBuildings(centerLat, centerLng, radiusM = 400) {
-  const r = radiusM;
-  const query = `
-    [out:json][timeout:20];
-    (
-      way["building"](around:${r},${centerLat},${centerLng});
-      relation["building"](around:${r},${centerLat},${centerLng});
-    );
-    out body geom;
-  `;
-  try {
-    const res = await fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      body: "data=" + encodeURIComponent(query),
-    });
-    const data = await res.json();
-    return data.elements || [];
-  } catch (e) {
-    console.warn("OSM fetch failed:", e);
-    return [];
-  }
-}
+    const gridSize = 12;
+    const spacing = 14;
+    const offset = (gridSize * spacing) / 2;
 
-function osmBuildingHeight(tags = {}) {
-  if (tags.height) return Math.min(parseFloat(tags.height) * SCALE, 40);
-  if (tags["building:levels"])
-    return Math.min(parseInt(tags["building:levels"]) * 3.2 * SCALE, 40);
-  // Guess by type
-  const type = tags.building || "";
-  if (["yes", "house", "detached", "semidetached_house", "terrace"].includes(type))
-    return 3 * SCALE; // 1 storey ~3m
-  if (["apartments", "residential"].includes(type)) return 12 * SCALE;
-  if (["commercial", "retail", "office"].includes(type)) return 10 * SCALE;
-  if (["industrial", "warehouse"].includes(type)) return 6 * SCALE;
-  if (["church", "cathedral", "chapel"].includes(type)) return 14 * SCALE;
-  if (["school", "university"].includes(type)) return 9 * SCALE;
-  return 5 * SCALE; // default
-}
+    for (let gx = 0; gx < gridSize; gx++) {
+      for (let gz = 0; gz < gridSize; gz++) {
+        const rand = rng(gx * 1000 + gz * 37 + 7);
+        // Skip some cells for streets
+        if (rand() < 0.25) continue;
 
-function osmBuildingColor(tags = {}) {
-  const type = tags.building || "";
-  const colorMap = {
-    house: "#e8ddd0",
-    detached: "#ede5d8",
-    semidetached_house: "#e5dcd0",
-    terrace: "#ddd5c8",
-    apartments: "#d0d8e0",
-    residential: "#d5dde5",
-    commercial: "#c8d0d8",
-    retail: "#d8c8c0",
-    office: "#c0ccd8",
-    industrial: "#c8c8c0",
-    warehouse: "#c8c4b8",
-    church: "#e0dcd5",
-    school: "#ddd8cc",
-    university: "#d8d0c8",
-  };
-  return colorMap[type] || "#ddd8d0";
-}
+        const bx = gx * spacing - offset + rand() * 4 - 2;
+        const bz = gz * spacing - offset + rand() * 4 - 2;
+        const bw = 4 + rand() * 7;
+        const bd = 4 + rand() * 7;
+        const bh = 2 + rand() * 12;
+        const col = palette[Math.floor(rand() * palette.length)];
+        const shade = 0.85 + rand() * 0.15;
 
-// Convert OSM way geometry to a flat polygon (XZ plane)
-function osmWayToPolygon(element) {
-  if (!element.geometry || element.geometry.length < 3) return null;
-  return element.geometry.map(({ lat, lon }) => geo2world(lat, lon));
-}
+        // Box faces (6 faces, 2 tris each = 36 verts)
+        const addFace = (v0, v1, v2, v3, nx, ny, nz, dark) => {
+          const f = dark ? 0.7 : 1.0;
+          const r = col[0] * shade * f, g = col[1] * shade * f, b = col[2] * shade * f;
+          positions.push(...v0, ...v1, ...v2, ...v0, ...v2, ...v3);
+          for (let i = 0; i < 6; i++) { normals.push(nx, ny, nz); colors.push(r, g, b); }
+        };
 
-// Extrude a flat polygon into a box-ish mesh geometry
-function extrudePolygon(pts, height) {
-  if (pts.length < 3) return null;
-  const shape = new THREE.Shape();
-  shape.moveTo(pts[0].x, pts[0].z);
-  for (let i = 1; i < pts.length; i++) shape.lineTo(pts[i].x, pts[i].z);
-  shape.closePath();
+        const x0 = bx - bw / 2, x1 = bx + bw / 2;
+        const z0 = bz - bd / 2, z1 = bz + bd / 2;
+        const y0 = 0, y1 = bh;
 
-  const extrudeSettings = {
-    depth: height,
-    bevelEnabled: false,
-  };
-  const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-  // Rotate so extrusion goes up (Y axis)
-  geo.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
-  return geo;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// OSMBuildings component
-// ─────────────────────────────────────────────────────────────────────────────
-
-function OSMBuildings({ centerLat, centerLng }) {
-  const [buildings, setBuildings] = useState([]);
-  const fetchedRef = useRef(null);
-
-  useEffect(() => {
-    if (!centerLat || !centerLng) return;
-    const key = `${centerLat.toFixed(3)},${centerLng.toFixed(3)}`;
-    if (fetchedRef.current === key) return;
-    fetchedRef.current = key;
-
-    fetchOSMBuildings(centerLat, centerLng, 350).then((elements) => {
-      const parsed = elements
-        .map((el) => {
-          const pts = osmWayToPolygon(el);
-          if (!pts) return null;
-          const h = osmBuildingHeight(el.tags);
-          const color = osmBuildingColor(el.tags);
-          const geo = extrudePolygon(pts, h);
-          if (!geo) return null;
-          return { id: el.id, geo, color, h };
-        })
-        .filter(Boolean);
-      setBuildings(parsed);
-    });
-  }, [centerLat, centerLng]);
-
-  return (
-    <group>
-      {buildings.map((b) => (
-        <mesh key={b.id} geometry={b.geo} castShadow receiveShadow>
-          <meshStandardMaterial color={b.color} roughness={0.75} metalness={0.05} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Nearest index helper
-// ─────────────────────────────────────────────────────────────────────────────
-
-function nearestIdx(pts, target) {
-  let best = 0,
-    bestD = Infinity;
-  for (let i = 0; i < pts.length; i++) {
-    const d = pts[i].distanceToSquared(target);
-    if (d < bestD) {
-      bestD = d;
-      best = i;
-    }
-  }
-  return best;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Route road mesh
-// ─────────────────────────────────────────────────────────────────────────────
-
-const ROAD_HW = 0.5;
-const WALK_HW = 0.18;
-
-function RouteMesh({ worldPts, safetyScore }) {
-  const geoms = useMemo(() => {
-    if (worldPts.length < 2) return null;
-    const roadPos = [], roadIdx = [];
-    const swPos = [], swIdx = [];
-
-    for (let i = 0; i < worldPts.length; i++) {
-      const cur = worldPts[i];
-      const prv = worldPts[Math.max(0, i - 1)];
-      const nxt = worldPts[Math.min(worldPts.length - 1, i + 1)];
-      const tang = new THREE.Vector3().subVectors(nxt, prv);
-      if (tang.lengthSq() < 1e-8) tang.set(1, 0, 0);
-      tang.normalize();
-      const perp = new THREE.Vector3(-tang.z, 0, tang.x);
-
-      const RL = cur.clone().addScaledVector(perp, ROAD_HW);
-      const RR = cur.clone().addScaledVector(perp, -ROAD_HW);
-      roadPos.push(RL.x, 0.015, RL.z, RR.x, 0.015, RR.z);
-
-      const SL0 = cur.clone().addScaledVector(perp, ROAD_HW);
-      const SL1 = cur.clone().addScaledVector(perp, ROAD_HW + WALK_HW);
-      const SR0 = cur.clone().addScaledVector(perp, -ROAD_HW);
-      const SR1 = cur.clone().addScaledVector(perp, -(ROAD_HW + WALK_HW));
-      swPos.push(SL0.x, 0.01, SL0.z, SL1.x, 0.01, SL1.z, SR0.x, 0.01, SR0.z, SR1.x, 0.01, SR1.z);
-
-      if (i < worldPts.length - 1) {
-        const rb = i * 2;
-        roadIdx.push(rb, rb + 1, rb + 2, rb + 1, rb + 3, rb + 2);
-        const sb = i * 4;
-        swIdx.push(sb, sb + 1, sb + 4, sb + 1, sb + 5, sb + 4);
-        swIdx.push(sb + 2, sb + 6, sb + 3, sb + 3, sb + 6, sb + 7);
+        // Top
+        addFace([x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1], 0, 1, 0, false);
+        // Front
+        addFace([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], 0, 0, 1, false);
+        // Back
+        addFace([x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0], 0, 0, -1, true);
+        // Left
+        addFace([x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0], -1, 0, 0, true);
+        // Right
+        addFace([x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1], 1, 0, 0, false);
+        // Bottom (skip — never seen)
       }
     }
 
-    const roadGeo = new THREE.BufferGeometry();
-    roadGeo.setAttribute("position", new THREE.Float32BufferAttribute(roadPos, 3));
-    roadGeo.setIndex(roadIdx);
-    roadGeo.computeVertexNormals();
-
-    const swGeo = new THREE.BufferGeometry();
-    swGeo.setAttribute("position", new THREE.Float32BufferAttribute(swPos, 3));
-    swGeo.setIndex(swIdx);
-    swGeo.computeVertexNormals();
-
-    return { roadGeo, swGeo };
-  }, [worldPts]);
-
-  if (!geoms) return null;
-  const roadColor = safetyScore > 0.7 ? "#9ca3af" : safetyScore > 0.4 ? "#d97706" : "#ef4444";
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
+    geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+    return geo;
+  }, []);
 
   return (
-    <group>
-      <mesh geometry={geoms.swGeo} receiveShadow>
-        <meshStandardMaterial color="#e5e7eb" roughness={0.9} />
-      </mesh>
-      <mesh geometry={geoms.roadGeo} receiveShadow>
-        <meshStandardMaterial color={roadColor} roughness={0.85} metalness={0.02} />
-      </mesh>
-    </group>
+    <mesh ref={meshRef} geometry={geometry} position={[centerX || 0, 0, centerZ || 0]} castShadow receiveShadow>
+      <meshStandardMaterial vertexColors roughness={0.88} metalness={0.02} />
+    </mesh>
   );
 }
 
-// Safety line overlay
-function SafetyLine({ worldPts, safetyScore }) {
-  const color = safetyScore > 0.7 ? "#10b981" : safetyScore > 0.4 ? "#f59e0b" : "#ef4444";
+// ---------------------------------------------------------------------------
+// Ground
+// ---------------------------------------------------------------------------
+function Ground() {
   return (
-    <group>
-      {worldPts.slice(0, -1).map((p, i) => {
-        const q = worldPts[i + 1];
-        const mid = new THREE.Vector3().addVectors(p, q).multiplyScalar(0.5);
-        const len = p.distanceTo(q);
-        const dir = new THREE.Vector3().subVectors(q, p);
-        const ang = Math.atan2(dir.x, dir.z);
-        return (
-          <mesh key={i} position={[mid.x, 0.025, mid.z]} rotation={[0, ang, 0]}>
-            <boxGeometry args={[0.06, 0.004, len]} />
-            <meshBasicMaterial color={color} />
-          </mesh>
-        );
-      })}
-    </group>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
+      <planeGeometry args={[500, 500]} />
+      <meshStandardMaterial color="#a8b898" roughness={0.95} />
+    </mesh>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Hazard markers
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Route ribbon (single merged geometry, no per-frame allocation)
+// ---------------------------------------------------------------------------
+function RouteRibbon({ points, progress, safety }) {
+  const meshRef = useRef();
+  const completedRef = useRef();
 
-const HAZARD_HEX = {
-  crime: 0xef4444, fire: 0xf97316, disaster: 0x8b5cf6,
-  congestion: 0xf59e0b, construction: 0xb45309,
-  poor_lighting: 0xca8a04, accessibility: 0x3b82f6,
-};
-const HAZARD_CSS = {
-  crime: "#ef4444", fire: "#f97316", disaster: "#8b5cf6",
-  congestion: "#f59e0b", construction: "#b45309",
-  poor_lighting: "#ca8a04", accessibility: "#3b82f6",
-};
-
-function HazardMarker({ hazard }) {
-  if (!hazard?.position?.lat || !hazard?.position?.lng) return null;
-  const { position, type, severity = 0.5, radius = 50 } = hazard;
-  const wPos = useMemo(() => geo2world(position.lat, position.lng), [position.lat, position.lng]);
-  const wRadius = Math.min(radius * SCALE, 8);
-  const hexCol = HAZARD_HEX[type] || 0xef4444;
-  const cssCol = HAZARD_CSS[type] || "#ef4444";
-  const spinRef = useRef();
-  const pLight = useRef();
-
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    if (spinRef.current) {
-      spinRef.current.rotation.y = t * 1.0;
-      spinRef.current.position.y = 0.7 + Math.sin(t * 1.8) * 0.1;
+  const { fullGeo, color } = useMemo(() => {
+    if (points.length < 2) return { fullGeo: null, color: "#8cd69c" };
+    const c = safety > 0.7 ? "#8cd69c" : safety > 0.4 ? "#ffb347" : "#ff7b6b";
+    const pos = [], idx = [], uvs = [];
+    for (let i = 0; i < points.length; i++) {
+      const cur = points[i];
+      const prev = points[Math.max(0, i - 1)];
+      const next = points[Math.min(points.length - 1, i + 1)];
+      const tx = next[0] - prev[0], tz = next[1] - prev[1];
+      const len = Math.sqrt(tx * tx + tz * tz) || 1;
+      const px = -tz / len * 1.5, pz = tx / len * 1.5;
+      pos.push(cur[0] + px, 0.04, cur[1] + pz, cur[0] - px, 0.04, cur[1] - pz);
+      uvs.push(0, i / (points.length - 1), 1, i / (points.length - 1));
+      if (i < points.length - 1) {
+        const b = i * 2;
+        idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+      }
     }
-    if (pLight.current) pLight.current.intensity = 1.5 + Math.sin(t * 3.5) * 0.5;
-  });
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    return { fullGeo: g, color: c };
+  }, [points, safety]);
 
-  const pillarH = 0.5 + severity * 0.8;
+  if (!fullGeo) return null;
+
   return (
-    <group position={[wPos.x, 0, wPos.z]}>
-      <mesh position={[0, 0.008, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[wRadius, 32]} />
-        <meshBasicMaterial color={hexCol} transparent opacity={0.08} depthWrite={false} />
+    <group>
+      <mesh ref={meshRef} geometry={fullGeo} receiveShadow>
+        <meshStandardMaterial color={color} roughness={0.6} transparent opacity={0.85} />
       </mesh>
-      <mesh position={[0, 0.05, 0]}>
-        <cylinderGeometry args={[0.16, 0.22, 0.1, 10]} />
-        <meshStandardMaterial color={hexCol} roughness={0.45} metalness={0.4} />
-      </mesh>
-      <mesh position={[0, 0.1 + pillarH / 2, 0]}>
-        <cylinderGeometry args={[0.045, 0.12, pillarH, 8]} />
-        <meshStandardMaterial color={hexCol} roughness={0.4} metalness={0.5} emissive={hexCol} emissiveIntensity={0.15} />
-      </mesh>
-      <mesh ref={spinRef} position={[0, 0.7, 0]}>
-        <octahedronGeometry args={[0.26, 0]} />
-        <meshStandardMaterial color={hexCol} roughness={0.2} metalness={0.7} emissive={hexCol} emissiveIntensity={0.4} />
-      </mesh>
-      <pointLight ref={pLight} color={hexCol} intensity={1.5} distance={wRadius * 2} decay={2} />
-      <Html position={[0, pillarH + 0.85, 0]} center distanceFactor={14} zIndexRange={[10, 20]} style={{ pointerEvents: "none" }}>
-        <div style={{ background: "rgba(255,255,255,0.92)", border: `1.5px solid ${cssCol}`, borderRadius: 6, padding: "3px 9px", color: cssCol, fontSize: 10, fontWeight: 700, textTransform: "uppercase", whiteSpace: "nowrap", fontFamily: "system-ui, sans-serif", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
-          ⚠ {(type || "hazard").replace(/_/g, " ")}
-        </div>
-      </Html>
     </group>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Destination marker
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Walking figure (simplified, no CapsuleGeometry for compat)
+// ---------------------------------------------------------------------------
+function WalkingFigure({ posRef, headingRef, walking, safety }) {
+  const groupRef = useRef();
+  const lArmRef = useRef();
+  const rArmRef = useRef();
+  const lLegRef = useRef();
+  const rLegRef = useRef();
+  const phaseRef = useRef(0);
 
-function DestinationMarker({ worldPos }) {
-  const pin = useRef();
-  const ring = useRef();
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    if (pin.current) pin.current.position.y = 0.7 + Math.sin(t * 2.2) * 0.15;
-    if (ring.current) ring.current.material.opacity = 0.3 + Math.sin(t * 2.2) * 0.12;
-  });
-  return (
-    <group position={[worldPos.x, 0, worldPos.z]}>
-      <mesh ref={ring} position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.4, 0.6, 28]} />
-        <meshBasicMaterial color="#10b981" transparent opacity={0.35} depthWrite={false} />
-      </mesh>
-      <mesh ref={pin} position={[0, 0.7, 0]}>
-        <coneGeometry args={[0.2, 0.6, 8]} />
-        <meshStandardMaterial color="#10b981" emissive="#10b981" emissiveIntensity={0.5} roughness={0.3} metalness={0.3} />
-      </mesh>
-      <pointLight color="#10b981" intensity={2} distance={5} decay={2} />
-      <Html position={[0, 1.7, 0]} center distanceFactor={14} zIndexRange={[5, 15]} style={{ pointerEvents: "none" }}>
-        <div style={{ background: "rgba(255,255,255,0.92)", border: "1.5px solid #10b981", borderRadius: 6, padding: "3px 10px", color: "#059669", fontSize: 10, fontWeight: 700, fontFamily: "system-ui, sans-serif", whiteSpace: "nowrap", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
-          ✓ DESTINATION
-        </div>
-      </Html>
-    </group>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Walking figure
-// ─────────────────────────────────────────────────────────────────────────────
-
-function WalkingFigure({ targetWorldPt, navState, routeSafety, onPosUpdate }) {
-  const root = useRef();
-  const lArm = useRef(); const rArm = useRef();
-  const lLeg = useRef(); const rLeg = useRef();
-  const curPos = useRef(new THREE.Vector3());
-  const curRot = useRef(0);
-  const tick = useRef(0);
-  const prevTarget = useRef(null);
-  const init = useRef(false);
-
-  const isWalking = navState === "walking";
-  const isArrived = navState === "arrived";
-  const jacketHex = routeSafety > 0.7 ? 0x2563eb : routeSafety > 0.4 ? 0xd97706 : 0xdc2626;
+  const jacketColor = safety > 0.7 ? "#2563eb" : safety > 0.4 ? "#d97706" : "#dc2626";
 
   useFrame((_, dt) => {
-    if (!root.current || !targetWorldPt) return;
-    tick.current += dt;
+    const g = groupRef.current;
+    if (!g) return;
+    g.position.set(posRef.current[0], 0, posRef.current[1]);
 
-    const target = targetWorldPt.clone();
+    // Smooth heading
+    const target = headingRef.current;
+    let diff = ((target - g.rotation.y + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+    g.rotation.y += diff * Math.min(1, 8 * dt);
 
-    // Calculate heading from movement direction
-    if (prevTarget.current) {
-      const d = new THREE.Vector3().subVectors(target, prevTarget.current);
-      if (d.lengthSq() > 0.0001) {
-        const desiredRot = Math.atan2(d.x, d.z);
-        let dRot = ((((desiredRot - curRot.current) % (Math.PI * 2)) + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
-        curRot.current += dRot * (1 - Math.exp(-8 * dt));
-      }
-    }
-    prevTarget.current = target.clone();
-
-    if (!init.current) {
-      curPos.current.copy(target);
-      init.current = true;
-    }
-
-    // Smooth follow
-    const k = 1 - Math.exp(-8 * dt);
-    curPos.current.lerp(target, k);
-
-    root.current.position.copy(curPos.current);
-    root.current.rotation.y = curRot.current;
-
-    // Walk animation
-    if (isWalking) {
-      const s = Math.sin(tick.current * 4.2);
-      if (lArm.current) lArm.current.rotation.x = s * 0.42;
-      if (rArm.current) rArm.current.rotation.x = -s * 0.42;
-      if (lLeg.current) lLeg.current.rotation.x = -s * 0.38;
-      if (rLeg.current) rLeg.current.rotation.x = s * 0.38;
-      root.current.position.y = Math.abs(Math.sin(tick.current * 4.2)) * 0.018;
+    if (walking) {
+      phaseRef.current += 5 * dt;
+      const s = Math.sin(phaseRef.current);
+      if (lArmRef.current) lArmRef.current.rotation.x = s * 0.4;
+      if (rArmRef.current) rArmRef.current.rotation.x = -s * 0.4;
+      if (lLegRef.current) lLegRef.current.rotation.x = -s * 0.35;
+      if (rLegRef.current) rLegRef.current.rotation.x = s * 0.35;
+      g.position.y = Math.abs(s) * 0.02;
     } else {
-      [lArm, rArm, lLeg, rLeg].forEach(r => { if (r.current) r.current.rotation.x *= 0.85; });
+      [lArmRef, rArmRef, lLegRef, rLegRef].forEach((r) => {
+        if (r.current) r.current.rotation.x *= 0.85;
+      });
     }
-
-    if (onPosUpdate) onPosUpdate(curPos.current, curRot.current);
   });
 
   return (
-    <group ref={root}>
-      <mesh position={[0, 0.008, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.36, 20]} />
-        <meshBasicMaterial color="#00000033" transparent opacity={0.35} depthWrite={false} />
+    <group ref={groupRef}>
+      {/* Shadow disc */}
+      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.35, 10]} />
+        <meshBasicMaterial color="#000" transparent opacity={0.2} depthWrite={false} />
       </mesh>
-      {/* Feet */}
-      {[0.09, -0.09].map((x, i) => (
-        <mesh key={i} position={[x, 0.06, 0.05]} castShadow>
-          <boxGeometry args={[0.09, 0.06, 0.17]} />
-          <meshStandardMaterial color="#1f2937" roughness={0.9} />
-        </mesh>
-      ))}
       {/* Legs */}
-      <group ref={lLeg} position={[0.09, 0.45, 0]}>
-        <mesh castShadow><capsuleGeometry args={[0.065, 0.55, 4, 8]} /><meshStandardMaterial color="#374151" roughness={0.8} /></mesh>
+      <group ref={lLegRef} position={[0.08, 0.45, 0]}>
+        <mesh><cylinderGeometry args={[0.055, 0.06, 0.5, 6]} /><meshStandardMaterial color="#374151" /></mesh>
       </group>
-      <group ref={rLeg} position={[-0.09, 0.45, 0]}>
-        <mesh castShadow><capsuleGeometry args={[0.065, 0.55, 4, 8]} /><meshStandardMaterial color="#374151" roughness={0.8} /></mesh>
+      <group ref={rLegRef} position={[-0.08, 0.45, 0]}>
+        <mesh><cylinderGeometry args={[0.055, 0.06, 0.5, 6]} /><meshStandardMaterial color="#374151" /></mesh>
       </group>
       {/* Torso */}
-      <mesh position={[0, 0.96, 0]} castShadow>
-        <boxGeometry args={[0.29, 0.44, 0.19]} />
-        <meshStandardMaterial color={jacketHex} roughness={0.7} metalness={0.05} />
-      </mesh>
-      {/* Backpack */}
-      <mesh position={[0, 0.97, -0.14]} castShadow>
-        <boxGeometry args={[0.18, 0.28, 0.1]} />
-        <meshStandardMaterial color="#6b7280" roughness={0.85} />
+      <mesh position={[0, 1.0, 0]} castShadow>
+        <boxGeometry args={[0.28, 0.4, 0.18]} />
+        <meshStandardMaterial color={jacketColor} roughness={0.7} />
       </mesh>
       {/* Arms */}
-      <group ref={lArm} position={[0.19, 1.06, 0]}>
-        <mesh position={[0, -0.17, 0]} castShadow><capsuleGeometry args={[0.05, 0.28, 4, 6]} /><meshStandardMaterial color={jacketHex} roughness={0.72} /></mesh>
+      <group ref={lArmRef} position={[0.19, 1.15, 0]}>
+        <mesh><cylinderGeometry args={[0.04, 0.04, 0.4, 5]} /><meshStandardMaterial color={jacketColor} /></mesh>
       </group>
-      <group ref={rArm} position={[-0.19, 1.06, 0]}>
-        <mesh position={[0, -0.17, 0]} castShadow><capsuleGeometry args={[0.05, 0.28, 4, 6]} /><meshStandardMaterial color={jacketHex} roughness={0.72} /></mesh>
+      <group ref={rArmRef} position={[-0.19, 1.15, 0]}>
+        <mesh><cylinderGeometry args={[0.04, 0.04, 0.4, 5]} /><meshStandardMaterial color={jacketColor} /></mesh>
       </group>
       {/* Head */}
-      <mesh position={[0, 1.24, 0]} castShadow><cylinderGeometry args={[0.055, 0.065, 0.1, 8]} /><meshStandardMaterial color="#d4a87a" roughness={0.7} /></mesh>
-      <mesh position={[0, 1.41, 0]} castShadow><sphereGeometry args={[0.14, 16, 14]} /><meshStandardMaterial color="#d4a87a" roughness={0.65} /></mesh>
+      <mesh position={[0, 1.42, 0]} castShadow>
+        <sphereGeometry args={[0.12, 10, 10]} />
+        <meshStandardMaterial color="#d4a87a" />
+      </mesh>
       {/* Cap */}
-      <mesh position={[0, 1.52, 0.01]} castShadow><cylinderGeometry args={[0.09, 0.155, 0.09, 12]} /><meshStandardMaterial color="#1e3a5f" roughness={0.7} /></mesh>
-      <mesh position={[0, 1.52, 0.12]} castShadow><boxGeometry args={[0.18, 0.03, 0.1]} /><meshStandardMaterial color="#1e3a5f" roughness={0.7} /></mesh>
-
-      {isWalking && (
-        <mesh position={[0, 0.02, ROAD_HW * 0.55]} rotation={[-Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.07, 0.22, 6]} />
-          <meshBasicMaterial color="#3b82f6" transparent opacity={0.8} />
-        </mesh>
-      )}
-      {isArrived && (
-        <mesh position={[0, 2.0, 0]}>
-          <octahedronGeometry args={[0.22, 0]} />
-          <meshStandardMaterial color="#10b981" emissive="#10b981" emissiveIntensity={0.7} roughness={0.2} metalness={0.5} />
-        </mesh>
-      )}
+      <mesh position={[0, 1.52, 0]} castShadow>
+        <cylinderGeometry args={[0.08, 0.13, 0.07, 6]} />
+        <meshStandardMaterial color="#1e3a5f" />
+      </mesh>
     </group>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Follow camera (Tesla-style: always behind figure)
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Hazard pin
+// ---------------------------------------------------------------------------
+function HazardPin({ worldX, worldZ, type }) {
+  const ref = useRef();
+  const color = type === "emergency" ? "#ef4444" : type === "construction" ? "#f97316" : "#f59e0b";
 
-function FollowCamera({ figPosRef, figRotRef, navState }) {
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.position.y = 1.0 + Math.sin(clock.getElapsedTime() * 3) * 0.12;
+  });
+
+  return (
+    <group position={[worldX, 0, worldZ]}>
+      {/* Ground ring */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+        <ringGeometry args={[0.8, 1.2, 16]} />
+        <meshBasicMaterial color={color} transparent opacity={0.2} depthWrite={false} />
+      </mesh>
+      {/* Pole */}
+      <mesh position={[0, 0.5, 0]}>
+        <cylinderGeometry args={[0.03, 0.03, 1, 4]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      {/* Diamond */}
+      <mesh ref={ref}>
+        <octahedronGeometry args={[0.18, 0]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
+      </mesh>
+      <pointLight color={color} intensity={1} distance={5} decay={2} position={[0, 1.2, 0]} />
+    </group>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Destination marker
+// ---------------------------------------------------------------------------
+function DestPin({ worldX, worldZ }) {
+  const ref = useRef();
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.rotation.y = clock.getElapsedTime() * 1.5;
+  });
+  return (
+    <group position={[worldX, 0, worldZ]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+        <ringGeometry args={[0.5, 0.8, 24]} />
+        <meshBasicMaterial color="#10b981" transparent opacity={0.35} depthWrite={false} />
+      </mesh>
+      <mesh position={[0, 0.7, 0]}>
+        <cylinderGeometry args={[0.03, 0.03, 1.4, 4]} />
+        <meshStandardMaterial color="#10b981" />
+      </mesh>
+      <mesh ref={ref} position={[0, 1.5, 0]}>
+        <octahedronGeometry args={[0.22, 0]} />
+        <meshStandardMaterial color="#10b981" emissive="#10b981" emissiveIntensity={0.6} />
+      </mesh>
+      <pointLight color="#10b981" intensity={2} distance={8} decay={2} position={[0, 1.5, 0]} />
+    </group>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Camera follower — behind-the-shoulder, smooth, zero allocation per frame
+// ---------------------------------------------------------------------------
+const _camTarget = new THREE.Vector3();
+const _camDesired = new THREE.Vector3();
+const _lookTarget = new THREE.Vector3();
+
+function FollowCamera({ posRef, headingRef, arrived }) {
   const { camera } = useThree();
-  const camPos = useRef(new THREE.Vector3(0, 6, 10));
-  const lookAt = useRef(new THREE.Vector3());
-  const init = useRef(false);
+  const smoothPos = useRef(new THREE.Vector3(0, 14, 12));
+  const smoothLook = useRef(new THREE.Vector3());
+  const smoothH = useRef(0);
 
   useFrame((_, dt) => {
-    const pos = figPosRef.current;
-    const rot = figRotRef.current;
-    const isWalking = navState === "walking";
+    const px = posRef.current[0], pz = posRef.current[1];
+    const h = headingRef.current;
 
-    const back = isWalking ? 4.5 : 6.5;
-    const up = isWalking ? 3.2 : 7.5;
+    // Smooth heading
+    let hd = ((h - smoothH.current + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+    smoothH.current += hd * Math.min(1, 3 * dt);
+    const sh = smoothH.current;
 
-    const desire = new THREE.Vector3(
-      pos.x - Math.sin(rot) * back,
-      pos.y + up,
-      pos.z + Math.cos(rot) * back,
-    );
+    if (arrived) {
+      _camDesired.set(px, 22, pz + 20);
+      _lookTarget.set(px, 0, pz);
+    } else {
+      _camDesired.set(
+        px - Math.sin(sh) * 12,
+        14,
+        pz + Math.cos(sh) * 12
+      );
+      _lookTarget.set(
+        px + Math.sin(sh) * 8,
+        1.2,
+        pz - Math.cos(sh) * 8
+      );
+    }
 
-    if (!init.current) { camPos.current.copy(desire); init.current = true; }
-
-    camPos.current.lerp(desire, 1 - Math.exp(-3.5 * dt));
-    camera.position.copy(camPos.current);
-
-    const ahead = new THREE.Vector3(
-      pos.x + Math.sin(rot) * 3,
-      pos.y + 1.2,
-      pos.z - Math.cos(rot) * 3,
-    );
-    lookAt.current.lerp(ahead, 1 - Math.exp(-5 * dt));
-    camera.lookAt(lookAt.current);
+    const t = Math.min(1, 3.5 * dt);
+    smoothPos.current.lerp(_camDesired, t);
+    smoothLook.current.lerp(_lookTarget, t);
+    camera.position.copy(smoothPos.current);
+    camera.lookAt(smoothLook.current);
   });
 
   return null;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Ground plane
-// ─────────────────────────────────────────────────────────────────────────────
-
-function Ground() {
-  return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, 0, 0]}>
-      <planeGeometry args={[800, 800, 1, 1]} />
-      <meshStandardMaterial color="#c8d5b0" roughness={1} />
-    </mesh>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Main 3D scene
-// ─────────────────────────────────────────────────────────────────────────────
-
-function PittsburghScene({
-  route, hazards, targetWorldPt, navigationState, routeSafety,
-  centerLat, centerLng,
-}) {
-  const worldPts = useMemo(() => {
-    if (!route || route.length === 0) return [];
-    // Thin out very dense polylines (keep every 2nd point)
-    return route
-      .filter((_, i) => i % 2 === 0 || i === route.length - 1)
-      .map(arr2world);
-  }, [route]);
-
-  const figPosRef = useRef(targetWorldPt ? targetWorldPt.clone() : new THREE.Vector3());
-  const figRotRef = useRef(0);
-
-  const handlePosUpdate = useCallback((pos, rot) => {
-    figPosRef.current.copy(pos);
-    figRotRef.current = rot;
-  }, []);
-
-  const destPt = worldPts.length > 0 ? worldPts[worldPts.length - 1] : null;
-  const isArrived = navigationState === "arrived";
-
-  const safeHazards = useMemo(
-    () => (hazards || []).filter(hz => hz?.position?.lat && hz?.position?.lng),
-    [hazards],
-  );
+// ---------------------------------------------------------------------------
+// Scene root (inside Canvas)
+// ---------------------------------------------------------------------------
+function Scene({ routeW, hazardW, destW, posRef, headingRef, navState, safety }) {
+  const walking = navState === "walking";
+  const arrived = navState === "arrived";
+  const cityCenter = routeW.length > 0
+    ? [(routeW[0][0] + routeW[routeW.length - 1][0]) / 2, (routeW[0][1] + routeW[routeW.length - 1][1]) / 2]
+    : [0, 0];
 
   return (
     <>
-      {/* Daytime sky lighting */}
-      <ambientLight intensity={1.4} color="#fffbe8" />
-      <directionalLight position={[12, 22, 15]} intensity={2.2} color="#fff8f0" castShadow
-        shadow-mapSize-width={2048} shadow-mapSize-height={2048}
-        shadow-camera-near={0.1} shadow-camera-far={300}
-        shadow-camera-left={-80} shadow-camera-right={80}
-        shadow-camera-top={80} shadow-camera-bottom={-80}
+      <ambientLight intensity={1.0} color="#fffce8" />
+      <hemisphereLight args={["#87ceeb", "#6b8a4e", 0.4]} />
+      <directionalLight
+        position={[20, 25, 15]}
+        intensity={1.8}
+        color="#fff8f0"
+        castShadow
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
+        shadow-bias={-0.002}
+        shadow-camera-near={1}
+        shadow-camera-far={120}
+        shadow-camera-left={-50}
+        shadow-camera-right={50}
+        shadow-camera-top={50}
+        shadow-camera-bottom={-50}
       />
-      <directionalLight position={[-10, 12, -8]} intensity={0.6} color="#c8dff0" />
-      <hemisphereLight args={["#87ceeb", "#a8c878", 0.5]} />
-      <fog attach="fog" args={["#c8e6f5", 50, 180]} />
+      <fog attach="fog" args={["#c0d4e8", 60, 200]} />
 
       <Ground />
+      <ProceduralCity centerX={cityCenter[0]} centerZ={cityCenter[1]} />
 
-      {/* Real OSM buildings around current position */}
-      {centerLat && centerLng && (
-        <OSMBuildings centerLat={centerLat} centerLng={centerLng} />
+      {routeW.length > 1 && (
+        <RouteRibbon points={routeW} progress={0} safety={safety} />
       )}
 
-      {worldPts.length > 1 && (
-        <>
-          <RouteMesh worldPts={worldPts} safetyScore={routeSafety} />
-          <SafetyLine worldPts={worldPts} safetyScore={routeSafety} />
-        </>
-      )}
-
-      {safeHazards.map((hz, i) => (
-        <HazardMarker key={hz.id || `hz-${i}`} hazard={hz} />
+      {hazardW.map((h, i) => (
+        <HazardPin key={i} worldX={h[0]} worldZ={h[1]} type={h[2]} />
       ))}
 
-      {destPt && !isArrived && <DestinationMarker worldPos={destPt} />}
+      {destW && <DestPin worldX={destW[0]} worldZ={destW[1]} />}
 
-      {targetWorldPt && (
-        <WalkingFigure
-          targetWorldPt={targetWorldPt}
-          navState={navigationState}
-          routeSafety={routeSafety}
-          onPosUpdate={handlePosUpdate}
-        />
-      )}
-
-      {/* No route fallback dot */}
-      {targetWorldPt && worldPts.length === 0 && (
-        <group position={[targetWorldPt.x, 0, targetWorldPt.z]}>
-          <mesh position={[0, 0.4, 0]}>
-            <sphereGeometry args={[0.3, 16, 16]} />
-            <meshStandardMaterial color="#3b82f6" emissive="#3b82f6" emissiveIntensity={0.3} />
-          </mesh>
-          <pointLight color="#3b82f6" intensity={2} distance={5} decay={2} />
-        </group>
-      )}
-
-      <FollowCamera figPosRef={figPosRef} figRotRef={figRotRef} navState={navigationState} />
+      <WalkingFigure posRef={posRef} headingRef={headingRef} walking={walking} safety={safety} />
+      <FollowCamera posRef={posRef} headingRef={headingRef} arrived={arrived} />
     </>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
 // HUD overlay
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+function HUD({ navState, safety, remainDist, estTime, stepIdx, steps, turnDist, onAdvance, onClose, testMode }) {
+  const safetyPct = Math.round(safety * 100);
+  const safetyColor = safety > 0.7 ? "#059669" : safety > 0.4 ? "#d97706" : "#dc2626";
+  const safeBg = safety > 0.7
+    ? "linear-gradient(135deg, #0d9488, #065f46)"
+    : safety > 0.4
+      ? "linear-gradient(135deg, #d97706, #78350f)"
+      : "linear-gradient(135deg, #dc2626, #7f1d1d)";
+  const distStr = remainDist > 1000 ? `${(remainDist / 1000).toFixed(1)} km` : `${Math.round(remainDist)} m`;
+  const timeStr = estTime ? `${Math.round(estTime / 60)} min` : "--";
+  const instruction = steps?.[stepIdx]?.instruction || "Follow the route";
+  const turnDistStr = turnDist != null ? `${Math.round(turnDist)} m` : "";
+  const stateLabel = { idle: "READY", walking: "NAVIGATING", stopped: "PAUSED", arrived: "ARRIVED", rerouting: "REROUTING" }[navState] || "—";
 
-function HUDOverlay({ navigationState, routeSafety, remainingDistance, estimatedTime, hazardCount, testMode, onAdvance }) {
-  const safetyColor = routeSafety > 0.7 ? "#059669" : routeSafety > 0.4 ? "#d97706" : "#dc2626";
-  const stateLabel = { idle: "READY", walking: "▶ NAVIGATING", rerouting: "↻ REROUTING", arrived: "✓ ARRIVED" }[navigationState] || navigationState.toUpperCase();
+  const s = {
+    overlay: { position: "absolute", inset: 0, pointerEvents: "none", zIndex: 20, fontFamily: "'SF Pro Display', 'Segoe UI', system-ui, sans-serif" },
+    topBar: {
+      position: "absolute", top: 8, left: 8, right: 8,
+      display: "flex", justifyContent: "space-between", alignItems: "center",
+      background: "rgba(10,10,18,0.82)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+      borderRadius: 14, padding: "7px 14px",
+      border: "1px solid rgba(255,255,255,0.06)", pointerEvents: "auto",
+    },
+    closeBtn: {
+      background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+      borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
+      cursor: "pointer", color: "#94a3b8", fontSize: 13,
+    },
+    badge: {
+      fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
+      padding: "3px 12px", borderRadius: 999,
+      background: `${safetyColor}18`, border: `1px solid ${safetyColor}55`, color: safetyColor,
+    },
+    instrBar: {
+      position: "absolute", bottom: 48, left: 8, right: 8,
+      background: safeBg, borderRadius: 14, padding: "10px 14px",
+      display: "flex", alignItems: "center", gap: 12, pointerEvents: "auto",
+    },
+    instrIcon: {
+      width: 38, height: 38, background: "rgba(255,255,255,0.15)",
+      borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
+    },
+    instrText: { fontSize: 13, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+    instrSub: { fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "rgba(255,255,255,0.55)" },
+    turnDist: { fontSize: 18, fontWeight: 700, color: "#fff", lineHeight: 1, textAlign: "right" },
+    turnLabel: { fontSize: 9, color: "rgba(255,255,255,0.6)", textAlign: "right" },
+    statsBar: {
+      position: "absolute", bottom: 0, left: 0, right: 0, height: 48,
+      background: "rgba(10,10,18,0.92)", backdropFilter: "blur(12px)",
+      borderTop: "1px solid rgba(255,255,255,0.06)",
+      display: "grid", gridTemplateColumns: "repeat(4,1fr)", alignItems: "center",
+      pointerEvents: "auto",
+    },
+    statVal: { fontSize: 14, fontWeight: 700, color: "#e2e8f0", textAlign: "center", lineHeight: 1.1 },
+    statLabel: { fontSize: 8, fontWeight: 700, textTransform: "uppercase", color: "#64748b", textAlign: "center", marginTop: 1 },
+    testBar: {
+      position: "absolute", top: 56, left: 8, right: 8,
+      background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.25)",
+      borderRadius: 10, padding: "5px 12px",
+      display: "flex", alignItems: "center", gap: 10, pointerEvents: "auto",
+    },
+    testBtn: {
+      background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)",
+      borderRadius: 7, padding: "4px 14px", fontSize: 11, fontWeight: 700, color: "#fbbf24", cursor: "pointer",
+    },
+  };
 
   return (
-    <div style={{ position: "absolute", top: 0, left: 0, right: 0, pointerEvents: "none", zIndex: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", fontFamily: "system-ui, -apple-system, sans-serif" }}>
-      {/* Left: nav status */}
-      <div style={{ background: "rgba(255,255,255,0.88)", backdropFilter: "blur(8px)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, padding: "8px 14px", display: "flex", flexDirection: "column", gap: 4, minWidth: 130, boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }}>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: safetyColor }}>{stateLabel}</div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: "#1f2937", lineHeight: 1 }}>
-          {Math.round(remainingDistance || 0)}
-          <span style={{ fontSize: 11, fontWeight: 400, color: "#6b7280", marginLeft: 3 }}>m</span>
-        </div>
-        <div style={{ fontSize: 10, color: "#6b7280" }}>~{Math.round((estimatedTime || 0) / 60)} min remaining</div>
+    <div style={s.overlay}>
+      {/* Top bar */}
+      <div style={s.topBar}>
+        <button style={s.closeBtn} onClick={onClose}>✕</button>
+        <div style={s.badge}>{safety > 0.7 ? "SAFE" : safety > 0.4 ? "CAUTION" : "DANGER"}</div>
+        <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>{stateLabel}</div>
       </div>
 
-      {/* Right: safety + test controls */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
-        <div style={{ background: "rgba(255,255,255,0.88)", backdropFilter: "blur(8px)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, padding: "8px 14px", display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end", boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "#6b7280" }}>ROUTE SAFETY</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: safetyColor, lineHeight: 1 }}>{Math.round((routeSafety || 0) * 100)}%</div>
-          {hazardCount > 0 && <div style={{ fontSize: 10, color: "#dc2626", fontWeight: 600 }}>⚠ {hazardCount} hazard{hazardCount !== 1 ? "s" : ""}</div>}
+      {/* Instruction */}
+      <div style={s.instrBar}>
+        <div style={s.instrIcon}>{stepIdx >= (steps?.length || 1) - 1 ? "🏁" : "→"}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={s.instrSub}>Step {stepIdx + 1} / {steps?.length || 1}</div>
+          <div style={s.instrText}>{instruction}</div>
         </div>
-
-        {/* Test mode: Advance button */}
-        {testMode && (
-          <button
-            onClick={onAdvance}
-            style={{ pointerEvents: "auto", background: "rgba(30,58,95,0.9)", backdropFilter: "blur(8px)", border: "1px solid rgba(59,130,246,0.5)", borderRadius: 10, padding: "8px 18px", color: "#93c5fd", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.2)", display: "flex", alignItems: "center", gap: 6 }}
-          >
-            ↑ ADVANCE (↑ key)
-          </button>
-        )}
+        <div>
+          <div style={s.turnDist}>{turnDistStr || "—"}</div>
+          <div style={s.turnLabel}>next turn</div>
+        </div>
       </div>
+
+      {/* Stats */}
+      <div style={s.statsBar}>
+        <div><div style={s.statVal}>{distStr}</div><div style={s.statLabel}>remaining</div></div>
+        <div><div style={s.statVal}>{timeStr}</div><div style={s.statLabel}>time</div></div>
+        <div><div style={{ ...s.statVal, color: safetyColor }}>{safetyPct}%</div><div style={s.statLabel}>safety</div></div>
+        <div><div style={s.statVal}>{stateLabel}</div><div style={s.statLabel}>status</div></div>
+      </div>
+
+      {/* Test mode */}
+      {testMode && (
+        <div style={s.testBar}>
+          <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", color: "#fbbf24", letterSpacing: "0.12em" }}>Test Mode</span>
+          <button style={s.testBtn} onClick={onAdvance}>↑ Advance</button>
+          <span style={{ fontSize: 9, color: "#fbbf2488" }}>or press W / ↑</span>
+        </div>
+      )}
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Test-mode GPS simulator
-// Walks along the route polyline one "step" per button press / arrow key
-// ─────────────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Error boundary
+// ---------------------------------------------------------------------------
+class ErrBoundary extends React.Component {
+  state = { err: false };
+  static getDerivedStateFromError() { return { err: true }; }
+  render() {
+    if (this.state.err) return (
+      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 10, background: "#111", color: "#888", fontSize: 13 }}>
+        <span style={{ fontSize: 28 }}>🗺️</span>
+        <div>3D view crashed</div>
+        <button onClick={() => this.setState({ err: false })} style={{ background: "#14b8a622", border: "1px solid #14b8a644", borderRadius: 8, padding: "6px 18px", color: "#14b8a6", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>Retry</button>
+      </div>
+    );
+    return this.props.children;
+  }
+}
 
-const STEP_M = 8; // metres to advance per keypress
+// ---------------------------------------------------------------------------
+// Main export
+// ---------------------------------------------------------------------------
+export default function Walking3DView({
+  route = [],
+  routeSteps = [],
+  currentStepIndex = 0,
+  distanceToNextTurn = null,
+  hazards = [],
+  constructionZones = [],
+  emergencies = [],
+  userPosition = null,
+  userHeading = 0,
+  navigationState = "idle",
+  routeSafety = 0.7,
+  remainingDistance = 0,
+  estimatedTime = 0,
+  routeType = "walking",
+  transitSegments = [],
+  testMode = false,
+  onTestPositionUpdate = null,
+  onClose = () => {},
+  style = {},
+}) {
+  // Init geo origin once
+  useEffect(() => {
+    _origin = null; _mLng = null; // reset on new route
+    if (route.length) initOrigin(route[0][0], route[0][1]);
+    else if (userPosition) initOrigin(userPosition[0], userPosition[1]);
+  }, [route, userPosition]);
 
-function useTestModeAdvancer({ testMode, route, onPositionUpdate }) {
-  const idxRef = useRef(0);
+  // Pre-compute world coords (memo'd, only recalculates on route change)
+  const routeW = useMemo(() => {
+    if (!_origin && route.length) initOrigin(route[0][0], route[0][1]);
+    return route.map(([lat, lng]) => geo2w(lat, lng));
+  }, [route]);
+
+  const allHazards = useMemo(() => [...hazards, ...constructionZones, ...emergencies], [hazards, constructionZones, emergencies]);
+  const hazardW = useMemo(() =>
+    allHazards.filter(h => h?.position?.lat).map(h => [...geo2w(h.position.lat, h.position.lng), h.type || "default"]),
+    [allHazards]
+  );
+
+  const destW = useMemo(() => routeW.length ? routeW[routeW.length - 1] : null, [routeW]);
+
+  // Figure position & heading refs (no re-renders on update)
+  const posRef = useRef([0, 0]);
+  const headingRef = useRef(0);
+
+  useEffect(() => {
+    if (userPosition) {
+      const [wx, wz] = geo2w(userPosition[0], userPosition[1]);
+      posRef.current = [wx, wz];
+    }
+  }, [userPosition]);
+
+  useEffect(() => {
+    headingRef.current = (userHeading * Math.PI) / 180;
+  }, [userHeading]);
+
+  // Test mode: advance along route
+  const testIdxRef = useRef(0);
+  useEffect(() => { testIdxRef.current = 0; }, [route]);
 
   const advance = useCallback(() => {
-    if (!route || route.length === 0) return;
-    idxRef.current = Math.min(idxRef.current + 1, route.length - 1);
-    onPositionUpdate(route[idxRef.current]);
-  }, [route, onPositionUpdate]);
-
-  // Reset when route changes
-  useEffect(() => { idxRef.current = 0; }, [route]);
+    if (!route.length) return;
+    testIdxRef.current = Math.min(testIdxRef.current + 1, route.length - 1);
+    const pt = route[testIdxRef.current];
+    if (onTestPositionUpdate) onTestPositionUpdate(pt);
+    // Also update local refs for immediate visual feedback
+    const [wx, wz] = geo2w(pt[0], pt[1]);
+    posRef.current = [wx, wz];
+    // Compute heading from previous point
+    if (testIdxRef.current > 0) {
+      const prev = route[testIdxRef.current - 1];
+      headingRef.current = Math.atan2(
+        (pt[1] - prev[1]) * (_mLng || 1),
+        (pt[0] - prev[0]) * M_LAT
+      );
+    }
+  }, [route, onTestPositionUpdate]);
 
   useEffect(() => {
     if (!testMode) return;
     const handler = (e) => {
-      if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
-        e.preventDefault();
-        advance();
-      }
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") { e.preventDefault(); advance(); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [testMode, advance]);
 
-  return { advance };
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Walking3DView — public API
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Props:
- *   route            — array of [lat, lng] pairs (the full polyline)
- *   hazards          — array of hazard objects {position:{lat,lng}, type, severity, radius}
- *   userPosition     — [lat, lng] — the REAL GPS position from parent/Dashboard
- *                      (this drives the figure; null = nothing shown)
- *   navigationState  — "idle" | "walking" | "rerouting" | "arrived"
- *   routeSafety      — 0–1
- *   remainingDistance — metres
- *   estimatedTime    — seconds
- *   testMode         — boolean: show Advance button + enable arrow keys
- *   onTestPositionUpdate — callback([lat,lng]) when test-mode advances position
- *                         (parent should update its userPosition state with this)
- *   style            — extra CSS for the outer div
- */
-export default function Walking3DView({
-  route = [],
-  hazards = [],
-  userPosition = null,
-  navigationState = "idle",
-  routeSafety = 0.8,
-  remainingDistance = 0,
-  estimatedTime = 0,
-  testMode = false,
-  onTestPositionUpdate = null,
-  style = {},
-}) {
-  // Set world origin from first route point (or user position)
-  useEffect(() => {
-    if (route.length > 0) {
-      setOrigin(route[0][0], route[0][1]);
-    } else if (userPosition) {
-      setOrigin(userPosition[0], userPosition[1]);
-    }
-  }, [route, userPosition]);
-
-  // Convert real GPS userPosition → world coord for the figure
-  const targetWorldPt = useMemo(() => {
-    if (!userPosition || !ORIGIN) return null;
-    return geo2world(userPosition[0], userPosition[1]);
-  }, [userPosition]);
-
-  // OSM building fetch centre follows user
-  const centerLat = userPosition ? userPosition[0] : route.length > 0 ? route[0][0] : null;
-  const centerLng = userPosition ? userPosition[1] : route.length > 0 ? route[0][1] : null;
-
-  // Test-mode advancer
-  const { advance } = useTestModeAdvancer({
-    testMode,
-    route,
-    onPositionUpdate: onTestPositionUpdate || (() => {}),
-  });
-
   return (
-    <div
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "100%",
-        background: "linear-gradient(180deg, #87ceeb 0%, #c8e6f5 60%, #c8d5b0 100%)",
-        borderRadius: 12,
-        overflow: "hidden",
-        ...style,
-      }}
-    >
-      <Canvas
-        shadows
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0, powerPreference: "high-performance" }}
-        camera={{ fov: 55, near: 0.1, far: 800 }}
-        style={{ width: "100%", height: "100%" }}
-      >
-        <PittsburghScene
-          route={route}
-          hazards={hazards}
-          targetWorldPt={targetWorldPt}
-          navigationState={navigationState}
-          routeSafety={routeSafety}
-          centerLat={centerLat}
-          centerLng={centerLng}
-        />
-      </Canvas>
+    <div style={{
+      position: "relative", width: "100%", height: "100%",
+      background: "linear-gradient(180deg, #87ceeb 0%, #c0d4e8 60%, #b8c8a8 100%)",
+      borderRadius: 12, overflow: "hidden", ...style,
+    }}>
+      <ErrBoundary>
+        <Canvas
+          shadows
+          dpr={Math.min(window.devicePixelRatio, 1.5)}
+          gl={{ antialias: true, powerPreference: "high-performance" }}
+          camera={{ fov: 50, near: 0.5, far: 400 }}
+          frameloop="always"
+          style={{ width: "100%", height: "100%" }}
+        >
+          <Scene
+            routeW={routeW}
+            hazardW={hazardW}
+            destW={destW}
+            posRef={posRef}
+            headingRef={headingRef}
+            navState={navigationState}
+            safety={routeSafety}
+          />
+        </Canvas>
+      </ErrBoundary>
 
-      <HUDOverlay
-        navigationState={navigationState}
-        routeSafety={routeSafety}
-        remainingDistance={remainingDistance}
-        estimatedTime={estimatedTime}
-        hazardCount={(hazards || []).length}
-        testMode={testMode}
+      <HUD
+        navState={navigationState}
+        safety={routeSafety}
+        remainDist={remainingDistance}
+        estTime={estimatedTime}
+        stepIdx={currentStepIndex}
+        steps={routeSteps}
+        turnDist={distanceToNextTurn}
         onAdvance={advance}
+        onClose={onClose}
+        testMode={testMode}
       />
-
-      <div style={{ position: "absolute", bottom: 8, right: 10, fontSize: 8, color: "rgba(0,0,0,0.3)", fontFamily: "system-ui, sans-serif", pointerEvents: "none" }}>
-        3D WALK VIEW · Pittsburgh
-      </div>
     </div>
   );
 }
