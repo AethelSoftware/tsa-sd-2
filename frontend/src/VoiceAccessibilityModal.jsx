@@ -426,6 +426,13 @@ export default function VoiceAccessibilityModal({
     startRecording, stopRecording, isConnected, voskReady,
   } = useVoiceSocket('http://127.0.0.1:5000');
   
+  // Cancel speech when modal closes
+  useEffect(() => {
+    if (!isVisible) {
+      window.speechSynthesis.cancel();
+    }
+  }, [isVisible]);
+  
   // ── TTS ─────────────────────────────────────────────────────────────────────
   
   const speak = useCallback((text, onDone = null) => {
@@ -1192,7 +1199,10 @@ export default function VoiceAccessibilityModal({
           {badge.text}
         </div>
         <button
-          onClick={onDismiss}
+          onClick={() => {
+            window.speechSynthesis.cancel();
+            onDismiss();
+          }}
           aria-label="Dismiss voice navigation modal"
           style={{
             background: 'var(--inset)', border: '1px solid var(--border)',

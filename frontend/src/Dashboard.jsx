@@ -3515,6 +3515,15 @@ export default function AccessibleMap() {
               ))}
             </div>
           )}
+
+          {/* ── DIRECTIONS PANEL ── */}
+          {showDirections && routeSteps.length > 0 && (
+            <DirectionsPanel
+              steps={routeSteps}
+              onClose={() => setShowDirections(false)}
+              routeType={routeType}
+            />
+          )}
         </div>
 
         {/* ── MAP TYPE BAR ── */}
@@ -3555,14 +3564,7 @@ export default function AccessibleMap() {
           </button>
         </div>
 
-        {/* ── DIRECTIONS PANEL ── */}
-        {showDirections && routeSteps.length > 0 && (
-          <DirectionsPanel
-            steps={routeSteps}
-            onClose={() => setShowDirections(false)}
-            routeType={routeType}
-          />
-        )}
+        
 
         {/* ── ROUTE INFO BAR ── */}
         {routeInfo && (

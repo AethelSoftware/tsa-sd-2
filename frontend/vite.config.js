@@ -26,33 +26,30 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: false, // Change to false for production (smaller build)
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {
-          // Split large libraries into separate chunks
           'react-vendor': ['react', 'react-dom'],
           'leaflet-vendor': ['leaflet', 'react-leaflet'],
           '3d-vendor': ['three', '@react-three/fiber', '@react-three/drei'],
-          // Don't put lucide-react in a separate chunk - it causes issues
         }
       }
     },
-    chunkSizeWarningLimit: 1000, // Increased from 500
+    chunkSizeWarningLimit: 1000,
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true, // Remove console.logs in production
+        drop_console: true,
         drop_debugger: true,
       },
     },
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'leaflet', 'react-leaflet', 'socket.io-client'],
-    exclude: ['lucide-react'], // Don't pre-bundle icons
+    exclude: ['lucide-react'],
   },
   esbuild: {
-    // Faster builds
     logOverride: { 'this-is-undefined-in-esm': 'silent' },
   },
 })
