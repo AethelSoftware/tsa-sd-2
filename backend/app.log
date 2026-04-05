@@ -4679,3 +4679,1026 @@ AssertionError: write() before start_response
 2026-04-04 14:06:41,079 - socketio.server - INFO - received event "voice_audio_chunk" from jjYsz6YZYD9jvAWBAAAO [/]
 2026-04-04 14:06:41,329 - socketio.server - INFO - received event "voice_audio_chunk" from jjYsz6YZYD9jvAWBAAAO [/]
 2026-04-04 14:06:41,575 - socketio.server - INFO - received event "voice_audio_chunk" from jjYsz6YZYD9jvAWBAAAO [/]
+2026-04-04 14:17:09,907 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-04 14:17:41,220 - gtfs_loader - INFO - Loaded GTFS: 6424 stops, 15826 trips, 15826 trip patterns, 5 service exceptions
+2026-04-04 14:17:54,710 - transit_router - INFO - Loaded 305 shapes
+2026-04-04 14:17:55,156 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-04 14:17:55,174 - transit_router - INFO - Loaded 101 routes
+2026-04-04 14:17:55,304 - transit_router - INFO - Cached 15826 trips
+2026-04-04 14:17:55,304 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-04 14:17:55,306 - __main__ - INFO - Safety AI loaded successfully
+2026-04-04 14:17:59,612 - voice_handler - INFO - Vosk imported successfully
+2026-04-04 14:17:59,614 - voice_handler - INFO - Voice handler initialized successfully
+2026-04-04 14:17:59,614 - __main__ - INFO - Voice handler registered successfully
+2026-04-04 14:17:59,618 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-04-04 14:17:59,618 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-04-04 14:17:59,618 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-04-04 14:17:59,618 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-04-04 14:17:59,632 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-04-04 14:17:59,632 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-04-04 14:18:02,149 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 14:18:02] "GET /api/hello HTTP/1.1" 200 -
+2026-04-04 14:18:05,676 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 14:18:05] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-04-04 14:18:08,161 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 14:18:08] "[32mGET /api/callback?state=BkICFIHI2Ag9Fy5EERotv00D3Ekjfh&iss=https://accounts.google.com&code=4/0Aci98E8KQZMmtMCKMO7XxgppDSmj4WsmStM_WWyNQAIuP4Mar3_KuPN6smJQPHyWU_tpeA&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+openid+https://www.googleapis.com/auth/userinfo.email&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-04-04 14:18:08,966 - voice_handler - INFO - Loading Vosk model from /Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/vosk-model (this takes a few seconds)...
+2026-04-04 14:18:08,969 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 14:18:08] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 14:18:08,971 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 14:18:08,992 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 14:18:09,010 - __main__ - ERROR - TomTom incidents API error: HTTPSConnectionPool(host='api.tomtom.com', port=443): Max retries exceeded with url: /traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-80.8,40.2,-79.5,40.8&fields=%7Bincidents%7Btype,geometry%7Btype,coordinates%7D,properties%7BiconCategory,magnitudeOfDelay,events%7Bdescription,code%7D,startTime,endTime,from,to%7D%7D%7D&language=en-US&timeValidityFilter=present (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x17a2c5de0>: Failed to resolve 'api.tomtom.com' ([Errno 8] nodename nor servname provided, or not known)"))
+2026-04-04 14:18:09,014 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 14:18:09,032 - __main__ - INFO - Websocket connected: TPZSJbpa_PfSeY5AAAAC
+2026-04-04 14:18:09,035 - socketio.server - INFO - received event "voice_start_session" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:09,181 - __main__ - INFO - TomTom returned 236 incidents
+2026-04-04 14:18:09,182 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 14:18:09,427 - voice_handler - INFO - Vosk model loaded successfully
+2026-04-04 14:18:09,428 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 14:18:09] "GET /api/voice/status HTTP/1.1" 200 -
+2026-04-04 14:18:09,429 - news_hazard_fetcher - WARNING - PulsePoint agency fetch returned 401
+2026-04-04 14:18:09,431 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-04-04 14:18:09,432 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 14:18:09] "GET /api/voice/status HTTP/1.1" 200 -
+2026-04-04 14:18:09,432 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-04-04 14:18:09,432 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-04-04 14:18:09,432 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 14:18:09,432 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 14:18:09,520 - socketio.server - INFO - emitting event "voice_session_created" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:09,521 - voice_handler - INFO - Voice session created: vs-1775326689-5048 for socket TPZSJbpa_PfSeY5AAAAC
+2026-04-04 14:18:09,538 - news_hazard_fetcher - WARNING - PulsePoint agency fetch returned 401
+2026-04-04 14:18:09,540 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-04-04 14:18:09,540 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-04-04 14:18:09,540 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-04-04 14:18:09,540 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 14:18:09,540 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 14:18:29,092 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:29,328 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:29,590 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:29,839 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:29,877 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:30,100 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:30,221 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:30,341 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:30,447 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:30,586 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:30,849 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:31,124 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:31,347 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:31,598 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:31,847 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:32,110 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:32,360 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:32,981 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:32,994 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:33,115 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:33,370 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:33,615 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:33,672 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:33,862 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:33,931 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:34,132 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:34,164 - socketio.server - INFO - emitting event "voice_final_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:34,197 - socketio.server - INFO - received event "voice_stop_recording" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:34,211 - socketio.server - INFO - emitting event "voice_final_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:40,280 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:40,530 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:40,776 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:41,016 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:41,277 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:41,526 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:41,789 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:42,042 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:42,309 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:42,551 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:42,602 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:42,810 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:42,952 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:43,049 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:43,141 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:43,298 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:43,549 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:43,813 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:44,058 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:44,307 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:44,559 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:44,819 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:45,067 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:45,321 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:45,577 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:45,820 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:46,077 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:46,139 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:46,309 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:46,579 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:46,830 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:47,090 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:47,326 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:47,966 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:47,993 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:48,016 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:48,113 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:48,340 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:48,595 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:48,849 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:49,113 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:49,350 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:49,616 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:49,861 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:49,896 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:50,009 - socketio.server - INFO - received event "voice_stop_recording" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:50,039 - socketio.server - INFO - emitting event "voice_final_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:51,928 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 14:18:55,869 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 14:18:55,877 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 14:18:55,899 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 14:18:55,899 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 14:18:55,899 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 14:18:55,900 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 14:18:55,900 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 14:18:55,901 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 14:18:55] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 14:18:55,922 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 14:18:58,145 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 14:18:58,146 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 14:18:58,168 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 14:18:58,169 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 14:18:58,169 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 14:18:58,169 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 14:18:58,169 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 14:18:58,174 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 14:18:58] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 14:18:59,008 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:59,257 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:59,506 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:18:59,755 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:00,017 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:00,057 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:00,266 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:00,516 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:00,769 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:01,027 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:01,277 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:01,307 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:01,526 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:01,537 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:01,776 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:01,788 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:02,037 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:02,051 - socketio.server - INFO - emitting event "voice_final_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:02,054 - socketio.server - INFO - received event "voice_stop_recording" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:02,054 - socketio.server - INFO - emitting event "voice_final_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:05,758 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:06,010 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:06,258 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:06,507 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:06,768 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:07,018 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:07,051 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:07,268 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:07,296 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:07,517 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:07,534 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:07,778 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:07,803 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:08,028 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:08,115 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:08,277 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:08,290 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:08,527 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:08,575 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:08,788 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:08,814 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:09,038 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:09,144 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:09,287 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:09,343 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:09,537 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:09,570 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:09,798 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:10,048 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:10,077 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:10,298 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:10,308 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:10,510 - socketio.server - INFO - received event "voice_stop_recording" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:10,522 - socketio.server - INFO - emitting event "voice_final_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:23,156 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:23,405 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:23,655 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:23,673 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:23,910 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:23,932 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:24,165 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:24,415 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:24,665 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:24,920 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:25,176 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:25,203 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:25,425 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:25,436 - socketio.server - INFO - emitting event "voice_partial_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:25,675 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:25,930 - socketio.server - INFO - received event "voice_audio_chunk" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:25,945 - socketio.server - INFO - emitting event "voice_final_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:25,948 - socketio.server - INFO - received event "voice_stop_recording" from TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:25,949 - socketio.server - INFO - emitting event "voice_final_result" to TPZSJbpa_PfSeY5AAAAC [/]
+2026-04-04 14:19:25,957 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 14:19:25] "OPTIONS /api/voice-route HTTP/1.1" 200 -
+2026-04-04 14:20:12,664 - gtfs_loader - INFO - Loaded GTFS: 6424 stops, 15826 trips, 15826 trip patterns, 5 service exceptions
+2026-04-04 14:20:21,659 - transit_router - INFO - Loaded 305 shapes
+2026-04-04 14:20:21,944 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-04 14:20:21,958 - transit_router - INFO - Loaded 101 routes
+2026-04-04 14:20:22,079 - transit_router - INFO - Cached 15826 trips
+2026-04-04 14:20:22,080 - app - INFO - GTFS transit router initialized successfully
+2026-04-04 14:20:32,384 - tomtom_router - WARNING - OSRM request timed out
+2026-04-04 14:20:32,708 - app - INFO - Safety AI loaded successfully
+2026-04-04 14:20:32,717 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 14:20:32] "POST /api/voice-route HTTP/1.1" 200 -
+2026-04-04 14:21:48,536 - __main__ - INFO - Client disconnected: TPZSJbpa_PfSeY5AAAAC
+2026-04-04 14:37:29,263 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 14:37:29] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 14:37:29,268 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 14:37:29,522 - __main__ - INFO - TomTom returned 230 incidents
+2026-04-04 14:37:29,525 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 14:37:29,525 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 14:37:29,525 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 14:37:42,209 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 14:37:43,450 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 14:37:43,450 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 14:37:43,463 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 14:37:43,463 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 14:37:43,464 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 14:37:43,464 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 14:37:43,464 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 14:37:43,466 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 14:37:43] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 14:59:09,630 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 14:59:09] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 14:59:09,634 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 14:59:09,903 - __main__ - INFO - TomTom returned 229 incidents
+2026-04-04 14:59:09,906 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 14:59:09,906 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 14:59:09,906 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 14:59:22,783 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 14:59:24,031 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 14:59:24,032 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 14:59:24,044 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 14:59:24,044 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 14:59:24,044 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 14:59:24,044 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 14:59:24,045 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 14:59:24,047 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 14:59:24] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 15:00:00,870 - voice_handler - INFO - Voice session vs-1775326689-5048 destroyed
+2026-04-04 15:00:00,870 - voice_handler - INFO - Cleaned up stale session vs-1775326689-5048
+2026-04-04 16:25:10,395 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 16:25:10] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 16:25:10,399 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 16:25:10,620 - __main__ - INFO - TomTom returned 210 incidents
+2026-04-04 16:25:10,622 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 16:25:10,622 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 16:25:10,622 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 16:25:23,521 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 16:25:24,784 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 16:25:24,784 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 16:25:24,797 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 16:25:24,797 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 16:25:24,797 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 16:25:24,797 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 16:25:24,797 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 16:25:24,800 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 16:25:24] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 16:55:57,152 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 16:55:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 16:55:57,156 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 16:55:57,469 - __main__ - INFO - TomTom returned 201 incidents
+2026-04-04 16:55:57,472 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 16:55:57,473 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 16:55:57,473 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 16:56:11,123 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 16:56:12,375 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 16:56:12,375 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 16:56:12,392 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 16:56:12,392 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 16:56:12,392 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 16:56:12,392 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 16:56:12,393 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 16:56:12,396 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 16:56:12] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 17:00:57,102 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 17:00:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 17:00:57,108 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 17:00:57,313 - __main__ - INFO - TomTom returned 201 incidents
+2026-04-04 17:00:57,316 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 17:00:57,316 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 17:00:57,317 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 17:00:57,323 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 17:00:57] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 17:05:57,155 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 17:05:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 17:05:57,162 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 17:05:57,414 - __main__ - INFO - TomTom returned 201 incidents
+2026-04-04 17:05:57,416 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 17:05:57,417 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 17:05:57,417 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 17:06:10,854 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 17:06:12,119 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 17:06:12,119 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 17:06:12,131 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 17:06:12,131 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 17:06:12,131 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 17:06:12,131 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 17:06:12,132 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 17:06:12,134 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 17:06:12] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 17:10:57,112 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 17:10:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 17:10:57,125 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 17:10:57,434 - __main__ - INFO - TomTom returned 199 incidents
+2026-04-04 17:10:57,436 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 17:10:57,437 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 17:10:57,438 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 17:10:57,443 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 17:10:57] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 17:15:57,181 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 17:15:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 17:15:57,184 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 17:15:57,382 - __main__ - INFO - TomTom returned 193 incidents
+2026-04-04 17:15:57,384 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 17:15:57,384 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 17:15:57,384 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 17:16:12,772 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 17:16:14,054 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 17:16:14,054 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 17:16:14,067 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 17:16:14,067 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 17:16:14,067 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 17:16:14,067 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 17:16:14,068 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 17:16:14,071 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 17:16:14] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 17:20:57,125 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 17:20:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 17:20:57,130 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 17:20:57,369 - __main__ - INFO - TomTom returned 200 incidents
+2026-04-04 17:20:57,371 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 17:20:57,371 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 17:20:57,372 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 17:20:57,380 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 17:20:57] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 17:25:57,087 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 17:25:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 17:25:57,090 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 17:25:57,245 - __main__ - INFO - TomTom returned 202 incidents
+2026-04-04 17:25:57,246 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 17:25:57,246 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 17:25:57,246 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 17:26:11,641 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 17:26:12,927 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 17:26:12,927 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 17:26:12,940 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 17:26:12,940 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 17:26:12,940 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 17:26:12,940 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 17:26:12,941 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 17:26:12,945 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 17:26:12] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 17:34:33,205 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 17:34:33] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 17:34:33,211 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 17:34:33,789 - __main__ - INFO - TomTom returned 207 incidents
+2026-04-04 17:34:33,792 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 17:34:33,793 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 17:34:33,793 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 17:35:14,094 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 17:35:15,403 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 17:35:15,403 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 17:35:15,420 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 17:35:15,420 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 17:35:15,421 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 17:35:15,421 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 17:35:15,421 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 17:35:15,425 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 17:35:15] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 18:04:54,414 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 18:04:54] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 18:04:54,419 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 18:04:54,601 - __main__ - INFO - TomTom returned 201 incidents
+2026-04-04 18:04:54,603 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 18:04:54,603 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 18:04:54,603 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 18:05:12,419 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 18:05:13,716 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 18:05:13,716 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 18:05:13,729 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 18:05:13,729 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 18:05:13,729 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 18:05:13,729 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 18:05:13,729 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 18:05:13,733 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 18:05:13] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 18:23:17,407 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 18:23:17] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 18:23:17,411 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 18:23:17,590 - __main__ - INFO - TomTom returned 205 incidents
+2026-04-04 18:23:17,593 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 18:23:17,593 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 18:23:17,593 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 18:23:30,412 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 18:23:31,681 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 18:23:31,681 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 18:23:31,693 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 18:23:31,694 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 18:23:31,694 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 18:23:31,694 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 18:23:31,694 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 18:23:31,696 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 18:23:31] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 18:38:13,265 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 18:38:13] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 18:38:13,270 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 18:38:13,504 - __main__ - INFO - TomTom returned 198 incidents
+2026-04-04 18:38:13,505 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 18:38:13,506 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 18:38:13,506 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 18:38:26,578 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 18:38:27,882 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 18:38:27,882 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 18:38:27,892 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 18:38:27,892 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 18:38:27,893 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 18:38:27,893 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 18:38:27,893 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 18:38:27,895 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 18:38:27] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:09:19,398 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-04 19:09:37,476 - gtfs_loader - INFO - Loaded GTFS: 6424 stops, 15826 trips, 15826 trip patterns, 5 service exceptions
+2026-04-04 19:09:45,277 - transit_router - INFO - Loaded 305 shapes
+2026-04-04 19:09:45,529 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-04 19:09:45,540 - transit_router - INFO - Loaded 101 routes
+2026-04-04 19:09:45,621 - transit_router - INFO - Cached 15826 trips
+2026-04-04 19:09:45,621 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-04 19:09:45,623 - __main__ - INFO - Safety AI loaded successfully
+2026-04-04 19:12:53,769 - voice_handler - INFO - Vosk imported successfully
+2026-04-04 19:12:53,771 - voice_handler - INFO - Voice handler initialized successfully
+2026-04-04 19:12:53,771 - __main__ - INFO - Voice handler registered successfully
+2026-04-04 19:12:53,774 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-04-04 19:12:53,774 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-04-04 19:12:53,774 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-04-04 19:12:53,774 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-04-04 19:12:53,786 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-04-04 19:12:53,786 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-04-04 19:12:56,510 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:12:56] "GET /api/hello HTTP/1.1" 200 -
+2026-04-04 19:14:14,646 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:14:14] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:14:14,649 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 19:14:14,911 - __main__ - INFO - TomTom returned 201 incidents
+2026-04-04 19:14:14,914 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 19:14:15,322 - news_hazard_fetcher - WARNING - PulsePoint agency fetch returned 401
+2026-04-04 19:14:15,326 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-04-04 19:14:15,327 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-04-04 19:14:15,327 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-04-04 19:14:15,327 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 19:14:15,327 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 19:14:28,160 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 19:14:29,547 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 19:14:29,547 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 19:14:29,559 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 19:14:29,559 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 19:14:29,559 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 19:14:29,559 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 19:14:29,560 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 19:14:29,562 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:14:29] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:15:01,426 - voice_handler - INFO - Loading Vosk model from /Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/vosk-model (this takes a few seconds)...
+2026-04-04 19:15:01,433 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:15:01] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:15:01,440 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 19:15:01,454 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 19:15:01,481 - __main__ - INFO - Websocket connected: SCOgsrz6wSUkrNWoAAAC
+2026-04-04 19:15:01,492 - socketio.server - INFO - received event "voice_start_session" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:01,602 - __main__ - INFO - TomTom returned 201 incidents
+2026-04-04 19:15:01,604 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 19:15:01,605 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 19:15:01,605 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 19:15:01,608 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:15:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:15:01,647 - __main__ - INFO - TomTom returned 201 incidents
+2026-04-04 19:15:01,648 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 19:15:01,648 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 19:15:01,648 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 19:15:01,650 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:15:01] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:15:01,764 - voice_handler - INFO - Vosk model loaded successfully
+2026-04-04 19:15:01,765 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:15:01] "GET /api/voice/status HTTP/1.1" 200 -
+2026-04-04 19:15:01,766 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:15:01] "GET /api/voice/status HTTP/1.1" 200 -
+2026-04-04 19:15:01,849 - socketio.server - INFO - emitting event "voice_session_created" to SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:01,849 - voice_handler - INFO - Voice session created: vs-1775344501-2891 for socket SCOgsrz6wSUkrNWoAAAC
+2026-04-04 19:15:19,327 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:19,581 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:19,822 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:20,071 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:20,331 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:20,571 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:20,821 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:20,894 - socketio.server - INFO - emitting event "voice_partial_result" to SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:21,061 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:21,095 - socketio.server - INFO - emitting event "voice_partial_result" to SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:21,321 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:21,343 - socketio.server - INFO - emitting event "voice_partial_result" to SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:21,580 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:21,821 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:22,071 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:22,331 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:22,571 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:22,591 - socketio.server - INFO - emitting event "voice_final_result" to SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:22,593 - socketio.server - INFO - received event "voice_stop_recording" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:22,594 - socketio.server - INFO - emitting event "voice_final_result" to SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:28,685 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:28,943 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:29,181 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:29,432 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:29,691 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:29,931 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:30,181 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:30,420 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:30,681 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:30,941 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:31,181 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:31,433 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:31,691 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:31,931 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:32,181 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:32,421 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:32,681 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:32,941 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:33,181 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:33,431 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:33,691 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:33,931 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:34,181 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:34,421 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:34,681 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:34,943 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:35,181 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:35,431 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:35,691 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:35,931 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:35,966 - socketio.server - INFO - emitting event "voice_partial_result" to SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:36,181 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:36,206 - socketio.server - INFO - emitting event "voice_partial_result" to SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:36,421 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:36,448 - socketio.server - INFO - emitting event "voice_partial_result" to SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:36,682 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:36,716 - socketio.server - INFO - emitting event "voice_partial_result" to SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:36,941 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:36,958 - socketio.server - INFO - emitting event "voice_partial_result" to SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:37,180 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:37,211 - socketio.server - INFO - emitting event "voice_partial_result" to SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:37,431 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:37,558 - socketio.server - INFO - emitting event "voice_partial_result" to SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:37,690 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:37,770 - socketio.server - INFO - emitting event "voice_partial_result" to SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:37,930 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:37,991 - socketio.server - INFO - emitting event "voice_partial_result" to SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:38,181 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:38,215 - socketio.server - INFO - emitting event "voice_partial_result" to SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:38,421 - socketio.server - INFO - received event "voice_audio_chunk" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:15:38,451 - socketio.server - INFO - received event "voice_stop_recording" from SCOgsrz6wSUkrNWoAAAC [/]
+2026-04-04 19:17:55,081 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-04 19:18:13,606 - gtfs_loader - INFO - Loaded GTFS: 6424 stops, 15826 trips, 15826 trip patterns, 5 service exceptions
+2026-04-04 19:18:21,592 - transit_router - INFO - Loaded 305 shapes
+2026-04-04 19:18:21,861 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-04 19:18:21,873 - transit_router - INFO - Loaded 101 routes
+2026-04-04 19:18:21,989 - transit_router - INFO - Cached 15826 trips
+2026-04-04 19:18:21,989 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-04 19:18:21,992 - __main__ - INFO - Safety AI loaded successfully
+2026-04-04 19:18:45,167 - voice_handler - INFO - Vosk imported successfully
+2026-04-04 19:18:45,168 - voice_handler - INFO - Voice handler initialized successfully
+2026-04-04 19:18:45,168 - __main__ - INFO - Voice handler registered successfully
+2026-04-04 19:18:45,172 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-04-04 19:18:45,172 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-04-04 19:18:45,172 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-04-04 19:18:45,172 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-04-04 19:18:45,184 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-04-04 19:18:45,184 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-04-04 19:18:47,620 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:18:47] "GET /api/hello HTTP/1.1" 200 -
+2026-04-04 19:19:10,146 - voice_handler - INFO - Loading Vosk model from /Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/vosk-model (this takes a few seconds)...
+2026-04-04 19:19:10,162 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:19:10] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:19:10,164 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:19:10] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:19:10,165 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 19:19:10,166 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:19:10] "[35m[1mGET /socket.io/?EIO=4&transport=websocket HTTP/1.1[0m" 500 -
+2026-04-04 19:19:10,168 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 19:19:10,171 - werkzeug - ERROR - Error on request:
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/werkzeug/serving.py", line 370, in run_wsgi
+    execute(self.server.app)
+  File "/opt/homebrew/lib/python3.10/site-packages/werkzeug/serving.py", line 336, in execute
+    write(b"")
+  File "/opt/homebrew/lib/python3.10/site-packages/werkzeug/serving.py", line 261, in write
+    assert status_set is not None, "write() before start_response"
+AssertionError: write() before start_response
+2026-04-04 19:19:10,179 - __main__ - INFO - Websocket connected: yZcSk2Of_K238-v_AAAC
+2026-04-04 19:19:10,182 - socketio.server - INFO - received event "voice_start_session" from yZcSk2Of_K238-v_AAAC [/]
+2026-04-04 19:19:10,347 - __main__ - INFO - TomTom returned 200 incidents
+2026-04-04 19:19:10,348 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 19:19:10,350 - __main__ - INFO - TomTom returned 200 incidents
+2026-04-04 19:19:10,350 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 19:19:10,476 - voice_handler - INFO - Vosk model loaded successfully
+2026-04-04 19:19:10,477 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:19:10] "GET /api/voice/status HTTP/1.1" 200 -
+2026-04-04 19:19:10,478 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:19:10] "GET /api/voice/status HTTP/1.1" 200 -
+2026-04-04 19:19:10,533 - socketio.server - INFO - emitting event "voice_session_created" to yZcSk2Of_K238-v_AAAC [/]
+2026-04-04 19:19:10,534 - voice_handler - INFO - Voice session created: vs-1775344750-4366 for socket yZcSk2Of_K238-v_AAAC
+2026-04-04 19:19:10,701 - news_hazard_fetcher - WARNING - PulsePoint agency fetch returned 401
+2026-04-04 19:19:10,704 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-04-04 19:19:10,704 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-04-04 19:19:10,704 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-04-04 19:19:10,704 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 19:19:10,704 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 19:19:10,708 - news_hazard_fetcher - WARNING - PulsePoint agency fetch returned 401
+2026-04-04 19:19:10,710 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-04-04 19:19:10,710 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-04-04 19:19:10,710 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-04-04 19:19:10,710 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 19:19:10,710 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 19:19:34,222 - socketio.server - INFO - received event "voice_audio_chunk" from yZcSk2Of_K238-v_AAAC [/]
+2026-04-04 19:19:34,452 - socketio.server - INFO - received event "voice_audio_chunk" from yZcSk2Of_K238-v_AAAC [/]
+2026-04-04 19:19:34,690 - socketio.server - INFO - received event "voice_audio_chunk" from yZcSk2Of_K238-v_AAAC [/]
+2026-04-04 19:19:34,945 - socketio.server - INFO - received event "voice_audio_chunk" from yZcSk2Of_K238-v_AAAC [/]
+2026-04-04 19:19:35,203 - socketio.server - INFO - received event "voice_audio_chunk" from yZcSk2Of_K238-v_AAAC [/]
+2026-04-04 19:20:17,817 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-04 19:20:36,748 - gtfs_loader - INFO - Loaded GTFS: 6424 stops, 15826 trips, 15826 trip patterns, 5 service exceptions
+2026-04-04 19:20:44,685 - transit_router - INFO - Loaded 305 shapes
+2026-04-04 19:20:45,037 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-04 19:20:45,049 - transit_router - INFO - Loaded 101 routes
+2026-04-04 19:20:45,149 - transit_router - INFO - Cached 15826 trips
+2026-04-04 19:20:45,150 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-04 19:20:45,152 - __main__ - INFO - Safety AI loaded successfully
+2026-04-04 19:22:34,227 - voice_handler - INFO - Vosk imported successfully
+2026-04-04 19:22:34,228 - voice_handler - INFO - Voice handler initialized successfully
+2026-04-04 19:22:34,228 - __main__ - INFO - Voice handler registered successfully
+2026-04-04 19:22:34,231 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-04-04 19:22:34,232 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-04-04 19:22:34,232 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-04-04 19:22:34,232 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-04-04 19:22:34,245 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-04-04 19:22:34,245 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-04-04 19:22:35,775 - __main__ - INFO - Websocket connected: ziQFScUDGpYENz3sAAAB
+2026-04-04 19:22:35,777 - socketio.server - INFO - received event "voice_start_session" from ziQFScUDGpYENz3sAAAB [/]
+2026-04-04 19:22:35,778 - voice_handler - INFO - Loading Vosk model from /Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/vosk-model (this takes a few seconds)...
+2026-04-04 19:22:36,056 - voice_handler - INFO - Vosk model loaded successfully
+2026-04-04 19:22:36,111 - socketio.server - INFO - emitting event "voice_session_created" to ziQFScUDGpYENz3sAAAB [/]
+2026-04-04 19:22:36,111 - voice_handler - INFO - Voice session created: vs-1775344956-3568 for socket ziQFScUDGpYENz3sAAAB
+2026-04-04 19:22:36,928 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:22:36] "GET /api/hello HTTP/1.1" 200 -
+2026-04-04 19:22:41,347 - __main__ - INFO - Client disconnected: ziQFScUDGpYENz3sAAAB
+2026-04-04 19:22:41,480 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:22:41] "GET /api/voice/status HTTP/1.1" 200 -
+2026-04-04 19:22:41,482 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:22:41] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:22:41,484 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:22:41] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:22:41,486 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:22:41] "GET /api/voice/status HTTP/1.1" 200 -
+2026-04-04 19:22:41,486 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 19:22:41,491 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 19:22:41,507 - __main__ - INFO - Websocket connected: PEhfylnjCszs13FHAAAE
+2026-04-04 19:22:41,508 - socketio.server - INFO - received event "voice_start_session" from PEhfylnjCszs13FHAAAE [/]
+2026-04-04 19:22:41,572 - socketio.server - INFO - emitting event "voice_session_created" to PEhfylnjCszs13FHAAAE [/]
+2026-04-04 19:22:41,572 - voice_handler - INFO - Voice session created: vs-1775344961-8524 for socket PEhfylnjCszs13FHAAAE
+2026-04-04 19:22:41,640 - __main__ - INFO - TomTom returned 198 incidents
+2026-04-04 19:22:41,640 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 19:22:41,660 - __main__ - INFO - TomTom returned 198 incidents
+2026-04-04 19:22:41,660 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 19:22:41,967 - news_hazard_fetcher - WARNING - PulsePoint agency fetch returned 401
+2026-04-04 19:22:41,972 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-04-04 19:22:41,973 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-04-04 19:22:41,973 - news_hazard_fetcher - WARNING - PulsePoint agency fetch returned 401
+2026-04-04 19:22:41,973 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-04-04 19:22:41,974 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 19:22:41,974 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 19:22:41,976 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-04-04 19:22:41,976 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-04-04 19:22:41,977 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-04-04 19:22:41,977 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 19:22:41,977 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 19:23:03,624 - socketio.server - INFO - received event "voice_audio_chunk" from PEhfylnjCszs13FHAAAE [/]
+2026-04-04 19:23:03,884 - socketio.server - INFO - received event "voice_audio_chunk" from PEhfylnjCszs13FHAAAE [/]
+2026-04-04 19:23:04,121 - socketio.server - INFO - received event "voice_audio_chunk" from PEhfylnjCszs13FHAAAE [/]
+2026-04-04 19:23:04,377 - socketio.server - INFO - received event "voice_audio_chunk" from PEhfylnjCszs13FHAAAE [/]
+2026-04-04 19:23:04,639 - socketio.server - INFO - received event "voice_audio_chunk" from PEhfylnjCszs13FHAAAE [/]
+2026-04-04 19:23:04,874 - socketio.server - INFO - received event "voice_audio_chunk" from PEhfylnjCszs13FHAAAE [/]
+2026-04-04 19:23:05,616 - socketio.server - INFO - received event "voice_audio_chunk" from PEhfylnjCszs13FHAAAE [/]
+2026-04-04 19:23:05,631 - socketio.server - INFO - received event "voice_audio_chunk" from PEhfylnjCszs13FHAAAE [/]
+2026-04-04 19:42:46,819 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-04 19:43:05,024 - gtfs_loader - INFO - Loaded GTFS: 6424 stops, 15826 trips, 15826 trip patterns, 5 service exceptions
+2026-04-04 19:43:13,466 - transit_router - INFO - Loaded 305 shapes
+2026-04-04 19:43:13,764 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-04 19:43:13,777 - transit_router - INFO - Loaded 101 routes
+2026-04-04 19:43:13,901 - transit_router - INFO - Cached 15826 trips
+2026-04-04 19:43:13,901 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-04 19:43:13,904 - __main__ - INFO - Safety AI loaded successfully
+2026-04-04 19:46:56,006 - voice_handler - INFO - Vosk imported successfully
+2026-04-04 19:46:56,008 - voice_handler - INFO - Voice handler initialized successfully
+2026-04-04 19:46:56,008 - __main__ - INFO - Voice handler registered successfully
+2026-04-04 19:46:56,014 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-04-04 19:46:56,014 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-04-04 19:46:56,014 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-04-04 19:46:56,014 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-04-04 19:46:56,027 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-04-04 19:46:56,027 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-04-04 19:46:58,468 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:46:58] "GET /api/hello HTTP/1.1" 200 -
+2026-04-04 19:46:58,547 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:46:58] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-04-04 19:49:59,619 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:49:59] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:49:59,624 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 19:49:59,883 - __main__ - INFO - TomTom returned 211 incidents
+2026-04-04 19:49:59,884 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 19:50:00,235 - news_hazard_fetcher - WARNING - PulsePoint agency fetch returned 401
+2026-04-04 19:50:00,238 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-04-04 19:50:00,238 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-04-04 19:50:00,238 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-04-04 19:50:00,238 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 19:50:00,238 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 19:50:13,827 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 19:50:15,470 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 19:50:15,471 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 19:50:15,533 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 19:50:15,533 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 19:50:15,533 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 19:50:15,533 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 19:50:15,533 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 19:50:15,538 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:50:15] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:50:21,871 - voice_handler - INFO - Loading Vosk model from /Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/vosk-model (this takes a few seconds)...
+2026-04-04 19:50:21,873 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:50:21] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:50:21,882 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 19:50:21,905 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 19:50:21,937 - __main__ - INFO - Websocket connected: HHzbhgbSU7jqF-WcAAAC
+2026-04-04 19:50:21,938 - socketio.server - INFO - received event "voice_start_session" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:50:22,042 - __main__ - INFO - TomTom returned 209 incidents
+2026-04-04 19:50:22,042 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 19:50:22,043 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 19:50:22,043 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 19:50:22,045 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:50:22] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:50:22,097 - __main__ - INFO - TomTom returned 209 incidents
+2026-04-04 19:50:22,098 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 19:50:22,098 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 19:50:22,099 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 19:50:22,103 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:50:22] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:50:22,299 - voice_handler - INFO - Vosk model loaded successfully
+2026-04-04 19:50:22,299 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:50:22] "GET /api/voice/status HTTP/1.1" 200 -
+2026-04-04 19:50:22,301 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:50:22] "GET /api/voice/status HTTP/1.1" 200 -
+2026-04-04 19:50:22,360 - socketio.server - INFO - emitting event "voice_session_created" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:50:22,360 - voice_handler - INFO - Voice session created: vs-1775346622-7459 for socket HHzbhgbSU7jqF-WcAAAC
+2026-04-04 19:55:07,872 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:08,116 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:08,365 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:08,517 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:08,654 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:08,876 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:09,049 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:09,126 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:09,174 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:09,376 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:09,626 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:09,885 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:09,912 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:10,138 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:10,385 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:10,637 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:10,896 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:11,145 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:11,395 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:11,646 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:11,906 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:12,155 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:12,405 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:12,655 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:12,918 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:13,165 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:13,250 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:13,417 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:13,435 - socketio.server - INFO - emitting event "voice_final_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:13,440 - socketio.server - INFO - received event "voice_stop_recording" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:13,440 - socketio.server - INFO - emitting event "voice_final_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:19,461 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:19,707 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:19,956 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:20,206 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:20,466 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:20,716 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:20,966 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:20,994 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:21,216 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:21,311 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:21,475 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:21,503 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:21,725 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:21,754 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:21,862 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:55:21] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:55:21,864 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 19:55:21,975 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:22,052 - __main__ - INFO - TomTom returned 222 incidents
+2026-04-04 19:55:22,053 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 19:55:22,053 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-04 19:55:22,053 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-04 19:55:22,094 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:22,226 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:22,294 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:22,491 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:22,552 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:22,770 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:22,847 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:23,036 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:23,130 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:23,257 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:23,380 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:23,514 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:23,588 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:23,769 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:23,865 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:24,029 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:24,081 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:24,277 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:24,340 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:24,533 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:24,708 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:24,760 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:24,826 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:25,024 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:25,136 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:25,274 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:25,525 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:25,776 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:26,038 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:26,290 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:26,541 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:26,789 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:27,039 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:27,288 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:27,542 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:27,804 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:28,052 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:28,307 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:28,548 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:28,816 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:29,058 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:29,217 - socketio.server - INFO - received event "voice_stop_recording" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:29,312 - socketio.server - INFO - emitting event "voice_final_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:38,407 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:38,648 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:38,890 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:39,158 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:39,407 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:39,475 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:39,662 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:39,896 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:40,159 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:40,408 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:40,663 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:40,907 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:41,162 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:41,415 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:41,824 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:41,919 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:41,919 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:42,186 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:42,435 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:42,681 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:42,937 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:43,108 - socketio.server - INFO - received event "voice_stop_recording" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:43,165 - socketio.server - INFO - emitting event "voice_final_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:58,699 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:58,945 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:59,192 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:59,459 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:59,694 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:55:59,938 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:00,193 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:00,259 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:00,444 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:00,702 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:00,757 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:00,947 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:01,204 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:01,453 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:01,724 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:01,957 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:01,992 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:02,219 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:02,249 - socketio.server - INFO - emitting event "voice_final_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:02,289 - socketio.server - INFO - received event "voice_stop_recording" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:02,306 - socketio.server - INFO - emitting event "voice_final_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:10,043 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-04 19:56:14,610 - news_hazard_fetcher - INFO - Crime data: 410 incidents in last 7 days, filtered 235 low-threat, created 175 hazards
+2026-04-04 19:56:14,611 - news_hazard_fetcher - INFO - Crime severity: High: 53, Medium: 41
+2026-04-04 19:56:14,698 - news_hazard_fetcher - INFO - Crime hazards: 175
+2026-04-04 19:56:14,699 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-04 19:56:14,700 - news_hazard_fetcher - INFO - Total hazards after filtering: 134
+2026-04-04 19:56:14,700 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
+2026-04-04 19:56:14,701 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 19:56:14,713 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:56:14] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 19:56:22,129 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:22,376 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:22,628 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:22,876 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:22,900 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:23,135 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:23,167 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:23,385 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:23,635 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:23,886 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:24,145 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:24,395 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:24,645 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:24,895 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:25,155 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:25,406 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:25,656 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:25,905 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:25,925 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:26,165 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:26,184 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:26,415 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:26,426 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:26,665 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:26,681 - socketio.server - INFO - emitting event "voice_final_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:26,683 - socketio.server - INFO - received event "voice_stop_recording" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:26,684 - socketio.server - INFO - emitting event "voice_final_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:32,676 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:32,926 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:33,176 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:33,425 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:33,688 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:33,936 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:34,186 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:34,436 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:34,482 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:34,695 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:34,735 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:34,945 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:34,978 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:35,196 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:35,238 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:35,445 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:35,462 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:35,705 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:35,722 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:35,956 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:35,976 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:36,206 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:36,226 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:36,456 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:36,509 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:36,715 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:36,966 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:37,215 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:37,466 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:37,725 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:37,976 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:38,225 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:38,477 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:38,728 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:38,985 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:39,235 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:39,485 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:39,735 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:39,995 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:40,245 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:40,495 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:40,745 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:41,005 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:41,255 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:41,505 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:41,755 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:42,015 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:42,265 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:42,427 - socketio.server - INFO - received event "voice_stop_recording" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:42,463 - socketio.server - INFO - emitting event "voice_final_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:51,409 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:51,658 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:51,906 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:52,156 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:52,416 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:52,443 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:52,665 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:52,915 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:53,165 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:53,426 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:53,675 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:53,925 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:54,175 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:54,435 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:54,451 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:54,686 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:54,704 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:54,936 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:55,185 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:55,445 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:55,695 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:55,945 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:56,159 - socketio.server - INFO - received event "voice_stop_recording" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:56:56,173 - socketio.server - INFO - emitting event "voice_final_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:10,210 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:10,456 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:10,706 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:10,738 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:10,956 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:11,215 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:11,465 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:11,715 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:11,965 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:12,225 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:12,475 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:12,725 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:12,975 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:13,235 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:13,485 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:13,735 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:13,986 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:14,245 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:14,498 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:14,749 - socketio.server - INFO - received event "voice_audio_chunk" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:14,837 - socketio.server - INFO - emitting event "voice_partial_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:14,961 - socketio.server - INFO - received event "voice_stop_recording" from HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:14,990 - socketio.server - INFO - emitting event "voice_final_result" to HHzbhgbSU7jqF-WcAAAC [/]
+2026-04-04 19:57:15,026 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:57:15] "OPTIONS /api/voice-route HTTP/1.1" 200 -
+2026-04-04 19:58:25,326 - gtfs_loader - INFO - Loaded GTFS: 6424 stops, 15826 trips, 15826 trip patterns, 5 service exceptions
+2026-04-04 19:58:53,426 - transit_router - INFO - Loaded 305 shapes
+2026-04-04 19:58:54,353 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-04 19:58:54,387 - transit_router - INFO - Loaded 101 routes
+2026-04-04 19:58:54,705 - transit_router - INFO - Cached 15826 trips
+2026-04-04 19:58:54,705 - app - INFO - GTFS transit router initialized successfully
+2026-04-04 19:59:05,178 - tomtom_router - WARNING - OSRM request timed out
+2026-04-04 19:59:05,401 - app - INFO - Safety AI loaded successfully
+2026-04-04 19:59:05,404 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 19:59:05] "POST /api/voice-route HTTP/1.1" 200 -
+2026-04-04 20:00:21,890 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 20:00:21] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 20:00:21,893 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-04 20:00:22,063 - __main__ - INFO - TomTom returned 215 incidents
+2026-04-04 20:00:22,065 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-04 20:00:22,065 - news_hazard_fetcher - INFO - Returning 134 cached hazards
+2026-04-04 20:00:22,066 - __main__ - INFO - Found 42 news-based hazards in area
+2026-04-04 20:00:22,072 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 20:00:22] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-04 20:00:42,042 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-04 20:01:13,419 - gtfs_loader - INFO - Loaded GTFS: 6424 stops, 15826 trips, 15826 trip patterns, 5 service exceptions
+2026-04-04 20:01:26,764 - transit_router - INFO - Loaded 305 shapes
+2026-04-04 20:01:27,202 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-04 20:01:27,219 - transit_router - INFO - Loaded 101 routes
+2026-04-04 20:01:27,333 - transit_router - INFO - Cached 15826 trips
+2026-04-04 20:01:27,334 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-04 20:01:27,344 - __main__ - INFO - Safety AI loaded successfully

@@ -123,6 +123,7 @@ except ImportError:
 
 _vosk_model = None
 _model_lock = threading.Lock()
+_recognizer_locks: Dict[str, threading.Lock] = {}
 
 def get_vosk_model():
     """
@@ -140,22 +141,30 @@ def get_vosk_model():
         if not VOSK_AVAILABLE:
             return None
         
-        if not os.path.exists(VOSK_MODEL_PATH):
-            logger.error(f"Vosk model not found at {VOSK_MODEL_PATH}")
-            print(VOSK_SETUP_MESSAGE)
-            return None
+        # Try multiple possible model paths
+        possible_paths = [
+            VOSK_MODEL_PATH,
+            os.path.join(os.path.dirname(__file__), 'vosk-model-small-en-us-0.15'),
+            os.path.join(os.path.dirname(__file__), 'vosk-model-en-us-0.22'),
+        ]
         
-        # Check model integrity
-        final_mdl = os.path.join(VOSK_MODEL_PATH, 'am', 'final.mdl')
-        if not os.path.exists(final_mdl):
-            logger.error(f"Vosk model appears incomplete — missing {final_mdl}")
+        model_path = None
+        for path in possible_paths:
+            if os.path.exists(path):
+                final_mdl = os.path.join(path, 'am', 'final.mdl')
+                if os.path.exists(final_mdl):
+                    model_path = path
+                    break
+        
+        if model_path is None:
+            logger.error(f"Vosk model not found. Tried: {possible_paths}")
             print(VOSK_SETUP_MESSAGE)
             return None
         
         try:
-            logger.info(f"Loading Vosk model from {VOSK_MODEL_PATH} (this takes a few seconds)...")
+            logger.info(f"Loading Vosk model from {model_path} (this takes a few seconds)...")
             vosk.SetLogLevel(-1)  # Suppress Vosk's verbose Kaldi logging
-            _vosk_model = vosk.Model(VOSK_MODEL_PATH)
+            _vosk_model = vosk.Model(model_path)
             logger.info("Vosk model loaded successfully")
             return _vosk_model
         except Exception as e:
@@ -190,6 +199,7 @@ def create_voice_session(socket_id: str) -> Optional[str]:
                 'is_recording': False,
                 'chunk_count': 0,
             }
+            _recognizer_locks[session_id] = threading.Lock()
         
         return session_id
     except Exception as e:
@@ -200,10 +210,11 @@ def destroy_voice_session(session_id: str):
     """Clean up session and free KaldiRecognizer memory."""
     with _sessions_lock:
         session = _voice_sessions.pop(session_id, None)
+        recognizer_lock = _recognizer_locks.pop(session_id, None)
+    
     if session:
-        # KaldiRecognizer doesn't have an explicit close method
-        # but deleting the reference frees C++ memory via Vosk's destructor
-        del session['recognizer']
+        # Mark recognizer as invalid
+        session['recognizer'] = None
         logger.info(f"Voice session {session_id} destroyed")
 
 def cleanup_stale_sessions():
@@ -227,30 +238,38 @@ def process_pcm_chunk(session_id: str, raw_bytes: bytes) -> Tuple[Optional[str],
     if not session:
         return None, None
     
-    session['last_activity'] = time.time()
-    session['chunk_count'] += 1
-    recognizer = session['recognizer']
-    
-    try:
-        is_complete = recognizer.AcceptWaveform(raw_bytes)
-        
-        if is_complete:
-            result_json = recognizer.Result()
-            result = json.loads(result_json)
-            final_text = result.get('text', '').strip()
-            session['accumulated_transcript'] = ''
-            if final_text:
-                return None, final_text
-            return None, None
-        else:
-            partial_json = recognizer.PartialResult()
-            partial = json.loads(partial_json)
-            partial_text = partial.get('partial', '').strip()
-            return partial_text if partial_text else None, None
-    
-    except Exception as e:
-        logger.error(f"Error processing PCM chunk in session {session_id}: {e}")
+    recognizer_lock = _recognizer_locks.get(session_id)
+    if recognizer_lock is None:
         return None, None
+    
+    with recognizer_lock:
+        session['last_activity'] = time.time()
+        session['chunk_count'] += 1
+        recognizer = session['recognizer']
+        
+        if recognizer is None:
+            return None, None
+        
+        try:
+            is_complete = recognizer.AcceptWaveform(raw_bytes)
+            
+            if is_complete:
+                result_json = recognizer.Result()
+                result = json.loads(result_json)
+                final_text = result.get('text', '').strip()
+                session['accumulated_transcript'] = ''
+                if final_text:
+                    return None, final_text
+                return None, None
+            else:
+                partial_json = recognizer.PartialResult()
+                partial = json.loads(partial_json)
+                partial_text = partial.get('partial', '').strip()
+                return partial_text if partial_text else None, None
+        
+        except Exception as e:
+            logger.error(f"Error processing PCM chunk in session {session_id}: {e}")
+            return None, None
 
 def force_final_result(session_id: str) -> Optional[str]:
     """Force Vosk to return whatever it has recognized so far."""
@@ -259,15 +278,23 @@ def force_final_result(session_id: str) -> Optional[str]:
     if not session:
         return None
     
-    recognizer = session['recognizer']
-    try:
-        final_json = recognizer.FinalResult()
-        result = json.loads(final_json)
-        final_text = result.get('text', '').strip()
-        return final_text if final_text else None
-    except Exception as e:
-        logger.error(f"Error getting final Vosk result for session {session_id}: {e}")
+    recognizer_lock = _recognizer_locks.get(session_id)
+    if recognizer_lock is None:
         return None
+    
+    with recognizer_lock:
+        recognizer = session['recognizer']
+        if recognizer is None:
+            return None
+        
+        try:
+            final_json = recognizer.FinalResult()
+            result = json.loads(final_json)
+            final_text = result.get('text', '').strip()
+            return final_text if final_text else None
+        except Exception as e:
+            logger.error(f"Error getting final Vosk result for session {session_id}: {e}")
+            return None
 
 def validate_audio_chunk(raw_bytes: bytes) -> bool:
     """
@@ -285,9 +312,12 @@ def validate_audio_chunk(raw_bytes: bytes) -> bool:
         return False
     
     # Check for pure silence (all-zero bytes)
-    samples = struct.unpack(f'<{len(raw_bytes)//2}h', raw_bytes)
-    max_amplitude = max(abs(s) for s in samples)
-    if max_amplitude < 50:  # Near silence threshold (out of 32767 max)
+    try:
+        samples = struct.unpack(f'<{len(raw_bytes)//2}h', raw_bytes)
+        max_amplitude = max(abs(s) for s in samples)
+        if max_amplitude < 50:  # Near silence threshold (out of 32767 max)
+            return False
+    except struct.error:
         return False
     
     return True
@@ -670,7 +700,8 @@ def init_voice_handler(app, socketio):
             mins = int((duration_s % 3600) / 60)
             duration_str = f"{hours} hour{'s' if hours > 1 else ''} and {mins} minutes"
         
-        route_id = f"VR-{int(time.time())}-{random.randint(1000, 9999)}"
+        # Shorter route ID for better TTS
+        route_id = f"VR-{int(time.time()) % 10000}-{random.randint(100, 999)}"
         
         # Store route for later retrieval
         _store_voice_route(route_id, {
