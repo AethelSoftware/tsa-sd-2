@@ -109,6 +109,8 @@ except ImportError as e:
 # Initialize routers and API clients
 if TOMTOM_AVAILABLE:
     tomtom_router = TomTomRouter()
+    tomtom_router.clear_cache()
+    logger.info("TomTom router cache cleared on startup")
 else:
     tomtom_router = None
     logger.warning("TomTom router not available - routing will use mock data")
@@ -148,6 +150,43 @@ else:
         logger.warning("GTFS transit router not available")
 
 safety_ai = None
+
+
+# Add this class at the top of app.py (around line 50):
+class RequestDebouncer:
+    def __init__(self):
+        self.pending = {}
+        self.lock = threading.Lock()
+    
+    def debounce(self, key, callback, delay_ms=500):
+        with self.lock:
+            if key in self.pending:
+                logger.info(f"Deduplicating request for {key}")
+                return self.pending[key]
+            
+            # Store a placeholder
+            self.pending[key] = None
+        
+        try:
+            time.sleep(delay_ms / 1000)
+            result = callback()
+            with self.lock:
+                self.pending[key] = result
+            return result
+        except Exception as e:
+            with self.lock:
+                self.pending.pop(key, None)
+            raise e
+        finally:
+            # Clean up after delay
+            def cleanup():
+                time.sleep(1)
+                with self.lock:
+                    self.pending.pop(key, None)
+            threading.Thread(target=cleanup, daemon=True).start()
+
+# Create instance
+request_debouncer = RequestDebouncer()
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -999,6 +1038,16 @@ def add_model_endpoints(app):
             end_lat = data.get('end_lat') or (data.get('end_location', {}).get('lat') if isinstance(data.get('end_location'), dict) else None)
             end_lng = data.get('end_lng') or (data.get('end_location', {}).get('lng') if isinstance(data.get('end_location'), dict) else None)
             
+            # Check for force refresh flag from frontend
+            force_refresh = data.get('force_refresh', False)
+            
+            # Log the request for debugging
+            logger.info(f"=== ROUTE REQUEST ===")
+            logger.info(f"From: {start_lat},{start_lng}")
+            logger.info(f"To: {end_lat},{end_lng}")
+            logger.info(f"Mode: {data.get('travel_mode', 'pedestrian')}")
+            logger.info(f"Force refresh: {force_refresh}")
+            
             if not all([start_lat, start_lng, end_lat, end_lng]):
                 return jsonify({
                     'success': False,
@@ -1042,7 +1091,7 @@ def add_model_endpoints(app):
             provider_used = None
             error_messages = []
             
-            # TRY 1: GTFS Transit Router (if travel_mode is transit and GTFS is available)
+            # ========== TRY 1: GTFS Transit Router ==========
             if travel_mode == 'transit' and transit_router:
                 try:
                     logger.info(f"Attempting GTFS transit route from {start_lat},{start_lng} to {end_lat},{end_lng}")
@@ -1091,7 +1140,7 @@ def add_model_endpoints(app):
                     logger.warning(f"GTFS transit routing failed: {e}")
                     error_messages.append(f"GTFS Transit: {str(e)}")
             
-            # TRY 2: Google Maps Transit (if travel_mode is transit and GTFS failed)
+            # ========== TRY 2: Google Maps Transit ==========
             if not route_result and travel_mode == 'transit' and google_router:
                 try:
                     logger.info(f"Attempting Google Maps transit route from {start_lat},{start_lng} to {end_lat},{end_lng}")
@@ -1143,12 +1192,22 @@ def add_model_endpoints(app):
                     logger.warning(f"Google Maps transit API failed: {e}")
                     error_messages.append(f"Google Transit: {str(e)}")
             
-            # TRY 3: TomTom API (for pedestrian routes) - WITH HAZARD AVOIDANCE
+            # ========== TRY 3: TomTom API (Pedestrian with Hazard Avoidance) ==========
             if not route_result and tomtom_router and tomtom_router.api_key and travel_mode != 'transit':
                 try:
-                    # Fetch hazards from WPRDC crime data
+                    # FORCE REFRESH - Clear TomTom cache for this specific destination
+                    if hasattr(tomtom_router, 'clear_cache'):
+                        tomtom_router.clear_cache()
+                        logger.info("TomTom cache cleared before route calculation")
+                    
+                    # Force refresh hazards to avoid stale data
                     from news_hazard_fetcher import get_news_fetcher
                     news_fetcher = get_news_fetcher()
+                    
+                    # Force refresh the hazard cache
+                    if hasattr(news_fetcher, 'force_refresh_cache'):
+                        news_fetcher.force_refresh_cache()
+                        logger.info("Hazard cache force refreshed")
                     
                     # Get hazards near the route area (midpoint with buffer)
                     mid_lat = (float(start_lat) + float(end_lat)) / 2
@@ -1215,27 +1274,77 @@ def add_model_endpoints(app):
                     except Exception as obs_err:
                         logger.warning(f"Failed to fetch construction zones: {obs_err}")
                     
-                    # Call TomTom router with obstruction zones
+                    # Call TomTom router with obstruction zones and force_refresh
                     if obstruction_zones:
                         logger.info(f"Routing with {len(obstruction_zones)} total hazards to avoid")
+                    
+                    # Add cache-busting timestamp to prevent stale routes
+                    import time
+                    cache_buster = time.time()
+                    logger.info(f"Route request cache buster: {cache_buster}")
+                    
+                                        # Log the exact coordinates being sent
+                    logger.info(f"=== CALLING TOMTOM ROUTER ===")
+                    logger.info(f"Start: {float(start_lat):.6f}, {float(start_lng):.6f}")
+                    logger.info(f"Dest: {float(end_lat):.6f}, {float(end_lng):.6f}")
+                    logger.info(f"force_refresh: True")
                     
                     route_result = tomtom_router.calculate_route(
                         float(start_lat), float(start_lng),
                         float(end_lat), float(end_lng),
                         travel_mode='pedestrian',
                         accessibility_needs=accessibility_needs if accessibility_needs else None,
-                        obstruction_zones=obstruction_zones if obstruction_zones else None
+                        obstruction_zones=obstruction_zones if obstruction_zones else None,
+                        force_refresh=True  # FORCE FRESH - prevents stale routes
                     )
+                    
+                    # Log the result
+                    if route_result:
+                        end_point = route_result.get('end_point', {})
+                        logger.info(f"TomTom returned route ending at: {end_point.get('lat')}, {end_point.get('lng')}")
+                    else:
+                        logger.warning("TomTom returned no route result")
                     
                     if route_result:
                         provider_used = "TomTom (Hazard Avoidance)"
                         logger.info(f"TomTom route with hazard avoidance successful")
                         
+                        # Verify destination matches (safety check)
+                        if 'end_point' in route_result:
+                            route_end_lat = route_result['end_point'].get('lat')
+                            route_end_lng = route_result['end_point'].get('lng')
+                            if route_end_lat and route_end_lng:
+                                dest_matches = (abs(route_end_lat - float(end_lat)) < 0.0001 and
+                                            abs(route_end_lng - float(end_lng)) < 0.0001)
+                                if not dest_matches:
+                                    logger.warning(f"Route destination mismatch! Route ends at {route_end_lat},{route_end_lng} but requested {end_lat},{end_lng}")
+                                    # Force another attempt without cache
+                                    route_result = None
+                                    logger.info("Retrying route calculation without cache...")
+                                    # Clear TomTom router cache for this destination
+                                    if hasattr(tomtom_router, 'route_cache'):
+                                        with tomtom_router.cache_lock:
+                                            # Clear all cache entries (aggressive but effective)
+                                            tomtom_router.route_cache.clear()
+                                            logger.info("TomTom router cache cleared")
+                                    # Retry
+                                    route_result = tomtom_router.calculate_route(
+                                        float(start_lat), float(start_lng),
+                                        float(end_lat), float(end_lng),
+                                        travel_mode='pedestrian',
+                                        accessibility_needs=accessibility_needs if accessibility_needs else None,
+                                        obstruction_zones=obstruction_zones if obstruction_zones else None,
+                                        force_refresh=True
+                                    )
+                                    if route_result:
+                                        provider_used = "TomTom (Hazard Avoidance - Retry)"
+                                        logger.info("TomTom route retry successful")
+                            
                 except Exception as e:
                     logger.warning(f"TomTom API failed: {e}")
                     error_messages.append(f"TomTom: {str(e)}")
             
-            # If any provider succeeded, process and return the route
+            # ========== PROCESS SUCCESSFUL ROUTE ==========
             if route_result:
                 # Convert points to coordinate objects
                 route_coords = [{'lat': p[0], 'lng': p[1]} for p in route_result['points']] if route_result.get('points') else []
@@ -1374,35 +1483,36 @@ def add_model_endpoints(app):
                         prefs=accessibility_preferences
                     )
                 
-                # Try to cache the response
-                try:
-                    query_text = (
-                        f"route from {start_address} to {end_address} "
-                        f"travel mode {travel_mode} "
-                        f"the estimated distance was {distance_str} "
-                        f"the duration was {duration_str} "
-                        f"accessibility needs are {json.dumps(accessibility_preferences, sort_keys=True)} "
-                        f"safety features include {json.dumps(safety_dict)}"
-                    )
-                    query_vector = embed(query_text)
-                    
-                    # Check if query_vector is valid
-                    if query_vector is not None and np.any(query_vector):
-                        cached_result = vdb.compare(query_vector)
+                # Only cache if not force_refresh
+                if not force_refresh:
+                    try:
+                        query_text = (
+                            f"route from {start_address} to {end_address} "
+                            f"travel mode {travel_mode} "
+                            f"the estimated distance was {distance_str} "
+                            f"the duration was {duration_str} "
+                            f"accessibility needs are {json.dumps(accessibility_preferences, sort_keys=True)} "
+                            f"safety features include {json.dumps(safety_dict)}"
+                        )
+                        query_vector = embed(query_text)
                         
-                        if cached_result and isinstance(cached_result, dict):
-                            cached_value = cached_result.get('value')
-                            if cached_value:
-                                logger.info("Using cached route result")
-                                return jsonify(cached_value)
-                        
-                        vdb.insert(query_vector, response_data)
-                except Exception as e:
-                    logger.warning(f"Caching failed (non-critical): {e}")
+                        # Check if query_vector is valid
+                        if query_vector is not None and np.any(query_vector):
+                            cached_result = vdb.compare(query_vector)
+                            
+                            if cached_result and isinstance(cached_result, dict):
+                                cached_value = cached_result.get('value')
+                                if cached_value:
+                                    logger.info("Using cached route result")
+                                    return jsonify(cached_value)
+                            
+                            vdb.insert(query_vector, response_data)
+                    except Exception as e:
+                        logger.warning(f"Caching failed (non-critical): {e}")
                 
                 return jsonify(response_data)
             
-            # If ALL providers failed, use fallback
+            # ========== FALLBACK: CALCULATED ROUTE ==========
             logger.warning(f"All routing providers failed: {error_messages}. Using calculated fallback.")
             
             straight_distance = haversine_distance(
@@ -1501,7 +1611,7 @@ def add_model_endpoints(app):
                 'success': False,
                 'error': str(e)
             }), 500
-    
+        
     # ============================================================================
     # NEW TRANSIT AND OBSTRUCTION ENDPOINTS
     # ============================================================================
@@ -2686,10 +2796,12 @@ def main():
     # Initialize SocketIO
     global socketio, tracker_instance
     socketio = SocketIO(app, 
-                       cors_allowed_origins="*",
-                       async_mode='threading',
-                       logger=True,
-                       engineio_logger=args.debug)
+                        cors_allowed_origins="*",
+                        async_mode='threading',  # Keep threading
+                        logger=False,  # Reduce logging noise
+                        engineio_logger=False,  # Reduce logging noise
+                        ping_timeout=60,
+                        ping_interval=25)
     
     try:
         from voice_handler import init_voice_handler
@@ -2843,7 +2955,7 @@ def main():
         socketio.run(app,
                     host=args.host,
                     port=args.port,
-                    debug=True,
+                    debug=False,
                     use_reloader=False,
                     allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:

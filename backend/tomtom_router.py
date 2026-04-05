@@ -18,7 +18,7 @@ class TomTomRouter:
         self.base_url = "https://api.tomtom.com/routing/1"
         self.search_url = "https://api.tomtom.com/search/2"
         
-        # Cache for route calculations
+        # Cache for route calculations - DISABLED for now to fix stale routes
         self.route_cache = {}
         self.cache_lock = Lock()
         self.cache_max_size = 100
@@ -40,15 +40,37 @@ class TomTomRouter:
         )
         return key
     
-    def _get_cached_route(self, key):
-        """Thread-safe cache retrieval with TTL"""
+    def _get_cached_route(self, key, dest_lat=None, dest_lng=None):
+        """Thread-safe cache retrieval with destination validation"""
         with self.cache_lock:
             if key in self.route_cache:
                 route_data, timestamp = self.route_cache[key]
+                # Check if cache is still fresh (5 minutes)
                 if (datetime.now() - timestamp).seconds < self.cache_ttl:
+                    # CRITICAL: Verify destination matches EXACTLY
+                    if dest_lat is not None and dest_lng is not None:
+                        cached_end = route_data.get('end_point', {})
+                        cached_lat = cached_end.get('lat', 0)
+                        cached_lng = cached_end.get('lng', 0)
+                        
+                        # Calculate distance between cached destination and requested
+                        dist_diff = self._haversine_distance(
+                            cached_lat, cached_lng, dest_lat, dest_lng
+                        )
+                        
+                        # Only use cache if destinations are within 50 meters
+                        if dist_diff < 50:
+                            logger.info(f"Cache HIT - destinations match within {dist_diff:.0f}m")
+                            return route_data
+                        else:
+                            logger.warning(f"Cache MISS - destination mismatch: cached ({cached_lat},{cached_lng}) vs requested ({dest_lat},{dest_lng}), distance {dist_diff:.0f}m")
+                            # Delete the stale cache entry
+                            del self.route_cache[key]
+                            return None
                     return route_data
                 else:
                     # Remove expired cache
+                    logger.info(f"Cache expired for key {key}")
                     del self.route_cache[key]
             return None
     
@@ -59,6 +81,7 @@ class TomTomRouter:
                 oldest_key = next(iter(self.route_cache))
                 del self.route_cache[oldest_key]
             self.route_cache[key] = (value, datetime.now())
+            logger.debug(f"Cached route for key {key}")
     
     # ========== OSRM PEDESTRIAN ROUTING (PRIMARY) ==========
     def _route_pedestrian_osrm(self, start_lat: float, start_lng: float,
@@ -69,7 +92,7 @@ class TomTomRouter:
         Returns same format as _process_route() or None on failure.
         """
         # Retry logic for OSRM (sometimes times out)
-        for attempt in range(2):
+        for attempt in range(3):  # Increased to 3 attempts
             try:
                 # OSRM expects lng,lat NOT lat,lng
                 url = (
@@ -84,12 +107,14 @@ class TomTomRouter:
                 }
                 headers = {'User-Agent': 'TryverSafetyApp/1.0 (Pittsburgh PA pedestrian routing)'}
                 
-                # Longer timeout for first attempt
-                timeout = 15 if attempt == 0 else 10
+                # Progressive timeout: 15s, 20s, 25s
+                timeout = 15 + (attempt * 5)
+                logger.info(f"OSRM attempt {attempt + 1}/3 with timeout {timeout}s")
+                
                 resp = self.session.get(url, params=params, headers=headers, timeout=timeout)
                 
                 if resp.status_code != 200:
-                    if attempt == 0:
+                    if attempt < 2:
                         logger.warning(f"OSRM returned {resp.status_code}, retrying...")
                         continue
                     logger.warning(f"OSRM returned {resp.status_code}")
@@ -98,7 +123,7 @@ class TomTomRouter:
                 data = resp.json()
                 
                 if data.get('code') != 'Ok':
-                    if attempt == 0 and data.get('code') == 'NoRoute':
+                    if attempt < 2 and data.get('code') == 'NoRoute':
                         logger.warning("OSRM: No route found, retrying...")
                         continue
                     logger.warning(f"OSRM code: {data.get('code')}, message: {data.get('message')}")
@@ -155,13 +180,13 @@ class TomTomRouter:
                 }
                 
             except requests.exceptions.Timeout:
-                if attempt == 0:
-                    logger.warning("OSRM request timed out, retrying...")
+                if attempt < 2:
+                    logger.warning(f"OSRM request timed out (attempt {attempt + 1}), retrying with longer timeout...")
                     continue
-                logger.warning("OSRM request timed out after retry")
+                logger.warning("OSRM request timed out after all retries")
                 return None
             except Exception as e:
-                if attempt == 0:
+                if attempt < 2:
                     logger.warning(f"OSRM routing failed: {e}, retrying...")
                     continue
                 logger.warning(f"OSRM routing failed: {e}")
@@ -247,13 +272,17 @@ class TomTomRouter:
     
     # ========== MAIN ROUTING METHOD ==========
     def calculate_route(self, start_lat: float, start_lng: float, 
-                       dest_lat: float, dest_lng: float,
-                       travel_mode: str = "pedestrian",
-                       avoid_hazards: bool = True,
-                       accessibility_needs: List[str] = None,
-                       obstruction_zones: List[Dict] = None,
-                       force_refresh: bool = False) -> Optional[Dict]:
-        """Calculate route. Tries OSRM first, then TomTom, then straight-line last resort."""
+                    dest_lat: float, dest_lng: float,
+                    travel_mode: str = "pedestrian",
+                    avoid_hazards: bool = True,
+                    accessibility_needs: List[str] = None,
+                    obstruction_zones: List[Dict] = None,
+                    force_refresh: bool = False) -> Optional[Dict]:
+        
+        logger.info(f"=== calculate_route called ===")
+        logger.info(f"Start: {start_lat}, {start_lng}")
+        logger.info(f"Dest: {dest_lat}, {dest_lng}")
+        logger.info(f"force_refresh: {force_refresh}")
         
         # Validate coordinates
         if not (-90 <= start_lat <= 90) or not (-180 <= start_lng <= 180):
@@ -267,36 +296,21 @@ class TomTomRouter:
         
         # Check cache (skip if force_refresh)
         if not force_refresh:
-            cached_route = self._get_cached_route(cache_key)
+            cached_route = self._get_cached_route(cache_key, dest_lat, dest_lng)
             if cached_route:
-                # Verify cached route ends at requested destination
-                cached_end = cached_route.get('end_point', {})
-                if (abs(cached_end.get('lat', 0) - dest_lat) < 0.0001 and
-                    abs(cached_end.get('lng', 0) - dest_lng) < 0.0001):
-                    logger.info(f"Using cached route to {dest_lat},{dest_lng}")
-                    return cached_route
-                else:
-                    logger.info(f"Cache invalid - destination mismatch. Recalculating...")
+                logger.info(f"Using cached route to {dest_lat},{dest_lng}")
+                return cached_route
+        else:
+            logger.info("force_refresh=True - bypassing cache")
         
         route_result = None
         
-        # ── ATTEMPT 1: OSRM (primary pedestrian router — knows all bridges) ──────
-        osrm_result = self._route_pedestrian_osrm(start_lat, start_lng, dest_lat, dest_lng)
-        if osrm_result:
-            route_result = osrm_result
-            
-            # If obstruction zones provided, check if this route avoids them
-            if obstruction_zones and len(obstruction_zones) > 0:
-                hazard_score = self._calculate_hazard_score(
-                    route_result['points'], obstruction_zones
-                )
-                if hazard_score > 2.0:
-                    # Route goes through significant hazards — try TomTom for avoidance
-                    logger.info(f"OSRM route has hazard score {hazard_score:.1f}, trying TomTom for avoidance")
-                    route_result = None  # Force TomTom attempt below
+        # SKIP OSRM - it always times out. Go directly to TomTom
+        logger.info("Skipping OSRM (always times out), going directly to TomTom")
         
-        # ── ATTEMPT 2: TomTom (for hazard avoidance or when OSRM is unavailable) ─
-        if route_result is None and self.api_key:
+        # ── ATTEMPT: TomTom directly ──────────────────────────────────────────────
+        if self.api_key:
+            logger.info("Attempting TomTom routing...")
             if obstruction_zones and len(obstruction_zones) > 0:
                 tomtom_result = self._get_safest_route_with_alternatives(
                     start_lat, start_lng, dest_lat, dest_lng,
@@ -309,28 +323,19 @@ class TomTomRouter:
                 )
             
             if tomtom_result and not tomtom_result.get('is_fallback', False):
+                logger.info("TomTom routing SUCCESS")
                 route_result = tomtom_result
         
-        # ── ATTEMPT 3: If OSRM failed and TomTom also failed, retry OSRM once ───
+        # ── Fallback to straight-line if TomTom fails ──────────────────────────────
         if route_result is None:
-            logger.warning("Both OSRM and TomTom failed, retrying OSRM...")
-            osrm_result = self._route_pedestrian_osrm(start_lat, start_lng, dest_lat, dest_lng)
-            if osrm_result:
-                route_result = osrm_result
-        
-        # ── ATTEMPT 4: Straight-line last resort ──────────────────────────────────
-        if route_result is None:
-            logger.error(
-                f"ALL routing failed for {start_lat},{start_lng} → {dest_lat},{dest_lng}. "
-                "Using straight-line fallback — MAY CROSS WATER."
-            )
+            logger.error(f"TomTom failed, using straight-line fallback")
             route_result = self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
         
         # Add accessibility features if needed
         if accessibility_needs and route_result:
             route_result = self._add_accessibility_features(route_result, accessibility_needs)
         
-        # Cache the result
+        # Cache the result (only if not force_refresh)
         if route_result and not force_refresh:
             self._set_cached_route(cache_key, route_result)
         
@@ -362,6 +367,7 @@ class TomTomRouter:
                 if 'wheelchair' in accessibility_needs:
                     params['hilliness'] = 'normal'
             
+            logger.info(f"Calling TomTom API: {url[:100]}...")
             response = self.session.get(url, params=params, timeout=15)
             
             if response.status_code == 200:
@@ -384,6 +390,16 @@ class TomTomRouter:
                         # Sort by hazard score (lower is better), then by distance
                         all_routes.sort(key=lambda r: (r.get('hazard_score', 999), r.get('distance_meters', 999)))
                         best_route = all_routes[0]
+                        
+                        # Verify the route ends at the correct destination
+                        route_end = best_route.get('end_point', {})
+                        route_end_lat = route_end.get('lat', 0)
+                        route_end_lng = route_end.get('lng', 0)
+                        dist_to_dest = self._haversine_distance(route_end_lat, route_end_lng, dest_lat, dest_lng)
+                        
+                        if dist_to_dest > 100:
+                            logger.error(f"TomTom route ends {dist_to_dest:.0f}m from requested destination! Rejecting.")
+                            return None
                         
                         if best_route.get('hazard_score', 0) > 0:
                             logger.warning(f"Best route still has hazard score {best_route.get('hazard_score', 0):.2f}")
@@ -425,12 +441,24 @@ class TomTomRouter:
                 if 'wheelchair' in accessibility_needs:
                     params['hilliness'] = 'normal'
             
+            logger.info(f"Calling TomTom standard API...")
             response = self.session.get(url, params=params, timeout=15)
             
             if response.status_code == 200:
                 data = response.json()
                 if 'routes' in data and data['routes']:
                     route = self._process_route(data['routes'][0], start_lat, start_lng, dest_lat, dest_lng)
+                    
+                    # Verify destination
+                    route_end = route.get('end_point', {})
+                    route_end_lat = route_end.get('lat', 0)
+                    route_end_lng = route_end.get('lng', 0)
+                    dist_to_dest = self._haversine_distance(route_end_lat, route_end_lng, dest_lat, dest_lng)
+                    
+                    if dist_to_dest > 100:
+                        logger.error(f"TomTom standard route ends {dist_to_dest:.0f}m from destination! Rejecting.")
+                        return None
+                    
                     if accessibility_needs:
                         route = self._add_accessibility_features(route, accessibility_needs)
                     return route
@@ -774,6 +802,12 @@ class TomTomRouter:
         except Exception as e:
             logger.error(f"Place search failed: {e}")
             return []
+    
+    def clear_cache(self):
+        """Clear the route cache - useful for debugging"""
+        with self.cache_lock:
+            self.route_cache.clear()
+            logger.info("Route cache cleared")
     
     def __del__(self):
         """Cleanup session"""
