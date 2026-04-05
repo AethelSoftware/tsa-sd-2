@@ -1,3 +1,4 @@
+# news_hazard_fetcher.py
 """
 Crime & Emergency Hazard Fetcher for Pittsburgh
 Sources: 
@@ -12,6 +13,8 @@ import pandas as pd
 from io import BytesIO
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
+import hashlib
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -102,8 +105,8 @@ PITTSBURGH_BOUNDS = {
     'max_lng': -79.5
 }
 
-# --- Caching ---
-CACHE_DURATION = 300  # 5 minutes
+# Cache configuration
+CACHE_DURATION = 300  # 5 minutes (increased from 300 seconds)
 MIN_SEVERITY_THRESHOLD = 0.5
 
 # ============================================================================
@@ -116,6 +119,10 @@ class NewsHazardFetcher:
         self.last_cache_time = None
         self.pulsepoint_agency_id = None
         self._init_pulsepoint()
+        
+        # Track ongoing requests to prevent duplicates
+        self._pending_requests = {}
+        
         logger.info("Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint")
         logger.info(f"Minimum severity threshold: {MIN_SEVERITY_THRESHOLD}")
         logger.info(f"Cache duration: {CACHE_DURATION}s")
@@ -123,7 +130,6 @@ class NewsHazardFetcher:
     def _init_pulsepoint(self):
         """Initialize PulsePoint agency ID for Pittsburgh/Allegheny County"""
         try:
-            # Try to find Allegheny County agency
             url = f"{PULSEPOINT_BASE_URL}/agencies"
             params = {'near': '40.4406,-79.9959', 'radius': 25}
             response = requests.get(url, params=params, timeout=10)
@@ -137,7 +143,6 @@ class NewsHazardFetcher:
                         logger.info(f"Found PulsePoint agency: {agency.get('name')} (ID: {self.pulsepoint_agency_id})")
                         return
                 
-                # Fallback to first agency in Pittsburgh area
                 if agencies:
                     self.pulsepoint_agency_id = agencies[0].get('id')
                     logger.info(f"Using fallback PulsePoint agency ID: {self.pulsepoint_agency_id}")
@@ -147,35 +152,63 @@ class NewsHazardFetcher:
         except Exception as e:
             logger.warning(f"PulsePoint initialization failed (will continue without real-time data): {e}")
 
-    def fetch_hazards(self) -> List[Dict[str, Any]]:
+    def fetch_hazards(self, force_refresh: bool = False) -> List[Dict[str, Any]]:
         """Fetch hazards from both CKAN crime data and PulsePoint real-time incidents."""
-        if self.last_cache_time and (datetime.now() - self.last_cache_time).seconds < CACHE_DURATION:
-            logger.info(f"Returning {len(self.cache)} cached hazards")
-            return self.cache
+        
+        # Check cache first (unless force refresh)
+        if not force_refresh and self.last_cache_time:
+            cache_age = (datetime.now() - self.last_cache_time).seconds
+            if cache_age < CACHE_DURATION:
+                logger.info(f"Returning {len(self.cache)} cached hazards (age: {cache_age}s)")
+                return self.cache
+        
+        # Prevent multiple simultaneous fetches with the same key
+        request_key = "fetch_hazards"
+        if request_key in self._pending_requests:
+            logger.info("Fetch already in progress, waiting for result...")
+            return self._pending_requests[request_key]
         
         logger.info("Cache expired. Fetching fresh hazards...")
-        all_hazards = []
         
-        # Fetch crime data from WPRDC
-        crime_hazards = self._fetch_crime_data()
-        all_hazards.extend(crime_hazards)
-        logger.info(f"Crime hazards: {len(crime_hazards)}")
+        # Create a future-like object
+        result_holder = []
+        self._pending_requests[request_key] = result_holder
         
-        # Fetch real-time incidents from PulsePoint
-        pulsepoint_hazards = self._fetch_pulsepoint_incidents()
-        all_hazards.extend(pulsepoint_hazards)
-        logger.info(f"PulsePoint real-time hazards: {len(pulsepoint_hazards)}")
-        
-        # Filter by severity threshold
-        filtered_hazards = [h for h in all_hazards if h.get('severity', 0) >= MIN_SEVERITY_THRESHOLD]
-        
-        self.cache = self.deduplicate_hazards(filtered_hazards)
-        self.last_cache_time = datetime.now()
-        
-        logger.info(f"Total hazards after filtering: {len(self.cache)}")
-        logger.info(f"Filtered out {len(all_hazards) - len(self.cache)} low-threat incidents")
-        
-        return self.cache
+        try:
+            all_hazards = []
+            
+            # Fetch crime data from WPRDC
+            crime_hazards = self._fetch_crime_data()
+            all_hazards.extend(crime_hazards)
+            logger.info(f"Crime hazards: {len(crime_hazards)}")
+            
+            # Fetch real-time incidents from PulsePoint
+            pulsepoint_hazards = self._fetch_pulsepoint_incidents()
+            all_hazards.extend(pulsepoint_hazards)
+            logger.info(f"PulsePoint real-time hazards: {len(pulsepoint_hazards)}")
+            
+            # Filter by severity threshold
+            filtered_hazards = [h for h in all_hazards if h.get('severity', 0) >= MIN_SEVERITY_THRESHOLD]
+            
+            self.cache = self.deduplicate_hazards(filtered_hazards)
+            self.last_cache_time = datetime.now()
+            
+            logger.info(f"Total hazards after filtering: {len(self.cache)}")
+            logger.info(f"Filtered out {len(all_hazards) - len(self.cache)} low-threat incidents")
+            
+            result_holder[:] = self.cache
+            return self.cache
+            
+        except Exception as e:
+            logger.error(f"Error fetching hazards: {e}")
+            # Return cached data if available, even if expired
+            if self.cache:
+                logger.warning(f"Returning stale cache due to error: {e}")
+                return self.cache
+            return []
+        finally:
+            # Clean up pending request
+            self._pending_requests.pop(request_key, None)
 
     def _fetch_pulsepoint_incidents(self) -> List[Dict[str, Any]]:
         """Fetch real-time incidents from PulsePoint API."""
@@ -186,7 +219,6 @@ class NewsHazardFetcher:
             return []
         
         try:
-            # Get active incidents for the agency
             url = f"{PULSEPOINT_BASE_URL}/agencies/{self.pulsepoint_agency_id}/incidents"
             response = requests.get(url, timeout=10)
             
@@ -195,21 +227,17 @@ class NewsHazardFetcher:
                 logger.info(f"PulsePoint returned {len(incidents)} active incidents")
                 
                 for incident in incidents:
-                    # Extract incident data
                     incident_type = incident.get('type', '').lower()
                     description = incident.get('description', incident.get('type', 'Emergency Incident'))
                     latitude = incident.get('latitude')
                     longitude = incident.get('longitude')
                     
-                    # Skip if no coordinates
                     if not latitude or not longitude:
                         continue
                     
-                    # Map PulsePoint type to our hazard type
                     hazard_type = PULSEPOINT_TYPE_MAP.get(incident.get('type', ''), 'emergency')
                     
-                    # Determine severity based on incident type
-                    severity = 0.7  # Default
+                    severity = 0.7
                     if 'fire' in incident_type or 'structure' in incident_type:
                         severity = 0.85
                     elif 'accident' in incident_type or 'crash' in incident_type:
@@ -233,10 +261,9 @@ class NewsHazardFetcher:
                         'publisher': 'PulsePoint',
                         'published_date': datetime.now().isoformat(),
                         'is_active': True,
-                        'units': incident.get('units', [])  # Responding units if available
+                        'units': incident.get('units', [])
                     }
                     hazards.append(hazard)
-                    logger.debug(f"Added PulsePoint hazard: {incident.get('type')} at ({latitude}, {longitude})")
                     
             elif response.status_code == 404:
                 logger.debug("No active incidents from PulsePoint")
@@ -305,7 +332,6 @@ class NewsHazardFetcher:
                     
                     recent_incidents += 1
                     
-                    # Extract coordinates
                     lng = None
                     lat = None
                     

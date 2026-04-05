@@ -1,14 +1,12 @@
-"""
-Real route calculation using TomTom API with proper turn-by-turn navigation and hazard avoidance.
-Now uses OSRM as primary pedestrian router for reliable road‑following routes.
-"""
-#tomtom_router.py
+# tomtom_router.py
 import os
 import requests
 import logging
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime, timedelta
 import math
+from functools import lru_cache
+from threading import Lock
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +18,48 @@ class TomTomRouter:
         self.base_url = "https://api.tomtom.com/routing/1"
         self.search_url = "https://api.tomtom.com/search/2"
         
+        # Cache for route calculations
+        self.route_cache = {}
+        self.cache_lock = Lock()
+        self.cache_max_size = 100
+        self.cache_ttl = 300  # 5 minutes cache TTL
+        
+        # Session for connection pooling
+        self.session = requests.Session()
+        self.session.headers.update({'User-Agent': 'TryverSafetyApp/1.0'})
+        
+    def _get_cache_key(self, start_lat, start_lng, dest_lat, dest_lng, 
+                       travel_mode, avoid_hazards, accessibility_needs):
+        """Create efficient cache key"""
+        key = (
+            round(start_lat, 6), round(start_lng, 6),
+            round(dest_lat, 6), round(dest_lng, 6),
+            travel_mode,
+            avoid_hazards,
+            frozenset(accessibility_needs) if accessibility_needs else frozenset()
+        )
+        return key
+    
+    def _get_cached_route(self, key):
+        """Thread-safe cache retrieval with TTL"""
+        with self.cache_lock:
+            if key in self.route_cache:
+                route_data, timestamp = self.route_cache[key]
+                if (datetime.now() - timestamp).seconds < self.cache_ttl:
+                    return route_data
+                else:
+                    # Remove expired cache
+                    del self.route_cache[key]
+            return None
+    
+    def _set_cached_route(self, key, value):
+        """Thread-safe cache storage with LRU eviction"""
+        with self.cache_lock:
+            if len(self.route_cache) >= self.cache_max_size:
+                oldest_key = next(iter(self.route_cache))
+                del self.route_cache[oldest_key]
+            self.route_cache[key] = (value, datetime.now())
+    
     # ========== OSRM PEDESTRIAN ROUTING (PRIMARY) ==========
     def _route_pedestrian_osrm(self, start_lat: float, start_lng: float,
                                 dest_lat: float, dest_lng: float) -> Optional[Dict]:
@@ -28,153 +68,191 @@ class TomTomRouter:
         Uses OpenStreetMap data — knows all bridges, paths, pedestrian ways.
         Returns same format as _process_route() or None on failure.
         """
-        try:
-            # OSRM expects lng,lat NOT lat,lng
-            url = (
-                f"https://router.project-osrm.org/route/v1/foot/"
-                f"{start_lng},{start_lat};{dest_lng},{dest_lat}"
-            )
-            params = {
-                'overview': 'full',
-                'geometries': 'geojson',
-                'steps': 'true',
-                'annotations': 'false'
-            }
-            headers = {'User-Agent': 'TryverSafetyApp/1.0 (Pittsburgh PA pedestrian routing)'}
-            
-            resp = requests.get(url, params=params, headers=headers, timeout=10)
-            
-            if resp.status_code != 200:
-                logger.warning(f"OSRM returned {resp.status_code}")
-                return None
-            
-            data = resp.json()
-            
-            if data.get('code') != 'Ok':
-                logger.warning(f"OSRM code: {data.get('code')}, message: {data.get('message')}")
-                return None
-            
-            routes = data.get('routes', [])
-            if not routes:
-                return None
-            
-            route = routes[0]
-            
-            # GeoJSON coords are [lon, lat] — flip to (lat, lon) tuples for Leaflet
-            geojson_coords = route['geometry']['coordinates']
-            route_points = [(c[1], c[0]) for c in geojson_coords]
-            
-            if len(route_points) < 2:
-                return None
-            
-            distance_meters = route.get('distance', 0)
-            duration_seconds = route.get('duration', distance_meters / 1.4)
-            
-            # Extract turn-by-turn instructions from OSRM steps
-            instructions = []
-            legs = route.get('legs', [])
-            if legs:
-                for step in legs[0].get('steps', []):
-                    maneuver = step.get('maneuver', {})
-                    maneuver_type = maneuver.get('type', 'continue')
-                    modifier = maneuver.get('modifier', '')
-                    street_name = step.get('name', '') or step.get('ref', '')
-                    step_distance = step.get('distance', 0)
-                    step_duration = step.get('duration', 0)
-                    
-                    if maneuver_type == 'depart':
-                        instr = f"Head {modifier} on {street_name}" if street_name else "Depart"
-                    elif maneuver_type == 'arrive':
-                        instr = "Arrive at your destination"
-                    elif maneuver_type == 'turn':
-                        direction = modifier.replace('-', ' ')
-                        instr = f"Turn {direction}" + (f" onto {street_name}" if street_name else "")
-                    elif maneuver_type == 'new name':
-                        instr = f"Continue onto {street_name}" if street_name else "Continue"
-                    elif maneuver_type == 'continue':
-                        instr = f"Continue on {street_name}" if street_name else "Continue straight"
-                    elif maneuver_type == 'roundabout':
-                        exit_num = maneuver.get('exit', 1)
-                        instr = f"At the roundabout, take exit {exit_num}"
-                    elif maneuver_type in ['merge', 'ramp', 'fork']:
-                        instr = f"Keep {modifier}" + (f" on {street_name}" if street_name else "")
-                    else:
-                        instr = f"Continue" + (f" on {street_name}" if street_name else "")
-                    
-                    # Format distance
-                    if step_distance >= 1000:
-                        dist_str = f"{step_distance/1000:.1f} km"
-                    else:
-                        dist_str = f"{step_distance:.0f} m"
-                    
-                    instructions.append({
-                        'instruction': instr,
-                        'distance': dist_str,
-                        'distance_meters': step_distance,
-                        'duration': f"{int(step_duration//60)} min" if step_duration >= 60 else f"{int(step_duration)} sec",
-                        'duration_seconds': step_duration,
-                        'travel_mode': 'WALKING',
-                        'maneuver_type': maneuver_type,
-                        'modifier': modifier,
-                    })
-            
-            # Calculate bounds
-            lats = [p[0] for p in route_points]
-            lngs = [p[1] for p in route_points]
-            bounds = {
-                'north': max(lats), 'south': min(lats),
-                'east': max(lngs), 'west': min(lngs)
-            }
-            
-            # Build segments for safety scoring
-            segments = []
-            for i in range(len(route_points) - 1):
-                seg_dist = self._haversine_distance(
-                    route_points[i][0], route_points[i][1],
-                    route_points[i+1][0], route_points[i+1][1]
+        # Retry logic for OSRM (sometimes times out)
+        for attempt in range(2):
+            try:
+                # OSRM expects lng,lat NOT lat,lng
+                url = (
+                    f"https://router.project-osrm.org/route/v1/foot/"
+                    f"{start_lng:.6f},{start_lat:.6f};{dest_lng:.6f},{dest_lat:.6f}"
                 )
-                segments.append({
-                    'start': {'lat': route_points[i][0], 'lng': route_points[i][1]},
-                    'end': {'lat': route_points[i+1][0], 'lng': route_points[i+1][1]},
-                    'distance': seg_dist,
-                    'duration': seg_dist / 1.4,
-                    'index': i
-                })
-            
-            logger.info(
-                f"OSRM pedestrian route: {len(route_points)} waypoints, "
-                f"{distance_meters:.0f}m, {duration_seconds/60:.1f} min"
-            )
-            
-            return {
-                'points': route_points,
-                'segments': segments,
-                'distance_meters': distance_meters,
-                'duration_seconds': duration_seconds,
-                'instructions': instructions,
-                'summary': {'lengthInMeters': distance_meters, 'travelTimeInSeconds': duration_seconds},
-                'bounds': bounds,
-                'travel_mode': 'pedestrian',
-                'arrival_time': (datetime.now() + timedelta(seconds=duration_seconds)).isoformat(),
-                'start_point': {'lat': start_lat, 'lng': start_lng},
-                'end_point': {'lat': dest_lat, 'lng': dest_lng},
-                'provider': 'osrm'
-            }
-            
-        except requests.exceptions.Timeout:
-            logger.warning("OSRM request timed out")
-            return None
-        except Exception as e:
-            logger.warning(f"OSRM routing failed: {e}")
-            return None
+                params = {
+                    'overview': 'full',
+                    'geometries': 'geojson',
+                    'steps': 'true',
+                    'annotations': 'false'
+                }
+                headers = {'User-Agent': 'TryverSafetyApp/1.0 (Pittsburgh PA pedestrian routing)'}
+                
+                # Longer timeout for first attempt
+                timeout = 15 if attempt == 0 else 10
+                resp = self.session.get(url, params=params, headers=headers, timeout=timeout)
+                
+                if resp.status_code != 200:
+                    if attempt == 0:
+                        logger.warning(f"OSRM returned {resp.status_code}, retrying...")
+                        continue
+                    logger.warning(f"OSRM returned {resp.status_code}")
+                    return None
+                
+                data = resp.json()
+                
+                if data.get('code') != 'Ok':
+                    if attempt == 0 and data.get('code') == 'NoRoute':
+                        logger.warning("OSRM: No route found, retrying...")
+                        continue
+                    logger.warning(f"OSRM code: {data.get('code')}, message: {data.get('message')}")
+                    return None
+                
+                routes = data.get('routes', [])
+                if not routes:
+                    return None
+                
+                route = routes[0]
+                
+                # GeoJSON coords are [lon, lat] — flip to (lat, lon) tuples for Leaflet
+                geojson_coords = route['geometry']['coordinates']
+                route_points = [(c[1], c[0]) for c in geojson_coords]
+                
+                if len(route_points) < 2:
+                    return None
+                
+                distance_meters = route.get('distance', 0)
+                duration_seconds = route.get('duration', distance_meters / 1.4)
+                
+                # Extract turn-by-turn instructions from OSRM steps
+                instructions = self._extract_osrm_instructions(route)
+                
+                # Calculate bounds
+                lats = [p[0] for p in route_points]
+                lngs = [p[1] for p in route_points]
+                bounds = {
+                    'north': max(lats), 'south': min(lats),
+                    'east': max(lngs), 'west': min(lngs)
+                }
+                
+                # Build segments for safety scoring
+                segments = self._build_segments(route_points)
+                
+                logger.info(
+                    f"OSRM pedestrian route: {len(route_points)} waypoints, "
+                    f"{distance_meters:.0f}m, {duration_seconds/60:.1f} min"
+                )
+                
+                return {
+                    'points': route_points,
+                    'segments': segments,
+                    'distance_meters': distance_meters,
+                    'duration_seconds': duration_seconds,
+                    'instructions': instructions,
+                    'summary': {'lengthInMeters': distance_meters, 'travelTimeInSeconds': duration_seconds},
+                    'bounds': bounds,
+                    'travel_mode': 'pedestrian',
+                    'arrival_time': (datetime.now() + timedelta(seconds=duration_seconds)).isoformat(),
+                    'start_point': {'lat': start_lat, 'lng': start_lng},
+                    'end_point': {'lat': dest_lat, 'lng': dest_lng},
+                    'provider': 'osrm'
+                }
+                
+            except requests.exceptions.Timeout:
+                if attempt == 0:
+                    logger.warning("OSRM request timed out, retrying...")
+                    continue
+                logger.warning("OSRM request timed out after retry")
+                return None
+            except Exception as e:
+                if attempt == 0:
+                    logger.warning(f"OSRM routing failed: {e}, retrying...")
+                    continue
+                logger.warning(f"OSRM routing failed: {e}")
+                return None
+        
+        return None
     
-    # ========== MAIN ROUTING METHOD (OSRM FIRST) ==========
+    def _extract_osrm_instructions(self, route: Dict) -> List[Dict]:
+        """Extract instructions from OSRM route"""
+        instructions = []
+        legs = route.get('legs', [])
+        
+        if not legs:
+            return instructions
+        
+        for step in legs[0].get('steps', []):
+            maneuver = step.get('maneuver', {})
+            maneuver_type = maneuver.get('type', 'continue')
+            modifier = maneuver.get('modifier', '')
+            street_name = step.get('name', '') or step.get('ref', '')
+            step_distance = step.get('distance', 0)
+            step_duration = step.get('duration', 0)
+            
+            # Build instruction text
+            if maneuver_type == 'depart':
+                instr = f"Head {modifier} on {street_name}" if street_name else "Depart"
+            elif maneuver_type == 'arrive':
+                instr = "Arrive at your destination"
+            elif maneuver_type == 'turn':
+                direction = modifier.replace('-', ' ')
+                instr = f"Turn {direction}" + (f" onto {street_name}" if street_name else "")
+            elif maneuver_type == 'new name':
+                instr = f"Continue onto {street_name}" if street_name else "Continue"
+            elif maneuver_type == 'continue':
+                instr = f"Continue on {street_name}" if street_name else "Continue straight"
+            elif maneuver_type == 'roundabout':
+                exit_num = maneuver.get('exit', 1)
+                instr = f"At the roundabout, take exit {exit_num}"
+            elif maneuver_type in ['merge', 'ramp', 'fork']:
+                instr = f"Keep {modifier}" + (f" on {street_name}" if street_name else "")
+            else:
+                instr = f"Continue" + (f" on {street_name}" if street_name else "")
+            
+            # Format distance
+            if step_distance >= 1000:
+                dist_str = f"{step_distance/1000:.1f} km"
+            else:
+                dist_str = f"{step_distance:.0f} m"
+            
+            instructions.append({
+                'instruction': instr,
+                'distance': dist_str,
+                'distance_meters': step_distance,
+                'duration': f"{int(step_duration//60)} min" if step_duration >= 60 else f"{int(step_duration)} sec",
+                'duration_seconds': step_duration,
+                'travel_mode': 'WALKING',
+                'maneuver_type': maneuver_type,
+                'modifier': modifier,
+            })
+        
+        return instructions
+    
+    def _build_segments(self, points: List[Tuple]) -> List[Dict]:
+        """Build segments from route points"""
+        if len(points) < 2:
+            return []
+        
+        segments = []
+        for i in range(len(points) - 1):
+            seg_dist = self._haversine_distance(
+                points[i][0], points[i][1],
+                points[i+1][0], points[i+1][1]
+            )
+            segments.append({
+                'start': {'lat': points[i][0], 'lng': points[i][1]},
+                'end': {'lat': points[i+1][0], 'lng': points[i+1][1]},
+                'distance': seg_dist,
+                'duration': seg_dist / 1.4,
+                'index': i
+            })
+        
+        return segments
+    
+    # ========== MAIN ROUTING METHOD ==========
     def calculate_route(self, start_lat: float, start_lng: float, 
                        dest_lat: float, dest_lng: float,
                        travel_mode: str = "pedestrian",
                        avoid_hazards: bool = True,
                        accessibility_needs: List[str] = None,
-                       obstruction_zones: List[Dict] = None) -> Optional[Dict]:
+                       obstruction_zones: List[Dict] = None,
+                       force_refresh: bool = False) -> Optional[Dict]:
         """Calculate route. Tries OSRM first, then TomTom, then straight-line last resort."""
         
         # Validate coordinates
@@ -182,6 +260,23 @@ class TomTomRouter:
             return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
         if not (-90 <= dest_lat <= 90) or not (-180 <= dest_lng <= 180):
             return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
+        
+        # Create cache key
+        cache_key = self._get_cache_key(start_lat, start_lng, dest_lat, dest_lng,
+                                        travel_mode, avoid_hazards, accessibility_needs)
+        
+        # Check cache (skip if force_refresh)
+        if not force_refresh:
+            cached_route = self._get_cached_route(cache_key)
+            if cached_route:
+                # Verify cached route ends at requested destination
+                cached_end = cached_route.get('end_point', {})
+                if (abs(cached_end.get('lat', 0) - dest_lat) < 0.0001 and
+                    abs(cached_end.get('lng', 0) - dest_lng) < 0.0001):
+                    logger.info(f"Using cached route to {dest_lat},{dest_lng}")
+                    return cached_route
+                else:
+                    logger.info(f"Cache invalid - destination mismatch. Recalculating...")
         
         route_result = None
         
@@ -235,6 +330,10 @@ class TomTomRouter:
         if accessibility_needs and route_result:
             route_result = self._add_accessibility_features(route_result, accessibility_needs)
         
+        # Cache the result
+        if route_result and not force_refresh:
+            self._set_cached_route(cache_key, route_result)
+        
         return route_result
     
     # ========== HAZARD AVOIDANCE ROUTING (TomTom alternatives) ==========
@@ -243,8 +342,8 @@ class TomTomRouter:
                                             dest_in_hazard=False, start_in_hazard=False):
         """Get multiple route alternatives and pick the safest one"""
         try:
-            origin = f"{start_lat},{start_lng}"
-            destination = f"{dest_lat},{dest_lng}"
+            origin = f"{start_lat:.6f},{start_lng:.6f}"
+            destination = f"{dest_lat:.6f},{dest_lng:.6f}"
             url = f"{self.base_url}/calculateRoute/{origin}:{destination}/json"
             
             params = {
@@ -263,7 +362,7 @@ class TomTomRouter:
                 if 'wheelchair' in accessibility_needs:
                     params['hilliness'] = 'normal'
             
-            response = requests.get(url, params=params, timeout=15)
+            response = self.session.get(url, params=params, timeout=15)
             
             if response.status_code == 200:
                 data = response.json()
@@ -308,8 +407,8 @@ class TomTomRouter:
                            travel_mode, accessibility_needs):
         """Get a standard route from TomTom"""
         try:
-            origin = f"{start_lat},{start_lng}"
-            destination = f"{dest_lat},{dest_lng}"
+            origin = f"{start_lat:.6f},{start_lng:.6f}"
+            destination = f"{dest_lat:.6f},{dest_lng:.6f}"
             url = f"{self.base_url}/calculateRoute/{origin}:{destination}/json"
             
             params = {
@@ -326,7 +425,7 @@ class TomTomRouter:
                 if 'wheelchair' in accessibility_needs:
                     params['hilliness'] = 'normal'
             
-            response = requests.get(url, params=params, timeout=15)
+            response = self.session.get(url, params=params, timeout=15)
             
             if response.status_code == 200:
                 data = response.json()
@@ -451,20 +550,7 @@ class TomTomRouter:
                 instructions.append(instruction)
         
         # Calculate segments
-        segments = []
-        if route_points and len(route_points) > 1:
-            for i in range(len(route_points) - 1):
-                start_point = route_points[i]
-                end_point = route_points[i + 1]
-                distance = self._haversine_distance(start_point[0], start_point[1], 
-                                                   end_point[0], end_point[1])
-                segments.append({
-                    'start': {'lat': start_point[0], 'lng': start_point[1]},
-                    'end': {'lat': end_point[0], 'lng': end_point[1]},
-                    'distance': distance,
-                    'duration': distance / 1.4,
-                    'index': i
-                })
+        segments = self._build_segments(route_points)
         
         # Calculate bounds
         if route_points:
@@ -611,18 +697,7 @@ class TomTomRouter:
             start_lat, start_lng, dest_lat, dest_lng, num_points=20
         )
         
-        segments = []
-        for i in range(len(points) - 1):
-            seg_distance = self._haversine_distance(
-                points[i][0], points[i][1], points[i+1][0], points[i+1][1]
-            )
-            segments.append({
-                'start': {'lat': points[i][0], 'lng': points[i][1]},
-                'end': {'lat': points[i+1][0], 'lng': points[i+1][1]},
-                'distance': seg_distance,
-                'duration': seg_distance / 1.4,
-                'index': i
-            })
+        segments = self._build_segments(points)
         
         return {
             'points': points,
@@ -649,7 +724,7 @@ class TomTomRouter:
         try:
             url = f"{self.search_url}/reverseGeocode/{lat},{lng}.json"
             params = {'key': self.api_key, 'language': 'en-US'}
-            response = requests.get(url, params=params, timeout=5)
+            response = self.session.get(url, params=params, timeout=5)
             response.raise_for_status()
             data = response.json()
             
@@ -680,7 +755,7 @@ class TomTomRouter:
                 params['lon'] = lng
                 params['radius'] = radius
             
-            response = requests.get(url, params=params, timeout=5)
+            response = self.session.get(url, params=params, timeout=5)
             response.raise_for_status()
             data = response.json()
             
@@ -699,3 +774,8 @@ class TomTomRouter:
         except Exception as e:
             logger.error(f"Place search failed: {e}")
             return []
+    
+    def __del__(self):
+        """Cleanup session"""
+        if hasattr(self, 'session'):
+            self.session.close()
