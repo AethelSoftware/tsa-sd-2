@@ -17,7 +17,6 @@ import googlemaps
 from authlib.integrations.flask_client import OAuth
 import secrets
 import hashlib
-import threading
 
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -25,6 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from flask import Flask, jsonify, request, send_file, send_from_directory, url_for, session, redirect
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
+import threading
 import webbrowser
 import json
 import numpy as np
@@ -111,21 +111,6 @@ if TOMTOM_AVAILABLE:
     tomtom_router = TomTomRouter()
     tomtom_router.clear_cache()
     logger.info("TomTom router cache cleared on startup")
-    
-    # Start OSRM pre-warm in background thread (non-blocking)
-    def _prewarm_osrm_background():
-        """Pre-warm OSRM connection in background thread — does not block startup."""
-        import time
-        time.sleep(3)  # Wait for server to fully initialise before making network calls
-        if tomtom_router:
-            reachable = tomtom_router.prewarm_osrm()
-            if reachable:
-                logger.info("✅ OSRM pre-warm complete — pedestrian fallback routing ready")
-            else:
-                logger.warning("⚠️ OSRM pre-warm failed — fallback routing may be slow on first use")
-
-    _osrm_prewarm_thread = threading.Thread(target=_prewarm_osrm_background, daemon=True)
-    _osrm_prewarm_thread.start()
 else:
     tomtom_router = None
     logger.warning("TomTom router not available - routing will use mock data")
@@ -589,7 +574,6 @@ def add_model_endpoints(app):
             # Check API availability
             apis_available = {
                 'tomtom': tomtom_router.api_key is not None if tomtom_router else False,
-                'osrm': tomtom_router._osrm_prewarmed if tomtom_router else False,
                 'openweather': api_client.openweather_key is not None if api_client else False,
                 'census': api_client.census_key is not None if api_client else False,
                 'geoapify': geoapify_client.api_key is not None if geoapify_client else False,
@@ -2774,7 +2758,6 @@ def main():
     print(f"Python: {sys.version.split()[0]}")
     print(f"Platform: {sys.platform}")
     print(f"TomTom API: {'✅ Available' if tomtom_router and tomtom_router.api_key else '❌ Not Available'}")
-    print(f"OSRM Fallback: {'⏳ Pre-warming...' if tomtom_router else '❌ Not Available'}")
     print(f"Google Maps API: {'✅ Available' if GOOGLE_MAPS_AVAILABLE else '❌ Not Available'}")
     print(f"Google Routing: {'✅ Available' if GOOGLE_ROUTING_AVAILABLE else '❌ Not Available'}")
     print(f"Real API Client: {'✅ Available' if api_client else '❌ Not Available'}")
@@ -2995,5 +2978,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-#

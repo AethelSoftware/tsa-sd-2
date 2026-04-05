@@ -1,3 +1,7 @@
+"""
+Transit Router using GTFS data with shape-based geometry
+OPTIMIZED VERSION - with aggressive caching and reduced API calls
+"""
 # transit_router.py
 from typing import List, Dict, Tuple, Optional
 from datetime import datetime, timedelta
@@ -13,7 +17,6 @@ import requests
 import pickle
 import hashlib
 from functools import lru_cache
-import time
 
 logger = logging.getLogger(__name__)
 
@@ -61,21 +64,6 @@ class TransitRouter:
         
         # Pre-compute shape indices for fast stop-to-shape mapping
         self._build_shape_index()
-        
-        # Walking-leg HTTP session — persistent connection pool for TomTom and OSRM calls
-        self._walk_session = requests.Session()
-        self._walk_session.headers.update({
-            'User-Agent': 'TryverSafetyApp/1.0 (Pittsburgh PA transit walking legs)',
-            'Accept': 'application/json',
-            'Connection': 'keep-alive',
-        })
-        walk_adapter = requests.adapters.HTTPAdapter(
-            pool_connections=2,
-            pool_maxsize=6,
-            max_retries=0,  # Handled manually in _route_walking_leg
-        )
-        self._walk_session.mount('https://', walk_adapter)
-        self._walk_session.mount('http://', walk_adapter)
     
     def _load_walk_cache(self) -> Dict:
         """Load walking route cache from disk"""
@@ -286,54 +274,38 @@ class TransitRouter:
             points.append((lat * 1e-5, lng * 1e-5))
         return points
     
-    def _route_walking_leg(self, from_lat: float, from_lon: float,
-                           to_lat: float, to_lon: float,
-                           leg_label: str = '') -> List[Tuple[float, float]]:
-        """
-        Get real pedestrian route between two points using road network.
-
-        Priority order:
-        1. Cache lookup (self._walk_route_cache) — instant
-        2. TomTom pedestrian API — fast, good for most cases
-        3. OSRM public demo — slower but knows every bridge and path
-        4. Straight-line fallback — last resort, warns if likely water crossing
-
-        All HTTP calls use self._walk_session (persistent, pooled) — NOT requests.get().
-
-        Args:
-            from_lat, from_lon: Origin of this walking leg
-            to_lat, to_lon: Destination of this walking leg
-            leg_label: Human-readable label for logging (e.g., "walk to Wood St Station")
-        """
+    @lru_cache(maxsize=2000)
+    def _route_walking_leg_cached(self, from_lat: float, from_lon: float,
+                                   to_lat: float, to_lon: float) -> Tuple[Tuple[float, float], ...]:
+        """Cached version of walking route - uses disk cache + LRU"""
         cache_key = f"{from_lat:.5f},{from_lon:.5f}|{to_lat:.5f},{to_lon:.5f}"
+        
+        # Check memory cache (via lru_cache params above)
+        # Check disk cache
         if cache_key in self._walk_route_cache:
-            return self._walk_route_cache[cache_key]
-
+            return tuple(self._walk_route_cache[cache_key])
+        
         straight_dist = self._haversine(from_lat, from_lon, to_lat, to_lon)
-        label = leg_label or f"{from_lat:.4f},{from_lon:.4f}→{to_lat:.4f},{to_lon:.4f}"
-
+        
+        # Very short legs (< 50m) are fine as straight line
         if straight_dist < 50:
             pts = [(from_lat, from_lon), (to_lat, to_lon)]
             self._walk_route_cache[cache_key] = pts
-            return pts
-
+            self._save_walk_cache()
+            return tuple(pts)
+        
+        # Try TomTom (only if not in cache)
         tomtom_key = os.getenv('TOMTOM_API_KEY', 'pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM')
-
-        # ── Attempt 1: TomTom pedestrian ────────────────────────────────────────────
         if tomtom_key:
             try:
-                url = (
-                    f"https://api.tomtom.com/routing/1/calculateRoute/"
-                    f"{from_lat:.6f},{from_lon:.6f}:{to_lat:.6f},{to_lon:.6f}/json"
-                )
+                url = (f"https://api.tomtom.com/routing/1/calculateRoute/"
+                       f"{from_lat},{from_lon}:{to_lat},{to_lon}/json")
                 params = {
                     'key': tomtom_key,
                     'travelMode': 'pedestrian',
                     'routeRepresentation': 'polyline',
-                    'computeTravelTimeFor': 'none',
                 }
-                # Use self._walk_session — NOT requests.get()
-                resp = self._walk_session.get(url, params=params, timeout=8)
+                resp = requests.get(url, params=params, timeout=5)  # Reduced timeout
                 if resp.status_code == 200:
                     data = resp.json()
                     routes = data.get('routes', [])
@@ -341,92 +313,31 @@ class TransitRouter:
                         legs = routes[0].get('legs', [])
                         if legs:
                             raw_points = legs[0].get('points', [])
-                            pts = []
                             if isinstance(raw_points, dict) and 'encodedPolyline' in raw_points:
                                 pts = self._decode_tomtom_polyline(raw_points['encodedPolyline'])
                             elif isinstance(raw_points, list) and raw_points:
                                 pts = [(p['latitude'], p['longitude']) for p in raw_points]
+                            else:
+                                pts = []
                             if len(pts) >= 2:
-                                routed_dist = self._path_distance(pts)
-                                logger.info(
-                                    f"TomTom walk leg [{label}]: "
-                                    f"{len(pts)} pts, {straight_dist:.0f}m straight → "
-                                    f"{routed_dist:.0f}m routed"
-                                )
                                 self._walk_route_cache[cache_key] = pts
-                                return pts
-            except requests.exceptions.Timeout:
-                logger.warning(f"TomTom walk leg timeout [{label}]")
+                                self._save_walk_cache()
+                                return tuple(pts)
             except Exception as e:
-                logger.warning(f"TomTom walk leg failed [{label}]: {e}")
-
-        # Brief pause before hitting OSRM — avoids hammering two APIs simultaneously
-        time.sleep(0.2)
-
-        # ── Attempt 2: OSRM public demo (lng,lat order — critical) ─────────────────
-        OSRM_TIMEOUTS = (6, 10)  # Two attempts for walk legs — faster than full route
-        for attempt, timeout in enumerate(OSRM_TIMEOUTS):
-            try:
-                osrm_url = (
-                    f"https://router.project-osrm.org/route/v1/foot/"
-                    f"{from_lon:.6f},{from_lat:.6f};{to_lon:.6f},{to_lat:.6f}"
-                )
-                params = {'overview': 'full', 'geometries': 'geojson'}
-                # Use self._walk_session — NOT requests.get()
-                resp = self._walk_session.get(
-                    osrm_url, params=params, timeout=timeout,
-                    headers={'User-Agent': 'TryverSafetyApp/1.0 (Pittsburgh transit walking leg)'}
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    routes = data.get('routes', [])
-                    if routes:
-                        # GeoJSON: [lon, lat] → must flip to (lat, lon)
-                        coords = routes[0]['geometry']['coordinates']
-                        pts = [(c[1], c[0]) for c in coords]
-                        if len(pts) >= 2:
-                            routed_dist = self._path_distance(pts)
-                            logger.info(
-                                f"OSRM walk leg [{label}]: "
-                                f"{len(pts)} pts, {straight_dist:.0f}m straight → "
-                                f"{routed_dist:.0f}m routed"
-                            )
-                            self._walk_route_cache[cache_key] = pts
-                            return pts
-            except requests.exceptions.Timeout:
-                logger.warning(f"OSRM walk leg timeout (attempt {attempt+1}) [{label}]")
-                if attempt < len(OSRM_TIMEOUTS) - 1:
-                    continue
-            except Exception as e:
-                logger.warning(f"OSRM walk leg error (attempt {attempt+1}) [{label}]: {e}")
-                if attempt < len(OSRM_TIMEOUTS) - 1:
-                    continue
-            break
-
-        # ── Fallback: Straight line ──────────────────────────────────────────────────
-        ALLEGHENY_BAND = (40.443, 40.452)
-        MON_BAND = (40.426, 40.436)
-        for band in [ALLEGHENY_BAND, MON_BAND]:
-            band_lo, band_hi = band
-            spans = (
-                (min(from_lat, to_lat) < band_lo and max(from_lat, to_lat) > band_hi)
-            )
-            if spans and straight_dist > 200:
-                logger.error(
-                    f"WALK LEG STRAIGHT-LINE FALLBACK MAY CROSS RIVER [{label}]: "
-                    f"{straight_dist:.0f}m. Both TomTom and OSRM failed."
-                )
-                break
-        else:
-            if straight_dist > 300:
-                logger.warning(
-                    f"Walk leg straight-line fallback [{label}]: "
-                    f"{straight_dist:.0f}m. Both APIs failed."
-                )
-
+                logger.debug(f"TomTom walk failed: {e}")
+        
+        # Fallback to straight line
         pts = [(from_lat, from_lon), (to_lat, to_lon)]
         self._walk_route_cache[cache_key] = pts
-        return pts
+        if len(self._walk_route_cache) % 100 == 0:
+            self._save_walk_cache()
+        return tuple(pts)
+    
+    def _route_walking_leg(self, from_lat: float, from_lon: float,
+                           to_lat: float, to_lon: float) -> List[Tuple[float, float]]:
+        """Get real pedestrian route - uses caching"""
+        result = self._route_walking_leg_cached(from_lat, from_lon, to_lat, to_lon)
+        return list(result)
     
     def _find_stops_with_expansion(self, lat: float, lon: float, initial_radius: float = 800) -> List[Tuple[Stop, float]]:
         """Find stops - optimized with single radius attempt"""
@@ -668,10 +579,7 @@ class TransitRouter:
         if first_transit and first_transit.from_stop_id:
             first_stop = self.gtfs.stops.get(first_transit.from_stop_id)
             if first_stop:
-                routed_pts = self._route_walking_leg(
-                    start_lat, start_lon, first_stop.lat, first_stop.lon,
-                    leg_label=f"origin → {self.gtfs.get_stop_name(first_stop.stop_id)}"
-                )
+                routed_pts = self._route_walking_leg(start_lat, start_lon, first_stop.lat, first_stop.lon)
                 distance_m = self._path_distance(routed_pts)
                 steps.append({
                     'type': 'walk',
@@ -737,10 +645,7 @@ class TransitRouter:
                     from_stop = self.gtfs.stops.get(state.node_id)
                     to_stop = self.gtfs.stops.get(next_transit.from_stop_id)
                     if from_stop and to_stop and from_stop.stop_id != to_stop.stop_id:
-                        routed_pts = self._route_walking_leg(
-                            from_stop.lat, from_stop.lon, to_stop.lat, to_stop.lon,
-                            leg_label=f"{self.gtfs.get_stop_name(from_stop.stop_id)} → {self.gtfs.get_stop_name(to_stop.stop_id)}"
-                        )
+                        routed_pts = self._route_walking_leg(from_stop.lat, from_stop.lon, to_stop.lat, to_stop.lon)
                         distance_m = self._path_distance(routed_pts)
                         steps.append({
                             'type': 'walk',
@@ -761,10 +666,7 @@ class TransitRouter:
         if last_transit and last_transit.to_stop_id:
             last_stop = self.gtfs.stops.get(last_transit.to_stop_id)
             if last_stop:
-                routed_pts = self._route_walking_leg(
-                    last_stop.lat, last_stop.lon, end_lat, end_lon,
-                    leg_label=f"{self.gtfs.get_stop_name(last_stop.stop_id)} → destination"
-                )
+                routed_pts = self._route_walking_leg(last_stop.lat, last_stop.lon, end_lat, end_lon)
                 distance_m = self._path_distance(routed_pts)
                 steps.append({
                     'type': 'walk',
@@ -778,9 +680,3 @@ class TransitRouter:
                 })
         
         return steps
-    
-    def __del__(self):
-        """Cleanup walking session"""
-        if hasattr(self, '_walk_session'):
-            self._walk_session.close()
-            
