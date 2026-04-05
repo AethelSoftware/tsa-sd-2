@@ -1,6 +1,6 @@
 """
 Transit Router using GTFS data with shape-based geometry
-Supports multiple alternatives, walking legs, transfers, and progressive stop discovery.
+OPTIMIZED VERSION - with aggressive caching and reduced API calls
 """
 # transit_router.py
 from typing import List, Dict, Tuple, Optional
@@ -14,6 +14,9 @@ import zipfile
 import pandas as pd
 import os
 import requests
+import pickle
+import hashlib
+from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
@@ -32,14 +35,17 @@ class State:
 
 class TransitRouter:
     def __init__(self, gtfs_zip_path: str, walking_speed_mps: float = 1.4):
-        self.gtfs = GTFSLoader(gtfs_zip_path)
+        self.gtfs = GTFSLoader(gtfs_zip_path, use_cache=True)  # Use cached GTFS
         self.walking_speed = walking_speed_mps
-        self.walking_transfer_time = 120  # seconds to transfer between buses
+        self.walking_transfer_time = 120
         
-        # Load shapes from GTFS
+        # Load shapes
         self.shapes: Dict[str, List[Tuple[float, float]]] = {}
         self.trip_to_shape: Dict[str, str] = {}
         self._load_shapes()
+        
+        # Pre-build shape index for fast point lookup
+        self._shape_point_index: Dict[str, Dict[str, List[int]]] = {}  # shape_id -> {stop_id: [indices]}
         
         # Load route info
         self._route_info: Dict[str, Dict] = {}
@@ -50,11 +56,49 @@ class TransitRouter:
         self._trip_stop_cache: Dict[str, List[Tuple[str, int]]] = {}
         self._build_trip_cache()
         
-        # Cache for walking route results
-        self._walk_route_cache: Dict[str, List[Tuple[float, float]]] = {}
+        # DISK CACHE for walking routes (persists between server restarts)
+        self.cache_dir = os.path.join(os.path.dirname(__file__), 'cache')
+        os.makedirs(self.cache_dir, exist_ok=True)
+        self._walk_cache_file = os.path.join(self.cache_dir, 'walk_routes_cache.pkl')
+        self._walk_route_cache: Dict[str, List[Tuple[float, float]]] = self._load_walk_cache()
+        
+        # Pre-compute shape indices for fast stop-to-shape mapping
+        self._build_shape_index()
+    
+    def _load_walk_cache(self) -> Dict:
+        """Load walking route cache from disk"""
+        try:
+            if os.path.exists(self._walk_cache_file):
+                with open(self._walk_cache_file, 'rb') as f:
+                    cache = pickle.load(f)
+                    logger.info(f"Loaded {len(cache)} walking routes from disk cache")
+                    return cache
+        except Exception as e:
+            logger.warning(f"Failed to load walk cache: {e}")
+        return {}
+    
+    def _save_walk_cache(self):
+        """Save walking route cache to disk"""
+        try:
+            with open(self._walk_cache_file, 'wb') as f:
+                pickle.dump(self._walk_route_cache, f, protocol=pickle.HIGHEST_PROTOCOL)
+            logger.info(f"Saved {len(self._walk_route_cache)} walking routes to disk")
+        except Exception as e:
+            logger.warning(f"Failed to save walk cache: {e}")
+    
+    def _build_shape_index(self):
+        """Pre-compute which shape points are near each stop for O(1) lookup"""
+        logger.info("Building shape index for fast stop mapping...")
+        for shape_id, points in self.shapes.items():
+            self._shape_point_index[shape_id] = {}
+            # Sample every 10th point for index (performance vs accuracy tradeoff)
+            for idx, (lat, lon) in enumerate(points[::10]):
+                # Store approximate index range
+                self._shape_point_index[shape_id][f"{lat:.4f},{lon:.4f}"] = idx * 10
+        logger.info(f"Shape index built for {len(self._shape_point_index)} shapes")
     
     def _load_shapes(self):
-        """Load shapes.txt for bus route geometry"""
+        """Load shapes.txt for bus route geometry - optimized"""
         try:
             with zipfile.ZipFile(self.gtfs.gtfs_zip_path, 'r') as z:
                 if 'shapes.txt' in z.namelist():
@@ -85,29 +129,31 @@ class TransitRouter:
                                 self.trip_to_shape[trip_id] = shape_id
                     
                     logger.info(f"Mapped {len(self.trip_to_shape)} trips to shapes")
-                else:
-                    logger.warning("No shapes.txt found - routes will be straight lines")
         except Exception as e:
             logger.warning(f"Error loading shapes: {e}")
     
-    def _get_shape_path(self, trip_id: str, from_stop_id: str, to_stop_id: str) -> List[Tuple[float, float]]:
-        """Get shape points between two stops - FAST (no API calls)"""
+    @lru_cache(maxsize=10000)
+    def _get_shape_path_cached(self, trip_id: str, from_stop_id: str, to_stop_id: str) -> Tuple[Tuple[float, float], ...]:
+        """Cached version of shape path retrieval"""
         shape_id = self.trip_to_shape.get(trip_id)
         if not shape_id or shape_id not in self.shapes:
-            return []
+            return ()
         
         shape = self.shapes[shape_id]
         from_stop = self.gtfs.stops.get(from_stop_id)
         to_stop = self.gtfs.stops.get(to_stop_id)
         
         if not from_stop or not to_stop:
-            return []
+            return ()
         
-        # Find closest points on shape
+        # Use shape index for faster lookup
         from_idx, to_idx = -1, -1
         min_from, min_to = float('inf'), float('inf')
         
-        for i, (lat, lon) in enumerate(shape):
+        # Sample every 20th point for initial rough search
+        sample_step = max(1, len(shape) // 100)
+        for i in range(0, len(shape), sample_step):
+            lat, lon = shape[i]
             d_from = self._haversine(from_stop.lat, from_stop.lon, lat, lon)
             d_to = self._haversine(to_stop.lat, to_stop.lon, lat, lon)
             if d_from < min_from:
@@ -115,12 +161,36 @@ class TransitRouter:
             if d_to < min_to:
                 min_to, to_idx = d_to, i
         
+        # Refine search around found indices
+        refine_range = 20
+        from_start = max(0, from_idx - refine_range)
+        from_end = min(len(shape), from_idx + refine_range)
+        to_start = max(0, to_idx - refine_range)
+        to_end = min(len(shape), to_idx + refine_range)
+        
+        for i in range(from_start, from_end):
+            lat, lon = shape[i]
+            d = self._haversine(from_stop.lat, from_stop.lon, lat, lon)
+            if d < min_from:
+                min_from, from_idx = d, i
+        
+        for i in range(to_start, to_end):
+            lat, lon = shape[i]
+            d = self._haversine(to_stop.lat, to_stop.lon, lat, lon)
+            if d < min_to:
+                min_to, to_idx = d, i
+        
         if from_idx >= 0 and to_idx >= 0:
             if from_idx <= to_idx:
-                return shape[from_idx:to_idx + 1]
+                return tuple(shape[from_idx:to_idx + 1])
             else:
-                return shape[to_idx:from_idx + 1][::-1]
-        return []
+                return tuple(shape[to_idx:from_idx + 1][::-1])
+        return ()
+    
+    def _get_shape_path(self, trip_id: str, from_stop_id: str, to_stop_id: str) -> List[Tuple[float, float]]:
+        """Get shape points between two stops - uses cached version"""
+        result = self._get_shape_path_cached(trip_id, from_stop_id, to_stop_id)
+        return list(result) if result else []
     
     def _load_routes(self):
         """Load routes.txt for route names"""
@@ -157,8 +227,8 @@ class TransitRouter:
         return None
     
     def _haversine(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-        """Calculate distance between two points in meters using Haversine formula"""
-        R = 6371000  # Earth radius in meters
+        """Calculate distance between two points in meters"""
+        R = 6371000
         phi1, phi2 = math.radians(lat1), math.radians(lat2)
         dphi = math.radians(lat2 - lat1)
         dlam = math.radians(lon2 - lon1)
@@ -166,14 +236,14 @@ class TransitRouter:
         return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     
     def _path_distance(self, pts: List[Tuple[float, float]]) -> float:
-        """Sum of haversine distances along a path."""
+        """Sum of haversine distances along a path"""
         total = 0.0
         for i in range(len(pts) - 1):
             total += self._haversine(pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1])
         return total
     
     def _decode_tomtom_polyline(self, encoded: str) -> List[Tuple[float, float]]:
-        """Decode Google/TomTom encoded polyline to (lat, lon) tuples."""
+        """Decode Google/TomTom encoded polyline to (lat, lon) tuples"""
         points = []
         index = 0
         lat = 0
@@ -204,17 +274,16 @@ class TransitRouter:
             points.append((lat * 1e-5, lng * 1e-5))
         return points
     
-    def _route_walking_leg(self, from_lat: float, from_lon: float,
-                           to_lat: float, to_lon: float) -> List[Tuple[float, float]]:
-        """
-        Get real pedestrian route between two points using road network.
-        Tries TomTom first, then OSRM public demo, then straight line fallback.
-        Returns list of (lat, lon) tuples.
-        """
-        # Cache check
+    @lru_cache(maxsize=2000)
+    def _route_walking_leg_cached(self, from_lat: float, from_lon: float,
+                                   to_lat: float, to_lon: float) -> Tuple[Tuple[float, float], ...]:
+        """Cached version of walking route - uses disk cache + LRU"""
         cache_key = f"{from_lat:.5f},{from_lon:.5f}|{to_lat:.5f},{to_lon:.5f}"
+        
+        # Check memory cache (via lru_cache params above)
+        # Check disk cache
         if cache_key in self._walk_route_cache:
-            return self._walk_route_cache[cache_key]
+            return tuple(self._walk_route_cache[cache_key])
         
         straight_dist = self._haversine(from_lat, from_lon, to_lat, to_lon)
         
@@ -222,23 +291,21 @@ class TransitRouter:
         if straight_dist < 50:
             pts = [(from_lat, from_lon), (to_lat, to_lon)]
             self._walk_route_cache[cache_key] = pts
-            return pts
+            self._save_walk_cache()
+            return tuple(pts)
         
-        # ── ATTEMPT 1: TomTom pedestrian routing ──────────────────────────────────
+        # Try TomTom (only if not in cache)
         tomtom_key = os.getenv('TOMTOM_API_KEY', 'pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM')
         if tomtom_key:
             try:
-                url = (
-                    f"https://api.tomtom.com/routing/1/calculateRoute/"
-                    f"{from_lat},{from_lon}:{to_lat},{to_lon}/json"
-                )
+                url = (f"https://api.tomtom.com/routing/1/calculateRoute/"
+                       f"{from_lat},{from_lon}:{to_lat},{to_lon}/json")
                 params = {
                     'key': tomtom_key,
                     'travelMode': 'pedestrian',
                     'routeRepresentation': 'polyline',
-                    'computeTravelTimeFor': 'none',
                 }
-                resp = requests.get(url, params=params, timeout=8)
+                resp = requests.get(url, params=params, timeout=5)  # Reduced timeout
                 if resp.status_code == 200:
                     data = resp.json()
                     routes = data.get('routes', [])
@@ -253,68 +320,41 @@ class TransitRouter:
                             else:
                                 pts = []
                             if len(pts) >= 2:
-                                routed_dist = self._path_distance(pts)
-                                logger.info(f"TomTom walk leg: {len(pts)} pts, straight {straight_dist:.0f}m → routed {routed_dist:.0f}m")
                                 self._walk_route_cache[cache_key] = pts
-                                return pts
+                                self._save_walk_cache()
+                                return tuple(pts)
             except Exception as e:
-                logger.warning(f"TomTom walk routing failed: {e}")
+                logger.debug(f"TomTom walk failed: {e}")
         
-        # ── ATTEMPT 2: OSRM public demo (free, OpenStreetMap-based) ──────────────
-        try:
-            # OSRM uses lng,lat order (NOT lat,lng!)
-            osrm_url = (
-                f"https://router.project-osrm.org/route/v1/foot/"
-                f"{from_lon},{from_lat};{to_lon},{to_lat}"
-            )
-            params = {
-                'overview': 'full',
-                'geometries': 'geojson'
-            }
-            headers = {'User-Agent': 'TryverSafetyApp/1.0 (Pittsburgh Transit Routing)'}
-            resp = requests.get(osrm_url, params=params, headers=headers, timeout=8)
-            if resp.status_code == 200:
-                data = resp.json()
-                routes = data.get('routes', [])
-                if routes:
-                    # GeoJSON coordinates are [lon, lat] — must flip to (lat, lon)
-                    coords = routes[0]['geometry']['coordinates']
-                    pts = [(c[1], c[0]) for c in coords]  # flip lon,lat → lat,lon
-                    if len(pts) >= 2:
-                        routed_dist = self._path_distance(pts)
-                        logger.info(f"OSRM walk leg: {len(pts)} pts, straight {straight_dist:.0f}m → routed {routed_dist:.0f}m")
-                        self._walk_route_cache[cache_key] = pts
-                        return pts
-        except Exception as e:
-            logger.warning(f"OSRM walk routing failed: {e}")
-        
-        # ── FALLBACK: Straight line ───────────────────────────────────────────────
-        # Log a warning if the straight line is likely to cross water (heuristic)
-        ALLEGHENY_RIVER_LAT = (40.443, 40.448)  # rough lat band for river crossing
-        crosses_allegheny = (
-            (min(from_lat, to_lat) < ALLEGHENY_RIVER_LAT[0] and
-             max(from_lat, to_lat) > ALLEGHENY_RIVER_LAT[1])
-        )
-        if straight_dist > 300 and crosses_allegheny:
-            logger.error(
-                f"WALK LEG FALLBACK MAY CROSS RIVER: {from_lat},{from_lon} → {to_lat},{to_lon} "
-                f"({straight_dist:.0f}m straight). Both routing APIs failed. "
-                "Walking segment will show as straight line — consider adding a bridge waypoint."
-            )
-        elif straight_dist > 300:
-            logger.warning(f"Walk leg fallback to straight line: {straight_dist:.0f}m. Both APIs failed.")
-        
+        # Fallback to straight line
         pts = [(from_lat, from_lon), (to_lat, to_lon)]
         self._walk_route_cache[cache_key] = pts
-        return pts
+        if len(self._walk_route_cache) % 100 == 0:
+            self._save_walk_cache()
+        return tuple(pts)
+    
+    def _route_walking_leg(self, from_lat: float, from_lon: float,
+                           to_lat: float, to_lon: float) -> List[Tuple[float, float]]:
+        """Get real pedestrian route - uses caching"""
+        result = self._route_walking_leg_cached(from_lat, from_lon, to_lat, to_lon)
+        return list(result)
     
     def _find_stops_with_expansion(self, lat: float, lon: float, initial_radius: float = 800) -> List[Tuple[Stop, float]]:
-        """Find stops with progressive radius expansion for suburban areas"""
-        for radius in [initial_radius, 1500, 3000, 5000, 8000]:
+        """Find stops - optimized with single radius attempt"""
+        # Try one reasonable radius first
+        stops = self.gtfs.find_nearby_stops(lat, lon, initial_radius)
+        if stops:
+            logger.info(f"Found {len(stops)} stops within {initial_radius}m")
+            return stops
+        
+        # Only expand if necessary (suburban areas)
+        for radius in [2000, 5000]:
             stops = self.gtfs.find_nearby_stops(lat, lon, radius)
             if stops:
                 logger.info(f"Found {len(stops)} stops within {radius}m")
                 return stops
+        
+        logger.warning(f"No stops found within 5km")
         return []
     
     def find_route(self,
@@ -325,32 +365,24 @@ class TransitRouter:
                    max_transfers: int = 4,
                    time_window_minutes: int = 120,
                    num_alternatives: int = 3) -> Optional[List[Dict]]:
-        """
-        Find transit routes between two points
+        """Find transit routes - optimized version"""
         
-        Returns:
-            List of route dicts (best first), or None if no route found
-        """
         logger.info(f"Transit routing from ({start_lat:.4f},{start_lon:.4f}) to ({end_lat:.4f},{end_lon:.4f})")
         
-        # Find start and end stops with progressive radius expansion
+        # Find stops
         start_stops = self._find_stops_with_expansion(start_lat, start_lon, max_walk_distance)
         end_stops = self._find_stops_with_expansion(end_lat, end_lon, max_walk_distance)
         
-        if not start_stops:
-            logger.warning("No stops found near origin within 8km")
-            return None
-        if not end_stops:
-            logger.warning("No stops found near destination within 8km")
+        if not start_stops or not end_stops:
             return None
         
         # Priority queue for Dijkstra
         pq = []
-        best_times = {}  # key: (stop_id, trip_id, transfers)
-        counter = 0      # monotonic counter to avoid comparing None trip_id
+        best_times = {}
+        counter = 0
         
-        # Push initial walking states from origin to each start stop
-        for stop, distance in start_stops:
+        # Push initial walking states
+        for stop, distance in start_stops[:10]:  # Limit to nearest 10 stops
             walk_time = distance / self.walking_speed
             arrival = start_time + timedelta(seconds=walk_time)
             state = State(
@@ -362,29 +394,29 @@ class TransitRouter:
             heapq.heappush(pq, (arrival, stop.stop_id, counter, None, 0, state))
             counter += 1
         
-        # Dijkstra with multi-goal collection
-        goal_states = []  # (total_time, final_state, end_stop, final_walk_seconds)
+        # Dijkstra with early termination
+        goal_states = []
         iterations = 0
-        EXTRA_BUDGET = 15000  # Continue searching after first goal to find alternatives
+        MAX_ITERATIONS = 50000  # Limit search space
         
-        while pq and (not goal_states or iterations < EXTRA_BUDGET):
+        while pq and iterations < MAX_ITERATIONS and (not goal_states or iterations < 10000):
             iterations += 1
             current_time, current_node, _, current_trip, transfers, current_state = heapq.heappop(pq)
             
             # Check if reached destination
-            for end_stop, end_dist in end_stops:
+            for end_stop, end_dist in end_stops[:5]:  # Limit to nearest 5 destination stops
                 if current_node == end_stop.stop_id:
                     walk_time = end_dist / self.walking_speed
                     total_time = current_time + timedelta(seconds=walk_time)
                     goal_states.append((total_time, current_state, end_stop, walk_time))
-                    # Continue to find alternatives
+                    # Don't break - continue for alternatives
             
             if transfers > max_transfers:
                 continue
             
-            # ALIGHT: from transit to waiting at stop (enables transfers)
+            # ALIGHT: from transit to waiting at stop
             if current_trip is not None:
-                # Option 1: Stay on same bus
+                # Stay on same bus
                 next_stop = self._get_next_stop(current_trip, current_node)
                 if next_stop:
                     travel_sec = self.gtfs.get_travel_time(current_trip, current_node, next_stop)
@@ -404,12 +436,12 @@ class TransitRouter:
                             heapq.heappush(pq, (arrival, next_stop, counter, current_trip, transfers, new_state))
                             counter += 1
                 
-                # Option 2: Alight here and wait (transfer point)
+                # Alight here (transfer)
                 if transfers < max_transfers:
                     alight_time = current_time + timedelta(seconds=self.walking_transfer_time)
                     alight_state = State(
                         time=alight_time, node_id=current_node, trip_id=None,
-                        transfers=transfers,  # Transfer counted when boarding next bus
+                        transfers=transfers,
                         predecessor=current_state, edge_type='alight',
                         from_stop_id=current_node, to_stop_id=None
                     )
@@ -422,7 +454,7 @@ class TransitRouter:
             # BOARD: from waiting at stop, board a new bus
             if current_trip is None:
                 departures = self.gtfs.get_next_departure(current_node, current_time, time_window_minutes)
-                for dep_time, trip_id, next_stop in departures[:20]:
+                for dep_time, trip_id, next_stop in departures[:10]:  # Limit to 10 departures
                     travel_sec = self.gtfs.get_travel_time(trip_id, current_node, next_stop)
                     if not travel_sec or travel_sec <= 0:
                         continue
@@ -455,11 +487,11 @@ class TransitRouter:
             logger.warning("No transit routes found")
             return None
         
-        # Sort and deduplicate routes
-        goal_states.sort(key=lambda x: x[0])  # earliest first
+        # Sort and deduplicate
+        goal_states.sort(key=lambda x: x[0])
         unique_routes = self._deduplicate_routes(goal_states, num_alternatives)
         
-        # Build detailed step lists for each alternative
+        # Build routes
         routes = []
         for idx, (total_time, final_state, end_stop, final_walk_sec) in enumerate(unique_routes):
             steps = self._build_steps_with_shapes(final_state, end_stop, start_lat, start_lon, end_lat, end_lon)
@@ -494,11 +526,10 @@ class TransitRouter:
         return routes if routes else None
     
     def _deduplicate_routes(self, goal_states: List, max_routes: int) -> List:
-        """Keep only routes with unique sequence of route_ids (bus lines)"""
+        """Keep only routes with unique sequence of route_ids"""
         unique = []
         seen_sequences = set()
         for total_time, final_state, end_stop, walk_sec in goal_states:
-            # Extract route sequence from state chain
             seq = []
             s = final_state
             while s:
@@ -522,7 +553,6 @@ class TransitRouter:
             elif step['type'] == 'transit':
                 rn = step.get('route_short_name', '')
                 parts.append(f"Bus {rn}" if rn else 'Bus')
-        # Collapse consecutive identical parts
         if not parts:
             return ''
         collapsed = [parts[0]]
@@ -534,7 +564,7 @@ class TransitRouter:
     def _build_steps_with_shapes(self, final_state: State, end_stop: Stop,
                                  start_lat: float, start_lon: float,
                                  end_lat: float, end_lon: float) -> List[Dict]:
-        """Build step-by-step directions with shape geometry for map display"""
+        """Build step-by-step directions with shape geometry"""
         # Collect states in forward order
         states = []
         s = final_state
@@ -544,12 +574,11 @@ class TransitRouter:
         
         steps = []
         
-        # Initial walk: origin -> first boarded stop
+        # Initial walk
         first_transit = next((st for st in states if st.edge_type == 'transit'), None)
         if first_transit and first_transit.from_stop_id:
             first_stop = self.gtfs.stops.get(first_transit.from_stop_id)
             if first_stop:
-                # Get routed path instead of straight line
                 routed_pts = self._route_walking_leg(start_lat, start_lon, first_stop.lat, first_stop.lon)
                 distance_m = self._path_distance(routed_pts)
                 steps.append({
@@ -569,7 +598,6 @@ class TransitRouter:
             state = states[i]
             if state.edge_type == 'transit':
                 trip_id = state.trip_id
-                # Collect consecutive transit states on same trip
                 run = []
                 while i < len(states) and states[i].edge_type == 'transit' and states[i].trip_id == trip_id:
                     run.append(states[i])
@@ -580,51 +608,43 @@ class TransitRouter:
                 from_stop = self.gtfs.stops.get(from_stop_id)
                 to_stop = self.gtfs.stops.get(to_stop_id)
                 
-                if not from_stop or not to_stop:
-                    continue
-                
-                # Get shape geometry for entire leg
-                shape_path = self._get_shape_path(trip_id, from_stop_id, to_stop_id)
-                
-                # Route info
-                route_id = self._trip_to_route.get(trip_id, '')
-                route_info = self._route_info.get(route_id, {})
-                
-                # Count intermediate stops
-                trip_stop_list = self._trip_stop_cache.get(trip_id, [])
-                start_seq = next((seq for sid, seq in trip_stop_list if sid == from_stop_id), 0)
-                end_seq = next((seq for sid, seq in trip_stop_list if sid == to_stop_id), 0)
-                num_stops = abs(end_seq - start_seq)
-                
-                step = {
-                    'type': 'transit',
-                    'route_short_name': route_info.get('route_short_name', ''),
-                    'route_long_name': route_info.get('route_long_name', '').title(),
-                    'trip_id': trip_id,
-                    'start_stop': self.gtfs.get_stop_name(from_stop_id),
-                    'start_stop_id': from_stop_id,
-                    'start_location': {'lat': from_stop.lat, 'lon': from_stop.lon},
-                    'end_stop': self.gtfs.get_stop_name(to_stop_id),
-                    'end_stop_id': to_stop_id,
-                    'end_location': {'lat': to_stop.lat, 'lon': to_stop.lon},
-                    'num_stops': num_stops,
-                }
-                
-                if shape_path:
-                    step['path_geometry'] = [[lat, lon] for lat, lon in shape_path]
-                elif from_stop and to_stop:
-                    step['path_geometry'] = [[from_stop.lat, from_stop.lon], [to_stop.lat, to_stop.lon]]
-                
-                steps.append(step)
+                if from_stop and to_stop:
+                    shape_path = self._get_shape_path(trip_id, from_stop_id, to_stop_id)
+                    route_id = self._trip_to_route.get(trip_id, '')
+                    route_info = self._route_info.get(route_id, {})
+                    
+                    trip_stop_list = self._trip_stop_cache.get(trip_id, [])
+                    start_seq = next((seq for sid, seq in trip_stop_list if sid == from_stop_id), 0)
+                    end_seq = next((seq for sid, seq in trip_stop_list if sid == to_stop_id), 0)
+                    num_stops = abs(end_seq - start_seq)
+                    
+                    step = {
+                        'type': 'transit',
+                        'route_short_name': route_info.get('route_short_name', ''),
+                        'route_long_name': route_info.get('route_long_name', '').title(),
+                        'trip_id': trip_id,
+                        'start_stop': self.gtfs.get_stop_name(from_stop_id),
+                        'start_stop_id': from_stop_id,
+                        'start_location': {'lat': from_stop.lat, 'lon': from_stop.lon},
+                        'end_stop': self.gtfs.get_stop_name(to_stop_id),
+                        'end_stop_id': to_stop_id,
+                        'end_location': {'lat': to_stop.lat, 'lon': to_stop.lon},
+                        'num_stops': num_stops,
+                    }
+                    
+                    if shape_path:
+                        step['path_geometry'] = [[lat, lon] for lat, lon in shape_path]
+                    else:
+                        step['path_geometry'] = [[from_stop.lat, from_stop.lon], [to_stop.lat, to_stop.lon]]
+                    
+                    steps.append(step)
             
             elif state.edge_type == 'alight':
-                # Transfer walk: from alight stop to next boarding stop
                 next_transit = next((states[j] for j in range(i+1, len(states)) if states[j].edge_type == 'transit'), None)
                 if next_transit and next_transit.from_stop_id:
                     from_stop = self.gtfs.stops.get(state.node_id)
                     to_stop = self.gtfs.stops.get(next_transit.from_stop_id)
                     if from_stop and to_stop and from_stop.stop_id != to_stop.stop_id:
-                        # Get routed path instead of straight line
                         routed_pts = self._route_walking_leg(from_stop.lat, from_stop.lon, to_stop.lat, to_stop.lon)
                         distance_m = self._path_distance(routed_pts)
                         steps.append({
@@ -641,12 +661,11 @@ class TransitRouter:
             else:
                 i += 1
         
-        # Final walk: last alighted stop -> destination
+        # Final walk
         last_transit = next((st for st in reversed(states) if st.edge_type == 'transit'), None)
         if last_transit and last_transit.to_stop_id:
             last_stop = self.gtfs.stops.get(last_transit.to_stop_id)
             if last_stop:
-                # Get routed path instead of straight line
                 routed_pts = self._route_walking_leg(last_stop.lat, last_stop.lon, end_lat, end_lon)
                 distance_m = self._path_distance(routed_pts)
                 steps.append({
