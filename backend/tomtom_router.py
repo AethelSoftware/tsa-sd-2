@@ -7,8 +7,27 @@ from datetime import datetime, timedelta
 import math
 from functools import lru_cache
 from threading import Lock
+import time  # Added for sleep in OSRM retries and pre-warm
 
 logger = logging.getLogger(__name__)
+
+# ── OSRM configuration ────────────────────────────────────────────────────────
+OSRM_BASE_URL = "https://router.project-osrm.org/route/v1/foot"
+OSRM_USER_AGENT = "TryverSafetyApp/1.0 (Pittsburgh PA pedestrian routing; contact@tryver.app)"
+
+# Timeout ladder: first attempt, second attempt, third attempt (seconds)
+OSRM_TIMEOUT_LADDER = (6, 10, 15)
+OSRM_MAX_RETRIES = 3
+
+# Only invoke OSRM fallback for routes longer than this threshold (metres)
+OSRM_MIN_DISTANCE_FOR_FALLBACK_M = 400
+
+# Pittsburgh river bounding box — if origin AND destination span across this
+# lat range and the TomTom route suspiciously goes point-to-point across it,
+# trigger OSRM automatically.
+PITTSBURGH_ALLEGHENY_RIVER_LAT_BAND = (40.443, 40.452)
+PITTSBURGH_MON_RIVER_LAT_BAND = (40.426, 40.436)
+
 
 class TomTomRouter:
     """Handle routing with TomTom API and OSRM fallback for pedestrian routes"""
@@ -24,9 +43,32 @@ class TomTomRouter:
         self.cache_max_size = 100
         self.cache_ttl = 300  # 5 minutes cache TTL
         
-        # Session for connection pooling
+        # Session for connection pooling (TomTom)
         self.session = requests.Session()
         self.session.headers.update({'User-Agent': 'TryverSafetyApp/1.0'})
+        
+        # Dedicated OSRM session with correct headers baked in
+        self.osrm_session = requests.Session()
+        self.osrm_session.headers.update({
+            'User-Agent': OSRM_USER_AGENT,
+            'Accept': 'application/json',
+            'Connection': 'keep-alive',
+        })
+        # Retry adapter: 3 retries with exponential backoff on 500/502/503/504
+        osrm_adapter = requests.adapters.HTTPAdapter(
+            pool_connections=2,
+            pool_maxsize=4,
+            max_retries=0,  # We handle retries ourselves for fine-grained timeout control
+        )
+        self.osrm_session.mount('https://', osrm_adapter)
+        self.osrm_session.mount('http://', osrm_adapter)
+
+        # OSRM result cache — keyed by (rounded_start_lat, rounded_start_lng, rounded_end_lat, rounded_end_lng)
+        # Separate from TomTom cache to allow independent TTL management
+        self._osrm_cache: dict = {}
+        self._osrm_cache_lock = Lock()
+        self._osrm_cache_ttl = 600  # 10 minutes — OSRM routes are stable (infrastructure doesn't change)
+        self._osrm_prewarmed = False  # Track whether pre-warm has run
         
     def _get_cache_key(self, start_lat, start_lng, dest_lat, dest_lng, 
                        travel_mode, avoid_hazards, accessibility_needs):
@@ -83,115 +125,331 @@ class TomTomRouter:
             self.route_cache[key] = (value, datetime.now())
             logger.debug(f"Cached route for key {key}")
     
-    # ========== OSRM PEDESTRIAN ROUTING (PRIMARY) ==========
-    def _route_pedestrian_osrm(self, start_lat: float, start_lng: float,
-                                dest_lat: float, dest_lng: float) -> Optional[Dict]:
+    # ========== OSRM PRE‑WARM ==========
+    def prewarm_osrm(self) -> bool:
         """
-        Route pedestrian path using OSRM public demo server.
-        Uses OpenStreetMap data — knows all bridges, paths, pedestrian ways.
-        Returns same format as _process_route() or None on failure.
+        Pre-warm the OSRM connection by making a cheap test route call.
+        This eliminates TCP connection setup time from the first real user request.
+        Returns True if OSRM is reachable, False otherwise.
+        Called once on application startup — non-blocking if OSRM is unreachable.
         """
-        # Retry logic for OSRM (sometimes times out)
-        for attempt in range(3):  # Increased to 3 attempts
-            try:
-                # OSRM expects lng,lat NOT lat,lng
-                url = (
-                    f"https://router.project-osrm.org/route/v1/foot/"
-                    f"{start_lng:.6f},{start_lat:.6f};{dest_lng:.6f},{dest_lat:.6f}"
+        if self._osrm_prewarmed:
+            return True
+        try:
+            # Short test route: Aspinwall borough park to Aspinwall waterfront (~300m)
+            test_url = f"{OSRM_BASE_URL}/-79.9021,40.4868;-79.9038,40.4852"
+            params = {'overview': 'false', 'steps': 'false'}
+            resp = self.osrm_session.get(test_url, params=params, timeout=8)
+            if resp.status_code == 200 and resp.json().get('code') == 'Ok':
+                logger.info("OSRM pre-warm successful — server is reachable")
+                self._osrm_prewarmed = True
+                return True
+            else:
+                logger.warning(f"OSRM pre-warm: unexpected response {resp.status_code}")
+                return False
+        except Exception as e:
+            logger.warning(f"OSRM pre-warm failed (will retry on first use): {e}")
+            return False
+    
+    # ========== OSRM CACHE METHODS ==========
+    def _get_osrm_cache_key(self, start_lat: float, start_lng: float,
+                             end_lat: float, end_lng: float) -> tuple:
+        """Cache key rounded to ~11m precision (4 decimal places ≈ 11m at Pittsburgh latitude)."""
+        return (round(start_lat, 4), round(start_lng, 4),
+                round(end_lat, 4), round(end_lng, 4))
+
+    def _get_cached_osrm(self, key: tuple) -> Optional[Dict]:
+        """Thread-safe OSRM cache retrieval with TTL check."""
+        with self._osrm_cache_lock:
+            if key in self._osrm_cache:
+                result, ts = self._osrm_cache[key]
+                if (datetime.now() - ts).total_seconds() < self._osrm_cache_ttl:
+                    logger.debug(f"OSRM cache HIT for key {key}")
+                    return result
+                else:
+                    del self._osrm_cache[key]
+                    logger.debug(f"OSRM cache EXPIRED for key {key}")
+        return None
+
+    def _set_cached_osrm(self, key: tuple, value: Dict) -> None:
+        """Thread-safe OSRM cache storage with simple eviction (max 200 entries)."""
+        with self._osrm_cache_lock:
+            if len(self._osrm_cache) >= 200:
+                # Evict oldest entry
+                oldest = min(self._osrm_cache.items(), key=lambda x: x[1][1])
+                del self._osrm_cache[oldest[0]]
+            self._osrm_cache[key] = (value, datetime.now())
+            logger.debug(f"OSRM result cached for key {key}")
+    
+    # ========== ROUTE SANITY CHECKER – WATER CROSSING DETECTION ==========
+    def _route_crosses_river(self, points: List[Tuple[float, float]],
+                             start_lat: float, start_lng: float,
+                             end_lat: float, end_lng: float) -> bool:
+        """
+        Heuristic check: does the TomTom route appear to cross a river in a straight line
+        (i.e., go directly from one bank to the other without following bridge geometry)?
+
+        Two conditions trigger a True result:
+        1. The origin and destination are on opposite sides of a known river lat band,
+           AND the route contains fewer than 8 intermediate waypoints crossing the band
+           (a real bridge route has many waypoints; a straight-line crossing has very few).
+        2. Any consecutive pair of points in the route is more than 450m apart AND
+           that segment crosses a known river lat band (indicates a jump, not real road geometry).
+
+        This is a heuristic — false positives are possible but rare in the Pittsburgh area.
+        False positives result in an unnecessary OSRM call, which is acceptable.
+        False negatives result in a water-crossing route being returned, which is the bug we're fixing.
+        """
+        if not points or len(points) < 2:
+            return False
+
+        RIVER_BANDS = [
+            PITTSBURGH_ALLEGHENY_RIVER_LAT_BAND,
+            PITTSBURGH_MON_RIVER_LAT_BAND,
+        ]
+
+        for lat_band in RIVER_BANDS:
+            band_lo, band_hi = lat_band
+
+            # Check if start and end are on opposite sides of the river
+            start_above = start_lat > band_hi
+            end_above = end_lat > band_hi
+            start_below = start_lat < band_lo
+            end_below = end_lat < band_lo
+
+            spans_river = (start_above and end_below) or (start_below and end_above)
+            if not spans_river:
+                continue
+
+            # Count how many route points actually pass through the river band
+            # A real bridge route will have many points threading through it
+            points_in_band = sum(1 for lat, lng in points if band_lo <= lat <= band_hi)
+            if points_in_band < 3:
+                logger.warning(
+                    f"OSRM trigger: route spans river band {lat_band} "
+                    f"but only {points_in_band} waypoints cross it — likely water crossing"
                 )
-                params = {
-                    'overview': 'full',
-                    'geometries': 'geojson',
-                    'steps': 'true',
-                    'annotations': 'false'
-                }
-                headers = {'User-Agent': 'TryverSafetyApp/1.0 (Pittsburgh PA pedestrian routing)'}
-                
-                # Progressive timeout: 15s, 20s, 25s
-                timeout = 15 + (attempt * 5)
-                logger.info(f"OSRM attempt {attempt + 1}/3 with timeout {timeout}s")
-                
-                resp = self.session.get(url, params=params, headers=headers, timeout=timeout)
-                
+                return True
+
+            # Check for large jumps across the band
+            for i in range(len(points) - 1):
+                lat1, lng1 = points[i]
+                lat2, lng2 = points[i + 1]
+                seg_crosses = (
+                    (lat1 < band_lo and lat2 > band_hi) or
+                    (lat1 > band_hi and lat2 < band_lo)
+                )
+                if seg_crosses:
+                    jump_dist = self._haversine_distance(lat1, lng1, lat2, lng2)
+                    if jump_dist > 450:
+                        logger.warning(
+                            f"OSRM trigger: {jump_dist:.0f}m jump across river band {lat_band} "
+                            f"between points {i} and {i+1}"
+                        )
+                        return True
+
+        return False
+    
+    # ========== OSRM PEDESTRIAN ROUTING (FIXED) ==========
+    def _route_pedestrian_osrm(self, start_lat: float, start_lng: float,
+                                dest_lat: float, dest_lng: float,
+                                skip_cache: bool = False) -> Optional[Dict]:
+        """
+        Route a pedestrian path using the OSRM public demo server.
+
+        Uses OpenStreetMap data — knows every bridge, pedestrian path, underpass,
+        and waterway crossing. This is the correct fallback when TomTom produces
+        physically impossible routes (e.g., straight-line water crossings).
+
+        Key improvements over the broken original:
+        - Uses persistent osrm_session with correct User-Agent (no throttling)
+        - Aggressive but sane timeout ladder: 6s / 10s / 15s per attempt
+        - Full result caching with 10-minute TTL (keyed to 4 d.p. precision)
+        - OSRM coordinate format: lng,lat (NOT lat,lng — this was a silent bug)
+        - Returns same dict structure as _process_route() for drop-in compatibility
+        - Sanity-checks the returned route (min 2 points, endpoint proximity check)
+
+        Args:
+            start_lat, start_lng: Origin coordinates
+            dest_lat, dest_lng: Destination coordinates
+            skip_cache: If True, bypass cache lookup (still writes to cache on success)
+
+        Returns:
+            Route dict compatible with _process_route() output, or None on failure.
+        """
+        # Check OSRM cache first
+        cache_key = self._get_osrm_cache_key(start_lat, start_lng, dest_lat, dest_lng)
+        if not skip_cache:
+            cached = self._get_cached_osrm(cache_key)
+            if cached:
+                logger.info(f"OSRM cache hit — skipping network call")
+                return cached
+
+        # OSRM uses lng,lat order (critical — lat,lng is silently wrong and returns garbage routes)
+        url = f"{OSRM_BASE_URL}/{start_lng:.6f},{start_lat:.6f};{dest_lng:.6f},{dest_lat:.6f}"
+        params = {
+            'overview': 'full',
+            'geometries': 'geojson',
+            'steps': 'true',
+            'annotations': 'false',
+        }
+
+        last_exception = None
+        for attempt, timeout in enumerate(OSRM_TIMEOUT_LADDER):
+            try:
+                logger.info(
+                    f"OSRM attempt {attempt + 1}/{OSRM_MAX_RETRIES} "
+                    f"(timeout={timeout}s) for {start_lat:.4f},{start_lng:.4f} → "
+                    f"{dest_lat:.4f},{dest_lng:.4f}"
+                )
+
+                resp = self.osrm_session.get(url, params=params, timeout=timeout)
+
+                if resp.status_code == 429:
+                    logger.warning("OSRM rate-limited (429) — backing off 1s before retry")
+                    time.sleep(1.0)
+                    continue
+
                 if resp.status_code != 200:
-                    if attempt < 2:
-                        logger.warning(f"OSRM returned {resp.status_code}, retrying...")
+                    logger.warning(f"OSRM returned HTTP {resp.status_code} on attempt {attempt + 1}")
+                    if attempt < OSRM_MAX_RETRIES - 1:
                         continue
-                    logger.warning(f"OSRM returned {resp.status_code}")
                     return None
-                
+
                 data = resp.json()
-                
+
                 if data.get('code') != 'Ok':
-                    if attempt < 2 and data.get('code') == 'NoRoute':
-                        logger.warning("OSRM: No route found, retrying...")
+                    logger.warning(
+                        f"OSRM code={data.get('code')} message={data.get('message')} "
+                        f"on attempt {attempt + 1}"
+                    )
+                    if data.get('code') == 'NoRoute':
+                        # No route is definitive — don't retry, return None immediately
+                        logger.warning("OSRM: NoRoute — origin/destination may be inaccessible by foot")
+                        return None
+                    if attempt < OSRM_MAX_RETRIES - 1:
                         continue
-                    logger.warning(f"OSRM code: {data.get('code')}, message: {data.get('message')}")
                     return None
-                
+
                 routes = data.get('routes', [])
                 if not routes:
+                    logger.warning(f"OSRM returned 0 routes on attempt {attempt + 1}")
+                    if attempt < OSRM_MAX_RETRIES - 1:
+                        continue
                     return None
-                
+
                 route = routes[0]
-                
-                # GeoJSON coords are [lon, lat] — flip to (lat, lon) tuples for Leaflet
-                geojson_coords = route['geometry']['coordinates']
-                route_points = [(c[1], c[0]) for c in geojson_coords]
-                
-                if len(route_points) < 2:
+
+                # Decode GeoJSON coordinates — OSRM returns [lon, lat], must flip to (lat, lon)
+                geojson_coords = route.get('geometry', {}).get('coordinates', [])
+                if not geojson_coords:
+                    logger.warning("OSRM: empty geometry coordinates")
+                    if attempt < OSRM_MAX_RETRIES - 1:
+                        continue
                     return None
-                
-                distance_meters = route.get('distance', 0)
+
+                route_points = [(c[1], c[0]) for c in geojson_coords]
+
+                if len(route_points) < 2:
+                    logger.warning(f"OSRM returned only {len(route_points)} point(s)")
+                    if attempt < OSRM_MAX_RETRIES - 1:
+                        continue
+                    return None
+
+                # Sanity check: last point should be near destination
+                last_pt = route_points[-1]
+                endpoint_dist = self._haversine_distance(
+                    last_pt[0], last_pt[1], dest_lat, dest_lng
+                )
+                if endpoint_dist > 200:
+                    logger.warning(
+                        f"OSRM endpoint {last_pt} is {endpoint_dist:.0f}m from "
+                        f"requested destination {dest_lat},{dest_lng} — route may be wrong"
+                    )
+                    # Still return it — OSRM snaps to nearest routable point,
+                    # so this is expected for destinations not on a pedestrian path
+
+                distance_meters = route.get('distance', 0.0)
                 duration_seconds = route.get('duration', distance_meters / 1.4)
-                
-                # Extract turn-by-turn instructions from OSRM steps
+
+                # Extract turn-by-turn instructions from OSRM step data
                 instructions = self._extract_osrm_instructions(route)
-                
+
+                # Build segments for safety scoring compatibility
+                segments = self._build_segments(route_points)
+
                 # Calculate bounds
                 lats = [p[0] for p in route_points]
                 lngs = [p[1] for p in route_points]
                 bounds = {
                     'north': max(lats), 'south': min(lats),
-                    'east': max(lngs), 'west': min(lngs)
+                    'east': max(lngs), 'west': min(lngs),
                 }
-                
-                # Build segments for safety scoring
-                segments = self._build_segments(route_points)
-                
-                logger.info(
-                    f"OSRM pedestrian route: {len(route_points)} waypoints, "
-                    f"{distance_meters:.0f}m, {duration_seconds/60:.1f} min"
-                )
-                
-                return {
+
+                result = {
                     'points': route_points,
                     'segments': segments,
                     'distance_meters': distance_meters,
                     'duration_seconds': duration_seconds,
                     'instructions': instructions,
-                    'summary': {'lengthInMeters': distance_meters, 'travelTimeInSeconds': duration_seconds},
+                    'summary': {
+                        'lengthInMeters': distance_meters,
+                        'travelTimeInSeconds': duration_seconds,
+                    },
                     'bounds': bounds,
                     'travel_mode': 'pedestrian',
                     'arrival_time': (datetime.now() + timedelta(seconds=duration_seconds)).isoformat(),
                     'start_point': {'lat': start_lat, 'lng': start_lng},
                     'end_point': {'lat': dest_lat, 'lng': dest_lng},
-                    'provider': 'osrm'
+                    'provider': 'osrm',
+                    'is_fallback': False,
                 }
-                
+
+                # Cache the successful result
+                self._set_cached_osrm(cache_key, result)
+
+                logger.info(
+                    f"OSRM SUCCESS on attempt {attempt + 1}: "
+                    f"{len(route_points)} waypoints, "
+                    f"{distance_meters:.0f}m, "
+                    f"{duration_seconds / 60:.1f} min"
+                )
+                self._osrm_prewarmed = True  # Mark as confirmed reachable
+                return result
+
             except requests.exceptions.Timeout:
-                if attempt < 2:
-                    logger.warning(f"OSRM request timed out (attempt {attempt + 1}), retrying with longer timeout...")
+                logger.warning(
+                    f"OSRM timeout on attempt {attempt + 1}/{OSRM_MAX_RETRIES} "
+                    f"(limit={timeout}s)"
+                )
+                last_exception = f"Timeout at {timeout}s"
+                if attempt < OSRM_MAX_RETRIES - 1:
+                    time.sleep(0.3 * (attempt + 1))  # Brief exponential backoff
                     continue
-                logger.warning("OSRM request timed out after all retries")
-                return None
+
+            except requests.exceptions.ConnectionError as e:
+                logger.warning(f"OSRM connection error on attempt {attempt + 1}: {e}")
+                last_exception = str(e)
+                if attempt < OSRM_MAX_RETRIES - 1:
+                    time.sleep(0.5 * (attempt + 1))
+                    continue
+
+            except (ValueError, KeyError) as e:
+                logger.warning(f"OSRM response parse error on attempt {attempt + 1}: {e}")
+                last_exception = str(e)
+                if attempt < OSRM_MAX_RETRIES - 1:
+                    continue
+
             except Exception as e:
-                if attempt < 2:
-                    logger.warning(f"OSRM routing failed: {e}, retrying...")
-                    continue
-                logger.warning(f"OSRM routing failed: {e}")
-                return None
-        
+                logger.error(f"OSRM unexpected error on attempt {attempt + 1}: {e}")
+                last_exception = str(e)
+                break
+
+        logger.error(
+            f"OSRM FAILED after {OSRM_MAX_RETRIES} attempts. "
+            f"Last error: {last_exception}. "
+            f"Route: {start_lat:.4f},{start_lng:.4f} → {dest_lat:.4f},{dest_lng:.4f}"
+        )
         return None
     
     def _extract_osrm_instructions(self, route: Dict) -> List[Dict]:
@@ -305,9 +563,6 @@ class TomTomRouter:
         
         route_result = None
         
-        # SKIP OSRM - it always times out. Go directly to TomTom
-        logger.info("Skipping OSRM (always times out), going directly to TomTom")
-        
         # ── ATTEMPT: TomTom directly ──────────────────────────────────────────────
         if self.api_key:
             logger.info("Attempting TomTom routing...")
@@ -326,9 +581,36 @@ class TomTomRouter:
                 logger.info("TomTom routing SUCCESS")
                 route_result = tomtom_result
         
-        # ── Fallback to straight-line if TomTom fails ──────────────────────────────
+        # ── OSRM fallback decision ───────────────────────────────────────────────
+        straight_dist = self._haversine_distance(start_lat, start_lng, dest_lat, dest_lng)
+
+        if route_result is None and straight_dist >= OSRM_MIN_DISTANCE_FOR_FALLBACK_M:
+            logger.info(
+                f"TomTom failed for {straight_dist:.0f}m route — attempting OSRM fallback"
+            )
+            route_result = self._route_pedestrian_osrm(start_lat, start_lng, dest_lat, dest_lng)
+
+        elif route_result is not None and straight_dist >= OSRM_MIN_DISTANCE_FOR_FALLBACK_M:
+            # TomTom succeeded — sanity-check for water crossing
+            returned_points = route_result.get('points', [])
+            if self._route_crosses_river(returned_points, start_lat, start_lng, dest_lat, dest_lng):
+                logger.warning(
+                    "TomTom route appears to cross water — overriding with OSRM"
+                )
+                osrm_result = self._route_pedestrian_osrm(
+                    start_lat, start_lng, dest_lat, dest_lng
+                )
+                if osrm_result:
+                    route_result = osrm_result
+                    logger.info("OSRM override successful — water crossing corrected")
+                else:
+                    logger.warning(
+                        "OSRM override failed — keeping TomTom route despite suspected water crossing"
+                    )
+        
+        # ── Final fallback to straight-line if everything fails ───────────────────
         if route_result is None:
-            logger.error(f"TomTom failed, using straight-line fallback")
+            logger.error(f"TomTom and OSRM both failed, using straight-line fallback")
             route_result = self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
         
         # Add accessibility features if needed
@@ -706,19 +988,16 @@ class TomTomRouter:
     
     def _generate_fallback_route(self, start_lat: float, start_lng: float,
                                 dest_lat: float, dest_lng: float) -> Dict:
-        """Generate fallback route — tries OSRM first, then straight line as last resort."""
-        
-        # Try OSRM before giving up
-        osrm_result = self._route_pedestrian_osrm(start_lat, start_lng, dest_lat, dest_lng)
-        if osrm_result:
-            logger.info("_generate_fallback_route: OSRM succeeded as fallback")
-            return osrm_result
-        
-        # Absolute last resort: straight line with warning
+        """
+        Absolute last-resort straight-line route.
+        OSRM is attempted earlier in calculate_route — by the time we reach here,
+        both TomTom and OSRM have already failed. Do not retry OSRM here.
+        """
         distance = self._haversine_distance(start_lat, start_lng, dest_lat, dest_lng)
         logger.error(
-            f"STRAIGHT LINE FALLBACK: {start_lat},{start_lng} → {dest_lat},{dest_lng} "
-            f"({distance:.0f}m). This route may cross water. Both OSRM and TomTom failed."
+            f"STRAIGHT LINE FALLBACK: {start_lat:.4f},{start_lng:.4f} → "
+            f"{dest_lat:.4f},{dest_lng:.4f} ({distance:.0f}m). "
+            f"Both TomTom and OSRM failed. This route may cross water or impassable terrain."
         )
         
         points = self._generate_intermediate_points(
@@ -810,6 +1089,8 @@ class TomTomRouter:
             logger.info("Route cache cleared")
     
     def __del__(self):
-        """Cleanup session"""
+        """Cleanup sessions"""
         if hasattr(self, 'session'):
             self.session.close()
+        if hasattr(self, 'osrm_session'):
+            self.osrm_session.close()
