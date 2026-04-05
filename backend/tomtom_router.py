@@ -86,11 +86,29 @@ class TomTomRouter:
                 del self.route_cache[oldest_key]
             self.route_cache[key] = (value, datetime.now())
     
-    # ========== TURN-BY-TURN INSTRUCTION GENERATOR ==========
+    # ========== GET STREET NAME FROM COORDINATES ==========
+    def _get_street_name(self, lat: float, lng: float) -> str:
+        """Reverse geocode to get street name at a point"""
+        try:
+            url = f"{self.search_url}/reverseGeocode/{lat},{lng}.json"
+            params = {'key': self.api_key, 'language': 'en-US', 'returnSpeedLimit': 'false'}
+            response = self.session.get(url, params=params, timeout=3)
+            if response.status_code == 200:
+                data = response.json()
+                if 'addresses' in data and data['addresses']:
+                    address = data['addresses'][0].get('address', {})
+                    street = address.get('streetName', '')
+                    if street:
+                        return street
+            return ""
+        except Exception:
+            return ""
+    
+    # ========== TURN-BY-TURN INSTRUCTION GENERATOR WITH STREET NAMES ==========
     def _generate_turn_by_turn_from_geometry(self, route_points: List[Tuple[float, float]]) -> List[Dict]:
         """
-        Generate detailed turn-by-turn instructions with LEFT/RIGHT turns.
-        This creates directions like "Turn left onto Main St" not cardinal directions.
+        Generate detailed turn-by-turn instructions with street names.
+        Creates directions like "Turn left onto Freeport Road"
         """
         if len(route_points) < 3:
             return []
@@ -105,7 +123,6 @@ class TomTomRouter:
             return (bearing + 360) % 360
         
         def get_turn_direction(prev_bearing, curr_bearing):
-            """Determine if it's a left or right turn"""
             diff = (curr_bearing - prev_bearing + 360) % 360
             if diff < 20 or diff > 340:
                 return "straight"
@@ -135,90 +152,134 @@ class TomTomRouter:
         instructions = []
         
         # First instruction - depart
-        first_seg_dist = 0
-        for i in range(len(simplified) - 1):
-            first_seg_dist += self._haversine_distance(simplified[i][0], simplified[i][1], simplified[i+1][0], simplified[i+1][1])
-            # Check if direction changes
-            if i < len(bearings) - 1:
-                turn = get_turn_direction(bearings[i], bearings[i+1])
-                if turn != "straight":
-                    break
+        first_street = self._get_street_name(simplified[0][0], simplified[0][1])
+        if first_street:
+            instructions.append({
+                'instruction': f"Depart from your location onto {first_street}",
+                'distance': "0 m",
+                'distance_meters': 0,
+                'duration': "0 sec",
+                'duration_seconds': 0,
+                'travel_mode': 'DEPART',
+            })
+        else:
+            instructions.append({
+                'instruction': "Depart from your location",
+                'distance': "0 m",
+                'distance_meters': 0,
+                'duration': "0 sec",
+                'duration_seconds': 0,
+                'travel_mode': 'DEPART',
+            })
         
-        instructions.append({
-            'instruction': "Depart from your location",
-            'distance': fmt_dist(first_seg_dist),
-            'distance_meters': round(first_seg_dist),
-            'duration': fmt_duration(first_seg_dist / 1.4),
-            'duration_seconds': first_seg_dist / 1.4,
-            'travel_mode': 'DEPART',
-        })
+        # Process each segment to detect turns and get street names
+        i = 0
+        segment_distances = []
+        segment_streets = []
         
-        # Process each turn
+        # Group into segments between turns
+        current_seg_start = 0
+        for j in range(len(bearings) - 1):
+            turn = get_turn_direction(bearings[j], bearings[j+1])
+            if turn != "straight":
+                # Calculate distance for this segment
+                seg_dist = 0
+                for k in range(current_seg_start, j + 1):
+                    seg_dist += self._haversine_distance(
+                        simplified[k][0], simplified[k][1],
+                        simplified[k+1][0], simplified[k+1][1]
+                    )
+                if seg_dist > 10:
+                    # Get street name at the middle of this segment
+                    mid_idx = (current_seg_start + j) // 2
+                    street_name = self._get_street_name(simplified[mid_idx][0], simplified[mid_idx][1])
+                    segment_distances.append(seg_dist)
+                    segment_streets.append(street_name)
+                current_seg_start = j + 1
+        
+        # Add final segment
+        if current_seg_start < len(simplified) - 1:
+            seg_dist = 0
+            for k in range(current_seg_start, len(simplified) - 1):
+                seg_dist += self._haversine_distance(
+                    simplified[k][0], simplified[k][1],
+                    simplified[k+1][0], simplified[k+1][1]
+                )
+            if seg_dist > 10:
+                mid_idx = (current_seg_start + len(simplified) - 1) // 2
+                street_name = self._get_street_name(simplified[mid_idx][0], simplified[mid_idx][1])
+                segment_distances.append(seg_dist)
+                segment_streets.append(street_name)
+        
+        # Now build turn instructions using the segments
         i = 0
         while i < len(bearings) - 1:
             turn = get_turn_direction(bearings[i], bearings[i+1])
             if turn != "straight":
-                # Calculate distance from last turn to this turn
-                seg_distance = 0
+                # Get the street name for the segment after the turn
+                street_name = ""
+                if i + 1 < len(simplified):
+                    # Look ahead to find the street for this turn
+                    lookahead = min(i + 5, len(simplified) - 1)
+                    street_name = self._get_street_name(simplified[lookahead][0], simplified[lookahead][1])
+                
+                # Get distance for this segment
+                seg_dist = 0
                 start_idx = i
-                while start_idx < len(simplified) - 1:
-                    seg_distance += self._haversine_distance(
-                        simplified[start_idx][0], simplified[start_idx][1],
-                        simplified[start_idx + 1][0], simplified[start_idx + 1][1]
-                    )
-                    # Check if next bearing changes
+                while start_idx < len(bearings):
                     if start_idx < len(bearings) - 1:
                         next_turn = get_turn_direction(bearings[start_idx], bearings[start_idx + 1])
                         if next_turn != "straight" and start_idx != i:
                             break
+                    seg_dist += self._haversine_distance(
+                        simplified[start_idx][0], simplified[start_idx][1],
+                        simplified[start_idx + 1][0], simplified[start_idx + 1][1]
+                    )
                     start_idx += 1
                 
                 if turn == "left":
-                    instr = "Turn left"
+                    if street_name:
+                        instr = f"Turn left onto {street_name}"
+                    else:
+                        instr = "Turn left"
                 else:
-                    instr = "Turn right"
-                
-                if seg_distance > 20:
-                    instr += f" after {fmt_dist(seg_distance)}"
+                    if street_name:
+                        instr = f"Turn right onto {street_name}"
+                    else:
+                        instr = "Turn right"
                 
                 instructions.append({
                     'instruction': instr,
-                    'distance': fmt_dist(seg_distance),
-                    'distance_meters': round(seg_distance),
-                    'duration': fmt_duration(seg_distance / 1.4),
-                    'duration_seconds': seg_distance / 1.4,
+                    'distance': fmt_dist(seg_dist),
+                    'distance_meters': round(seg_dist),
+                    'duration': fmt_duration(seg_dist / 1.4),
+                    'duration_seconds': seg_dist / 1.4,
                     'travel_mode': 'WALKING',
                 })
                 i = start_idx
             else:
                 i += 1
         
-        # Add final approach
-        final_dist = 0
-        if len(instructions) > 1:
-            last_idx = instructions[-1].get('distance_meters', 0)
-            total_dist = sum(self._haversine_distance(simplified[j][0], simplified[j][1], simplified[j+1][0], simplified[j+1][1]) 
-                           for j in range(len(simplified) - 1))
-            final_dist = total_dist - last_idx
-            if final_dist > 0:
-                instructions.append({
-                    'instruction': f"Continue for {fmt_dist(final_dist)}",
-                    'distance': fmt_dist(final_dist),
-                    'distance_meters': round(final_dist),
-                    'duration': fmt_duration(final_dist / 1.4),
-                    'duration_seconds': final_dist / 1.4,
-                    'travel_mode': 'WALKING',
-                })
-        
-        # Add arrival
-        instructions.append({
-            'instruction': "Arrive at your destination",
-            'distance': '0 m',
-            'distance_meters': 0,
-            'duration': '0 sec',
-            'duration_seconds': 0,
-            'travel_mode': 'ARRIVE',
-        })
+        # Add arrival instruction
+        dest_street = self._get_street_name(route_points[-1][0], route_points[-1][1])
+        if dest_street:
+            instructions.append({
+                'instruction': f"Arrive at your destination on {dest_street}",
+                'distance': "0 m",
+                'distance_meters': 0,
+                'duration': "0 sec",
+                'duration_seconds': 0,
+                'travel_mode': 'ARRIVE',
+            })
+        else:
+            instructions.append({
+                'instruction': "Arrive at your destination",
+                'distance': "0 m",
+                'distance_meters': 0,
+                'duration': "0 sec",
+                'duration_seconds': 0,
+                'travel_mode': 'ARRIVE',
+            })
         
         return instructions
     
@@ -254,7 +315,7 @@ class TomTomRouter:
                 distance_meters = route.get('distance', 0)
                 duration_seconds = route.get('duration', distance_meters / 1.4)
                 
-                # Extract OSRM instructions
+                # Extract OSRM instructions with street names
                 instructions = []
                 legs = route.get('legs', [])
                 if legs:
@@ -266,13 +327,25 @@ class TomTomRouter:
                         step_dist = step.get('distance', 0)
                         
                         if m_type == 'depart':
-                            instr = f"Head {modifier} on {street}" if street else "Depart"
+                            if street:
+                                instr = f"Depart from your location onto {street}"
+                            else:
+                                instr = "Depart from your location"
                         elif m_type == 'arrive':
-                            instr = "Arrive at your destination"
+                            if street:
+                                instr = f"Arrive at your destination on {street}"
+                            else:
+                                instr = "Arrive at your destination"
                         elif m_type == 'turn':
-                            instr = f"Turn {modifier} onto {street}" if street else f"Turn {modifier}"
+                            if street:
+                                instr = f"Turn {modifier} onto {street}"
+                            else:
+                                instr = f"Turn {modifier}"
                         else:
-                            instr = f"Continue on {street}" if street else "Continue"
+                            if street:
+                                instr = f"Continue on {street}"
+                            else:
+                                instr = "Continue"
                         
                         instructions.append({
                             'instruction': instr,
@@ -355,7 +428,7 @@ class TomTomRouter:
         if not route_points or len(route_points) < 2:
             route_points = [(start_lat, start_lng), (dest_lat, dest_lng)]
         
-        # Generate turn-by-turn instructions from geometry
+        # Generate turn-by-turn instructions with street names
         instructions = self._generate_turn_by_turn_from_geometry(route_points)
         
         distance_meters = summary.get('lengthInMeters', 0)
@@ -459,7 +532,6 @@ class TomTomRouter:
                 if response.status_code == 200:
                     data = response.json()
                     if 'routes' in data and data['routes']:
-                        # If multiple routes, pick safest (lowest hazard score)
                         best_route = None
                         best_score = float('inf')
                         
