@@ -1,4 +1,4 @@
-// Walking3DView.jsx
+// Walking3DView.jsx - Optimized Version
 import React, { useRef, useMemo, useCallback, useEffect, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
@@ -31,64 +31,61 @@ const damp = (current, target, speed, dt) =>
 // ---------------------------------------------------------------------------
 // Ground (dark/black)
 // ---------------------------------------------------------------------------
-function Ground() {
+const Ground = React.memo(() => {
+  const geometry = useMemo(() => new THREE.PlaneGeometry(600, 600), []);
+  const material = useMemo(() => new THREE.MeshStandardMaterial({ color: "#0a0a0a", roughness: 0.9, metalness: 0.05 }), []);
+  
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow>
-      <planeGeometry args={[600, 600]} />
-      <meshStandardMaterial color="#0a0a0a" roughness={0.9} metalness={0.05} />
-    </mesh>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow geometry={geometry} material={material} />
   );
-}
+});
 
 // ---------------------------------------------------------------------------
-// Route Path
+// Route Path - Optimized
 // ---------------------------------------------------------------------------
-function RoutePath({ points, progressIdx }) {
-  const { lineGeometry, remainingPoints } = useMemo(() => {
-    if (points.length < 2) return { lineGeometry: null, remainingPoints: [] };
+const RoutePath = React.memo(({ points, progressIdx }) => {
+  const { lineGeometry, remainingGeometry } = useMemo(() => {
+    if (points.length < 2) return { lineGeometry: null, remainingGeometry: null };
     
-    const positions = [];
+    // Completed path geometry
+    const completedPositions = [];
     for (let i = 0; i <= progressIdx; i++) {
-      positions.push(points[i][0], 0.05, points[i][1]);
+      completedPositions.push(points[i][0], 0.05, points[i][1]);
+    }
+    const completedGeom = new THREE.BufferGeometry();
+    completedGeom.setAttribute("position", new THREE.Float32BufferAttribute(completedPositions, 3));
+    
+    // Remaining path geometry
+    const remainingPoints = points.slice(progressIdx);
+    let remainingGeom = null;
+    if (remainingPoints.length > 1) {
+      const remainingPositions = remainingPoints.flatMap(p => [p[0], 0.05, p[1]]);
+      remainingGeom = new THREE.BufferGeometry();
+      remainingGeom.setAttribute("position", new THREE.Float32BufferAttribute(remainingPositions, 3));
     }
     
-    const geom = new THREE.BufferGeometry();
-    geom.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-    return { 
-      lineGeometry: geom,
-      remainingPoints: points.slice(progressIdx)
-    };
+    return { lineGeometry: completedGeom, remainingGeometry: remainingGeom };
   }, [points, progressIdx]);
+
+  const completedMaterial = useMemo(() => new THREE.LineBasicMaterial({ color: "#8B7355" }), []);
+  const remainingMaterial = useMemo(() => new THREE.LineBasicMaterial({ color: "#D4A574" }), []);
 
   return (
     <group>
-      {lineGeometry && (
-        <line geometry={lineGeometry}>
-          <lineBasicMaterial color="#8B7355" linewidth={2} />
-        </line>
-      )}
-      {remainingPoints.length > 1 && (
-        <line>
-          <bufferGeometry>
-            <bufferAttribute
-              attach="attributes-position"
-              count={remainingPoints.length}
-              array={new Float32Array(remainingPoints.flatMap(p => [p[0], 0.05, p[1]]))}
-              itemSize={3}
-            />
-          </bufferGeometry>
-          <lineBasicMaterial color="#D4A574" linewidth={3} />
-        </line>
-      )}
+      {lineGeometry && <line geometry={lineGeometry} material={completedMaterial} />}
+      {remainingGeometry && <line geometry={remainingGeometry} material={remainingMaterial} />}
     </group>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
-// Bus Model
+// Bus Model - Optimized
 // ---------------------------------------------------------------------------
-function BusModel({ position, rotationY }) {
+const BusModel = React.memo(({ position, rotationY }) => {
   const groupRef = useRef();
+  const bodyMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#8B4513", roughness: 0.5 }), []);
+  const topMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#D2691E" }), []);
+  const wheelMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#1a0a04" }), []);
   
   useFrame(({ clock }) => {
     if (groupRef.current) {
@@ -96,32 +93,45 @@ function BusModel({ position, rotationY }) {
     }
   });
   
+  const wheels = useMemo(() => {
+    const wheelPositions = [];
+    for (const x of [-0.5, 0.5]) {
+      for (const z of [0.8, -0.8]) {
+        wheelPositions.push(
+          <mesh key={`${x}-${z}`} position={[x, 0.1, z]} castShadow>
+            <cylinderGeometry args={[0.25, 0.25, 0.1, 8]} rotation={[Math.PI / 2, 0, 0]} />
+            <primitive object={wheelMaterial} attach="material" />
+          </mesh>
+        );
+      }
+    }
+    return wheelPositions;
+  }, [wheelMaterial]);
+  
   return (
     <group ref={groupRef} position={[position[0], 0.15, position[1]]} rotation={[0, rotationY, 0]}>
       <mesh position={[0, 0.4, 0]} castShadow receiveShadow>
         <boxGeometry args={[1.2, 0.6, 2.2]} />
-        <meshStandardMaterial color="#8B4513" roughness={0.5} />
+        <primitive object={bodyMaterial} attach="material" />
       </mesh>
       <mesh position={[0, 0.75, 0]} castShadow>
         <boxGeometry args={[1.1, 0.15, 2.1]} />
-        <meshStandardMaterial color="#D2691E" />
+        <primitive object={topMaterial} attach="material" />
       </mesh>
-      {[-0.5, 0.5].map(x => [0.8, -0.8].map(z => (
-        <mesh key={`${x}-${z}`} position={[x, 0.1, z]} castShadow>
-          <cylinderGeometry args={[0.25, 0.25, 0.1, 8]} rotation={[Math.PI / 2, 0, 0]} />
-          <meshStandardMaterial color="#1a0a04" />
-        </mesh>
-      )))}
+      {wheels}
     </group>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
-// User Marker
+// User Marker - Optimized
 // ---------------------------------------------------------------------------
-function UserMarker({ posRef, isOnBus = false }) {
+const UserMarker = React.memo(({ posRef, isOnBus = false }) => {
   const groupRef = useRef();
   const walkCycle = useRef(0);
+  const shadowMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#000", transparent: true, opacity: 0.2 }), []);
+  const bodyMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#D4A574" }), []);
+  const headMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#E8C99B" }), []);
   
   useFrame((_, dt) => {
     const g = groupRef.current;
@@ -142,25 +152,29 @@ function UserMarker({ posRef, isOnBus = false }) {
     <group ref={groupRef}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]}>
         <circleGeometry args={[0.5, 8]} />
-        <meshBasicMaterial color="#000" transparent opacity={0.2} />
+        <primitive object={shadowMaterial} attach="material" />
       </mesh>
       <mesh position={[0, 0.5, 0]} castShadow>
         <capsuleGeometry args={[0.2, 0.5, 4, 6]} />
-        <meshStandardMaterial color="#D4A574" />
+        <primitive object={bodyMaterial} attach="material" />
       </mesh>
       <mesh position={[0, 0.85, 0]} castShadow>
         <sphereGeometry args={[0.2, 8, 8]} />
-        <meshStandardMaterial color="#E8C99B" />
+        <primitive object={headMaterial} attach="material" />
       </mesh>
     </group>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
-// Destination marker
+// Destination marker - Optimized
 // ---------------------------------------------------------------------------
-function DestinationMarker({ worldX, worldZ }) {
+const DestinationMarker = React.memo(({ worldX, worldZ }) => {
   const ref = useRef();
+  const ringMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#8B7355", transparent: true, opacity: 0.3 }), []);
+  const poleMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#8B7355" }), []);
+  const topMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#D4A574", emissive: "#D4A574", emissiveIntensity: 0.2 }), []);
+  
   useFrame(({ clock }) => {
     if (ref.current) ref.current.rotation.y = clock.getElapsedTime() * 2;
   });
@@ -169,24 +183,24 @@ function DestinationMarker({ worldX, worldZ }) {
     <group position={[worldX, 0, worldZ]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
         <ringGeometry args={[0.8, 1.2, 16]} />
-        <meshBasicMaterial color="#8B7355" transparent opacity={0.3} />
+        <primitive object={ringMaterial} attach="material" />
       </mesh>
       <mesh position={[0, 1.2, 0]}>
         <cylinderGeometry args={[0.08, 0.12, 2.4, 6]} />
-        <meshStandardMaterial color="#8B7355" />
+        <primitive object={poleMaterial} attach="material" />
       </mesh>
       <mesh ref={ref} position={[0, 2.5, 0]}>
         <octahedronGeometry args={[0.5, 0]} />
-        <meshStandardMaterial color="#D4A574" emissive="#D4A574" emissiveIntensity={0.2} />
+        <primitive object={topMaterial} attach="material" />
       </mesh>
     </group>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
-// Camera
+// Camera - Optimized
 // ---------------------------------------------------------------------------
-function NavCamera({ posRef }) {
+const NavCamera = React.memo(({ posRef }) => {
   const { camera } = useThree();
   const targetPos = useRef({ x: 0, z: 0 });
   const ready = useRef(false);
@@ -214,16 +228,24 @@ function NavCamera({ posRef }) {
   });
   
   return null;
-}
+});
 
 // ---------------------------------------------------------------------------
 // Scene
 // ---------------------------------------------------------------------------
-function Scene({ routeW, destW, posRef, progressIdx, busPosition, busRotation, isOnBus, showBus }) {
+const Scene = React.memo(({ routeW, destW, posRef, progressIdx, busPosition, busRotation, isOnBus, showBus }) => {
+  const ambientLight = useMemo(() => new THREE.AmbientLight(0xffffff, 0.5), []);
+  const directionalLight = useMemo(() => {
+    const light = new THREE.DirectionalLight(0xffffff, 0.8);
+    light.position.set(20, 30, 10);
+    light.castShadow = true;
+    return light;
+  }, []);
+  
   return (
     <>
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[20, 30, 10]} intensity={0.8} castShadow />
+      <primitive object={ambientLight} />
+      <primitive object={directionalLight} />
       <Ground />
       {routeW.length > 1 && <RoutePath points={routeW} progressIdx={progressIdx} />}
       {destW && <DestinationMarker worldX={destW[0]} worldZ={destW[1]} />}
@@ -232,17 +254,17 @@ function Scene({ routeW, destW, posRef, progressIdx, busPosition, busRotation, i
       <NavCamera posRef={posRef} />
     </>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
-// Directions Panel (smaller, half height)
+// Directions Panel - Optimized with memo
 // ---------------------------------------------------------------------------
-function DirectionsPanel({ steps, currentStepIndex, onNext, onPrev, onClose }) {
+const DirectionsPanel = React.memo(({ steps, currentStepIndex, onNext, onPrev, onClose }) => {
   const currentStep = steps?.[currentStepIndex];
   const isFirst = currentStepIndex === 0;
   const isLast = currentStepIndex === (steps?.length || 1) - 1;
   
-  const getStepIcon = (step) => {
+  const getStepIcon = useCallback((step) => {
     if (step?.type === "transit") return "🚌";
     const instr = step?.instruction?.toLowerCase() || "";
     if (instr.includes("left")) return "⬅️";
@@ -250,13 +272,18 @@ function DirectionsPanel({ steps, currentStepIndex, onNext, onPrev, onClose }) {
     if (instr.includes("walk")) return "🚶";
     if (instr.includes("arrive")) return "🏁";
     return "📍";
-  };
+  }, []);
   
-  const getStepColor = (step) => {
+  const getStepColor = useCallback((step) => {
     if (step?.type === "transit") return "#A0522D";
     if (step?.instruction?.toLowerCase().includes("arrive")) return "#8B7355";
     return "#D4A574";
-  };
+  }, []);
+  
+  const handleStepClick = useCallback((idx) => {
+    if (idx > currentStepIndex) onNext(idx - currentStepIndex);
+    else if (idx < currentStepIndex) onPrev(currentStepIndex - idx);
+  }, [currentStepIndex, onNext, onPrev]);
   
   return (
     <div style={{
@@ -272,7 +299,6 @@ function DirectionsPanel({ steps, currentStepIndex, onNext, onPrev, onClose }) {
       border: "1px solid rgba(210, 165, 115, 0.2)",
       zIndex: 30,
     }}>
-      {/* Progress bar */}
       <div style={{ marginBottom: 8 }}>
         <div style={{ height: 2, background: "rgba(210, 165, 115, 0.2)", borderRadius: 2, overflow: "hidden" }}>
           <div style={{
@@ -287,7 +313,6 @@ function DirectionsPanel({ steps, currentStepIndex, onNext, onPrev, onClose }) {
         </div>
       </div>
       
-      {/* Main instruction */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
         <div style={{
           width: 40, height: 40, borderRadius: 20,
@@ -309,7 +334,6 @@ function DirectionsPanel({ steps, currentStepIndex, onNext, onPrev, onClose }) {
         </div>
       </div>
       
-      {/* Buttons */}
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={onPrev} disabled={isFirst} style={{
           flex: 1, padding: "6px", borderRadius: 16,
@@ -325,17 +349,13 @@ function DirectionsPanel({ steps, currentStepIndex, onNext, onPrev, onClose }) {
         }}>{isLast ? "🏁" : "→"}</button>
       </div>
       
-      {/* Collapsible steps list */}
       <details style={{ marginTop: 8 }}>
         <summary style={{ fontSize: 9, color: "rgba(210, 165, 115, 0.4)", cursor: "pointer", textAlign: "center", padding: "4px" }}>
           All steps
         </summary>
         <div style={{ marginTop: 8, maxHeight: 120, overflowY: "auto" }}>
           {steps?.map((step, idx) => (
-            <div key={idx} onClick={() => {
-              if (idx > currentStepIndex) onNext(idx - currentStepIndex);
-              else if (idx < currentStepIndex) onPrev(currentStepIndex - idx);
-            }} style={{
+            <div key={idx} onClick={() => handleStepClick(idx)} style={{
               display: "flex", alignItems: "center", gap: 8, padding: "5px 8px", marginBottom: 4,
               borderRadius: 12, background: idx === currentStepIndex ? "rgba(210, 165, 115, 0.15)" : "rgba(255,255,255,0.02)",
               cursor: "pointer",
@@ -358,7 +378,10 @@ function DirectionsPanel({ steps, currentStepIndex, onNext, onPrev, onClose }) {
       }}>✕</button>
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  return prevProps.currentStepIndex === nextProps.currentStepIndex &&
+         prevProps.steps?.length === nextProps.steps?.length;
+});
 
 // ---------------------------------------------------------------------------
 // Error Boundary
@@ -381,7 +404,7 @@ class ErrBoundary extends React.Component {
 }
 
 // ---------------------------------------------------------------------------
-// Main Export
+// Main Export - Optimized
 // ---------------------------------------------------------------------------
 export default function Walking3DView({
   route = [],
@@ -402,7 +425,9 @@ export default function Walking3DView({
   const animationRef = useRef(null);
   const posRef = useRef([0, 0]);
   const [progressIdx, setProgressIdx] = useState(0);
+  const positionUpdateTimeout = useRef(null);
   
+  // Initialize origin
   useEffect(() => {
     _origin = null;
     _mLng = null;
@@ -410,6 +435,7 @@ export default function Walking3DView({
     else if (userPosition) initOrigin(userPosition[0], userPosition[1]);
   }, [route, userPosition]);
 
+  // Compute world coordinates with proper dependencies
   const routeW = useMemo(() => {
     if (!_origin && route.length) initOrigin(route[0][0], route[0][1]);
     return route.map(([lat, lng]) => geo2w(lat, lng));
@@ -417,12 +443,29 @@ export default function Walking3DView({
   
   const destW = useMemo(() => routeW.length ? routeW[routeW.length - 1] : null, [routeW]);
   
+  // Throttled position updates
   useEffect(() => {
-    if (userPosition) posRef.current = geo2w(userPosition[0], userPosition[1]);
+    if (!userPosition) return;
+    
+    if (positionUpdateTimeout.current) {
+      clearTimeout(positionUpdateTimeout.current);
+    }
+    
+    positionUpdateTimeout.current = setTimeout(() => {
+      posRef.current = geo2w(userPosition[0], userPosition[1]);
+    }, 16);
+    
+    return () => {
+      if (positionUpdateTimeout.current) {
+        clearTimeout(positionUpdateTimeout.current);
+      }
+    };
   }, [userPosition]);
 
+  // Optimized progress index calculation
   useEffect(() => {
     if (!userPosition || !route.length) return;
+    
     let best = 0, minD = Infinity;
     for (let i = 0; i < route.length; i++) {
       const d = Math.abs(route[i][0] - userPosition[0]) + Math.abs(route[i][1] - userPosition[1]);
@@ -434,6 +477,35 @@ export default function Walking3DView({
   const currentStep = routeSteps[localStepIndex];
   const isTransitStep = currentStep?.type === "transit";
   
+  // Create spatial index for route points
+  const routeIndex = useMemo(() => {
+    const index = new Map();
+    routeW.forEach((point, idx) => {
+      const key = `${Math.round(point[0] / 5)}_${Math.round(point[1] / 5)}`;
+      index.set(key, { point, idx });
+    });
+    return index;
+  }, [routeW]);
+  
+  // Find nearest route point
+  const findNearestRoutePoint = useCallback((targetW) => {
+    const key = `${Math.round(targetW[0] / 5)}_${Math.round(targetW[1] / 5)}`;
+    if (routeIndex.has(key)) return routeIndex.get(key).point;
+    
+    // Fallback to linear search if not found in index
+    let nearest = null;
+    let minDist = Infinity;
+    for (const point of routeW) {
+      const dist = Math.hypot(point[0] - targetW[0], point[1] - targetW[1]);
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = point;
+      }
+    }
+    return nearest;
+  }, [routeIndex, routeW]);
+  
+  // Bus animation effect
   useEffect(() => {
     if (isTransitStep && !isOnBus && currentStep?.start_location && currentStep?.end_location) {
       setIsOnBus(true);
@@ -442,40 +514,68 @@ export default function Walking3DView({
       const fromStop = currentStep.start_location;
       const toStop = currentStep.end_location;
       
-      const fromPoint = routeW.find(p => Math.hypot(p[0] - geo2w(fromStop.lat, fromStop.lon)[0], p[1] - geo2w(fromStop.lat, fromStop.lon)[1]) < 5) || routeW[Math.min(progressIdx + 5, routeW.length - 1)];
-      const toPoint = routeW.find(p => Math.hypot(p[0] - geo2w(toStop.lat, toStop.lon)[0], p[1] - geo2w(toStop.lat, toStop.lon)[1]) < 5) || routeW[Math.min(progressIdx + 30, routeW.length - 1)];
+      const fromPointW = geo2w(fromStop.lat, fromStop.lon);
+      const toPointW = geo2w(toStop.lat, toStop.lon);
+      
+      const fromPoint = findNearestRoutePoint(fromPointW) || routeW[Math.min(progressIdx + 5, routeW.length - 1)];
+      const toPoint = findNearestRoutePoint(toPointW) || routeW[Math.min(progressIdx + 30, routeW.length - 1)];
       
       if (fromPoint && toPoint) {
         setBusPosition([fromPoint[0], fromPoint[1]]);
         setBusRotation(Math.atan2(toPoint[0] - fromPoint[0], toPoint[1] - fromPoint[1]));
         
-        const startPos = [...fromPoint], endPos = [...toPoint];
-        const startTime = Date.now();
+        const startPos = [...fromPoint];
+        const endPos = [...toPoint];
+        const startTime = performance.now();
         const duration = 2000;
+        let animationFrameId = null;
         
         const animate = () => {
-          const t = Math.min(1, (Date.now() - startTime) / duration);
-          setBusPosition([startPos[0] + (endPos[0] - startPos[0]) * t, startPos[1] + (endPos[1] - startPos[1]) * t]);
-          if (t < 1) animationRef.current = requestAnimationFrame(animate);
-          else {
+          if (!animationRef.current) return;
+          const now = performance.now();
+          const t = Math.min(1, (now - startTime) / duration);
+          setBusPosition([
+            startPos[0] + (endPos[0] - startPos[0]) * t,
+            startPos[1] + (endPos[1] - startPos[1]) * t
+          ]);
+          
+          if (t < 1) {
+            animationFrameId = requestAnimationFrame(animate);
+            animationRef.current = animationFrameId;
+          } else {
             setShowBus(false);
             if (onTestPositionUpdate) onTestPositionUpdate([toStop.lat, toStop.lon]);
             setTimeout(() => setIsOnBus(false), 300);
+            animationRef.current = null;
           }
         };
-        if (animationRef.current) cancelAnimationFrame(animationRef.current);
-        animationRef.current = requestAnimationFrame(animate);
+        
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+        }
+        animationFrameId = requestAnimationFrame(animate);
+        animationRef.current = animationFrameId;
       }
     }
-    return () => { if (animationRef.current) cancelAnimationFrame(animationRef.current); };
-  }, [isTransitStep, localStepIndex]);
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+    };
+  }, [isTransitStep, localStepIndex, findNearestRoutePoint, routeW, progressIdx, onTestPositionUpdate, isOnBus]);
 
   const handleNextStep = useCallback(() => {
-    if (localStepIndex < (routeSteps?.length || 1) - 1) setLocalStepIndex(prev => prev + 1);
+    if (localStepIndex < (routeSteps?.length || 1) - 1) {
+      setLocalStepIndex(prev => prev + 1);
+    }
   }, [localStepIndex, routeSteps?.length]);
 
   const handlePrevStep = useCallback(() => {
-    if (localStepIndex > 0) setLocalStepIndex(prev => prev - 1);
+    if (localStepIndex > 0) {
+      setLocalStepIndex(prev => prev - 1);
+    }
   }, [localStepIndex]);
 
   const testIdxRef = useRef(0);
@@ -505,11 +605,33 @@ export default function Walking3DView({
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", background: "#000", borderRadius: 16, overflow: "hidden", ...style }}>
       <ErrBoundary>
-        <Canvas shadows dpr={[1, 1]} camera={{ fov: 45, near: 0.5, far: 500 }} style={{ width: "100%", height: "100%" }}>
-          <Scene routeW={routeW} destW={destW} posRef={posRef} progressIdx={progressIdx} busPosition={busPosition} busRotation={busRotation} isOnBus={isOnBus} showBus={showBus} />
+        <Canvas 
+          shadows 
+          dpr={[1, 1.5]} 
+          frameloop="always"
+          performance={{ min: 0.5 }}
+          camera={{ fov: 45, near: 0.5, far: 300 }}
+          style={{ width: "100%", height: "100%" }}
+        >
+          <Scene 
+            routeW={routeW} 
+            destW={destW} 
+            posRef={posRef} 
+            progressIdx={progressIdx} 
+            busPosition={busPosition} 
+            busRotation={busRotation} 
+            isOnBus={isOnBus} 
+            showBus={showBus} 
+          />
         </Canvas>
       </ErrBoundary>
-      <DirectionsPanel steps={routeSteps} currentStepIndex={localStepIndex} onNext={handleNextStep} onPrev={handlePrevStep} onClose={onClose} />
+      <DirectionsPanel 
+        steps={routeSteps} 
+        currentStepIndex={localStepIndex} 
+        onNext={handleNextStep} 
+        onPrev={handlePrevStep} 
+        onClose={onClose} 
+      />
     </div>
   );
 }

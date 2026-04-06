@@ -1,4 +1,3 @@
-// useAlternateDestinations.js
 import { useState, useRef, useCallback } from 'react';
 
 const TOMTOM_API_KEY = 'pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM';

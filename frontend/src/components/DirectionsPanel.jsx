@@ -1,7 +1,6 @@
 import React from "react";
 import { List, Bus, X, CircleDot, Flag, Footprints, ArrowUp, CornerUpLeft, CornerUpRight, CornerDownLeft, CornerDownRight, ArrowLeft, ArrowRight, Navigation2 } from "lucide-react";
 
-// Copy these helpers that DirectionsPanel needs
 function stripHtml(str = "") {
   return str.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
 }
