@@ -1,12 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { MapPin, X, AlertTriangle, Shield, ArrowRight, Bus, Footprints, Navigation } from "lucide-react";
-
-const ALT_DEST_COLORS = [
-  { line: '#7c9ff5', label: 'Blue' },
-  { line: '#f5c56e', label: 'Amber' },
-  { line: '#a8e6a3', label: 'Mint' },
-  { line: '#d4a0f5', label: 'Purple' },
-];
 
 const AlternateDestinationsPanel = ({
   alternateDestinations = [],
@@ -26,14 +19,10 @@ const AlternateDestinationsPanel = ({
   onDismiss = () => {},
   onCloseComparison = () => {},
   isMobile = false,
-  // NEW props for alternate routes
   alternateRoutes = [],
   onSelectAlternateRoute = () => {},
   onHoverAlternateRoute = () => {},
 }) => {
-  const [showAltRoutes, setShowAltRoutes] = useState(true);
-  const [showAltDests, setShowAltDests] = useState(true);
-
   if (loading && alternateDestinations.length === 0 && alternateRoutes.length === 0) {
     return (
       <div className="alt-dest-panel">
@@ -47,6 +36,9 @@ const AlternateDestinationsPanel = ({
 
   if (alternateDestinations.length === 0 && alternateRoutes.length === 0) return null;
 
+  const routeCount = alternateRoutes.length;
+  const destCount = alternateDestinations.length;
+
   return (
     <div className="alt-dest-panel">
       <div className="alt-dest-header">
@@ -54,11 +46,13 @@ const AlternateDestinationsPanel = ({
           <Shield size={16} />
         </div>
         <div className="alt-dest-header-text">
-          <div className="alt-dest-title">Hazard Detected — Safer Options Available</div>
+          <div className="alt-dest-title">Hazard Detected — Safer Options</div>
           <div className="alt-dest-subtitle">
-            {triggerReason === "destination_in_hazard" 
-              ? "Destination is in a hazard zone" 
-              : "Route passes through hazards"}
+            {routeCount > 0 && destCount > 0
+              ? `${routeCount} safer route(s) · ${destCount} alternate destination(s)`
+              : routeCount > 0
+              ? `${routeCount} safer route(s) to same destination`
+              : `1 alternate destination nearby`}
           </div>
         </div>
         <button className="alt-dest-close" onClick={onDismiss}>
@@ -68,35 +62,29 @@ const AlternateDestinationsPanel = ({
 
       {/* Section A: Safer Routes to Same Destination */}
       {alternateRoutes.length > 0 && (
-        <div style={{ padding: "8px 0 0 0" }}>
-          <div className="comp-section-label" style={{ padding: "0 14px", marginBottom: "6px" }}>
-            <Navigation size={12} /> Safer Routes to Same Destination
+        <div style={{ padding: "8px 0" }}>
+          <div className="comp-section-label" style={{ padding: "0 14px", marginBottom: "6px", color: "#818cf8" }}>
+            <Navigation size={12} /> ▶ SAFER ROUTES TO {originalDestinationName.slice(0, 20)}...
           </div>
-          <div className="alt-dest-scroll">
+          <div style={{ display: "flex", flexDirection: "column" }}>
             {alternateRoutes.map((route, idx) => {
-              const isHovered = hoveredAlternate === idx; // reuse hover index for both? We'll use separate hover for routes later
-              const color = route.color || ALT_DEST_COLORS[idx % ALT_DEST_COLORS.length].line;
+              const isHovered = hoveredAlternate === idx;
               return (
                 <div
                   key={route.id}
-                  className={`alt-card ${isHovered ? "hovered" : ""}`}
-                  style={{ "--alt-color": color }}
+                  className="alt-route-row"
+                  style={{ borderLeftColor: isHovered ? route.color : 'transparent', backgroundColor: isHovered ? 'var(--wood-dim)' : 'transparent' }}
                   onMouseEnter={() => onHoverAlternateRoute(idx)}
                   onMouseLeave={() => onHoverAlternateRoute(null)}
                   onClick={() => onSelectAlternateRoute(route)}
                 >
-                  <div className="alt-card-badge">
-                    <div className="alt-card-dot" style={{ background: color }} />
-                    <span>{route.label}</span>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: route.color, flexShrink: 0 }} />
+                  <div className="alt-route-row-label" style={{ color: route.color }}>{route.label}</div>
+                  <div className="alt-route-row-stats">{route.distance} · {route.duration}</div>
+                  <div style={{ fontSize: '10px', color: route.hazardCount === 0 ? 'var(--green)' : 'var(--amber)' }}>
+                    {route.hazardCount === 0 ? '✓ No hazards' : `⚠ ${route.hazardCount}`}
                   </div>
-                  <div className="alt-card-name">Same destination</div>
-                  <div className="alt-card-stat">
-                    <span>{route.distance}</span> · <span>{route.duration}</span>
-                  </div>
-                  <div className={`alt-card-stat ${route.hazardCount === 0 ? "safe" : "warn"}`}>
-                    {route.hazardCount === 0 ? "✓ No hazards" : `⚠ ${route.hazardCount} hazard(s)`}
-                  </div>
-                  <div className="alt-card-compare-btn">Compare →</div>
+                  <button className="alt-route-compare-btn" style={{ color: route.color, borderColor: route.color }}>Compare →</button>
                 </div>
               );
             })}
@@ -104,42 +92,40 @@ const AlternateDestinationsPanel = ({
         </div>
       )}
 
-      {/* Section B: Alternate Destinations */}
+      {/* Section B: Alternate Destination */}
       {alternateDestinations.length > 0 && (
         <div style={{ padding: "8px 0 8px 0" }}>
-          <div className="comp-section-label" style={{ padding: "0 14px", marginBottom: "6px" }}>
-            <MapPin size={12} /> Alternate Destinations Nearby
+          <div className="comp-section-label" style={{ padding: "0 14px", marginBottom: "6px", color: "#c084fc" }}>
+            <MapPin size={12} /> ◆ ALTERNATE DESTINATION NEARBY
           </div>
-          <div className="alt-dest-scroll">
-            {alternateDestinations.map((alt, idx) => {
-              const isHovered = hoveredAlternate === idx;
-              const isSelected = selectedAlternate?.id === alt.id;
-              const color = ALT_DEST_COLORS[idx % ALT_DEST_COLORS.length].line;
-              return (
-                <div
-                  key={alt.id}
-                  className={`alt-card ${isHovered ? "hovered" : ""}`}
-                  style={{ "--alt-color": color }}
-                  onMouseEnter={() => onHoverAlternate(idx)}
-                  onMouseLeave={() => onHoverAlternate(null)}
-                  onClick={() => onSelectAlternate(alt)}
-                >
-                  <div className="alt-card-badge">
-                    <div className="alt-card-dot" style={{ background: color }} />
-                    <span>Alternative</span>
-                  </div>
-                  <div className="alt-card-name">{alt.name.length > 25 ? alt.name.slice(0,25)+"…" : alt.name}</div>
-                  <div className="alt-card-stat">
-                    <span>{alt.routeDistance}</span> · <span>{alt.routeDuration}</span>
-                  </div>
-                  <div className={`alt-card-stat ${alt.hazardCount === 0 ? "safe" : "warn"}`}>
-                    {alt.hazardCount === 0 ? "✓ Safe route" : `⚠ ${alt.hazardCount} hazard(s)`}
-                  </div>
-                  <div className="alt-card-compare-btn">Compare →</div>
+          {alternateDestinations.slice(0, 1).map((alt, idx) => {
+            const isHovered = hoveredAlternate === idx;
+            const color = "#c084fc";
+            return (
+              <div
+                key={alt.id}
+                className="alt-dest-card-wide"
+                style={{ borderColor: isHovered ? color : 'var(--border)' }}
+                onMouseEnter={() => onHoverAlternate(idx)}
+                onMouseLeave={() => onHoverAlternate(null)}
+                onClick={() => onSelectAlternate(alt)}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                  <span style={{ fontSize: "14px", color }}>◆</span>
+                  <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--txt)" }}>{alt.name}</div>
                 </div>
-              );
-            })}
-          </div>
+                <div style={{ fontSize: "11px", color: "var(--txt2)", marginBottom: "8px" }}>
+                  {alt.routeDistance} · {alt.routeDuration} · {alt.hazardCount === 0 ? "✓ Hazard-free route" : `⚠ ${alt.hazardCount} hazard(s)`}
+                </div>
+                <div style={{ marginBottom: "12px" }}>
+                  <span style={{ fontSize: "9px", background: "var(--inset)", padding: "2px 8px", borderRadius: "12px", color: "var(--txt2)" }}>
+                    {alt.category}
+                  </span>
+                </div>
+                <button className="alt-route-compare-btn" style={{ color: color, borderColor: color, width: "100%", padding: "8px" }}>Compare & Accept →</button>
+              </div>
+            );
+          })}
         </div>
       )}
 
