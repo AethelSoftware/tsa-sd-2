@@ -2796,12 +2796,12 @@ def main():
     # Initialize SocketIO
     global socketio, tracker_instance
     socketio = SocketIO(app, 
-                        cors_allowed_origins="*",
-                        async_mode='threading',  # Keep threading
-                        logger=False,  # Reduce logging noise
-                        engineio_logger=False,  # Reduce logging noise
-                        ping_timeout=60,
-                        ping_interval=25)
+                    cors_allowed_origins="*",
+                    async_mode='eventlet',
+                    logger=False,
+                    engineio_logger=False,
+                    ping_timeout=60,
+                    ping_interval=25)
     
     try:
         from voice_handler import init_voice_handler
