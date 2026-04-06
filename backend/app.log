@@ -9253,3 +9253,123 @@ UnboundLocalError: local variable 'fmt_dist' referenced before assignment
 2026-04-04 22:43:47,598 - news_hazard_fetcher - INFO - Filtered out 41 low-threat incidents
 2026-04-04 22:43:47,598 - __main__ - INFO - Found 42 news-based hazards in area
 2026-04-04 22:43:47,603 - werkzeug - INFO - 127.0.0.1 - - [04/Apr/2026 22:43:47] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-06 02:43:15,894 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-06 02:43:15,920 - tomtom_router - INFO - Route cache cleared
+2026-04-06 02:43:15,921 - __main__ - INFO - TomTom router cache cleared on startup
+2026-04-06 02:43:15,921 - gtfs_loader - INFO - Loading GTFS from /Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/GTFS.zip...
+2026-04-06 02:44:02,476 - gtfs_loader - INFO - Loaded GTFS fresh: 6424 stops, 15826 trips, 15826 trip patterns - took 46.6s
+2026-04-06 02:44:03,809 - gtfs_loader - INFO - Saved GTFS to cache: gtfs_cache_2afc89c9036c43f38146182fff3388e6.pkl
+2026-04-06 02:44:18,930 - transit_router - INFO - Loaded 305 shapes
+2026-04-06 02:44:19,354 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-06 02:44:19,372 - transit_router - INFO - Loaded 101 routes
+2026-04-06 02:44:19,541 - transit_router - INFO - Cached 15826 trips
+2026-04-06 02:44:19,607 - transit_router - INFO - Route-stops index: 100 routes
+2026-04-06 02:44:19,658 - transit_router - INFO - Shape index: 305 shapes
+2026-04-06 02:44:19,658 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-06 02:44:19,664 - __main__ - INFO - Safety AI loaded successfully
+2026-04-06 02:44:21,769 - voice_handler - INFO - Vosk imported successfully
+2026-04-06 02:44:21,770 - voice_handler - INFO - Geoapify client available
+2026-04-06 02:44:21,771 - voice_handler - INFO - Voice handler v3 initialized — intent detection + phonetic fingerprinting (84 rules, 47 landmarks)
+2026-04-06 02:44:21,771 - __main__ - INFO - Voice handler registered successfully
+2026-04-06 02:44:21,789 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-04-06 02:44:21,789 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-04-06 02:44:21,789 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-04-06 02:44:21,789 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-04-06 02:45:18,919 - voice_handler - INFO - Loading Vosk model from /Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/vosk-model...
+2026-04-06 02:45:19,936 - voice_handler - INFO - Vosk model loaded successfully
+2026-04-06 02:45:19,944 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 02:45:20,110 - __main__ - INFO - TomTom returned 191 incidents
+2026-04-06 02:45:20,112 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 02:45:20,472 - news_hazard_fetcher - WARNING - PulsePoint agency fetch returned 401
+2026-04-06 02:45:20,476 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-04-06 02:45:20,476 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-04-06 02:45:20,476 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-04-06 02:45:20,476 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 02:45:20,477 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 02:45:48,650 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 02:45:55,844 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 02:45:55,846 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 02:45:55,951 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 02:45:55,952 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 02:45:55,952 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 02:45:55,952 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 02:45:55,953 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 02:45:55,966 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 02:45:56,119 - __main__ - INFO - TomTom returned 191 incidents
+2026-04-06 02:45:56,121 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 02:45:56,121 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 02:45:56,122 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 02:45:56,134 - __main__ - INFO - Websocket connected: x_YtrCxZbqKaTcIvAAAC
+2026-04-06 02:45:56,137 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 02:45:56,289 - __main__ - INFO - TomTom returned 191 incidents
+2026-04-06 02:45:56,291 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 02:45:56,291 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 02:45:56,291 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 02:45:56,321 - transit_router - INFO - Transit routing (40.4885,-79.8982) -> (40.4545,-79.9376)
+2026-04-06 02:45:56,349 - transit_router - INFO - Found 17 stops within 1000.0m of (40.4885,-79.8982)
+2026-04-06 02:45:56,378 - transit_router - INFO - Found 20 stops within 1000.0m of (40.4545,-79.9376)
+2026-04-06 02:45:56,497 - transit_router - INFO - Found 5 routes with max 0 transfer(s)
+2026-04-06 02:45:57,088 - transit_router - INFO - Found 40 routes with max 1 transfer(s)
+2026-04-06 02:45:57,730 - voice_handler - INFO - Session created: vs-1775457957-8013 for socket x_YtrCxZbqKaTcIvAAAC
+2026-04-06 02:46:50,827 - transit_router - INFO - Transit routing (40.4885,-79.8982) -> (40.4545,-79.9376)
+2026-04-06 02:46:50,839 - transit_router - INFO - Found 17 stops within 1000.0m of (40.4885,-79.8982)
+2026-04-06 02:46:50,846 - transit_router - INFO - Found 20 stops within 1000.0m of (40.4545,-79.9376)
+2026-04-06 02:46:50,876 - transit_router - INFO - Found 5 routes with max 0 transfer(s)
+2026-04-06 02:46:51,406 - transit_router - INFO - Found 40 routes with max 1 transfer(s)
+2026-04-06 02:47:07,048 - transit_router - INFO - Transit routing (40.4885,-79.8982) -> (40.4460,-80.0167)
+2026-04-06 02:47:07,105 - transit_router - INFO - Found 17 stops within 1000.0m of (40.4885,-79.8982)
+2026-04-06 02:47:07,137 - transit_router - INFO - Found 20 stops within 1000.0m of (40.4460,-80.0167)
+2026-04-06 02:47:07,685 - transit_router - INFO - Found 6 routes with max 1 transfer(s)
+2026-04-06 02:49:23,735 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 02:49:23,976 - __main__ - INFO - TomTom returned 191 incidents
+2026-04-06 02:49:23,979 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 02:49:23,980 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 208s)
+2026-04-06 02:49:23,980 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 02:50:22,535 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 02:50:22,733 - __main__ - INFO - TomTom returned 191 incidents
+2026-04-06 02:50:22,735 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 02:50:22,735 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 266s)
+2026-04-06 02:50:22,735 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 02:54:23,648 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 02:54:24,055 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 02:54:24,058 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 02:54:24,058 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 02:54:24,059 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 02:55:18,732 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 02:55:25,593 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 02:55:25,595 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 02:55:25,803 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 02:55:25,803 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 02:55:25,804 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 02:55:25,804 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 02:55:25,805 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 02:55:25,857 - transit_router - INFO - Transit routing (40.4383,-79.9216) -> (40.4473,-80.0043)
+2026-04-06 02:55:25,890 - transit_router - INFO - Found 20 stops within 1000.0m of (40.4383,-79.9216)
+2026-04-06 02:55:25,920 - transit_router - INFO - Found 20 stops within 1000.0m of (40.4473,-80.0043)
+2026-04-06 02:55:26,794 - transit_router - INFO - Found 16 routes with max 1 transfer(s)
+2026-04-06 02:55:27,171 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 02:55:27,295 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 02:55:27,296 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 02:55:27,297 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 1s)
+2026-04-06 02:55:27,297 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 02:58:24,738 - transit_router - INFO - Transit routing (40.4360,-79.9192) -> (40.4473,-80.0043)
+2026-04-06 02:58:24,766 - transit_router - INFO - Found 20 stops within 800.0m of (40.4360,-79.9192)
+2026-04-06 02:58:24,810 - transit_router - INFO - Found 20 stops within 800.0m of (40.4473,-80.0043)
+2026-04-06 02:58:24,889 - gtfs_loader - INFO - Fallback: found 8 departures from stop 7996 (outside normal time window)
+2026-04-06 02:58:24,890 - gtfs_loader - INFO - Fallback: found 8 departures from stop 18499 (outside normal time window)
+2026-04-06 02:58:25,023 - gtfs_loader - INFO - Fallback: found 8 departures from stop 7996 (outside normal time window)
+2026-04-06 02:58:25,023 - gtfs_loader - INFO - Fallback: found 8 departures from stop 18499 (outside normal time window)
+2026-04-06 02:58:26,633 - transit_router - INFO - Found 14 routes with max 1 transfer(s)
+2026-04-06 02:59:23,869 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 02:59:25,430 - __main__ - INFO - TomTom returned 190 incidents
+2026-04-06 02:59:25,490 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 02:59:25,491 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 239s)
+2026-04-06 02:59:25,492 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 02:59:31,373 - transit_router - INFO - Transit routing (40.4360,-79.9192) -> (40.4473,-80.0043)
+2026-04-06 02:59:31,398 - transit_router - INFO - Found 20 stops within 1200.0m of (40.4360,-79.9192)
+2026-04-06 02:59:31,424 - transit_router - INFO - Found 20 stops within 1200.0m of (40.4473,-80.0043)
+2026-04-06 02:59:31,524 - gtfs_loader - INFO - Fallback: found 8 departures from stop 7996 (outside normal time window)
+2026-04-06 02:59:31,525 - gtfs_loader - INFO - Fallback: found 8 departures from stop 18499 (outside normal time window)
+2026-04-06 02:59:31,638 - gtfs_loader - INFO - Fallback: found 8 departures from stop 7996 (outside normal time window)
+2026-04-06 02:59:31,639 - gtfs_loader - INFO - Fallback: found 8 departures from stop 18499 (outside normal time window)
+2026-04-06 02:59:32,394 - transit_router - INFO - Found 14 routes with max 1 transfer(s)

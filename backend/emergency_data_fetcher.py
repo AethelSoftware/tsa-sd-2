@@ -2,7 +2,7 @@
 Lightweight Emergency Data Fetcher - Uses News API only
 No heavy CSV processing, instant startup
 """
-
+#emergency_data_fetcher.py
 import logging
 from datetime import datetime
 from typing import List, Dict, Any

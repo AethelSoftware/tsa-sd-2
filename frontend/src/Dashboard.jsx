@@ -80,9 +80,9 @@ import VoiceAccessibilityModal from "./VoiceAccessibilityModal";
 const Walking3DView = lazy(() => import("./Walking3DView"));
 // ADD this:
 const DirectionsPanel = lazy(() => import("./components/DirectionsPanel"));
-
 const ObstructionMarker = lazy(() => import("./components/ObstructionMarker"));
-
+const AlternateDestinationsPanel = lazy(() => import("./AlternateDestinationsPanel"));
+import useAlternateDestinations from "./AlternateDestinationsPanel";
 
 // Add this after your imports, before the component
 const throttle = (fn, delay) => {
@@ -748,6 +748,362 @@ const CSS = `
   .hud-instruction-main.new-step {
     animation: step-slide-in 0.25s ease forwards;
   }
+
+  /* ── ALTERNATE DESTINATIONS ─────────────────────────── */
+  .alt-dest-panel {
+    position: absolute;
+    left: calc(var(--rail-w) + 14px);
+    bottom: 90px;
+    width: 380px;
+    max-width: calc(100vw - var(--rail-w) - 28px);
+    background: var(--surface);
+    border: 1px solid rgba(232,168,112,0.30);
+    border-radius: 20px;
+    backdrop-filter: blur(28px);
+    box-shadow: var(--sh-lg);
+    z-index: 52;
+    overflow: hidden;
+    animation: slideUp 0.26s ease;
+  }
+  .alt-dest-header {
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    background: rgba(255,123,107,0.06);
+  }
+  .alt-dest-header-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255,123,107,0.15);
+    border: 1px solid rgba(255,123,107,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #ff7b6b;
+  }
+  .alt-dest-header-text { flex: 1; min-width: 0; }
+  .alt-dest-title {
+    font-family: var(--ff-d);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--txt);
+    margin-bottom: 2px;
+  }
+  .alt-dest-subtitle {
+    font-size: 10px;
+    color: var(--txt2);
+    letter-spacing: 0.2px;
+  }
+  .alt-dest-close {
+    background: var(--inset);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--txt2);
+    transition: all .14s;
+    flex-shrink: 0;
+  }
+  .alt-dest-close:hover { color: var(--red); border-color: rgba(255,123,107,.35); background: var(--red-dim); }
+  .alt-dest-scroll {
+    display: flex;
+    gap: 10px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .alt-dest-scroll::-webkit-scrollbar { display: none; }
+  .alt-card {
+    flex-shrink: 0;
+    width: 136px;
+    scroll-snap-align: start;
+    background: var(--inset);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all .18s;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+  .alt-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--alt-color, var(--wood));
+    opacity: 0;
+    transition: opacity .18s;
+  }
+  .alt-card.hovered, .alt-card:hover {
+    border-color: var(--alt-color, var(--wood));
+    background: var(--wood-dim);
+    transform: translateY(-2px);
+  }
+  .alt-card.hovered::before, .alt-card:hover::before { opacity: 1; }
+  .alt-card-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--alt-color, var(--wood));
+  }
+  .alt-card-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--alt-color, var(--wood));
+    flex-shrink: 0;
+  }
+  .alt-card-name {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--txt);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .alt-card-stat {
+    font-size: 10px;
+    color: var(--txt2);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .alt-card-stat.safe { color: var(--green); }
+  .alt-card-stat.warn { color: var(--amber); }
+  .alt-card-compare-btn {
+    margin-top: auto;
+    padding: 5px 0;
+    background: transparent;
+    border: 1px solid var(--alt-color, var(--border));
+    border-radius: 8px;
+    color: var(--alt-color, var(--wood));
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .14s;
+    text-align: center;
+  }
+  .alt-card-compare-btn:hover {
+    background: rgba(232,168,112,0.12);
+  }
+  .alt-dest-footer {
+    padding: 8px 14px 12px;
+    border-top: 1px solid var(--border);
+  }
+  .alt-dest-continue-btn {
+    width: 100%;
+    padding: 9px;
+    background: transparent;
+    border: 1px solid rgba(255,123,107,0.3);
+    border-radius: 12px;
+    color: var(--red);
+    font-family: var(--ff-b);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .alt-dest-continue-btn:hover {
+    background: var(--red-dim);
+    border-color: rgba(255,123,107,0.6);
+  }
+  .alt-loading-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    font-size: 12px;
+    color: var(--txt2);
+  }
+  /* Comparison Drawer */
+  .alt-comparison-drawer {
+    position: absolute;
+    z-index: 55;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    backdrop-filter: blur(28px);
+    box-shadow: var(--sh-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .alt-comparison-drawer.desktop {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(460px, 100vw);
+    border-radius: 0;
+    border-right: none;
+    animation: slideDown 0.28s ease;
+  }
+  .alt-comparison-drawer.mobile {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 92dvh;
+    border-radius: 20px 20px 0 0;
+    animation: slideUp 0.28s ease;
+  }
+  .comp-section {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .comp-section-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--txt2);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .comp-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .comp-route-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .comp-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .comp-stat-value {
+    font-family: var(--ff-d);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--txt);
+  }
+  .comp-stat-label {
+    font-size: 9px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--txt2);
+  }
+  .comp-steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .comp-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 4px;
+    border-left: 3px solid transparent;
+    transition: background .12s;
+    font-size: 11.5px;
+    color: var(--txt);
+    line-height: 1.4;
+  }
+  .comp-step.hazard {
+    border-left-color: #ff7b6b;
+    background: rgba(255,123,107,0.05);
+  }
+  .comp-step-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 11px;
+  }
+  .comp-hazard-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(255,123,107,0.15);
+    border: 1px solid rgba(255,123,107,0.35);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 9px;
+    font-weight: 700;
+    color: #ff7b6b;
+    margin-left: 6px;
+  }
+  .comp-sim-item, .comp-draw-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 11.5px;
+    padding: 3px 0;
+    line-height: 1.4;
+  }
+  .comp-sim-item { color: var(--green); }
+  .comp-draw-item { color: var(--amber); }
+  .comp-accept-btn {
+    margin: 12px 16px;
+    padding: 13px;
+    background: var(--wood-g);
+    border: none;
+    border-radius: 14px;
+    color: #fff;
+    font-family: var(--ff-d);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all .2s;
+    box-shadow: var(--sh-w);
+  }
+  .comp-accept-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 28px rgba(232,168,112,0.5);
+    filter: brightness(1.1);
+  }
+  /* ── ALTERNATE DEST ANIMATIONS ────────────────────── */
+  @keyframes altPulse {
+    0%, 100% { stroke-opacity: 0.72; }
+    50%       { stroke-opacity: 1.0; }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
 `;
 
 // ─── constants ────────────────────────────────────────────────────────────────
@@ -908,6 +1264,118 @@ function getObstructionStyle(type, iconCategory) {
   };
 }
 
+// ─── NEW: Alternate Destinations Helper Functions (module-level) ──────────────
+
+const ALT_DEST_COLORS = [
+  { line: '#7c9ff5', halo: 'rgba(124,159,245,0.4)', label: 'Blue'   },  // Soft blue
+  { line: '#f5c56e', halo: 'rgba(245,197,110,0.4)', label: 'Amber'  },  // Warm amber
+  { line: '#a8e6a3', halo: 'rgba(168,230,163,0.4)', label: 'Mint'   },  // Soft green
+  { line: '#d4a0f5', halo: 'rgba(212,160,245,0.4)', label: 'Purple' },  // Soft purple
+];
+
+function makeAltLabelIcon(alt, idx, color) {
+  const html = `
+    <div style="
+      background: rgba(16,8,3,0.94);
+      border: 1.5px solid ${color};
+      border-radius: 10px;
+      padding: 5px 10px;
+      color: ${color};
+      font-family: DM Sans, sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.45);
+      pointer-events: none;
+    ">
+      Alt ${idx + 1}: ${alt.name.length > 22 ? alt.name.slice(0, 22) + '…' : alt.name}
+      <span style="color: #8cd69c; margin-left: 4px; font-weight: 400;">${alt.routeDistance}</span>
+    </div>
+  `;
+  return L.divIcon({
+    className: 'alt-label-icon',
+    html,
+    iconAnchor: [0, 0],
+    iconSize: null,
+  });
+}
+
+function doesRoutePassThroughHazards(routeCoords, hazards, constructionZones, bufferMeters = 120) {
+  const allHazards = [
+    ...(hazards || []).filter(h => h.severity >= 0.5).map(h => ({
+      lat: h.lat, lng: h.lng,
+      radius: (h.radius || 50) + bufferMeters,
+      severity: h.severity,
+      label: h.description || 'Hazard',
+      type: h.type || 'hazard',
+      source: h.source || 'unknown'
+    })),
+    ...(constructionZones || []).map(z => ({
+      lat: z.lat, lng: z.lng,
+      radius: (z.radius || 50) + bufferMeters,
+      severity: 0.7,
+      label: z.description || 'Construction',
+      type: 'construction',
+      source: 'tomtom'
+    }))
+  ];
+
+  const encounteredHazards = [];
+
+  for (const hazard of allHazards) {
+    for (let i = 0; i < routeCoords.length - 1; i++) {
+      const segStart = [routeCoords[i][1], routeCoords[i][0]]; // [lng, lat]
+      const segEnd = [routeCoords[i+1][1], routeCoords[i+1][0]];
+      const hazardPoint = [hazard.lng, hazard.lat];
+      
+      const dist = pointToSegmentDistanceMeters(hazardPoint, segStart, segEnd);
+      if (dist < hazard.radius) {
+        if (!encounteredHazards.find(e => e.lat === hazard.lat && e.lng === hazard.lng)) {
+          encounteredHazards.push({ ...hazard, distanceFromRoute: dist });
+        }
+        break;
+      }
+    }
+  }
+
+  return {
+    hasHazards: encounteredHazards.length > 0,
+    hazards: encounteredHazards,
+    worstSeverity: encounteredHazards.reduce((max, h) => Math.max(max, h.severity), 0),
+    count: encounteredHazards.length
+  };
+}
+
+function isDestinationInHazardZone(destLat, destLng, hazards, constructionZones) {
+  const allHazards = [
+    ...(hazards || []).filter(h => h.severity >= 0.6),
+    ...(constructionZones || []).map(z => ({ ...z, severity: 0.7 }))
+  ];
+  
+  for (const hazard of allHazards) {
+    const dist = haversineDistance(destLat, destLng, hazard.lat, hazard.lng);
+    if (dist < (hazard.radius || 50)) {
+      return { inHazard: true, hazard };
+    }
+  }
+  return { inHazard: false, hazard: null };
+}
+
+function inferCategory(destinationName, destinationAddress = '') {
+  const name = (destinationName + ' ' + destinationAddress).toLowerCase();
+  if (/museum|gallery|exhibit|art|science center/.test(name)) return 'museum';
+  if (/hospital|medical|upmc|allegheny health|urgent care|clinic|er |emergency room/.test(name)) return 'medical';
+  if (/university|college|school|campus|academy/.test(name)) return 'education';
+  if (/coffee|cafe|starbucks|dunkin|espresso|roast/.test(name)) return 'cafe';
+  if (/restaurant|dining|kitchen|grill|bar |pub |tavern|bistro|eatery/.test(name)) return 'restaurant';
+  if (/park|trail|greenway|reserve|recreation|garden/.test(name)) return 'park';
+  if (/mall|shopping|store|shop|market|grocery/.test(name)) return 'shopping';
+  if (/pharmacy|cvs|walgreens|rite aid|drug/.test(name)) return 'pharmacy';
+  if (/library|public library/.test(name)) return 'library';
+  if (/transit|bus stop|station|terminal/.test(name)) return 'transit';
+  return 'general';
+}
+
 // ─── map sub-components ───────────────────────────────────────────────────────
 
 const ObstructedRoadSegment = React.memo(({ segment, zoomLevel = 13 }) => {
@@ -1005,8 +1473,6 @@ const ObstructedRoadSegment = React.memo(({ segment, zoomLevel = 13 }) => {
     </>
   );
 });
-
-
 
 // ─── Helper functions for transit routing ───────────────────────────────────
 
@@ -1181,6 +1647,18 @@ export default function AccessibleMap() {
 
   // ── Search panel collapse state ──
   const [searchPanelCollapsed, setSearchPanelCollapsed] = useState(false);
+
+  // ── ALTERNATE DESTINATIONS STATE ──
+  const [alternateDestinations, setAlternateDestinations] = useState([]);
+  const [showAlternateDestinations, setShowAlternateDestinations] = useState(false);
+  const [alternateDestinationsLoading, setAlternateDestinationsLoading] = useState(false);
+  const [hoveredAlternate, setHoveredAlternate] = useState(null);
+  const [selectedAlternate, setSelectedAlternate] = useState(null);
+  const [showAlternateComparison, setShowAlternateComparison] = useState(false);
+  const [alternateDestinationsTriggerReason, setAlternateDestinationsTriggerReason] = useState(null);
+  const [routeHazardSummary, setRouteHazardSummary] = useState(null);
+  const [alternatesDismissed, setAlternatesDismissed] = useState(false);
+  const alternateCheckDoneRef = useRef(false);
 
   const debRef = useRef(null);
   const destRef = useRef(null);
@@ -2306,6 +2784,17 @@ export default function AccessibleMap() {
     setEstimatedTimeRemaining(0);
     setWalkerHeading(0);
     setNavigationState("idle");
+    // Alternate destinations cleanup
+    setAlternateDestinations([]);
+    setShowAlternateDestinations(false);
+    setAlternateDestinationsLoading(false);
+    setHoveredAlternate(null);
+    setSelectedAlternate(null);
+    setShowAlternateComparison(false);
+    setAlternateDestinationsTriggerReason(null);
+    setRouteHazardSummary(null);
+    setAlternatesDismissed(false);
+    alternateCheckDoneRef.current = false;
   };
 
   // ─── main route calc ──────────────────────────────────────────────────────────
@@ -2322,6 +2811,13 @@ export default function AccessibleMap() {
     setShowDirections(false);
     setTransitSegments([]);
     setTransitAlternatives([]);
+    // Reset alternate state for new route
+    alternateCheckDoneRef.current = false;
+    setAlternatesDismissed(false);
+    setAlternateDestinations([]);
+    setShowAlternateDestinations(false);
+    setRouteHazardSummary(null);
+    setAlternateDestinationsTriggerReason(null);
 
     try {
       const geoData = await (
@@ -2572,6 +3068,49 @@ export default function AccessibleMap() {
         setTimeout(() => {
           startNavigation(coords);
         }, 300);
+
+        // ── ALTERNATE DESTINATIONS CHECK ──
+        const checkAndSuggestAlternates = async (routeCoords, destLat, destLng, destName) => {
+          if (alternateCheckDoneRef.current) return;
+          alternateCheckDoneRef.current = true;
+          if (mode === 'transit') return;
+          if (navigationActive) return;
+
+          await new Promise(r => setTimeout(r, 800));
+
+          const hazardCheck = doesRoutePassThroughHazards(routeCoords, activeHazards, constructionZones, 120);
+          const destCheck = isDestinationInHazardZone(destLat, destLng, activeHazards, constructionZones);
+
+          if (!hazardCheck.hasHazards && !destCheck.inHazard) return;
+
+          const reason = destCheck.inHazard ? 'destination_in_hazard' : 'route_through_hazard';
+          setRouteHazardSummary(hazardCheck);
+          setAlternateDestinationsTriggerReason(reason);
+
+          setAlternateDestinationsLoading(true);
+          try {
+            const alternates = await computeAlternateDestinations(
+              destLat, destLng, destName,
+              loc[0], loc[1],
+              activeHazards, constructionZones,
+              mode
+            );
+            if (alternates && alternates.length > 0) {
+              setAlternateDestinations(alternates);
+              setShowAlternateDestinations(true);
+              say(`${alternates.length} safer destination${alternates.length > 1 ? 's' : ''} nearby — tap to view`);
+            }
+          } finally {
+            setAlternateDestinationsLoading(false);
+          }
+        };
+
+        const capturedDestLat = destCoords.lat;
+        const capturedDestLng = destCoords.lng;
+        const capturedDestName = toVal;
+        const capturedCoords = coords;
+        setTimeout(() => checkAndSuggestAlternates(capturedCoords, capturedDestLat, capturedDestLng, capturedDestName), 0);
+
       } else {
         say("Couldn't find a route. Try a different destination.");
       }
@@ -2610,6 +3149,41 @@ export default function AccessibleMap() {
   const togglePanel = (name) => setPanel((p) => (p === name ? null : name));
   const hc = a11y.highContrast;
   const lt = a11y.largeText;
+
+  // ─── Alternate Destinations Hook ──────────────────────────────────────────────
+  const {
+    computeAlternateDestinations,
+    cancelComputation,
+    isComputing: altIsComputing,
+    error: altError
+  } = useAlternateDestinations();
+
+  // ─── Accept Alternate Handler ────────────────────────────────────────────────
+  const handleAcceptAlternate = useCallback((alt) => {
+    setToVal(alt.name);
+    setDest([alt.lat, alt.lng]);
+    setRoutePath(alt.routeCoords);
+    const segs = [];
+    for (let i = 0; i < alt.routeCoords.length - 1; i++) {
+      segs.push({
+        start: alt.routeCoords[i],
+        end: alt.routeCoords[i + 1],
+        safety_score: alt.safetyScore,
+        instructions: 'Continue on route',
+      });
+    }
+    setRouteSegments(segs);
+    setRouteInfo({ distance: alt.routeDistance, duration: alt.routeDuration, type: mode });
+    setRouteSteps(alt.routeSteps || []);
+    setShowDirections(true);
+    setShowAlternateDestinations(false);
+    setAlternateDestinations([]);
+    setShowAlternateComparison(false);
+    setSelectedAlternate(null);
+    setAlternatesDismissed(true);
+    say(`Route updated — navigating to ${alt.name}`);
+    setTimeout(() => startNavigation(alt.routeCoords), 300);
+  }, [mode, say, startNavigation]);
 
   // ─── render ───────────────────────────────────────────────────────────────────
 
@@ -3115,6 +3689,122 @@ export default function AccessibleMap() {
                   </Polyline>
                 ),
             )}
+
+            {/* ── ALTERNATE DESTINATION DOTTED ROUTES ── */}
+            {showAlternateDestinations && !alternatesDismissed && alternateDestinations.map((alt, idx) => {
+              const isHovered = hoveredAlternate === idx;
+              const isSelected = selectedAlternate?.id === alt.id;
+
+              if (!alt.routeCoords || alt.routeCoords.length < 2) return null;
+
+              return (
+                <React.Fragment key={`alt-dest-${idx}`}>
+                  {/* Halo layer — wider, very transparent, shows on hover */}
+                  {isHovered && (
+                    <Polyline
+                      positions={alt.routeCoords}
+                      pathOptions={{
+                        color: ALT_DEST_COLORS[idx % ALT_DEST_COLORS.length].halo,
+                        weight: 16,
+                        opacity: 0.18,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                      }}
+                    />
+                  )}
+                  {/* Shadow layer */}
+                  <Polyline
+                    positions={alt.routeCoords}
+                    pathOptions={{
+                      color: '#000000',
+                      weight: isHovered ? 10 : 7,
+                      opacity: isHovered ? 0.3 : 0.15,
+                      lineCap: 'round',
+                      lineJoin: 'round',
+                    }}
+                  />
+                  {/* Main dotted line */}
+                  <Polyline
+                    positions={alt.routeCoords}
+                    eventHandlers={{
+                      mouseover: () => setHoveredAlternate(idx),
+                      mouseout: () => setHoveredAlternate(null),
+                      click: () => {
+                        setSelectedAlternate(alt);
+                        setShowAlternateComparison(true);
+                      },
+                    }}
+                    pathOptions={{
+                      color: ALT_DEST_COLORS[idx % ALT_DEST_COLORS.length].line,
+                      weight: isHovered ? 5 : 3.5,
+                      opacity: isHovered ? 1 : 0.72,
+                      dashArray: isHovered ? '10, 6' : '7, 8',
+                      dashOffset: '0',
+                      lineCap: 'round',
+                      lineJoin: 'round',
+                    }}
+                  />
+                  {/* Endpoint marker */}
+                  <CircleMarker
+                    center={[alt.lat, alt.lng]}
+                    radius={isHovered ? 11 : 8}
+                    pathOptions={{
+                      color: ALT_DEST_COLORS[idx % ALT_DEST_COLORS.length].line,
+                      fillColor: isHovered
+                        ? ALT_DEST_COLORS[idx % ALT_DEST_COLORS.length].line
+                        : 'rgba(16,8,3,0.9)',
+                      fillOpacity: 1,
+                      weight: 2.5,
+                    }}
+                    eventHandlers={{
+                      mouseover: () => setHoveredAlternate(idx),
+                      mouseout: () => setHoveredAlternate(null),
+                      click: () => {
+                        setSelectedAlternate(alt);
+                        setShowAlternateComparison(true);
+                      },
+                    }}
+                  >
+                    <Popup>
+                      <div style={{ fontFamily: 'DM Sans, sans-serif', minWidth: 180 }}>
+                        <div style={{ fontWeight: 700, color: ALT_DEST_COLORS[idx % ALT_DEST_COLORS.length].line, marginBottom: 4 }}>
+                          Alt {idx + 1}: {alt.name}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#b09878' }}>
+                          {alt.routeDistance} · {alt.routeDuration}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#8cd69c', marginTop: 4 }}>
+                          ✓ {alt.hazardCount === 0 ? 'No hazards on route' : `${alt.hazardCount} hazard(s) — safer than original`}
+                        </div>
+                        <button
+                          onClick={() => { setSelectedAlternate(alt); setShowAlternateComparison(true); }}
+                          style={{
+                            marginTop: 8, padding: '5px 10px', background: '#c06c30', border: 'none',
+                            borderRadius: 8, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                          }}
+                        >
+                          Compare →
+                        </button>
+                      </div>
+                    </Popup>
+                  </CircleMarker>
+
+                  {/* Floating label at midpoint of route */}
+                  {isHovered && alt.routeCoords.length > 2 && (() => {
+                    const midIdx = Math.floor(alt.routeCoords.length / 2);
+                    const midPt = alt.routeCoords[midIdx];
+                    return (
+                      <Marker
+                        position={midPt}
+                        icon={makeAltLabelIcon(alt, idx, ALT_DEST_COLORS[idx % ALT_DEST_COLORS.length].line)}
+                        interactive={false}
+                      />
+                    );
+                  })()}
+                </React.Fragment>
+              );
+            })}
+
           </MapContainer>
         </div>
 
@@ -3684,35 +4374,6 @@ export default function AccessibleMap() {
                     </>
                   )}
                 </button>
-
-                {/* Map Legend - Commented out for now */}
-                {/* <button className="sc-leg-btn" onClick={() => setLegendOpen((o) => !o)}>
-          <span className="sc-leg-lbl">Map Legend</span>
-          <ChevronDown size={13} className={`leg-chv${legendOpen ? " open" : ""}`} />
-        </button>
-        {legendOpen && (
-          <div className="sc-leg-body" role="list">
-            {[
-              { color: "#8cd69c", label: "Safe Route (70-100%)", type: "line" },
-              { color: "#ffb347", label: "Caution Route (40-69%)", type: "line" },
-              { color: "#ff7b6b", label: "Unsafe Route (0-39%)", type: "line" },
-              { color: "#4fc3f7", label: "Transit (Bus) Segment", type: "line" },
-              { color: "#8cd69c", label: "Walking Segment", type: "line", dash: true },
-              { color: "#ff7b6b", label: "Construction Zone", type: "circle", dash: true },
-              { color: "#ffb347", label: "Hazard Area", type: "circle" },
-              { color: "#e8a870", label: "Alternative Route", type: "line", dash: true },
-            ].map((item) => (
-              <div key={item.label} className="leg-row" role="listitem">
-                {item.type === "circle" ? (
-                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: item.color, border: item.dash ? "1px dashed white" : "none", flexShrink: 0 }} />
-                ) : (
-                  <div style={{ width: 28, height: 3, borderRadius: 2, flexShrink: 0, background: item.dash ? `repeating-linear-gradient(90deg,${item.color} 0,${item.color} 6px,transparent 6px,transparent 10px)` : item.color }} />
-                )}
-                <span className="leg-lbl">{item.label}</span>
-              </div>
-            ))}
-          </div>
-        )} */}
               </>
             )}
           </div>
@@ -3742,6 +4403,41 @@ export default function AccessibleMap() {
               routeType={routeType}
             />
           </div>
+        )}
+
+        {/* ── ALTERNATE DESTINATIONS PANEL ── */}
+        {showAlternateDestinations && !alternatesDismissed && alternateDestinations.length > 0 && (
+          <Suspense fallback={null}>
+            <AlternateDestinationsPanel
+              alternateDestinations={alternateDestinations}
+              loading={alternateDestinationsLoading}
+              triggerReason={alternateDestinationsTriggerReason}
+              routeHazardSummary={routeHazardSummary}
+              hoveredAlternate={hoveredAlternate}
+              selectedAlternate={selectedAlternate}
+              showComparison={showAlternateComparison}
+              originalDestinationName={toVal}
+              originalRouteDistance={routeInfo?.distance || ''}
+              originalRouteDuration={routeInfo?.duration || ''}
+              originalRouteSteps={routeSteps}
+              onHoverAlternate={setHoveredAlternate}
+              onSelectAlternate={(alt) => {
+                setSelectedAlternate(alt);
+                setShowAlternateComparison(true);
+              }}
+              onAcceptAlternate={handleAcceptAlternate}
+              onDismiss={() => {
+                setAlternatesDismissed(true);
+                setShowAlternateDestinations(false);
+                say('Continuing with original route. Hazards present — proceed with caution.');
+              }}
+              onCloseComparison={() => {
+                setShowAlternateComparison(false);
+                setSelectedAlternate(null);
+              }}
+              isMobile={window.innerWidth < 640}
+            />
+          </Suspense>
         )}
 
         {/* ── MAP TYPE BAR ── */}

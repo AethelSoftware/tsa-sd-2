@@ -1,7 +1,7 @@
 """
 Monitor external hazard sources and integrate with tracking system.
 """
-
+#hazard_monitor.py
 import requests
 import json
 import time

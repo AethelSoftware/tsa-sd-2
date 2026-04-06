@@ -1283,7 +1283,7 @@ def add_model_endpoints(app):
                     cache_buster = time.time()
                     logger.info(f"Route request cache buster: {cache_buster}")
                     
-                                        # Log the exact coordinates being sent
+                    # Log the exact coordinates being sent
                     logger.info(f"=== CALLING TOMTOM ROUTER ===")
                     logger.info(f"Start: {float(start_lat):.6f}, {float(start_lng):.6f}")
                     logger.info(f"Dest: {float(end_lat):.6f}, {float(end_lng):.6f}")
@@ -2118,7 +2118,227 @@ def add_model_endpoints(app):
                 'success': False,
                 'error': str(e)
             }), 500
-    
+
+    # ── INSERT AFTER /api/check-obstructions endpoint ─────────────────
+    # (new endpoint 1 of 2)
+
+    @app.route("/api/alternate-destinations/check", methods=['POST'])
+    def check_alternate_destinations_needed():
+        """
+        Lightweight endpoint: checks if a route passes through hazards and
+        whether alternate destinations should be suggested.
+        Used by frontend to decide whether to trigger full alternate computation.
+        """
+        try:
+            data = request.json
+            route_coords = data.get('route_coords', [])
+            dest_lat = float(data.get('dest_lat', 0))
+            dest_lng = float(data.get('dest_lng', 0))
+            buffer_meters = float(data.get('buffer_meters', 120))
+            
+            if not route_coords:
+                return jsonify({'success': False, 'error': 'No route coordinates provided'}), 400
+            
+            waypoints = []
+            for coord in route_coords:
+                if isinstance(coord, (list, tuple)) and len(coord) >= 2:
+                    waypoints.append((float(coord[0]), float(coord[1])))
+                elif isinstance(coord, dict):
+                    waypoints.append((float(coord.get('lat', 0)), float(coord.get('lng', 0))))
+            
+            # Fetch current hazards for the route area
+            if not waypoints:
+                return jsonify({'success': False, 'error': 'No valid coordinates'}), 400
+            
+            mid_lat = sum(w[0] for w in waypoints) / len(waypoints)
+            mid_lng = sum(w[1] for w in waypoints) / len(waypoints)
+            
+            # Get TomTom incidents + news hazards in route area
+            all_hazards = []
+            tomtom_key = os.getenv('TOMTOM_API_KEY') or (tomtom_router.api_key if tomtom_router else None)
+            
+            if tomtom_key:
+                try:
+                    route_span_lat = max(w[0] for w in waypoints) - min(w[0] for w in waypoints)
+                    route_span_lng = max(w[1] for w in waypoints) - min(w[1] for w in waypoints)
+                    buf_lat = max(0.005, route_span_lat / 2 + 0.002)
+                    buf_lng = max(0.007, route_span_lng / 2 + 0.003)
+                    bbox = f"{mid_lng - buf_lng},{mid_lat - buf_lat},{mid_lng + buf_lng},{mid_lat + buf_lat}"
+                    fields = "{incidents{geometry{type,coordinates},properties{iconCategory,events{description}}}}"
+                    url = (f"https://api.tomtom.com/traffic/services/5/incidentDetails"
+                           f"?key={tomtom_key}&bbox={bbox}&fields={fields}&timeValidityFilter=present")
+                    resp = requests.get(url, timeout=6)
+                    if resp.status_code == 200:
+                        for inc in resp.json().get('incidents', []):
+                            geom = inc.get('geometry', {}); coords = geom.get('coordinates', [])
+                            if not coords: continue
+                            if geom.get('type') == 'Point':
+                                inc_lat, inc_lng = coords[1], coords[0]
+                            elif geom.get('type') == 'LineString' and coords:
+                                mid_i = coords[len(coords)//2]; inc_lat, inc_lng = mid_i[1], mid_i[0]
+                            else: continue
+                            all_hazards.append({'lat': inc_lat, 'lng': inc_lng, 'radius': 50, 'severity': 0.6,
+                                                'type': 'incident', 'source': 'tomtom'})
+                except Exception as e:
+                    logger.warning(f"TomTom fetch for alt-dest check failed: {e}")
+            
+            try:
+                from news_hazard_fetcher import get_news_fetcher
+                news = get_news_fetcher()
+                for h in news.get_hazards_in_area(mid_lat, mid_lng, 1500):
+                    all_hazards.append({'lat': h['lat'], 'lng': h['lng'],
+                                        'radius': 100, 'severity': h.get('severity', 0.5),
+                                        'type': h.get('type', 'hazard'), 'source': 'news'})
+            except Exception as e:
+                logger.debug(f"News hazard fetch for alt-dest check: {e}")
+            
+            # Check each route segment against each hazard
+            route_hazards = []
+            for hazard in all_hazards:
+                if hazard.get('severity', 0) < 0.5: continue
+                effective_radius = hazard.get('radius', 50) + buffer_meters
+                for i in range(len(waypoints) - 1):
+                    seg_s = [waypoints[i][1], waypoints[i][0]]
+                    seg_e = [waypoints[i+1][1], waypoints[i+1][0]]
+                    hz_pt = [hazard['lng'], hazard['lat']]
+                    
+                    # Simplified point-to-segment distance
+                    dx, dy = seg_e[0]-seg_s[0], seg_e[1]-seg_s[1]
+                    if dx == 0 and dy == 0:
+                        dist = haversine_distance(hazard['lat'], hazard['lng'], waypoints[i][0], waypoints[i][1])
+                    else:
+                        t = max(0, min(1, ((hz_pt[0]-seg_s[0])*dx + (hz_pt[1]-seg_s[1])*dy) / (dx*dx+dy*dy)))
+                        proj_lng = seg_s[0] + t*dx; proj_lat = seg_s[1] + t*dy
+                        dist = haversine_distance(hazard['lat'], hazard['lng'], proj_lat, proj_lng)
+                    
+                    if dist < effective_radius:
+                        if not any(abs(h['lat']-hazard['lat'])<0.0001 and abs(h['lng']-hazard['lng'])<0.0001
+                                   for h in route_hazards):
+                            route_hazards.append({**hazard, 'distance_from_route': round(dist, 1)})
+                        break
+            
+            # Check if destination itself is in hazard
+            dest_in_hazard = None
+            for h in all_hazards:
+                d = haversine_distance(dest_lat, dest_lng, h['lat'], h['lng'])
+                if d < h.get('radius', 50) and h.get('severity', 0) >= 0.6:
+                    dest_in_hazard = h; break
+            
+            worst_severity = max((h['severity'] for h in route_hazards), default=0)
+            
+            return jsonify({
+                'success': True,
+                'should_suggest_alternates': len(route_hazards) > 0 or dest_in_hazard is not None,
+                'route_hazards': route_hazards,
+                'dest_in_hazard': dest_in_hazard,
+                'hazard_count': len(route_hazards),
+                'worst_severity': worst_severity,
+                'trigger_reason': (
+                    'destination_in_hazard' if dest_in_hazard
+                    else 'route_through_hazard' if route_hazards
+                    else None
+                ),
+            })
+            
+        except Exception as e:
+            logger.error(f"Alternate destinations check error: {e}", exc_info=True)
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+
+    # ── INSERT AFTER /api/alternate-destinations/check endpoint ─────────
+    # (new endpoint 2 of 2)
+
+    @app.route("/api/alternate-destinations/search", methods=['POST'])
+    def search_alternate_destinations():
+        """
+        Searches for semantically similar POIs near the original destination
+        that are NOT in hazard zones. Returns candidates with basic metadata.
+        The frontend will fetch routes for each candidate separately.
+        """
+        try:
+            data = request.json
+            dest_lat = float(data.get('dest_lat'))
+            dest_lng = float(data.get('dest_lng'))
+            dest_name = data.get('dest_name', '')
+            user_lat = float(data.get('user_lat'))
+            user_lng = float(data.get('user_lng'))
+            category = data.get('category', 'general')
+            search_radius_m = float(data.get('search_radius_m', 1500))
+            max_results = int(data.get('max_results', 8))
+            
+            CATEGORY_SEARCH_MAP = {
+                'museum': 'museum', 'medical': 'hospital', 'education': 'university',
+                'cafe': 'coffee shop', 'restaurant': 'restaurant', 'park': 'park',
+                'shopping': 'shopping mall', 'pharmacy': 'pharmacy', 'library': 'library',
+                'transit': 'transit station', 'general': 'point of interest',
+            }
+            search_query = CATEGORY_SEARCH_MAP.get(category, 'point of interest')
+            
+            tomtom_key = os.getenv('TOMTOM_API_KEY') or (tomtom_router.api_key if tomtom_router else None)
+            if not tomtom_key:
+                return jsonify({'success': False, 'error': 'TomTom API key not configured'}), 503
+            
+            search_url = (f"https://api.tomtom.com/search/2/categorySearch/{requests.utils.quote(search_query)}.json"
+                          f"?key={tomtom_key}&lat={dest_lat}&lon={dest_lng}"
+                          f"&radius={int(search_radius_m)}&limit={max_results + 4}&language=en-US")
+            resp = requests.get(search_url, timeout=8)
+            
+            if resp.status_code != 200:
+                return jsonify({'success': False, 'error': f'TomTom search returned {resp.status_code}'}), 502
+            
+            poi_data = resp.json()
+            candidates = []
+            
+            # Fetch current hazards in area
+            all_hazards = []
+            try:
+                from news_hazard_fetcher import get_news_fetcher
+                news = get_news_fetcher()
+                for h in news.get_hazards_in_area(dest_lat, dest_lng, search_radius_m + 500):
+                    all_hazards.append(h)
+            except Exception: pass
+            
+            for result in poi_data.get('results', []):
+                pos = result.get('position', {})
+                c_lat, c_lng = pos.get('lat'), pos.get('lon')
+                if c_lat is None or c_lng is None: continue
+                
+                name = result.get('poi', {}).get('name') or result.get('address', {}).get('freeformAddress', 'Unknown')
+                address = result.get('address', {}).get('freeformAddress', '')
+                
+                dist_from_original = haversine_distance(c_lat, c_lng, dest_lat, dest_lng)
+                if dist_from_original < 80 or dist_from_original > 2500: continue
+                
+                # Check if this candidate is in a hazard zone
+                in_hazard = False
+                for h in all_hazards:
+                    if haversine_distance(c_lat, c_lng, h['lat'], h['lng']) < (h.get('radius', 100) + 30):
+                        if h.get('severity', 0) >= 0.6:
+                            in_hazard = True; break
+                if in_hazard: continue
+                
+                dist_from_user = haversine_distance(c_lat, c_lng, user_lat, user_lng)
+                
+                candidates.append({
+                    'id': result.get('id', f'poi_{len(candidates)}'),
+                    'name': name,
+                    'address': address,
+                    'lat': c_lat,
+                    'lng': c_lng,
+                    'category': category,
+                    'dist_from_original_m': round(dist_from_original, 1),
+                    'dist_from_user_m': round(dist_from_user, 1),
+                    'phone': result.get('poi', {}).get('phone', ''),
+                    'url': result.get('poi', {}).get('url', ''),
+                })
+            
+            candidates.sort(key=lambda c: c['dist_from_original_m'])
+            return jsonify({'success': True, 'candidates': candidates[:max_results]})
+            
+        except Exception as e:
+            logger.error(f"Alternate destinations search error: {e}", exc_info=True)
+            return jsonify({'success': False, 'error': str(e)}), 500
+
     # ============================================================================
     # EXISTING ENDPOINTS
     # ============================================================================
