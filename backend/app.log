@@ -9373,3 +9373,499 @@ UnboundLocalError: local variable 'fmt_dist' referenced before assignment
 2026-04-06 02:59:31,638 - gtfs_loader - INFO - Fallback: found 8 departures from stop 7996 (outside normal time window)
 2026-04-06 02:59:31,639 - gtfs_loader - INFO - Fallback: found 8 departures from stop 18499 (outside normal time window)
 2026-04-06 02:59:32,394 - transit_router - INFO - Found 14 routes with max 1 transfer(s)
+2026-04-06 03:00:22,687 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:00:23,120 - __main__ - INFO - TomTom returned 190 incidents
+2026-04-06 03:00:23,122 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:00:23,123 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 297s)
+2026-04-06 03:00:23,123 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:04:24,356 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:04:25,174 - __main__ - INFO - TomTom returned 190 incidents
+2026-04-06 03:04:25,289 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:04:25,292 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 03:04:25,293 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 03:05:12,974 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 03:05:19,840 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 03:05:19,841 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 03:05:19,907 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 03:05:19,908 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 03:05:19,908 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 03:05:19,909 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 03:05:19,909 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:05:22,960 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:05:23,182 - __main__ - INFO - TomTom returned 190 incidents
+2026-04-06 03:05:23,185 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:05:23,185 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 3s)
+2026-04-06 03:05:23,185 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:09:23,777 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:09:24,575 - __main__ - INFO - TomTom returned 193 incidents
+2026-04-06 03:09:24,705 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:09:24,709 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 244s)
+2026-04-06 03:09:24,710 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:10:22,544 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:10:22,738 - __main__ - INFO - TomTom returned 193 incidents
+2026-04-06 03:10:22,740 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:10:22,740 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 03:10:22,740 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 03:10:47,360 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 03:10:49,520 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 03:10:49,520 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 03:10:49,540 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 03:10:49,540 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 03:10:49,540 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 03:10:49,540 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 03:10:49,540 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:14:23,630 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:14:23,870 - __main__ - INFO - TomTom returned 192 incidents
+2026-04-06 03:14:23,871 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:14:23,871 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 214s)
+2026-04-06 03:14:23,871 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:15:22,545 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:15:23,260 - __main__ - INFO - TomTom returned 192 incidents
+2026-04-06 03:15:23,260 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:15:23,261 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 273s)
+2026-04-06 03:15:23,261 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:19:21,858 - voice_handler - INFO - Voice session vs-1775457957-8013 destroyed
+2026-04-06 03:19:23,632 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:19:23,906 - __main__ - INFO - TomTom returned 192 incidents
+2026-04-06 03:19:23,908 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:19:23,909 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 03:19:23,909 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 03:19:47,213 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 03:19:49,985 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 03:19:49,985 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 03:19:50,023 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 03:19:50,023 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 03:19:50,024 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 03:19:50,024 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 03:19:50,024 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:20:23,573 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:20:23,807 - __main__ - INFO - TomTom returned 191 incidents
+2026-04-06 03:20:23,808 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:20:23,809 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 33s)
+2026-04-06 03:20:23,809 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:24:23,630 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:24:23,865 - __main__ - INFO - TomTom returned 191 incidents
+2026-04-06 03:24:23,867 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:24:23,868 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 273s)
+2026-04-06 03:24:23,868 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:25:23,584 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:25:23,759 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 03:25:23,760 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:25:23,760 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 03:25:23,761 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 03:25:46,647 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 03:25:48,807 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 03:25:48,808 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 03:25:48,825 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 03:25:48,825 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 03:25:48,826 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 03:25:48,826 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 03:25:48,826 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:29:23,577 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:29:23,817 - __main__ - INFO - TomTom returned 190 incidents
+2026-04-06 03:29:23,819 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:29:23,819 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 214s)
+2026-04-06 03:29:23,819 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:30:23,557 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:30:23,778 - __main__ - INFO - TomTom returned 190 incidents
+2026-04-06 03:30:23,779 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:30:23,780 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 274s)
+2026-04-06 03:30:23,780 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:34:23,669 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:34:23,868 - __main__ - INFO - TomTom returned 190 incidents
+2026-04-06 03:34:23,869 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:34:23,870 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 03:34:23,870 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 03:34:47,667 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 03:34:49,927 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 03:34:49,928 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 03:34:49,951 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 03:34:49,951 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 03:34:49,951 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 03:34:49,951 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 03:34:49,952 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:35:23,592 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:35:23,776 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 03:35:23,777 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:35:23,778 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 33s)
+2026-04-06 03:35:23,778 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:39:23,629 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:39:23,894 - __main__ - INFO - TomTom returned 188 incidents
+2026-04-06 03:39:23,896 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:39:23,896 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 273s)
+2026-04-06 03:39:23,897 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:40:23,575 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:40:23,759 - __main__ - INFO - TomTom returned 188 incidents
+2026-04-06 03:40:23,762 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:40:23,762 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 03:40:23,763 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 03:40:46,281 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 03:40:48,407 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 03:40:48,407 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 03:40:48,427 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 03:40:48,428 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 03:40:48,428 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 03:40:48,428 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 03:40:48,428 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:44:23,695 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:44:23,951 - __main__ - INFO - TomTom returned 188 incidents
+2026-04-06 03:44:23,954 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:44:23,960 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 215s)
+2026-04-06 03:44:23,962 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:45:23,603 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:45:23,831 - __main__ - INFO - TomTom returned 188 incidents
+2026-04-06 03:45:23,835 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:45:23,836 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 275s)
+2026-04-06 03:45:23,836 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:49:23,624 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:49:24,033 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 03:49:24,042 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:49:24,054 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 03:49:24,056 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 03:49:46,750 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 03:49:48,883 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 03:49:48,883 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 03:49:48,900 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 03:49:48,900 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 03:49:48,901 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 03:49:48,901 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 03:49:48,901 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:50:23,577 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:50:23,757 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 03:50:23,759 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:50:23,759 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 34s)
+2026-04-06 03:50:23,759 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:54:23,599 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:54:23,796 - __main__ - INFO - TomTom returned 190 incidents
+2026-04-06 03:54:23,798 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:54:23,799 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 274s)
+2026-04-06 03:54:23,799 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:55:23,604 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:55:23,772 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 03:55:23,773 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:55:23,774 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 03:55:23,774 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 03:55:44,751 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 03:55:47,147 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 03:55:47,147 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 03:55:47,163 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 03:55:47,163 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 03:55:47,163 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 03:55:47,163 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 03:55:47,163 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 03:59:23,608 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 03:59:23,796 - __main__ - INFO - TomTom returned 188 incidents
+2026-04-06 03:59:23,797 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 03:59:23,798 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 216s)
+2026-04-06 03:59:23,798 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:00:23,571 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:00:23,783 - __main__ - INFO - TomTom returned 188 incidents
+2026-04-06 04:00:23,785 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:00:23,785 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 276s)
+2026-04-06 04:00:23,785 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:04:23,604 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:04:23,857 - __main__ - INFO - TomTom returned 188 incidents
+2026-04-06 04:04:23,859 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:04:23,859 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 04:04:23,859 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 04:04:44,870 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 04:04:47,032 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 04:04:47,032 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 04:04:47,048 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 04:04:47,048 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 04:04:47,049 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 04:04:47,049 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 04:04:47,049 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:05:23,569 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:05:23,747 - __main__ - INFO - TomTom returned 188 incidents
+2026-04-06 04:05:23,749 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:05:23,749 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 36s)
+2026-04-06 04:05:23,749 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:09:23,635 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:09:23,868 - __main__ - INFO - TomTom returned 188 incidents
+2026-04-06 04:09:23,870 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:09:23,870 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 276s)
+2026-04-06 04:09:23,871 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:10:23,581 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:10:23,855 - __main__ - INFO - TomTom returned 188 incidents
+2026-04-06 04:10:23,856 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:10:23,856 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 04:10:23,856 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 04:10:45,361 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 04:10:47,514 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 04:10:47,514 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 04:10:47,532 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 04:10:47,532 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 04:10:47,532 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 04:10:47,532 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 04:10:47,533 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:14:23,670 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:14:23,933 - __main__ - INFO - TomTom returned 188 incidents
+2026-04-06 04:14:23,935 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:14:23,935 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 216s)
+2026-04-06 04:14:23,936 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:15:23,584 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:15:23,760 - __main__ - INFO - TomTom returned 188 incidents
+2026-04-06 04:15:23,762 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:15:23,763 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 276s)
+2026-04-06 04:15:23,763 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:19:23,614 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:19:23,811 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 04:19:23,813 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:19:23,813 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 04:19:23,813 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 04:19:45,091 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 04:19:47,614 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 04:19:47,615 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 04:19:47,632 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 04:19:47,632 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 04:19:47,632 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 04:19:47,632 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 04:19:47,632 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:20:23,601 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:20:23,804 - __main__ - INFO - TomTom returned 188 incidents
+2026-04-06 04:20:23,806 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:20:23,807 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 36s)
+2026-04-06 04:20:23,807 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:24:23,589 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:24:23,806 - __main__ - INFO - TomTom returned 188 incidents
+2026-04-06 04:24:23,808 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:24:23,808 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 276s)
+2026-04-06 04:24:23,808 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:25:23,535 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:25:23,716 - __main__ - INFO - TomTom returned 188 incidents
+2026-04-06 04:25:23,718 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:25:23,718 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 04:25:23,718 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 04:25:44,659 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 04:25:46,819 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 04:25:46,819 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 04:25:46,836 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 04:25:46,836 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 04:25:46,836 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 04:25:46,836 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 04:25:46,836 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:29:23,577 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:29:23,826 - __main__ - INFO - TomTom returned 187 incidents
+2026-04-06 04:29:23,827 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:29:23,828 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 216s)
+2026-04-06 04:29:23,828 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:30:23,533 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:30:23,703 - __main__ - INFO - TomTom returned 187 incidents
+2026-04-06 04:30:23,704 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:30:23,705 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 276s)
+2026-04-06 04:30:23,705 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:34:23,566 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:34:23,787 - __main__ - INFO - TomTom returned 190 incidents
+2026-04-06 04:34:23,789 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:34:23,789 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 04:34:23,789 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 04:34:45,320 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 04:34:47,463 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 04:34:47,463 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 04:34:47,478 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 04:34:47,478 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 04:34:47,479 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 04:34:47,479 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 04:34:47,479 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:35:23,538 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:35:23,779 - __main__ - INFO - TomTom returned 192 incidents
+2026-04-06 04:35:23,781 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:35:23,781 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 36s)
+2026-04-06 04:35:23,781 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:39:23,559 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:39:23,815 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 04:39:23,817 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:39:23,818 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 276s)
+2026-04-06 04:39:23,818 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:40:23,522 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:40:23,714 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 04:40:23,716 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:40:23,716 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 04:40:23,716 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 04:40:44,693 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 04:40:46,850 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 04:40:46,850 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 04:40:46,865 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 04:40:46,865 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 04:40:46,865 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 04:40:46,865 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 04:40:46,866 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:44:23,608 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:44:23,796 - __main__ - INFO - TomTom returned 191 incidents
+2026-04-06 04:44:23,797 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:44:23,798 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 216s)
+2026-04-06 04:44:23,798 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:45:23,530 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:45:23,730 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 04:45:23,731 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:45:23,731 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 276s)
+2026-04-06 04:45:23,732 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:49:23,562 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:49:23,802 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 04:49:23,803 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:49:23,804 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 04:49:23,804 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 04:49:45,490 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 04:49:47,656 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 04:49:47,656 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 04:49:47,672 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 04:49:47,672 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 04:49:47,672 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 04:49:47,672 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 04:49:47,672 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:50:23,532 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:50:23,727 - __main__ - INFO - TomTom returned 190 incidents
+2026-04-06 04:50:23,729 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:50:23,729 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 36s)
+2026-04-06 04:50:23,729 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:54:23,611 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:54:23,829 - __main__ - INFO - TomTom returned 190 incidents
+2026-04-06 04:54:23,832 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:54:23,832 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 276s)
+2026-04-06 04:54:23,833 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:55:23,543 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:55:23,712 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 04:55:23,714 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:55:23,714 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 04:55:23,714 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 04:55:44,883 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 04:55:47,318 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 04:55:47,318 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 04:55:47,334 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 04:55:47,334 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 04:55:47,335 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 04:55:47,335 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 04:55:47,335 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 04:59:23,586 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 04:59:24,867 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 04:59:24,869 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 04:59:24,869 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 217s)
+2026-04-06 04:59:24,870 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 05:00:23,551 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 05:00:23,743 - __main__ - INFO - TomTom returned 188 incidents
+2026-04-06 05:00:23,745 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 05:00:23,746 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 276s)
+2026-04-06 05:00:23,746 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 05:04:23,593 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 05:04:23,822 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 05:04:23,824 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 05:04:23,824 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 05:04:23,824 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 05:04:44,863 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 05:04:47,017 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 05:04:47,017 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 05:04:47,032 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 05:04:47,033 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 05:04:47,033 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 05:04:47,033 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 05:04:47,033 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 05:05:23,565 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 05:05:23,774 - __main__ - INFO - TomTom returned 190 incidents
+2026-04-06 05:05:23,776 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 05:05:23,776 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 36s)
+2026-04-06 05:05:23,776 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 05:09:23,574 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 05:09:23,801 - __main__ - INFO - TomTom returned 191 incidents
+2026-04-06 05:09:23,803 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 05:09:23,804 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 276s)
+2026-04-06 05:09:23,804 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 05:10:23,547 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 05:10:23,706 - __main__ - INFO - TomTom returned 190 incidents
+2026-04-06 05:10:23,707 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 05:10:23,707 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 05:10:23,708 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 05:10:45,361 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 05:10:47,513 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 05:10:47,513 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 05:10:47,528 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 05:10:47,528 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 05:10:47,529 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 05:10:47,529 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 05:10:47,529 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 05:14:23,609 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 05:14:23,915 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 05:14:23,917 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 05:14:23,917 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 216s)
+2026-04-06 05:14:23,917 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 05:15:23,542 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 05:15:23,726 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 05:15:23,727 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 05:15:23,728 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 276s)
+2026-04-06 05:15:23,728 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 05:19:23,586 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 05:19:23,837 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 05:19:23,839 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 05:19:23,839 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 05:19:23,839 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 05:19:47,549 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 05:19:49,911 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 05:19:49,911 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 05:19:49,926 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 05:19:49,926 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 05:19:49,926 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 05:19:49,926 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 05:19:49,926 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 05:20:23,560 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 05:20:23,755 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 05:20:23,757 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 05:20:23,757 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 33s)
+2026-04-06 05:20:23,757 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 05:24:23,597 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 05:24:23,796 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 05:24:23,798 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 05:24:23,798 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 273s)
+2026-04-06 05:24:23,799 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 05:25:23,561 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 05:25:23,733 - __main__ - INFO - TomTom returned 189 incidents
+2026-04-06 05:25:23,735 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 05:25:23,735 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 05:25:23,735 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 05:25:45,007 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 05:25:47,158 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 05:25:47,158 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 05:25:47,173 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 05:25:47,173 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 05:25:47,173 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 05:25:47,174 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 05:25:47,174 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 05:28:27,225 - __main__ - INFO - Client disconnected: x_YtrCxZbqKaTcIvAAAC
+2026-04-06 05:53:45,479 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 05:53:46,124 - __main__ - INFO - TomTom returned 194 incidents
+2026-04-06 05:53:46,145 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 05:53:46,149 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 05:53:46,149 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 05:54:10,895 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 05:54:13,039 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 05:54:13,039 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 05:54:13,055 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 05:54:13,055 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 05:54:13,055 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 05:54:13,055 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 05:54:13,055 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 05:54:30,753 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 05:54:30,910 - __main__ - INFO - TomTom returned 194 incidents
+2026-04-06 05:54:30,911 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 05:54:30,912 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 17s)
+2026-04-06 05:54:30,912 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 05:54:30,916 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 05:54:31,055 - __main__ - INFO - TomTom returned 194 incidents
+2026-04-06 05:54:31,056 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 05:54:31,056 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 18s)
+2026-04-06 05:54:31,056 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 05:54:31,120 - __main__ - INFO - Websocket connected: kOwg0eW8bFDn57cpAAAF
+2026-04-06 05:54:31,655 - voice_handler - INFO - Session created: vs-1775469271-6506 for socket kOwg0eW8bFDn57cpAAAF
+2026-04-06 05:54:34,643 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 05:54:34,791 - __main__ - INFO - TomTom returned 194 incidents
+2026-04-06 05:54:34,792 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 05:54:34,792 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 21s)
+2026-04-06 05:54:34,793 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 05:54:51,042 - transit_router - INFO - Transit routing (40.5536,-79.9087) -> (40.4460,-80.0167)
+2026-04-06 05:54:51,078 - transit_router - INFO - Found 20 stops within 8000m of (40.5536,-79.9087)
+2026-04-06 05:54:51,085 - transit_router - INFO - Found 20 stops within 1000.0m of (40.4460,-80.0167)
+2026-04-06 05:54:51,214 - transit_router - INFO - Found 6 routes with max 1 transfer(s)
+2026-04-06 05:55:43,882 - transit_router - INFO - Transit routing (40.5536,-79.9087) -> (40.4460,-80.0167)
+2026-04-06 05:55:43,923 - transit_router - INFO - Found 20 stops within 8000m of (40.5536,-79.9087)
+2026-04-06 05:55:43,930 - transit_router - INFO - Found 20 stops within 1000.0m of (40.4460,-80.0167)
+2026-04-06 05:55:44,044 - transit_router - INFO - Found 6 routes with max 1 transfer(s)
+2026-04-06 05:55:47,269 - __main__ - INFO - Client disconnected: kOwg0eW8bFDn57cpAAAF

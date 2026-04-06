@@ -1494,17 +1494,43 @@ function buildTransitSegments(steps) {
   return segments;
 }
 
+// FIXED: Robust coordinate extraction with fallback
 function extractCoordsFromSteps(steps) {
   const pts = [];
   for (const step of steps) {
-    const geom = step.path_geometry || [];
-    for (const pt of geom) {
-      const lat = Array.isArray(pt) ? pt[0] : pt.lat;
-      const lon = Array.isArray(pt) ? pt[1] : pt.lon || pt.lng;
-      if (lat && lon) pts.push([lat, lon]);
+    let geom = step.path_geometry;
+    // If no path_geometry but we have start and end stops, create straight line
+    if (!geom || geom.length === 0) {
+      if (step.type === 'transit' && step.start_location && step.end_location) {
+        const start = step.start_location;
+        const end = step.end_location;
+        geom = [[start.lat, start.lon || start.lng], [end.lat, end.lon || end.lng]];
+      } else if (step.type === 'walk' && step.from_location && step.to_location) {
+        const from = step.from_location;
+        const to = step.to_location;
+        geom = [[from.lat, from.lon || from.lng], [to.lat, to.lon || to.lng]];
+      }
+    }
+    if (geom && geom.length) {
+      for (const pt of geom) {
+        const lat = Array.isArray(pt) ? pt[0] : pt.lat;
+        const lon = Array.isArray(pt) ? pt[1] : (pt.lon || pt.lng);
+        if (lat && lon && !isNaN(lat) && !isNaN(lon)) {
+          pts.push([lat, lon]);
+        }
+      }
     }
   }
-  return pts;
+  // Remove duplicates
+  const unique = [];
+  for (const p of pts) {
+    if (unique.length === 0 || 
+        Math.abs(unique[unique.length-1][0] - p[0]) > 0.00001 ||
+        Math.abs(unique[unique.length-1][1] - p[1]) > 0.00001) {
+      unique.push(p);
+    }
+  }
+  return unique;
 }
 
 function buildDisplayStepsFromTransit(steps) {
@@ -1526,6 +1552,8 @@ function buildDisplayStepsFromTransit(steps) {
             : `${(dist / 1000).toFixed(1)} km`,
         duration: dur >= 60 ? `${Math.round(dur / 60)} min` : `${dur} sec`,
         path_geometry: step.path_geometry || [],
+        from_location: step.from_location,
+        to_location: step.to_location,
       });
     } else if (step.type === "transit") {
       const routeName = step.route_short_name || "";
@@ -1549,6 +1577,8 @@ function buildDisplayStepsFromTransit(steps) {
             ? `${Math.round(step.duration_seconds / 60)} min`
             : `${step.duration_seconds} sec`,
         path_geometry: step.path_geometry || [],
+        start_location: step.start_location,
+        end_location: step.end_location,
       });
     }
   }
@@ -2879,14 +2909,20 @@ export default function AccessibleMap() {
             const primarySegments = buildTransitSegments(bestRoute.steps);
             setTransitSegments(primarySegments);
 
-            const alts = allRoutes.slice(1).map((alt, idx) => ({
-              coords: extractCoordsFromSteps(alt.steps),
-              route_summary: alt.route_summary,
-              safety: alt.safety?.overall_safety || 0.7,
-              total_time_seconds: alt.total_time_seconds,
-              index: idx + 1,
-            }));
+            // Build alternatives with robust coordinate extraction
+            const alts = allRoutes.slice(1).map((alt, idx) => {
+              const altCoords = extractCoordsFromSteps(alt.steps);
+              console.log(`Alternative ${idx} coords:`, altCoords);
+              return {
+                coords: altCoords,
+                route_summary: alt.route_summary,
+                safety: alt.safety?.overall_safety || 0.7,
+                total_time_seconds: alt.total_time_seconds,
+                index: idx + 1,
+              };
+            });
             setTransitAlternatives(alts);
+            console.log("Transit alternatives set:", alts);
 
             const allCoords = primarySegments.flatMap((s) => s.coords);
             setRoutePath(allCoords);
@@ -3073,7 +3109,8 @@ export default function AccessibleMap() {
         const checkAndSuggestAlternates = async (routeCoords, destLat, destLng, destName) => {
           if (alternateCheckDoneRef.current) return;
           alternateCheckDoneRef.current = true;
-          if (mode === 'transit') return;
+          // Allow alternate destinations in transit mode as well
+          // if (mode === 'transit') return;
           if (navigationActive) return;
 
           await new Promise(r => setTimeout(r, 800));
@@ -3661,14 +3698,14 @@ export default function AccessibleMap() {
             {/* ── TRANSIT ALTERNATIVE ROUTES (dotted) ── */}
             {transitAlternatives.map(
               (alt, altIdx) =>
-                alt.coords.length > 1 && (
+                alt.coords && alt.coords.length > 1 && (
                   <Polyline
                     key={`transit-alt-${altIdx}`}
                     positions={alt.coords}
                     pathOptions={{
                       color: "#e8a870",
                       weight: 3,
-                      opacity: 0.55,
+                      opacity: 0.9,
                       dashArray: "8,7",
                       lineCap: "round",
                       lineJoin: "round",
