@@ -10359,571 +10359,547 @@ UnboundLocalError: local variable 'fmt_dist' referenced before assignment
 2026-04-06 08:18:14,224 - transit_router - INFO - Found 18 routes with max 1 transfer(s)
 2026-04-06 08:18:14,471 - __main__ - INFO - Websocket connected: _3Ll1q6jkuaU_JRlAAAx
 2026-04-06 08:18:14,598 - voice_handler - INFO - Session created: vs-1775477894-1097 for socket _3Ll1q6jkuaU_JRlAAAx
-2026-04-06 12:13:23,630 - tomtom_router - WARNING - Polyline library not installed. Install with: pip install polyline
-2026-04-06 12:13:23,648 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
-2026-04-06 12:13:23,726 - tomtom_router - INFO - TomTomRouter initialized with 10 workers
-2026-04-06 12:13:23,726 - tomtom_router - INFO - All caches cleared
-2026-04-06 12:13:23,726 - __main__ - INFO - TomTom router cache cleared on startup
-2026-04-06 12:13:23,729 - gtfs_loader - INFO - Loading GTFS from C:\Users\jshah\OneDrive\Desktop\Triver\tsa-sd-2\backend\GTFS.zip...
-2026-04-06 12:15:24,520 - tomtom_router - WARNING - Polyline library not installed. Install with: pip install polyline
-2026-04-06 12:15:24,524 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
-2026-04-06 12:15:24,542 - tomtom_router - INFO - TomTomRouter initialized with 10 workers
-2026-04-06 12:15:24,544 - tomtom_router - INFO - All caches cleared
-2026-04-06 12:15:24,544 - __main__ - INFO - TomTom router cache cleared on startup
-2026-04-06 12:15:24,544 - gtfs_loader - INFO - Loading GTFS from C:\Users\jshah\OneDrive\Desktop\Triver\tsa-sd-2\backend\GTFS.zip...
-2026-04-06 12:18:41,911 - gtfs_loader - INFO - Loaded GTFS fresh: 6424 stops, 15826 trips, 15826 trip patterns - took 197.4s
-2026-04-06 12:18:44,396 - gtfs_loader - INFO - Saved GTFS to cache: gtfs_cache_2ca93cd5f90c18e5b67da8bab1140433.pkl
-2026-04-06 12:19:04,647 - transit_router - INFO - Loaded 305 shapes
-2026-04-06 12:19:05,773 - transit_router - INFO - Mapped 14879 trips to shapes
-2026-04-06 12:19:05,828 - transit_router - INFO - Loaded 101 routes
-2026-04-06 12:19:06,134 - transit_router - INFO - Cached 15826 trips
-2026-04-06 12:19:06,293 - transit_router - INFO - Route-stops index: 100 routes
-2026-04-06 12:19:06,358 - transit_router - INFO - Shape index: 305 shapes
-2026-04-06 12:19:06,358 - __main__ - INFO - GTFS transit router initialized successfully
-2026-04-06 12:19:06,377 - __main__ - INFO - Safety AI loaded successfully
-2026-04-06 12:22:27,025 - tomtom_router - WARNING - Polyline library not installed. Install with: pip install polyline
-2026-04-06 12:22:27,030 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
-2026-04-06 12:22:27,041 - tomtom_router - INFO - TomTomRouter initialized with 10 workers
-2026-04-06 12:22:27,041 - tomtom_router - INFO - All caches cleared
-2026-04-06 12:22:27,041 - __main__ - INFO - TomTom router cache cleared on startup
-2026-04-06 12:22:28,406 - gtfs_loader - INFO - Loaded GTFS from cache (age: 4 minutes)
-2026-04-06 12:22:28,406 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
-2026-04-06 12:22:48,580 - transit_router - INFO - Loaded 305 shapes
-2026-04-06 12:22:49,184 - transit_router - INFO - Mapped 14879 trips to shapes
-2026-04-06 12:22:49,216 - transit_router - INFO - Loaded 101 routes
-2026-04-06 12:22:49,366 - transit_router - INFO - Cached 15826 trips
-2026-04-06 12:22:49,472 - transit_router - INFO - Route-stops index: 100 routes
-2026-04-06 12:22:49,532 - transit_router - INFO - Shape index: 305 shapes
-2026-04-06 12:22:49,535 - __main__ - INFO - GTFS transit router initialized successfully
-2026-04-06 12:22:49,540 - __main__ - INFO - Safety AI loaded successfully
-2026-04-06 12:24:14,586 - tomtom_router - WARNING - Polyline library not installed. Install with: pip install polyline
-2026-04-06 12:24:14,588 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
-2026-04-06 12:24:14,599 - tomtom_router - INFO - TomTomRouter initialized with 10 workers
-2026-04-06 12:24:14,604 - tomtom_router - INFO - All caches cleared
-2026-04-06 12:24:14,604 - __main__ - INFO - TomTom router cache cleared on startup
-2026-04-06 12:24:15,894 - gtfs_loader - INFO - Loaded GTFS from cache (age: 6 minutes)
-2026-04-06 12:24:15,894 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
-2026-04-06 12:24:36,175 - transit_router - INFO - Loaded 305 shapes
-2026-04-06 12:24:36,783 - transit_router - INFO - Mapped 14879 trips to shapes
-2026-04-06 12:24:36,822 - transit_router - INFO - Loaded 101 routes
-2026-04-06 12:24:36,999 - transit_router - INFO - Cached 15826 trips
-2026-04-06 12:24:37,128 - transit_router - INFO - Route-stops index: 100 routes
-2026-04-06 12:24:37,203 - transit_router - INFO - Shape index: 305 shapes
-2026-04-06 12:24:37,203 - __main__ - INFO - GTFS transit router initialized successfully
-2026-04-06 12:24:37,215 - __main__ - INFO - Safety AI loaded successfully
-2026-04-06 12:24:39,594 - voice_handler - WARNING - Vosk not installed. Run: pip install vosk
-2026-04-06 12:24:39,596 - voice_handler - INFO - Geoapify client available
-2026-04-06 12:24:39,602 - voice_handler - INFO - Voice handler v3 initialized � intent detection + phonetic fingerprinting (84 rules, 47 landmarks)
-2026-04-06 12:24:39,602 - __main__ - INFO - Voice handler registered successfully
-2026-04-06 12:24:39,650 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
-2026-04-06 12:24:39,650 - __main__ - INFO - RealTimeTracker initialized successfully
-2026-04-06 12:24:39,650 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
-2026-04-06 12:24:39,796 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
- * Running on http://127.0.0.1:5000
-2026-04-06 12:24:39,798 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
-2026-04-06 12:24:42,798 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:24:42] "GET /api/hello HTTP/1.1" 200 -
-2026-04-06 12:24:42,974 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:24:42] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
-2026-04-06 12:24:52,555 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:24:52] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
-2026-04-06 12:24:55,261 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:24:55] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
-2026-04-06 12:25:08,588 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:25:08] "[32mGET /api/callback?state=bMsydC0QSwAt6uIw8UGYSSOaEzgfQE&iss=https://accounts.google.com&code=4/0Aci98E9nT8IhqGZVcfHrz_H8KZ503YiE2SxjlTSgJvdfWDf_ifEiBxjqWW4rFayNpqnLDg&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+openid+https://www.googleapis.com/auth/userinfo.email&authuser=0&prompt=none HTTP/1.1[0m" 302 -
-2026-04-06 12:25:10,198 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:25:10] "GET /api/voice/status HTTP/1.1" 200 -
-2026-04-06 12:25:10,343 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:25:10] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:25:10,365 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:25:10] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:25:10,386 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:25:10] "GET /api/voice/status HTTP/1.1" 200 -
-2026-04-06 12:25:10,429 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 12:25:10,444 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 12:25:10,843 - __main__ - INFO - Websocket connected: V--nRqK130Uf9l9MAAAC
-2026-04-06 12:25:12,800 - __main__ - INFO - TomTom returned 251 incidents
-2026-04-06 12:25:12,807 - __main__ - INFO - Found 0 active 911 emergencies in area
-2026-04-06 12:25:12,823 - __main__ - INFO - TomTom returned 251 incidents
-2026-04-06 12:25:12,842 - __main__ - INFO - Found 0 active 911 emergencies in area
-2026-04-06 12:25:15,409 - news_hazard_fetcher - WARNING - PulsePoint agency fetch returned 401
-2026-04-06 12:25:15,415 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
-2026-04-06 12:25:15,415 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
-2026-04-06 12:25:15,415 - news_hazard_fetcher - INFO - Cache duration: 300s
-2026-04-06 12:25:15,415 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
-2026-04-06 12:25:15,415 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
-2026-04-06 12:25:15,636 - news_hazard_fetcher - WARNING - PulsePoint agency fetch returned 401
-2026-04-06 12:25:15,647 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
-2026-04-06 12:25:15,647 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
-2026-04-06 12:25:15,647 - news_hazard_fetcher - INFO - Cache duration: 300s
-2026-04-06 12:25:15,647 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
-2026-04-06 12:25:15,656 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
-2026-04-06 12:25:20,180 - news_hazard_fetcher - ERROR - Failed to fetch crime data: Missing optional dependency 'openpyxl'.  Use pip or conda to install openpyxl.
-2026-04-06 12:25:20,197 - news_hazard_fetcher - INFO - Crime hazards: 0
-2026-04-06 12:25:20,201 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
-2026-04-06 12:25:20,206 - news_hazard_fetcher - INFO - Total hazards after filtering: 0
-2026-04-06 12:25:20,217 - news_hazard_fetcher - INFO - Filtered out 0 low-threat incidents
-2026-04-06 12:25:20,217 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 12:25:20,241 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:25:20] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:25:20,434 - news_hazard_fetcher - ERROR - Failed to fetch crime data: Missing optional dependency 'openpyxl'.  Use pip or conda to install openpyxl.
-2026-04-06 12:25:20,442 - news_hazard_fetcher - INFO - Crime hazards: 0
-2026-04-06 12:25:20,442 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
-2026-04-06 12:25:20,444 - news_hazard_fetcher - INFO - Total hazards after filtering: 0
-2026-04-06 12:25:20,448 - news_hazard_fetcher - INFO - Filtered out 0 low-threat incidents
-2026-04-06 12:25:20,452 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 12:25:20,479 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:25:20] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:25:53,685 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:25:53] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
-2026-04-06 12:25:53,695 - __main__ - INFO - === ROUTE REQUEST ===
-2026-04-06 12:25:53,719 - __main__ - INFO - From: 40.472,-79.94
-2026-04-06 12:25:53,745 - __main__ - INFO - To: 37.44806,-91.695785
-2026-04-06 12:25:53,759 - __main__ - INFO - Mode: pedestrian
-2026-04-06 12:25:53,772 - __main__ - INFO - Force refresh: False
-2026-04-06 12:25:53,777 - tomtom_router - INFO - All caches cleared
-2026-04-06 12:25:53,777 - __main__ - INFO - TomTom cache cleared before route calculation
-2026-04-06 12:25:53,790 - __main__ - INFO - Fetching hazards within 5000m of route midpoint
-2026-04-06 12:25:53,790 - news_hazard_fetcher - INFO - Returning 0 cached hazards (age: 33s)
-2026-04-06 12:25:53,811 - __main__ - INFO - Found 0 crime/hazard zones to avoid
-2026-04-06 12:25:56,700 - __main__ - INFO - Added 0 construction zones to avoidance list
-2026-04-06 12:25:56,700 - __main__ - INFO - Route request cache buster: 1775492756.7008536
-2026-04-06 12:25:56,703 - __main__ - INFO - === CALLING TOMTOM ROUTER ===
-2026-04-06 12:25:56,703 - __main__ - INFO - Start: 40.472000, -79.940000
-2026-04-06 12:25:56,703 - __main__ - INFO - Dest: 37.448060, -91.695785
-2026-04-06 12:25:56,703 - __main__ - INFO - force_refresh: True
-2026-04-06 12:25:56,705 - tomtom_router - INFO - Calculating route: (40.472, -79.94) -> (37.44806, -91.695785)
-2026-04-06 12:25:58,810 - tomtom_router - WARNING - TomTom returned status 400
-2026-04-06 12:25:58,810 - tomtom_router - INFO - Falling back to OSRM
-2026-04-06 12:26:11,205 - urllib3.connectionpool - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=10)")': /route/v1/foot/-79.940000,40.472000;-91.695785,37.448060?overview=simplified&geometries=polyline&steps=true
-2026-04-06 12:26:29,867 - urllib3.connectionpool - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=10)")': /route/v1/foot/-79.940000,40.472000;-91.695785,37.448060?overview=simplified&geometries=polyline&steps=true
-2026-04-06 12:26:45,213 - tomtom_router - WARNING - OSRM attempt 1 failed: HTTPSConnectionPool(host='router.project-osrm.org', port=443): Max retries exceeded with url: /route/v1/foot/-79.940000,40.472000;-91.695785,37.448060?overview=simplified&geometries=polyline&steps=true (Caused by ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=10)"))
-2026-04-06 12:27:02,076 - urllib3.connectionpool - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=15)")': /route/v1/foot/-79.940000,40.472000;-91.695785,37.448060?overview=simplified&geometries=polyline&steps=true
-2026-04-06 12:27:22,862 - urllib3.connectionpool - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=15)")': /route/v1/foot/-79.940000,40.472000;-91.695785,37.448060?overview=simplified&geometries=polyline&steps=true
-2026-04-06 12:27:47,554 - tomtom_router - WARNING - OSRM attempt 2 failed: HTTPSConnectionPool(host='router.project-osrm.org', port=443): Max retries exceeded with url: /route/v1/foot/-79.940000,40.472000;-91.695785,37.448060?overview=simplified&geometries=polyline&steps=true (Caused by ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=15)"))
-2026-04-06 12:27:47,554 - tomtom_router - ERROR - All routing failed, using straight-line fallback
-2026-04-06 12:27:47,554 - tomtom_router - WARNING - Using straight-line fallback: 1069616m
-2026-04-06 12:27:47,554 - __main__ - INFO - TomTom returned route ending at: 37.44806, -91.695785
-2026-04-06 12:27:47,554 - __main__ - INFO - TomTom route with hazard avoidance successful
-2026-04-06 12:27:51,278 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
-2026-04-06 12:27:51,302 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:27:51] "POST /api/calculate-route HTTP/1.1" 200 -
-2026-04-06 12:27:51,330 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:27:51] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:27:51,352 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 12:27:52,249 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:27:52] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
-2026-04-06 12:27:52,336 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:27:52] "POST /api/check-obstructions HTTP/1.1" 200 -
-2026-04-06 12:27:53,742 - __main__ - INFO - TomTom returned 253 incidents
-2026-04-06 12:27:53,752 - news_hazard_fetcher - INFO - Returning 0 cached hazards (age: 153s)
-2026-04-06 12:27:53,752 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 12:27:53,778 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:27:53] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:28:43,054 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:28:43] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
-2026-04-06 12:28:43,070 - __main__ - INFO - === ROUTE REQUEST ===
-2026-04-06 12:28:43,070 - __main__ - INFO - From: 40.472,-79.94
-2026-04-06 12:28:43,077 - __main__ - INFO - To: 40.4460173,-80.0167014
-2026-04-06 12:28:43,086 - __main__ - INFO - Mode: pedestrian
-2026-04-06 12:28:43,100 - __main__ - INFO - Force refresh: False
-2026-04-06 12:28:43,102 - tomtom_router - INFO - All caches cleared
-2026-04-06 12:28:43,102 - __main__ - INFO - TomTom cache cleared before route calculation
-2026-04-06 12:28:43,112 - __main__ - INFO - Fetching hazards within 3551.7030919688996m of route midpoint
-2026-04-06 12:28:43,121 - news_hazard_fetcher - INFO - Returning 0 cached hazards (age: 202s)
-2026-04-06 12:28:43,142 - __main__ - INFO - Found 0 crime/hazard zones to avoid
-2026-04-06 12:28:45,132 - __main__ - INFO - Added 37 construction zones to avoidance list
-2026-04-06 12:28:45,132 - __main__ - INFO - Routing with 37 total hazards to avoid
-2026-04-06 12:28:45,132 - __main__ - INFO - Route request cache buster: 1775492925.132148
-2026-04-06 12:28:45,139 - __main__ - INFO - === CALLING TOMTOM ROUTER ===
-2026-04-06 12:28:45,144 - __main__ - INFO - Start: 40.472000, -79.940000
-2026-04-06 12:28:45,147 - __main__ - INFO - Dest: 40.446017, -80.016701
-2026-04-06 12:28:45,155 - __main__ - INFO - force_refresh: True
-2026-04-06 12:28:45,168 - tomtom_router - INFO - Calculating route: (40.472, -79.94) -> (40.4460173, -80.0167014)
-2026-04-06 12:28:54,131 - tomtom_router - INFO - Generated 16 turn-by-turn instructions
-2026-04-06 12:28:57,613 - tomtom_router - INFO - Generated 22 turn-by-turn instructions
-2026-04-06 12:28:58,831 - tomtom_router - INFO - Generated 12 turn-by-turn instructions
-2026-04-06 12:28:58,838 - tomtom_router - INFO - TomTom route found (hazard score: 2.39)
-2026-04-06 12:28:58,844 - __main__ - INFO - TomTom returned route ending at: 40.4460173, -80.0167014
-2026-04-06 12:28:58,844 - __main__ - INFO - TomTom route with hazard avoidance successful
-2026-04-06 12:29:02,661 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
-2026-04-06 12:29:02,708 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:29:02] "POST /api/calculate-route HTTP/1.1" 200 -
-2026-04-06 12:29:03,830 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:29:03] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:29:03,862 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 12:29:04,104 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:29:04] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
-2026-04-06 12:29:04,133 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:29:04] "POST /api/check-obstructions HTTP/1.1" 200 -
-2026-04-06 12:29:05,993 - __main__ - INFO - TomTom returned 258 incidents
-2026-04-06 12:29:05,996 - news_hazard_fetcher - INFO - Returning 0 cached hazards (age: 225s)
-2026-04-06 12:29:05,996 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 12:29:06,013 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:29:06] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:29:07,925 - __main__ - INFO - === ROUTE REQUEST ===
-2026-04-06 12:29:07,928 - __main__ - INFO - === ROUTE REQUEST ===
-2026-04-06 12:29:07,928 - __main__ - INFO - From: 40.472,-79.94
-2026-04-06 12:29:07,930 - __main__ - INFO - === ROUTE REQUEST ===
-2026-04-06 12:29:07,930 - __main__ - INFO - From: 40.472,-79.94
-2026-04-06 12:29:07,933 - __main__ - INFO - === ROUTE REQUEST ===
-2026-04-06 12:29:07,936 - __main__ - INFO - To: 40.450336,-80.020216
-2026-04-06 12:29:07,938 - __main__ - INFO - From: 40.472,-79.94
-2026-04-06 12:29:07,939 - __main__ - INFO - To: 40.452664,-80.016495
-2026-04-06 12:29:07,954 - __main__ - INFO - From: 40.472,-79.94
-2026-04-06 12:29:07,962 - __main__ - INFO - Mode: pedestrian
-2026-04-06 12:29:07,977 - __main__ - INFO - To: 40.448335,-80.002667
-2026-04-06 12:29:07,982 - __main__ - INFO - Mode: pedestrian
-2026-04-06 12:29:07,989 - __main__ - INFO - To: 40.445976,-80.017901
-2026-04-06 12:29:07,997 - __main__ - INFO - Force refresh: False
-2026-04-06 12:29:08,007 - __main__ - INFO - Mode: pedestrian
-2026-04-06 12:29:08,012 - __main__ - INFO - Force refresh: False
-2026-04-06 12:29:08,046 - __main__ - INFO - Mode: pedestrian
-2026-04-06 12:29:08,060 - tomtom_router - INFO - All caches cleared
-2026-04-06 12:29:08,071 - __main__ - INFO - Force refresh: False
-2026-04-06 12:29:08,081 - tomtom_router - INFO - All caches cleared
-2026-04-06 12:29:08,109 - __main__ - INFO - Force refresh: False
-2026-04-06 12:29:08,114 - __main__ - INFO - TomTom cache cleared before route calculation
-2026-04-06 12:29:08,120 - tomtom_router - INFO - All caches cleared
-2026-04-06 12:29:08,131 - __main__ - INFO - TomTom cache cleared before route calculation
-2026-04-06 12:29:08,138 - tomtom_router - INFO - All caches cleared
-2026-04-06 12:29:08,144 - __main__ - INFO - Fetching hazards within 3600.6540779160064m of route midpoint
-2026-04-06 12:29:08,146 - __main__ - INFO - TomTom cache cleared before route calculation
-2026-04-06 12:29:08,146 - __main__ - INFO - Fetching hazards within 3409.674731281488m of route midpoint
-2026-04-06 12:29:08,152 - __main__ - INFO - TomTom cache cleared before route calculation
-2026-04-06 12:29:08,160 - news_hazard_fetcher - INFO - Returning 0 cached hazards (age: 227s)
-2026-04-06 12:29:08,162 - __main__ - INFO - Fetching hazards within 2959.475366185339m of route midpoint
-2026-04-06 12:29:08,162 - news_hazard_fetcher - INFO - Returning 0 cached hazards (age: 227s)
-2026-04-06 12:29:08,170 - __main__ - INFO - Found 0 crime/hazard zones to avoid
-2026-04-06 12:29:08,181 - __main__ - INFO - Found 0 crime/hazard zones to avoid
-2026-04-06 12:29:08,206 - news_hazard_fetcher - INFO - Returning 0 cached hazards (age: 227s)
-2026-04-06 12:29:08,208 - __main__ - INFO - Fetching hazards within 3599.0447308729076m of route midpoint
-2026-04-06 12:29:08,231 - __main__ - INFO - Found 0 crime/hazard zones to avoid
-2026-04-06 12:29:08,240 - news_hazard_fetcher - INFO - Returning 0 cached hazards (age: 227s)
-2026-04-06 12:29:08,256 - __main__ - INFO - Found 0 crime/hazard zones to avoid
-2026-04-06 12:29:10,187 - __main__ - INFO - Added 37 construction zones to avoidance list
-2026-04-06 12:29:10,187 - __main__ - INFO - Routing with 37 total hazards to avoid
-2026-04-06 12:29:10,187 - __main__ - INFO - Route request cache buster: 1775492950.187205
-2026-04-06 12:29:10,190 - __main__ - INFO - === CALLING TOMTOM ROUTER ===
-2026-04-06 12:29:10,190 - __main__ - INFO - Start: 40.472000, -79.940000
-2026-04-06 12:29:10,190 - __main__ - INFO - Dest: 40.450336, -80.020216
-2026-04-06 12:29:10,193 - __main__ - INFO - force_refresh: True
-2026-04-06 12:29:10,197 - tomtom_router - INFO - Calculating route: (40.472, -79.94) -> (40.450336, -80.020216)
-2026-04-06 12:29:10,399 - __main__ - INFO - Added 32 construction zones to avoidance list
-2026-04-06 12:29:10,401 - __main__ - INFO - Routing with 32 total hazards to avoid
-2026-04-06 12:29:10,404 - __main__ - INFO - Route request cache buster: 1775492950.4046082
-2026-04-06 12:29:10,404 - __main__ - INFO - === CALLING TOMTOM ROUTER ===
-2026-04-06 12:29:10,404 - __main__ - INFO - Start: 40.472000, -79.940000
-2026-04-06 12:29:10,404 - __main__ - INFO - Added 37 construction zones to avoidance list
-2026-04-06 12:29:10,404 - __main__ - INFO - Dest: 40.448335, -80.002667
-2026-04-06 12:29:10,409 - __main__ - INFO - Routing with 37 total hazards to avoid
-2026-04-06 12:29:10,409 - __main__ - INFO - force_refresh: True
-2026-04-06 12:29:10,409 - __main__ - INFO - Route request cache buster: 1775492950.409328
-2026-04-06 12:29:10,412 - tomtom_router - INFO - Calculating route: (40.472, -79.94) -> (40.448335, -80.002667)
-2026-04-06 12:29:10,412 - __main__ - INFO - === CALLING TOMTOM ROUTER ===
-2026-04-06 12:29:10,417 - __main__ - INFO - Start: 40.472000, -79.940000
-2026-04-06 12:29:10,421 - __main__ - INFO - Dest: 40.445976, -80.017901
-2026-04-06 12:29:10,424 - __main__ - INFO - force_refresh: True
-2026-04-06 12:29:10,426 - tomtom_router - INFO - Calculating route: (40.472, -79.94) -> (40.445976, -80.017901)
-2026-04-06 12:29:10,436 - __main__ - INFO - Added 35 construction zones to avoidance list
-2026-04-06 12:29:10,450 - __main__ - INFO - Routing with 35 total hazards to avoid
-2026-04-06 12:29:10,459 - __main__ - INFO - Route request cache buster: 1775492950.4571874
-2026-04-06 12:29:10,472 - __main__ - INFO - === CALLING TOMTOM ROUTER ===
-2026-04-06 12:29:10,490 - __main__ - INFO - Start: 40.472000, -79.940000
-2026-04-06 12:29:10,498 - __main__ - INFO - Dest: 40.452664, -80.016495
-2026-04-06 12:29:10,504 - __main__ - INFO - force_refresh: True
-2026-04-06 12:29:10,512 - tomtom_router - INFO - Calculating route: (40.472, -79.94) -> (40.452664, -80.016495)
-2026-04-06 12:29:13,737 - tomtom_router - INFO - Generated 20 turn-by-turn instructions
-2026-04-06 12:29:17,059 - tomtom_router - INFO - Generated 21 turn-by-turn instructions
-2026-04-06 12:29:19,285 - tomtom_router - INFO - Generated 15 turn-by-turn instructions
-2026-04-06 12:29:21,745 - tomtom_router - INFO - Generated 14 turn-by-turn instructions
-2026-04-06 12:29:22,899 - tomtom_router - INFO - Generated 30 turn-by-turn instructions
-2026-04-06 12:29:26,320 - tomtom_router - INFO - Generated 27 turn-by-turn instructions
-2026-04-06 12:29:28,382 - tomtom_router - INFO - Generated 25 turn-by-turn instructions
-2026-04-06 12:29:29,833 - tomtom_router - INFO - Generated 20 turn-by-turn instructions
-2026-04-06 12:29:32,941 - tomtom_router - WARNING - TomTom API error: 3 (of 23) futures unfinished
-2026-04-06 12:29:32,944 - tomtom_router - INFO - Falling back to OSRM
-2026-04-06 12:29:36,332 - tomtom_router - INFO - Generated 27 turn-by-turn instructions
-2026-04-06 12:29:36,369 - tomtom_router - INFO - TomTom route found (hazard score: 2.39)
-2026-04-06 12:29:36,387 - tomtom_router - INFO - Generated 20 turn-by-turn instructions
-2026-04-06 12:29:36,387 - __main__ - INFO - TomTom returned route ending at: 40.445976, -80.017901
-2026-04-06 12:29:36,404 - tomtom_router - INFO - TomTom route found (hazard score: 7.22)
-2026-04-06 12:29:36,406 - __main__ - INFO - TomTom route with hazard avoidance successful
-2026-04-06 12:29:36,417 - __main__ - INFO - TomTom returned route ending at: 40.452664, -80.016495
-2026-04-06 12:29:36,422 - __main__ - INFO - TomTom route with hazard avoidance successful
-2026-04-06 12:29:38,564 - tomtom_router - INFO - Generated 18 turn-by-turn instructions
-2026-04-06 12:29:38,564 - tomtom_router - INFO - TomTom route found (hazard score: 2.37)
-2026-04-06 12:29:38,582 - __main__ - INFO - TomTom returned route ending at: 40.448335, -80.002667
-2026-04-06 12:29:38,599 - __main__ - INFO - TomTom route with hazard avoidance successful
-2026-04-06 12:29:45,018 - urllib3.connectionpool - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=10)")': /route/v1/foot/-79.940000,40.472000;-80.020216,40.450336?overview=simplified&geometries=polyline&steps=true
-2026-04-06 12:29:45,298 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
-2026-04-06 12:29:45,321 - __main__ - INFO - Using cached route result
-2026-04-06 12:29:45,352 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:29:45] "POST /api/calculate-route HTTP/1.1" 200 -
-2026-04-06 12:29:45,451 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
-2026-04-06 12:29:45,483 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:29:45] "POST /api/calculate-route HTTP/1.1" 200 -
-2026-04-06 12:29:45,487 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
-2026-04-06 12:29:45,516 - __main__ - INFO - Using cached route result
-2026-04-06 12:29:45,533 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:29:45] "POST /api/calculate-route HTTP/1.1" 200 -
-2026-04-06 12:29:57,317 - urllib3.connectionpool - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=10)")': /route/v1/foot/-79.940000,40.472000;-80.020216,40.450336?overview=simplified&geometries=polyline&steps=true
-2026-04-06 12:30:09,420 - tomtom_router - WARNING - OSRM attempt 1 failed: HTTPSConnectionPool(host='router.project-osrm.org', port=443): Max retries exceeded with url: /route/v1/foot/-79.940000,40.472000;-80.020216,40.450336?overview=simplified&geometries=polyline&steps=true (Caused by ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=10)"))
-2026-04-06 12:30:10,887 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:30:10] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:30:10,896 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 12:30:12,722 - __main__ - INFO - TomTom returned 258 incidents
-2026-04-06 12:30:12,722 - __main__ - INFO - Found 0 active 911 emergencies in area
-2026-04-06 12:30:12,722 - news_hazard_fetcher - INFO - Returning 0 cached hazards (age: 292s)
-2026-04-06 12:30:12,722 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 12:30:12,750 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:30:12] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:30:26,158 - urllib3.connectionpool - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=15)")': /route/v1/foot/-79.940000,40.472000;-80.020216,40.450336?overview=simplified&geometries=polyline&steps=true
-2026-04-06 12:30:43,185 - urllib3.connectionpool - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=15)")': /route/v1/foot/-79.940000,40.472000;-80.020216,40.450336?overview=simplified&geometries=polyline&steps=true
-2026-04-06 12:31:00,364 - tomtom_router - WARNING - OSRM attempt 2 failed: HTTPSConnectionPool(host='router.project-osrm.org', port=443): Max retries exceeded with url: /route/v1/foot/-79.940000,40.472000;-80.020216,40.450336?overview=simplified&geometries=polyline&steps=true (Caused by ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=15)"))
-2026-04-06 12:31:00,365 - tomtom_router - ERROR - All routing failed, using straight-line fallback
-2026-04-06 12:31:00,365 - tomtom_router - WARNING - Using straight-line fallback: 7201m
-2026-04-06 12:31:00,365 - __main__ - INFO - TomTom returned route ending at: 40.450336, -80.020216
-2026-04-06 12:31:00,365 - __main__ - INFO - TomTom route with hazard avoidance successful
-2026-04-06 12:31:04,588 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
-2026-04-06 12:31:04,600 - __main__ - INFO - Using cached route result
-2026-04-06 12:31:04,609 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:31:04] "POST /api/calculate-route HTTP/1.1" 200 -
-2026-04-06 12:31:07,403 - __main__ - INFO - Client disconnected: V--nRqK130Uf9l9MAAAC
-2026-04-06 12:31:07,417 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:31:07] "[35m[1mGET /socket.io/?EIO=4&transport=websocket HTTP/1.1[0m" 500 -
-2026-04-06 12:31:07,486 - werkzeug - ERROR - Error on request:
-Traceback (most recent call last):
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 370, in run_wsgi
-    execute(self.server.app)
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 336, in execute
-    write(b"")
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 261, in write
-    assert status_set is not None, "write() before start_response"
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: write() before start_response
-2026-04-06 12:31:12,712 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:31:12] "GET /api/voice/status HTTP/1.1" 200 -
-2026-04-06 12:31:12,723 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:31:12] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:31:12,727 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:31:12] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:31:12,753 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:31:12] "GET /api/voice/status HTTP/1.1" 200 -
-2026-04-06 12:31:12,762 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 12:31:12,785 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 12:31:12,821 - __main__ - INFO - Websocket connected: eSaqi9IitfZ1NSwPAAAF
-2026-04-06 12:31:14,648 - __main__ - INFO - TomTom returned 248 incidents
-2026-04-06 12:31:14,652 - __main__ - INFO - Found 0 active 911 emergencies in area
-2026-04-06 12:31:14,666 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
-2026-04-06 12:31:14,666 - __main__ - INFO - TomTom returned 248 incidents
-2026-04-06 12:31:14,666 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
-2026-04-06 12:31:14,670 - __main__ - INFO - Found 0 active 911 emergencies in area
-2026-04-06 12:31:14,670 - news_hazard_fetcher - INFO - Fetch already in progress, waiting for result...
-2026-04-06 12:31:14,672 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 12:31:14,681 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:31:14] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:31:18,699 - news_hazard_fetcher - ERROR - Failed to fetch crime data: Missing optional dependency 'openpyxl'.  Use pip or conda to install openpyxl.
-2026-04-06 12:31:18,717 - news_hazard_fetcher - INFO - Crime hazards: 0
-2026-04-06 12:31:18,721 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
-2026-04-06 12:31:18,727 - news_hazard_fetcher - INFO - Total hazards after filtering: 0
-2026-04-06 12:31:18,735 - news_hazard_fetcher - INFO - Filtered out 0 low-threat incidents
-2026-04-06 12:31:18,739 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 12:31:18,769 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:31:18] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:31:19,598 - __main__ - INFO - Client disconnected: eSaqi9IitfZ1NSwPAAAF
-2026-04-06 12:31:19,608 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:31:19] "[35m[1mGET /socket.io/?EIO=4&transport=websocket HTTP/1.1[0m" 500 -
-2026-04-06 12:31:19,618 - werkzeug - ERROR - Error on request:
-Traceback (most recent call last):
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 370, in run_wsgi
-    execute(self.server.app)
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 336, in execute
-    write(b"")
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 261, in write
-    assert status_set is not None, "write() before start_response"
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: write() before start_response
-2026-04-06 12:40:43,048 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:40:43] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:40:43,113 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 12:40:43,442 - __main__ - INFO - Websocket connected: mAiId4PN1s7VepPBAAAH
-2026-04-06 12:40:43,532 - __main__ - INFO - Client disconnected: mAiId4PN1s7VepPBAAAH
-2026-04-06 12:40:43,582 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:40:43] "[35m[1mGET /socket.io/?EIO=4&transport=websocket HTTP/1.1[0m" 500 -
-2026-04-06 12:40:43,628 - werkzeug - ERROR - Error on request:
-Traceback (most recent call last):
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 370, in run_wsgi
-    execute(self.server.app)
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 336, in execute
-    write(b"")
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 261, in write
-    assert status_set is not None, "write() before start_response"
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: write() before start_response
-2026-04-06 12:40:44,160 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 12:40:44,185 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 12:40:44,199 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:40:44] "GET /api/voice/status HTTP/1.1" 200 -
-2026-04-06 12:40:44,249 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:40:44] "GET /api/voice/status HTTP/1.1" 200 -
-2026-04-06 12:40:44,268 - __main__ - INFO - Websocket connected: oJAtheMszZ8Z_XhZAAAK
-2026-04-06 12:40:45,490 - __main__ - INFO - TomTom returned 257 incidents
-2026-04-06 12:40:45,494 - __main__ - INFO - Found 0 active 911 emergencies in area
-2026-04-06 12:40:45,494 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
-2026-04-06 12:40:45,495 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
-2026-04-06 12:40:45,586 - __main__ - INFO - TomTom returned 257 incidents
-2026-04-06 12:40:45,588 - __main__ - INFO - Found 0 active 911 emergencies in area
-2026-04-06 12:40:45,597 - __main__ - INFO - TomTom returned 257 incidents
-2026-04-06 12:40:45,597 - news_hazard_fetcher - INFO - Fetch already in progress, waiting for result...
-2026-04-06 12:40:45,599 - __main__ - INFO - Found 0 active 911 emergencies in area
-2026-04-06 12:40:45,599 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 12:40:45,601 - news_hazard_fetcher - INFO - Fetch already in progress, waiting for result...
-2026-04-06 12:40:45,605 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:40:45] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:40:45,605 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 12:40:45,613 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:40:45] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:40:47,403 - news_hazard_fetcher - ERROR - Failed to fetch crime data: Missing optional dependency 'openpyxl'.  Use pip or conda to install openpyxl.
-2026-04-06 12:40:47,410 - news_hazard_fetcher - INFO - Crime hazards: 0
-2026-04-06 12:40:47,412 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
-2026-04-06 12:40:47,413 - news_hazard_fetcher - INFO - Total hazards after filtering: 0
-2026-04-06 12:40:47,413 - news_hazard_fetcher - INFO - Filtered out 0 low-threat incidents
-2026-04-06 12:40:47,413 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 12:40:47,426 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:40:47] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:41:42,032 - __main__ - INFO - Client disconnected: oJAtheMszZ8Z_XhZAAAK
-2026-04-06 12:41:42,136 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:41:42] "[35m[1mGET /socket.io/?EIO=4&transport=websocket HTTP/1.1[0m" 500 -
-2026-04-06 12:41:42,153 - werkzeug - ERROR - Error on request:
-Traceback (most recent call last):
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 370, in run_wsgi
-    execute(self.server.app)
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 336, in execute
-    write(b"")
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 261, in write
-    assert status_set is not None, "write() before start_response"
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: write() before start_response
-2026-04-06 12:42:30,282 - __main__ - INFO - Websocket connected: SweyT_rvH16Tu_wwAAAM
-2026-04-06 12:42:37,332 - __main__ - INFO - Client disconnected: SweyT_rvH16Tu_wwAAAM
-2026-04-06 12:42:37,866 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:42:37] "GET /api/voice/status HTTP/1.1" 200 -
-2026-04-06 12:42:37,873 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:42:37] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:42:37,878 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:42:37] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:42:37,883 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:42:37] "GET /api/voice/status HTTP/1.1" 200 -
-2026-04-06 12:42:37,891 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 12:42:37,906 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 12:42:37,968 - __main__ - INFO - Websocket connected: rJw3ffcmbdMY1Dh3AAAP
-2026-04-06 12:42:40,520 - __main__ - INFO - TomTom returned 258 incidents
-2026-04-06 12:42:40,531 - __main__ - INFO - Found 0 active 911 emergencies in area
-2026-04-06 12:42:40,533 - news_hazard_fetcher - INFO - Returning 0 cached hazards (age: 113s)
-2026-04-06 12:42:40,534 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 12:42:40,551 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:42:40] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:42:40,681 - __main__ - INFO - TomTom returned 258 incidents
-2026-04-06 12:42:40,689 - __main__ - INFO - Found 0 active 911 emergencies in area
-2026-04-06 12:42:40,689 - news_hazard_fetcher - INFO - Returning 0 cached hazards (age: 113s)
-2026-04-06 12:42:40,694 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 12:42:40,705 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:42:40] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:42:50,174 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:42:50] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:42:50,187 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 12:42:52,648 - __main__ - INFO - TomTom returned 261 incidents
-2026-04-06 12:42:52,658 - __main__ - INFO - Found 0 active 911 emergencies in area
-2026-04-06 12:42:52,660 - news_hazard_fetcher - INFO - Returning 0 cached hazards (age: 125s)
-2026-04-06 12:42:52,660 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 12:42:52,679 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:42:52] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:43:10,070 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:43:10] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
-2026-04-06 12:43:10,083 - __main__ - INFO - === ROUTE REQUEST ===
-2026-04-06 12:43:10,090 - __main__ - INFO - From: 40.51884917423351,-79.86835662553354
-2026-04-06 12:43:10,090 - __main__ - INFO - To: 40.517806,-79.869701
-2026-04-06 12:43:10,090 - __main__ - INFO - Mode: pedestrian
-2026-04-06 12:43:10,090 - __main__ - INFO - Force refresh: False
-2026-04-06 12:43:10,090 - tomtom_router - INFO - All caches cleared
-2026-04-06 12:43:10,090 - __main__ - INFO - TomTom cache cleared before route calculation
-2026-04-06 12:43:10,090 - __main__ - INFO - Fetching hazards within 2000m of route midpoint
-2026-04-06 12:43:10,090 - news_hazard_fetcher - INFO - Returning 0 cached hazards (age: 142s)
-2026-04-06 12:43:10,102 - __main__ - INFO - Found 0 crime/hazard zones to avoid
-2026-04-06 12:43:12,199 - __main__ - INFO - Added 1 construction zones to avoidance list
-2026-04-06 12:43:12,201 - __main__ - INFO - Routing with 1 total hazards to avoid
-2026-04-06 12:43:12,201 - __main__ - INFO - Route request cache buster: 1775493792.2010815
-2026-04-06 12:43:12,203 - __main__ - INFO - === CALLING TOMTOM ROUTER ===
-2026-04-06 12:43:12,203 - __main__ - INFO - Start: 40.518849, -79.868357
-2026-04-06 12:43:12,203 - __main__ - INFO - Dest: 40.517806, -79.869701
-2026-04-06 12:43:12,203 - __main__ - INFO - force_refresh: True
-2026-04-06 12:43:12,203 - tomtom_router - INFO - Calculating route: (40.51884917423351, -79.86835662553354) -> (40.517806, -79.869701)
-2026-04-06 12:43:14,150 - tomtom_router - WARNING - TomTom returned status 400
-2026-04-06 12:43:14,150 - tomtom_router - INFO - Falling back to OSRM
-2026-04-06 12:43:26,340 - urllib3.connectionpool - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=10)")': /route/v1/foot/-79.868357,40.518849;-79.869701,40.517806?overview=simplified&geometries=polyline&steps=true
-2026-04-06 12:43:38,336 - urllib3.connectionpool - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=10)")': /route/v1/foot/-79.868357,40.518849;-79.869701,40.517806?overview=simplified&geometries=polyline&steps=true
-2026-04-06 12:43:50,334 - tomtom_router - WARNING - OSRM attempt 1 failed: HTTPSConnectionPool(host='router.project-osrm.org', port=443): Max retries exceeded with url: /route/v1/foot/-79.868357,40.518849;-79.869701,40.517806?overview=simplified&geometries=polyline&steps=true (Caused by ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=10)"))
-2026-04-06 12:44:07,119 - urllib3.connectionpool - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=15)")': /route/v1/foot/-79.868357,40.518849;-79.869701,40.517806?overview=simplified&geometries=polyline&steps=true
-2026-04-06 12:44:24,199 - urllib3.connectionpool - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=15)")': /route/v1/foot/-79.868357,40.518849;-79.869701,40.517806?overview=simplified&geometries=polyline&steps=true
-2026-04-06 12:44:41,532 - tomtom_router - WARNING - OSRM attempt 2 failed: HTTPSConnectionPool(host='router.project-osrm.org', port=443): Max retries exceeded with url: /route/v1/foot/-79.868357,40.518849;-79.869701,40.517806?overview=simplified&geometries=polyline&steps=true (Caused by ReadTimeoutError("HTTPSConnectionPool(host='router.project-osrm.org', port=443): Read timed out. (read timeout=15)"))
-2026-04-06 12:44:41,532 - tomtom_router - ERROR - All routing failed, using straight-line fallback
-2026-04-06 12:44:41,537 - tomtom_router - WARNING - Using straight-line fallback: 162m
-2026-04-06 12:44:41,537 - __main__ - INFO - TomTom returned route ending at: 40.517806, -79.869701
-2026-04-06 12:44:41,544 - __main__ - INFO - TomTom route with hazard avoidance successful
-2026-04-06 12:44:45,511 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
-2026-04-06 12:44:45,520 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:44:45] "POST /api/calculate-route HTTP/1.1" 200 -
-2026-04-06 12:44:45,564 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:44:45] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:44:45,582 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 12:44:46,359 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:44:46] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
-2026-04-06 12:44:46,378 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:44:46] "POST /api/check-obstructions HTTP/1.1" 200 -
-2026-04-06 12:44:47,910 - __main__ - INFO - TomTom returned 263 incidents
-2026-04-06 12:44:47,923 - news_hazard_fetcher - INFO - Returning 0 cached hazards (age: 240s)
-2026-04-06 12:44:47,926 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 12:44:47,950 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:44:47] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:46:24,523 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:46:24] "OPTIONS /api/transit-route HTTP/1.1" 200 -
-2026-04-06 12:46:24,539 - transit_router - INFO - Transit routing (40.5188,-79.8684) -> (40.5178,-79.8697)
-2026-04-06 12:46:24,763 - transit_router - INFO - Found 20 stops within 3000m of (40.5188,-79.8684)
-2026-04-06 12:46:24,841 - transit_router - INFO - Found 20 stops within 3000m of (40.5178,-79.8697)
-2026-04-06 12:46:24,844 - transit_router - INFO - Found 15 routes with max 0 transfer(s)
-2026-04-06 12:46:24,846 - transit_router - INFO - Found 15 routes with max 1 transfer(s)
-2026-04-06 12:46:24,848 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:46:24] "[33mPOST /api/transit-route HTTP/1.1[0m" 404 -
-2026-04-06 12:46:36,851 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:46:36] "OPTIONS /api/transit-route HTTP/1.1" 200 -
-2026-04-06 12:46:36,851 - transit_router - INFO - Transit routing (40.5188,-79.8684) -> (40.4460,-80.0167)
-2026-04-06 12:46:36,987 - transit_router - INFO - Found 20 stops within 3000m of (40.5188,-79.8684)
-2026-04-06 12:46:37,020 - transit_router - INFO - Found 20 stops within 1000.0m of (40.4460,-80.0167)
-2026-04-06 12:46:38,244 - transit_router - INFO - Found 22 routes with max 1 transfer(s)
-2026-04-06 12:46:43,813 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:46:43] "POST /api/transit-route HTTP/1.1" 200 -
-2026-04-06 12:46:44,788 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:46:44] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
-2026-04-06 12:46:44,821 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:46:44] "POST /api/check-obstructions HTTP/1.1" 200 -
-2026-04-06 12:47:50,393 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:47:50] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:47:50,402 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 12:47:52,528 - __main__ - INFO - TomTom returned 271 incidents
-2026-04-06 12:47:52,539 - __main__ - INFO - Found 0 active 911 emergencies in area
-2026-04-06 12:47:52,539 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
-2026-04-06 12:47:52,539 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
-2026-04-06 12:47:55,455 - news_hazard_fetcher - ERROR - Failed to fetch crime data: Missing optional dependency 'openpyxl'.  Use pip or conda to install openpyxl.
-2026-04-06 12:47:55,460 - news_hazard_fetcher - INFO - Crime hazards: 0
-2026-04-06 12:47:55,460 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
-2026-04-06 12:47:55,460 - news_hazard_fetcher - INFO - Total hazards after filtering: 0
-2026-04-06 12:47:55,460 - news_hazard_fetcher - INFO - Filtered out 0 low-threat incidents
-2026-04-06 12:47:55,460 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 12:47:55,481 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:47:55] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 12:49:09,246 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:49:09] "OPTIONS /api/transit-route HTTP/1.1" 200 -
-2026-04-06 12:49:09,251 - transit_router - INFO - Transit routing (40.5188,-79.8684) -> (40.4961,-80.2563)
-2026-04-06 12:49:09,343 - transit_router - INFO - Found 20 stops within 3000m of (40.5188,-79.8684)
-2026-04-06 12:49:09,386 - transit_router - INFO - Found 1 stops within 1000.0m of (40.4961,-80.2563)
-2026-04-06 12:49:10,653 - transit_router - INFO - Found 5 routes with max 1 transfer(s)
-2026-04-06 12:49:14,567 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:49:14] "POST /api/transit-route HTTP/1.1" 200 -
-2026-04-06 12:49:15,343 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:49:15] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
-2026-04-06 12:49:15,404 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:49:15] "POST /api/check-obstructions HTTP/1.1" 200 -
-2026-04-06 12:52:09,351 - __main__ - INFO - Client disconnected: rJw3ffcmbdMY1Dh3AAAP
-2026-04-06 12:52:09,405 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 12:52:09] "[35m[1mGET /socket.io/?EIO=4&transport=websocket HTTP/1.1[0m" 500 -
-2026-04-06 12:52:09,426 - werkzeug - ERROR - Error on request:
-Traceback (most recent call last):
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 370, in run_wsgi
-    execute(self.server.app)
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 336, in execute
-    write(b"")
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 261, in write
-    assert status_set is not None, "write() before start_response"
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: write() before start_response
-2026-04-06 14:15:11,714 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 14:15:11] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 14:15:11,760 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 14:15:11,778 - __main__ - ERROR - TomTom incidents API error: HTTPSConnectionPool(host='api.tomtom.com', port=443): Max retries exceeded with url: /traffic/services/5/incidentDetails?key=pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM&bbox=-80.8,40.2,-79.5,40.8&fields=%7Bincidents%7Btype,geometry%7Btype,coordinates%7D,properties%7BiconCategory,magnitudeOfDelay,events%7Bdescription,code%7D,startTime,endTime,from,to%7D%7D%7D&language=en-US&timeValidityFilter=present (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x000001B7DF4777A0>: Failed to resolve 'api.tomtom.com' ([Errno 11001] getaddrinfo failed)"))
-2026-04-06 14:15:11,781 - __main__ - INFO - Found 0 active 911 emergencies in area
-2026-04-06 14:15:11,785 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
-2026-04-06 14:15:11,792 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
-2026-04-06 14:15:11,804 - news_hazard_fetcher - ERROR - Failed to fetch crime data: HTTPSConnectionPool(host='data.wprdc.org', port=443): Max retries exceeded with url: /dataset/65e69ee3-93b2-4f7a-b9cb-8ce977f15d9a/resource/bd41992a-987a-4cca-8798-fbe1cd946b07/download/monthly_crime_data_2024_2026.xlsx (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x000001B7DF475520>: Failed to resolve 'data.wprdc.org' ([Errno 11001] getaddrinfo failed)"))
-2026-04-06 14:15:11,808 - news_hazard_fetcher - INFO - Crime hazards: 0
-2026-04-06 14:15:11,810 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
-2026-04-06 14:15:11,818 - news_hazard_fetcher - INFO - Total hazards after filtering: 0
-2026-04-06 14:15:11,822 - news_hazard_fetcher - INFO - Filtered out 0 low-threat incidents
-2026-04-06 14:15:11,829 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 14:15:11,835 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 14:15:11] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 14:15:14,294 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 14:15:14] "[35m[1mGET /socket.io/?EIO=4&transport=websocket HTTP/1.1[0m" 500 -
-2026-04-06 14:15:14,298 - werkzeug - ERROR - Error on request:
-Traceback (most recent call last):
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 370, in run_wsgi
-    execute(self.server.app)
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 336, in execute
-    write(b"")
-  File "C:\Users\jshah\AppData\Local\Programs\Python\Python312\Lib\site-packages\werkzeug\serving.py", line 261, in write
-    assert status_set is not None, "write() before start_response"
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: write() before start_response
-2026-04-06 16:07:52,019 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 16:07:52] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 16:07:52,061 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 16:07:53,199 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 16:07:53] "GET /api/voice/status HTTP/1.1" 200 -
-2026-04-06 16:07:53,200 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 16:07:53,210 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
-2026-04-06 16:07:53,212 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 16:07:53] "GET /api/voice/status HTTP/1.1" 200 -
-2026-04-06 16:07:53,295 - __main__ - INFO - Websocket connected: Tut6mvTkF49BzDeBAAAT
-2026-04-06 16:07:54,302 - __main__ - INFO - TomTom returned 293 incidents
-2026-04-06 16:07:54,307 - __main__ - INFO - Found 0 active 911 emergencies in area
-2026-04-06 16:07:54,308 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
-2026-04-06 16:07:54,308 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
-2026-04-06 16:07:54,896 - __main__ - INFO - TomTom returned 293 incidents
-2026-04-06 16:07:54,901 - __main__ - INFO - Found 0 active 911 emergencies in area
-2026-04-06 16:07:54,901 - news_hazard_fetcher - INFO - Fetch already in progress, waiting for result...
-2026-04-06 16:07:54,901 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 16:07:54,915 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 16:07:54] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 16:07:55,026 - __main__ - INFO - TomTom returned 293 incidents
-2026-04-06 16:07:55,030 - __main__ - INFO - Found 0 active 911 emergencies in area
-2026-04-06 16:07:55,030 - news_hazard_fetcher - INFO - Fetch already in progress, waiting for result...
-2026-04-06 16:07:55,031 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 16:07:55,038 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 16:07:55] "POST /api/area-obstructions HTTP/1.1" 200 -
-2026-04-06 16:07:56,629 - news_hazard_fetcher - ERROR - Failed to fetch crime data: Missing optional dependency 'openpyxl'.  Use pip or conda to install openpyxl.
-2026-04-06 16:07:56,635 - news_hazard_fetcher - INFO - Crime hazards: 0
-2026-04-06 16:07:56,637 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
-2026-04-06 16:07:56,637 - news_hazard_fetcher - INFO - Total hazards after filtering: 0
-2026-04-06 16:07:56,639 - news_hazard_fetcher - INFO - Filtered out 0 low-threat incidents
-2026-04-06 16:07:56,639 - __main__ - INFO - Found 0 news-based hazards in area
-2026-04-06 16:07:56,649 - werkzeug - INFO - 127.0.0.1 - - [06/Apr/2026 16:07:56] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-06 08:22:11,020 - __main__ - INFO - Client disconnected: _3Ll1q6jkuaU_JRlAAAx
+2026-04-06 08:22:11,024 - __main__ - INFO - Client disconnected: exnTD5v4-qyGyFGYAAAt
+2026-04-06 08:22:11,346 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 08:22:11,532 - __main__ - INFO - TomTom returned 236 incidents
+2026-04-06 08:22:11,534 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 08:22:11,535 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 238s)
+2026-04-06 08:22:11,535 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 08:22:11,539 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 08:22:11,712 - __main__ - INFO - TomTom returned 236 incidents
+2026-04-06 08:22:11,714 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 08:22:11,714 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 238s)
+2026-04-06 08:22:11,714 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 08:22:11,726 - __main__ - INFO - Websocket connected: AdfKgUcxISJr5SUnAAA0
+2026-04-06 08:22:11,898 - voice_handler - INFO - Session created: vs-1775478131-5947 for socket AdfKgUcxISJr5SUnAAA0
+2026-04-06 08:22:11,960 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 08:22:12,160 - __main__ - INFO - TomTom returned 236 incidents
+2026-04-06 08:22:12,161 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 08:22:12,161 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 238s)
+2026-04-06 08:22:12,161 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 08:22:12,166 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 08:22:12,324 - __main__ - INFO - TomTom returned 236 incidents
+2026-04-06 08:22:12,325 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 08:22:12,325 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 238s)
+2026-04-06 08:22:12,325 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 08:22:12,461 - __main__ - INFO - Websocket connected: fRp2mu6MusaX_bOVAAA3
+2026-04-06 08:22:12,717 - voice_handler - INFO - Session created: vs-1775478132-7804 for socket fRp2mu6MusaX_bOVAAA3
+2026-04-06 08:23:59,306 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 08:23:59,524 - __main__ - INFO - TomTom returned 234 incidents
+2026-04-06 08:23:59,526 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 08:23:59,527 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 08:23:59,527 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 08:24:15,768 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 08:24:17,322 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 08:24:17,322 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 08:24:17,333 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 08:24:17,333 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 08:24:17,334 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 08:24:17,334 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 08:24:17,334 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 08:24:17,340 - transit_router - INFO - Transit routing (40.5181,-79.8690) -> (40.4460,-80.0167)
+2026-04-06 08:24:17,351 - transit_router - INFO - Found 20 stops within 3000m of (40.5181,-79.8690)
+2026-04-06 08:24:17,355 - transit_router - INFO - Found 20 stops within 1000.0m of (40.4460,-80.0167)
+2026-04-06 08:24:17,505 - transit_router - INFO - Found 18 routes with max 1 transfer(s)
+2026-04-06 08:24:17,991 - __main__ - INFO - Client disconnected: AdfKgUcxISJr5SUnAAA0
+2026-04-06 08:24:44,629 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 08:24:44,815 - __main__ - INFO - TomTom returned 236 incidents
+2026-04-06 08:24:44,817 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 08:24:44,817 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 27s)
+2026-04-06 08:24:44,818 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 08:24:44,823 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 08:24:44,980 - __main__ - INFO - TomTom returned 236 incidents
+2026-04-06 08:24:44,982 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 08:24:44,982 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 27s)
+2026-04-06 08:24:44,982 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 08:24:44,998 - __main__ - INFO - Websocket connected: 9vnCMpwUbEaKs9xtAAA6
+2026-04-06 08:24:45,115 - voice_handler - INFO - Session created: vs-1775478285-7759 for socket 9vnCMpwUbEaKs9xtAAA6
+2026-04-06 08:24:47,251 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 08:24:47,419 - __main__ - INFO - TomTom returned 236 incidents
+2026-04-06 08:24:47,421 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 08:24:47,421 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 30s)
+2026-04-06 08:24:47,421 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 08:24:52,563 - transit_router - INFO - Transit routing (40.5181,-79.8690) -> (40.4460,-80.0167)
+2026-04-06 08:24:52,582 - transit_router - INFO - Found 20 stops within 3000m of (40.5181,-79.8690)
+2026-04-06 08:24:52,586 - transit_router - INFO - Found 20 stops within 1000.0m of (40.4460,-80.0167)
+2026-04-06 08:24:52,758 - transit_router - INFO - Found 18 routes with max 1 transfer(s)
+2026-04-06 08:26:49,161 - __main__ - INFO - Client disconnected: 9vnCMpwUbEaKs9xtAAA6
+2026-04-06 08:26:49,164 - __main__ - INFO - Client disconnected: fRp2mu6MusaX_bOVAAA3
+2026-04-06 08:26:49,373 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 08:26:49,537 - __main__ - INFO - TomTom returned 232 incidents
+2026-04-06 08:26:49,539 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 08:26:49,539 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 152s)
+2026-04-06 08:26:49,539 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 08:26:49,543 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 08:26:49,696 - __main__ - INFO - TomTom returned 232 incidents
+2026-04-06 08:26:49,698 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 08:26:49,698 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 152s)
+2026-04-06 08:26:49,698 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 08:26:49,705 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 08:26:49,864 - __main__ - INFO - TomTom returned 232 incidents
+2026-04-06 08:26:49,866 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 08:26:49,866 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 152s)
+2026-04-06 08:26:49,867 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 08:26:49,874 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 08:26:50,032 - __main__ - INFO - TomTom returned 232 incidents
+2026-04-06 08:26:50,034 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 08:26:50,035 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 152s)
+2026-04-06 08:26:50,035 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 08:26:50,071 - __main__ - INFO - Websocket connected: l5MN86VkoMlDOrjLAAA-
+2026-04-06 08:26:50,214 - voice_handler - INFO - Session created: vs-1775478410-1692 for socket l5MN86VkoMlDOrjLAAA-
+2026-04-06 08:26:50,214 - __main__ - INFO - Websocket connected: k1lCliQO5QqeBIkbAAA_
+2026-04-06 08:26:50,308 - voice_handler - INFO - Session created: vs-1775478410-8539 for socket k1lCliQO5QqeBIkbAAA_
+2026-04-06 08:26:52,041 - voice_handler - INFO - Voice session vs-1775476525-3153 destroyed
+2026-04-06 08:48:55,878 - __main__ - INFO - Client disconnected: l5MN86VkoMlDOrjLAAA-
+2026-04-06 08:48:55,896 - __main__ - INFO - Client disconnected: k1lCliQO5QqeBIkbAAA_
+2026-04-06 08:48:56,225 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 08:48:56,401 - __main__ - INFO - TomTom returned 227 incidents
+2026-04-06 08:48:56,404 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 08:48:56,404 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 08:48:56,404 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 08:55:32,453 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 08:55:34,012 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 08:55:34,012 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 08:55:34,023 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 08:55:34,023 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 08:55:34,023 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 08:55:34,023 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 08:55:34,023 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 08:55:34,026 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 08:55:34,221 - __main__ - INFO - TomTom returned 219 incidents
+2026-04-06 08:55:34,223 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 08:55:34,223 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 08:55:34,223 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 08:55:34,228 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 08:55:34,391 - __main__ - INFO - TomTom returned 219 incidents
+2026-04-06 08:55:34,392 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 08:55:34,392 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 08:55:34,393 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 08:55:34,398 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 08:55:34,552 - __main__ - INFO - TomTom returned 219 incidents
+2026-04-06 08:55:34,554 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 08:55:34,554 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 08:55:34,554 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 08:55:34,705 - __main__ - INFO - Websocket connected: j3DHdMs83pcK-NxBAABE
+2026-04-06 08:55:34,904 - voice_handler - INFO - Session created: vs-1775480134-8162 for socket j3DHdMs83pcK-NxBAABE
+2026-04-06 08:57:38,966 - voice_handler - INFO - Voice session vs-1775477364-8255 destroyed
+2026-04-06 08:57:38,970 - voice_handler - INFO - Voice session vs-1775477364-8738 destroyed
+2026-04-06 08:57:38,973 - voice_handler - INFO - Voice session vs-1775477405-7768 destroyed
+2026-04-06 08:57:38,974 - voice_handler - INFO - Voice session vs-1775477407-2954 destroyed
+2026-04-06 08:57:38,975 - voice_handler - INFO - Voice session vs-1775477537-4642 destroyed
+2026-04-06 08:57:38,976 - voice_handler - INFO - Voice session vs-1775477538-7365 destroyed
+2026-04-06 08:57:38,977 - voice_handler - INFO - Voice session vs-1775477894-1097 destroyed
+2026-04-06 08:57:38,978 - voice_handler - INFO - Voice session vs-1775478131-5947 destroyed
+2026-04-06 08:57:38,979 - voice_handler - INFO - Voice session vs-1775478132-7804 destroyed
+2026-04-06 08:57:38,980 - voice_handler - INFO - Voice session vs-1775478285-7759 destroyed
+2026-04-06 08:57:38,982 - voice_handler - INFO - Voice session vs-1775478410-1692 destroyed
+2026-04-06 08:57:38,982 - voice_handler - INFO - Voice session vs-1775478410-8539 destroyed
+2026-04-06 09:00:19,349 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:00:19,561 - __main__ - INFO - TomTom returned 220 incidents
+2026-04-06 09:00:19,563 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:00:19,563 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 285s)
+2026-04-06 09:00:19,564 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:01:24,892 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:01:25,069 - __main__ - INFO - TomTom returned 218 incidents
+2026-04-06 09:01:25,070 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:01:25,071 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 09:01:25,071 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 09:01:39,692 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 09:01:40,968 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 09:01:40,968 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 09:01:40,980 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 09:01:40,980 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 09:01:40,980 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 09:01:40,980 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 09:01:40,981 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:01:40,984 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:01:41,187 - __main__ - INFO - TomTom returned 219 incidents
+2026-04-06 09:01:41,188 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:01:41,188 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 09:01:41,188 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:01:41,194 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:01:41,361 - __main__ - INFO - TomTom returned 219 incidents
+2026-04-06 09:01:41,363 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:01:41,364 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 09:01:41,364 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:01:41,374 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:01:41,536 - __main__ - INFO - TomTom returned 219 incidents
+2026-04-06 09:01:41,539 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:01:41,539 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 09:01:41,539 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:01:41,546 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:01:41,711 - __main__ - INFO - TomTom returned 219 incidents
+2026-04-06 09:01:41,713 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:01:41,713 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 09:01:41,714 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:01:41,720 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:01:41,873 - __main__ - INFO - TomTom returned 219 incidents
+2026-04-06 09:01:41,874 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:01:41,875 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 09:01:41,875 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:01:41,881 - __main__ - INFO - Websocket connected: ePimDjnQYrNgsAPSAABJ
+2026-04-06 09:01:42,017 - voice_handler - INFO - Session created: vs-1775480501-6321 for socket ePimDjnQYrNgsAPSAABJ
+2026-04-06 09:01:52,067 - transit_router - INFO - Transit routing (40.5182,-79.8690) -> (40.4460,-80.0167)
+2026-04-06 09:01:52,083 - transit_router - INFO - Found 20 stops within 3000m of (40.5182,-79.8690)
+2026-04-06 09:01:52,087 - transit_router - INFO - Found 20 stops within 1000.0m of (40.4460,-80.0167)
+2026-04-06 09:01:52,268 - transit_router - INFO - Found 17 routes with max 1 transfer(s)
+2026-04-06 09:05:19,343 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:05:19,559 - __main__ - INFO - TomTom returned 213 incidents
+2026-04-06 09:05:19,562 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:05:19,562 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 218s)
+2026-04-06 09:05:19,562 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:06:39,320 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:06:39,529 - __main__ - INFO - TomTom returned 216 incidents
+2026-04-06 09:06:39,531 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:06:39,532 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 298s)
+2026-04-06 09:06:39,532 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:08:00,371 - __main__ - INFO - Client disconnected: j3DHdMs83pcK-NxBAABE
+2026-04-06 09:08:00,404 - __main__ - INFO - Client disconnected: ePimDjnQYrNgsAPSAABJ
+2026-04-06 09:08:00,598 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:08:00,770 - __main__ - INFO - TomTom returned 215 incidents
+2026-04-06 09:08:00,772 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:08:00,772 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 09:08:00,772 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 09:08:16,227 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 09:08:17,458 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 09:08:17,458 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 09:08:17,473 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 09:08:17,473 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 09:08:17,473 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 09:08:17,473 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 09:08:17,473 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:08:17,476 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:08:17,661 - __main__ - INFO - TomTom returned 215 incidents
+2026-04-06 09:08:17,662 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:08:17,663 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 09:08:17,666 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:08:17,671 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:08:17,854 - __main__ - INFO - TomTom returned 215 incidents
+2026-04-06 09:08:17,855 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:08:17,855 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 09:08:17,856 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:08:17,861 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:08:18,019 - __main__ - INFO - TomTom returned 215 incidents
+2026-04-06 09:08:18,020 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:08:18,020 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 09:08:18,020 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:08:18,025 - __main__ - INFO - Websocket connected: Summ6vZdBLEABmzlAABM
+2026-04-06 09:08:18,154 - voice_handler - INFO - Session created: vs-1775480898-5591 for socket Summ6vZdBLEABmzlAABM
+2026-04-06 09:08:18,154 - __main__ - INFO - Websocket connected: g4o1aH3igZLPah_WAABO
+2026-04-06 09:08:18,292 - voice_handler - INFO - Session created: vs-1775480898-6786 for socket g4o1aH3igZLPah_WAABO
+2026-04-06 09:13:01,326 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:13:01,550 - __main__ - INFO - TomTom returned 217 incidents
+2026-04-06 09:13:01,552 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:13:01,553 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 284s)
+2026-04-06 09:13:01,553 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:13:01,559 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:13:01,722 - __main__ - INFO - TomTom returned 217 incidents
+2026-04-06 09:13:01,724 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:13:01,724 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 284s)
+2026-04-06 09:13:01,724 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:18:01,321 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:18:01,534 - __main__ - INFO - TomTom returned 207 incidents
+2026-04-06 09:18:01,538 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:18:01,538 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 09:18:01,538 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 09:18:19,103 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 09:18:20,670 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 09:18:20,670 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 09:18:20,682 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 09:18:20,682 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 09:18:20,682 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 09:18:20,682 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 09:18:20,682 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:18:20,686 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:18:20,879 - __main__ - INFO - TomTom returned 207 incidents
+2026-04-06 09:18:20,880 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:18:20,880 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 09:18:20,880 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:23:00,581 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:23:00,859 - __main__ - INFO - TomTom returned 209 incidents
+2026-04-06 09:23:00,862 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:23:00,863 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 280s)
+2026-04-06 09:23:00,863 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:23:01,312 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:23:01,475 - __main__ - INFO - TomTom returned 209 incidents
+2026-04-06 09:23:01,479 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:23:01,479 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 280s)
+2026-04-06 09:23:01,479 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:25:15,226 - __main__ - INFO - Client disconnected: g4o1aH3igZLPah_WAABO
+2026-04-06 09:25:15,249 - __main__ - INFO - Client disconnected: Summ6vZdBLEABmzlAABM
+2026-04-06 09:25:15,836 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:25:16,365 - __main__ - INFO - TomTom returned 211 incidents
+2026-04-06 09:25:16,368 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:25:16,368 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 09:25:16,370 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 09:50:21,468 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 09:50:23,582 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 09:50:23,582 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 09:50:23,606 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 09:50:23,606 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 09:50:23,607 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 09:50:23,607 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 09:50:23,607 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:50:23,614 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:50:23,825 - __main__ - INFO - TomTom returned 222 incidents
+2026-04-06 09:50:23,826 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:50:23,826 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 09:50:23,826 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:50:23,837 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:50:24,000 - __main__ - INFO - TomTom returned 222 incidents
+2026-04-06 09:50:24,001 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:50:24,001 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 09:50:24,001 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:50:24,006 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:50:24,163 - __main__ - INFO - TomTom returned 222 incidents
+2026-04-06 09:50:24,165 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:50:24,166 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 09:50:24,167 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:50:24,242 - __main__ - INFO - Websocket connected: Fvr7ycR8gWRs0p7yAABT
+2026-04-06 09:50:24,660 - voice_handler - INFO - Session created: vs-1775483424-6611 for socket Fvr7ycR8gWRs0p7yAABT
+2026-04-06 09:50:24,661 - __main__ - INFO - Websocket connected: OCXo68O4epemO-MqAABU
+2026-04-06 09:50:24,826 - voice_handler - INFO - Session created: vs-1775483424-9799 for socket OCXo68O4epemO-MqAABU
+2026-04-06 09:50:27,322 - __main__ - INFO - Client disconnected: OCXo68O4epemO-MqAABU
+2026-04-06 09:50:27,323 - __main__ - INFO - Client disconnected: Fvr7ycR8gWRs0p7yAABT
+2026-04-06 09:50:27,889 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:50:28,409 - __main__ - INFO - TomTom returned 222 incidents
+2026-04-06 09:50:28,411 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:50:28,411 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 4s)
+2026-04-06 09:50:28,412 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:50:28,416 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:50:28,802 - __main__ - INFO - TomTom returned 222 incidents
+2026-04-06 09:50:28,804 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:50:28,805 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 5s)
+2026-04-06 09:50:28,805 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:50:28,813 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:50:29,145 - __main__ - INFO - TomTom returned 222 incidents
+2026-04-06 09:50:29,147 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:50:29,147 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 5s)
+2026-04-06 09:50:29,147 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:50:29,153 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:50:29,505 - __main__ - INFO - TomTom returned 222 incidents
+2026-04-06 09:50:29,508 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:50:29,508 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 5s)
+2026-04-06 09:50:29,508 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:50:29,664 - __main__ - INFO - Websocket connected: YRKTc14pU6JuROUBAABZ
+2026-04-06 09:50:29,846 - voice_handler - INFO - Session created: vs-1775483429-5098 for socket YRKTc14pU6JuROUBAABZ
+2026-04-06 09:50:29,847 - __main__ - INFO - Websocket connected: UrvjVM54DkipztAuAABa
+2026-04-06 09:50:30,107 - voice_handler - INFO - Session created: vs-1775483429-5235 for socket UrvjVM54DkipztAuAABa
+2026-04-06 09:52:59,552 - voice_handler - INFO - Voice session vs-1775480134-8162 destroyed
+2026-04-06 09:52:59,555 - voice_handler - INFO - Voice session vs-1775480501-6321 destroyed
+2026-04-06 09:52:59,556 - voice_handler - INFO - Voice session vs-1775480898-5591 destroyed
+2026-04-06 09:52:59,557 - voice_handler - INFO - Voice session vs-1775480898-6786 destroyed
+2026-04-06 09:56:10,866 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:56:11,124 - __main__ - INFO - TomTom returned 225 incidents
+2026-04-06 09:56:11,126 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:56:11,126 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 09:56:11,126 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 09:56:33,886 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 09:56:35,996 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 09:56:35,996 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 09:56:36,011 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 09:56:36,011 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 09:56:36,011 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 09:56:36,011 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 09:56:36,012 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:56:36,016 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:56:36,195 - __main__ - INFO - TomTom returned 227 incidents
+2026-04-06 09:56:36,196 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:56:36,196 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 09:56:36,196 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:57:18,930 - voice_handler - INFO - Voice session vs-1775483429-5098 destroyed
+2026-04-06 09:57:18,940 - voice_handler - INFO - Voice session vs-1775483429-5235 destroyed
+2026-04-06 09:57:18,944 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:57:19,193 - __main__ - INFO - TomTom returned 225 incidents
+2026-04-06 09:57:19,194 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:57:19,194 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 43s)
+2026-04-06 09:57:19,194 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:57:19,199 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:57:19,370 - __main__ - INFO - TomTom returned 225 incidents
+2026-04-06 09:57:19,371 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:57:19,371 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 43s)
+2026-04-06 09:57:19,371 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:57:19,375 - __main__ - INFO - Client disconnected: YRKTc14pU6JuROUBAABZ
+2026-04-06 09:57:19,377 - __main__ - INFO - Client disconnected: UrvjVM54DkipztAuAABa
+2026-04-06 09:57:19,378 - __main__ - INFO - Websocket connected: c8nWlkz-z3mgrhN7AABd
+2026-04-06 09:57:19,469 - __main__ - INFO - Websocket connected: fuoMWmiDIYlfM_J9AABe
+2026-04-06 09:57:19,725 - voice_handler - INFO - Session created: vs-1775483839-7050 for socket c8nWlkz-z3mgrhN7AABd
+2026-04-06 09:57:19,890 - voice_handler - INFO - Session created: vs-1775483839-4786 for socket fuoMWmiDIYlfM_J9AABe
+2026-04-06 09:59:14,769 - __main__ - INFO - Client disconnected: c8nWlkz-z3mgrhN7AABd
+2026-04-06 09:59:15,436 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:59:15,675 - __main__ - INFO - TomTom returned 224 incidents
+2026-04-06 09:59:15,677 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:59:15,677 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 159s)
+2026-04-06 09:59:15,678 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:59:15,684 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:59:15,854 - __main__ - INFO - TomTom returned 224 incidents
+2026-04-06 09:59:15,857 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:59:15,857 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 159s)
+2026-04-06 09:59:15,857 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:59:15,881 - __main__ - INFO - Websocket connected: t7k3oCdSA4keX00AAABh
+2026-04-06 09:59:16,203 - voice_handler - INFO - Session created: vs-1775483955-9256 for socket t7k3oCdSA4keX00AAABh
+2026-04-06 09:59:31,856 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 09:59:32,098 - __main__ - INFO - TomTom returned 224 incidents
+2026-04-06 09:59:32,100 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 09:59:32,100 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 176s)
+2026-04-06 09:59:32,101 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 09:59:53,439 - transit_router - INFO - Transit routing (40.5185,-79.8684) -> (40.4460,-80.0167)
+2026-04-06 09:59:53,465 - transit_router - INFO - Found 20 stops within 3000m of (40.5185,-79.8684)
+2026-04-06 09:59:53,472 - transit_router - INFO - Found 20 stops within 1000.0m of (40.4460,-80.0167)
+2026-04-06 09:59:53,765 - transit_router - INFO - Found 17 routes with max 1 transfer(s)
+2026-04-06 10:02:19,861 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 10:02:20,105 - __main__ - INFO - TomTom returned 223 incidents
+2026-04-06 10:02:20,108 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 10:02:20,108 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 10:02:20,108 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 10:02:45,092 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 10:02:48,089 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 10:02:48,089 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 10:02:48,115 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 10:02:48,115 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 10:02:48,115 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 10:02:48,115 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 10:02:48,116 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 10:04:32,940 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 10:04:33,159 - __main__ - INFO - TomTom returned 220 incidents
+2026-04-06 10:04:33,161 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 10:04:33,161 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 105s)
+2026-04-06 10:04:33,161 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 10:06:44,387 - __main__ - INFO - Client disconnected: fuoMWmiDIYlfM_J9AABe
+2026-04-06 10:06:44,396 - __main__ - INFO - Client disconnected: t7k3oCdSA4keX00AAABh
+2026-04-06 10:06:51,607 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-06 10:06:51,611 - tomtom_router - INFO - TomTomRouter initialized with 10 workers
+2026-04-06 10:06:51,611 - tomtom_router - INFO - All caches cleared
+2026-04-06 10:06:51,611 - __main__ - INFO - TomTom router cache cleared on startup
+2026-04-06 10:06:52,749 - gtfs_loader - INFO - Loaded GTFS from cache (age: 7.4 hours)
+2026-04-06 10:06:52,749 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-04-06 10:07:14,428 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-06 10:07:14,432 - tomtom_router - INFO - TomTomRouter initialized with 10 workers
+2026-04-06 10:07:14,432 - tomtom_router - INFO - All caches cleared
+2026-04-06 10:07:14,432 - __main__ - INFO - TomTom router cache cleared on startup
+2026-04-06 10:07:15,575 - gtfs_loader - INFO - Loaded GTFS from cache (age: 7.4 hours)
+2026-04-06 10:07:15,576 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-04-06 10:07:28,903 - transit_router - INFO - Loaded 305 shapes
+2026-04-06 10:07:29,311 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-06 10:07:29,327 - transit_router - INFO - Loaded 101 routes
+2026-04-06 10:07:29,656 - transit_router - INFO - Cached 15826 trips
+2026-04-06 10:07:29,658 - transit_router - INFO - Loaded 32 walking routes from cache
+2026-04-06 10:07:29,724 - transit_router - INFO - Route-stops index: 100 routes
+2026-04-06 10:07:29,763 - transit_router - INFO - Shape index: 305 shapes
+2026-04-06 10:07:29,763 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-06 10:07:29,766 - __main__ - INFO - Safety AI loaded successfully
+2026-04-06 13:45:47,396 - root - WARNING - pyproj not installed; crime coordinate conversion will be disabled.
+2026-04-06 13:45:47,401 - tomtom_router - INFO - TomTomRouter initialized with 10 workers
+2026-04-06 13:45:47,401 - tomtom_router - INFO - All caches cleared
+2026-04-06 13:45:47,401 - __main__ - INFO - TomTom router cache cleared on startup
+2026-04-06 13:45:48,510 - gtfs_loader - INFO - Loaded GTFS from cache (age: 11.0 hours)
+2026-04-06 13:45:48,511 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-04-06 13:46:02,370 - transit_router - INFO - Loaded 305 shapes
+2026-04-06 13:46:02,791 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-06 13:46:02,807 - transit_router - INFO - Loaded 101 routes
+2026-04-06 13:46:03,179 - transit_router - INFO - Cached 15826 trips
+2026-04-06 13:46:03,181 - transit_router - INFO - Loaded 32 walking routes from cache
+2026-04-06 13:46:03,246 - transit_router - INFO - Route-stops index: 100 routes
+2026-04-06 13:46:03,303 - transit_router - INFO - Shape index: 305 shapes
+2026-04-06 13:46:03,303 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-06 13:46:03,308 - __main__ - INFO - Safety AI loaded successfully
+2026-04-06 13:46:39,209 - voice_handler - INFO - Vosk imported successfully
+2026-04-06 13:46:39,209 - voice_handler - INFO - Geoapify client available
+2026-04-06 13:46:39,211 - voice_handler - INFO - Voice handler v3 initialized — intent detection + phonetic fingerprinting (84 rules, 47 landmarks)
+2026-04-06 13:46:39,211 - __main__ - INFO - Voice handler registered successfully
+2026-04-06 13:46:39,216 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-04-06 13:46:39,216 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-04-06 13:46:39,216 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-04-06 13:46:39,216 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-04-06 13:46:48,778 - voice_handler - INFO - Loading Vosk model from /Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/vosk-model...
+2026-04-06 13:46:49,714 - voice_handler - INFO - Vosk model loaded successfully
+2026-04-06 13:46:49,725 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 13:46:49,921 - __main__ - INFO - TomTom returned 251 incidents
+2026-04-06 13:46:49,923 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 13:46:50,230 - news_hazard_fetcher - WARNING - PulsePoint agency fetch returned 401
+2026-04-06 13:46:50,233 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-04-06 13:46:50,233 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-04-06 13:46:50,233 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-04-06 13:46:50,234 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-06 13:46:50,234 - news_hazard_fetcher - INFO - Downloading crime data from WPRDC...
+2026-04-06 13:47:12,507 - news_hazard_fetcher - INFO - Loaded 89038 total crime records
+2026-04-06 13:47:14,624 - news_hazard_fetcher - INFO - Crime data: 111 incidents in last 7 days, filtered 61 low-threat, created 50 hazards
+2026-04-06 13:47:14,625 - news_hazard_fetcher - INFO - Crime severity: High: 18, Medium: 8
+2026-04-06 13:47:14,641 - news_hazard_fetcher - INFO - Crime hazards: 50
+2026-04-06 13:47:14,641 - news_hazard_fetcher - INFO - PulsePoint real-time hazards: 0
+2026-04-06 13:47:14,641 - news_hazard_fetcher - INFO - Total hazards after filtering: 41
+2026-04-06 13:47:14,641 - news_hazard_fetcher - INFO - Filtered out 9 low-threat incidents
+2026-04-06 13:47:14,642 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 13:47:14,646 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 13:47:14,839 - __main__ - INFO - TomTom returned 251 incidents
+2026-04-06 13:47:14,840 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 13:47:14,840 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 13:47:14,840 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 13:47:14,844 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 13:47:15,012 - __main__ - INFO - TomTom returned 251 incidents
+2026-04-06 13:47:15,013 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-06 13:47:15,013 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 0s)
+2026-04-06 13:47:15,014 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 13:47:15,022 - transit_router - INFO - Transit routing (40.5185,-79.8694) -> (40.4460,-80.0167)
+2026-04-06 13:47:15,044 - transit_router - INFO - Found 20 stops within 3000m of (40.5185,-79.8694)
+2026-04-06 13:47:15,050 - transit_router - INFO - Found 20 stops within 1000.0m of (40.4460,-80.0167)
+2026-04-06 13:47:15,114 - gtfs_loader - INFO - Fallback: found 13 departures from stop 22368 (outside normal time window)
+2026-04-06 13:47:15,768 - transit_router - INFO - Found 22 routes with max 1 transfer(s)
+2026-04-06 13:47:16,055 - __main__ - INFO - Websocket connected: K9dJ_9tvMKHuMBMXAAAD
+2026-04-06 13:47:16,248 - voice_handler - INFO - Session created: vs-1775497636-4687 for socket K9dJ_9tvMKHuMBMXAAAD
+2026-04-06 13:47:16,253 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-06 13:47:16,415 - __main__ - INFO - TomTom returned 251 incidents
+2026-04-06 13:47:16,416 - news_hazard_fetcher - INFO - Returning 41 cached hazards (age: 1s)
+2026-04-06 13:47:16,417 - __main__ - INFO - Found 12 news-based hazards in area
+2026-04-06 13:47:16,858 - __main__ - INFO - === ROUTE REQUEST ===
+2026-04-06 13:47:16,858 - __main__ - INFO - From: 40.51852416950178,-79.86937713707069
+2026-04-06 13:47:16,858 - __main__ - INFO - To: 40.450336,-80.020216
+2026-04-06 13:47:16,858 - __main__ - INFO - Mode: transit
+2026-04-06 13:47:16,858 - __main__ - INFO - Force refresh: False
+2026-04-06 13:47:16,858 - __main__ - INFO - Attempting GTFS transit route from 40.51852416950178,-79.86937713707069 to 40.450336,-80.020216
+2026-04-06 13:47:16,859 - transit_router - INFO - Transit routing (40.5185,-79.8694) -> (40.4503,-80.0202)
+2026-04-06 13:47:16,878 - transit_router - INFO - Found 20 stops within 3000m of (40.5185,-79.8694)
+2026-04-06 13:47:16,885 - transit_router - INFO - Found 20 stops within 800m of (40.4503,-80.0202)
+2026-04-06 13:47:17,136 - transit_router - INFO - Found 6 routes with max 1 transfer(s)
+2026-04-06 13:47:17,253 - __main__ - INFO - GTFS transit route successful - Duration: 115 minutes
+2026-04-06 13:47:17,741 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-04-06 13:47:17,756 - __main__ - INFO - === ROUTE REQUEST ===
+2026-04-06 13:47:17,756 - __main__ - INFO - From: 40.51852416950178,-79.86937713707069
+2026-04-06 13:47:17,756 - __main__ - INFO - To: 40.452664,-80.016495
+2026-04-06 13:47:17,756 - __main__ - INFO - Mode: transit
+2026-04-06 13:47:17,756 - __main__ - INFO - Force refresh: False
+2026-04-06 13:47:17,756 - __main__ - INFO - Attempting GTFS transit route from 40.51852416950178,-79.86937713707069 to 40.452664,-80.016495
+2026-04-06 13:47:17,756 - transit_router - INFO - Transit routing (40.5185,-79.8694) -> (40.4527,-80.0165)
+2026-04-06 13:47:17,777 - transit_router - INFO - Found 20 stops within 3000m of (40.5185,-79.8694)
+2026-04-06 13:47:17,783 - transit_router - INFO - Found 20 stops within 800m of (40.4527,-80.0165)
+2026-04-06 13:47:18,024 - transit_router - INFO - Found 11 routes with max 1 transfer(s)
+2026-04-06 13:47:18,246 - __main__ - INFO - GTFS transit route successful - Duration: 114 minutes
+2026-04-06 13:47:18,511 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-04-06 13:47:18,514 - __main__ - INFO - Using cached route result
+2026-04-06 13:47:18,526 - __main__ - INFO - === ROUTE REQUEST ===
+2026-04-06 13:47:18,526 - __main__ - INFO - From: 40.51852416950178,-79.86937713707069
+2026-04-06 13:47:18,526 - __main__ - INFO - To: 40.445976,-80.017901
+2026-04-06 13:47:18,526 - __main__ - INFO - Mode: transit
+2026-04-06 13:47:18,526 - __main__ - INFO - Force refresh: False
+2026-04-06 13:47:18,526 - __main__ - INFO - Attempting GTFS transit route from 40.51852416950178,-79.86937713707069 to 40.445976,-80.017901
+2026-04-06 13:47:18,526 - transit_router - INFO - Transit routing (40.5185,-79.8694) -> (40.4460,-80.0179)
+2026-04-06 13:47:18,547 - transit_router - INFO - Found 20 stops within 3000m of (40.5185,-79.8694)
+2026-04-06 13:47:18,554 - transit_router - INFO - Found 20 stops within 800m of (40.4460,-80.0179)
+2026-04-06 13:47:18,797 - transit_router - INFO - Found 17 routes with max 1 transfer(s)
+2026-04-06 13:47:18,938 - __main__ - INFO - GTFS transit route successful - Duration: 116 minutes
+2026-04-06 13:47:19,211 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-04-06 13:47:19,213 - __main__ - INFO - Using cached route result
+2026-04-06 13:47:19,225 - __main__ - INFO - === ROUTE REQUEST ===
+2026-04-06 13:47:19,225 - __main__ - INFO - From: 40.51852416950178,-79.86937713707069
+2026-04-06 13:47:19,225 - __main__ - INFO - To: 40.457006,-80.012298
+2026-04-06 13:47:19,225 - __main__ - INFO - Mode: transit
+2026-04-06 13:47:19,225 - __main__ - INFO - Force refresh: False
+2026-04-06 13:47:19,225 - __main__ - INFO - Attempting GTFS transit route from 40.51852416950178,-79.86937713707069 to 40.457006,-80.012298
+2026-04-06 13:47:19,225 - transit_router - INFO - Transit routing (40.5185,-79.8694) -> (40.4570,-80.0123)
+2026-04-06 13:47:19,246 - transit_router - INFO - Found 20 stops within 3000m of (40.5185,-79.8694)
+2026-04-06 13:47:19,252 - transit_router - INFO - Found 20 stops within 800m of (40.4570,-80.0123)
+2026-04-06 13:47:19,497 - transit_router - INFO - Found 15 routes with max 1 transfer(s)
+2026-04-06 13:47:19,722 - __main__ - INFO - GTFS transit route successful - Duration: 117 minutes
+2026-04-06 13:47:19,995 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-04-06 13:47:19,998 - __main__ - INFO - Using cached route result
