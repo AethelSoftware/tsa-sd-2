@@ -16,6 +16,7 @@ import pickle
 import hashlib
 from dataclasses import dataclass
 import json
+import time as time_module
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +98,6 @@ class GTFSLoader:
         """Generate cache file path based on GTFS file modification time and size"""
         cache_key = None
         if os.path.exists(zip_path):
-            # Use file modification time + size as cache key
             stat = os.stat(zip_path)
             cache_key = f"{zip_path}_{stat.st_mtime}_{stat.st_size}"
             cache_key = hashlib.md5(cache_key.encode()).hexdigest()
@@ -112,7 +112,6 @@ class GTFSLoader:
             if not os.path.exists(self.cache_file):
                 return False
             
-            # Check if GTFS.zip is newer than cache
             cache_mtime = os.path.getmtime(self.cache_file)
             zip_mtime = os.path.getmtime(self.gtfs_zip_path) if os.path.exists(self.gtfs_zip_path) else 0
             
@@ -141,7 +140,7 @@ class GTFSLoader:
         """Get human-readable cache age"""
         try:
             if os.path.exists(self.cache_file):
-                age_seconds = time.time() - os.path.getmtime(self.cache_file)
+                age_seconds = time_module.time() - os.path.getmtime(self.cache_file)
                 if age_seconds < 3600:
                     return f"{age_seconds / 60:.0f} minutes"
                 elif age_seconds < 86400:
@@ -223,7 +222,7 @@ class GTFSLoader:
                 
                 # ---- stop times (large - use chunking) ----
                 with z.open('stop_times.txt') as f:
-                    chunk_size = 100000  # Larger chunks for better performance
+                    chunk_size = 100000
                     for chunk in pd.read_csv(f, chunksize=chunk_size, dtype=str, low_memory=False):
                         for _, row in chunk.iterrows():
                             try:
@@ -307,34 +306,84 @@ class GTFSLoader:
     
     def _is_service_active(self, service_id: str, date: datetime) -> bool:
         date_int = int(date.strftime('%Y%m%d'))
+        
         # Check calendar_dates exceptions first
         if service_id in self.calendar_dates:
             for exc_date, exc_type in self.calendar_dates[service_id]:
                 if exc_date == date_int:
-                    return exc_type == 1      # 1 = added, 2 = removed
+                    return exc_type == 1
+ 
         if service_id not in self.calendar:
             return False
+        
         cal = self.calendar[service_id]
-        if date_int < cal.start_date or date_int > cal.end_date:
-            return False
+        
+        # Check day of week first
         weekday = date.weekday()
         day_flags = [cal.monday, cal.tuesday, cal.wednesday,
                      cal.thursday, cal.friday, cal.saturday, cal.sunday]
-        return day_flags[weekday]
+        
+        if not day_flags[weekday]:
+            return False
+        
+        # Normal range check
+        if cal.start_date <= date_int <= cal.end_date:
+            return True
+        
+        # TOLERANCE FOR EXPIRED FEEDS
+        if date_int > cal.end_date:
+            if not hasattr(self, '_calendar_expiry_warned'):
+                self._calendar_expiry_warned = True
+                logger.warning(
+                    f"GTFS calendar expired! today={date_int} > end_date={cal.end_date}. "
+                    f"Using day-of-week fallback. UPDATE YOUR GTFS.zip!"
+                )
+            return True
+        
+        return False
+
+    def _is_service_active_any_day(self, service_id: str, date: datetime) -> bool:
+        """Check if service is active ignoring day-of-week.
+        Used for time-agnostic routing to find ANY trip that serves a stop,
+        regardless of whether it runs today specifically."""
+        date_int = int(date.strftime('%Y%m%d'))
+        
+        if service_id in self.calendar_dates:
+            for exc_date, exc_type in self.calendar_dates[service_id]:
+                if exc_date == date_int:
+                    return exc_type == 1
+        
+        if service_id not in self.calendar:
+            return False
+        
+        cal = self.calendar[service_id]
+        
+        # Only check date range, NOT day of week
+        if cal.start_date <= date_int <= cal.end_date:
+            return True
+        
+        # Tolerance for expired feeds
+        if date_int > cal.end_date:
+            return True
+        
+        return False
     
     def get_next_departure(self, stop_id: str, after_time: datetime, time_window_minutes: int = 120) -> List[Tuple[datetime, str, str]]:
         """
         Returns list of (departure_datetime, trip_id, next_stop_id) for departures
-        within the time window (including next‑day overruns).
+        within the time window.
+        
+        If no departures found in the time window, falls back to finding the
+        EARLIEST departure from this stop on any active service — so we always
+        return a route if one exists in the schedule, regardless of current time.
         """
         if not self._loaded or stop_id not in self.stop_times_by_stop:
             return []
         
         current_seconds = after_time.hour * 3600 + after_time.minute * 60 + after_time.second
         max_seconds = current_seconds + (time_window_minutes * 60)
-        max_seconds_extended = max_seconds + 86400   # allow for trips that start after midnight
+        max_seconds_extended = max_seconds + 86400
         
-        # Binary search to first departure >= current_seconds
         dep_times = self._dep_times_by_stop.get(stop_id, [])
         if not dep_times:
             return []
@@ -342,12 +391,10 @@ class GTFSLoader:
         start_idx = bisect.bisect_left(dep_times, current_seconds)
         
         departures = []
-        # Limit to first 50 results for performance
         stop_times_list = self.stop_times_by_stop[stop_id][start_idx:start_idx + 200]
         
         for stop_time in stop_times_list:
             dep_sec = stop_time.departure_time
-            # Accept if within today's window OR next‑day window (>=86400)
             in_window = (current_seconds <= dep_sec <= max_seconds) or (dep_sec >= 86400 and dep_sec <= max_seconds_extended)
             if not in_window:
                 continue
@@ -358,7 +405,6 @@ class GTFSLoader:
             if not self._is_service_active(trip.service_id, after_time):
                 continue
             
-            # Find next stop (cached lookup)
             trip_stops = self.stop_times.get(stop_time.trip_id, [])
             next_stop_id = None
             for i, ts in enumerate(trip_stops):
@@ -368,7 +414,6 @@ class GTFSLoader:
             if not next_stop_id:
                 continue
             
-            # Build datetime efficiently
             days_to_add = dep_sec // 86400
             sec_in_day = dep_sec % 86400
             hours = sec_in_day // 3600
@@ -382,7 +427,6 @@ class GTFSLoader:
                 if dep_dt < after_time:
                     dep_dt += timedelta(days=1)
             except Exception:
-                # fallback
                 delta_sec = dep_sec - current_seconds
                 if delta_sec < 0:
                     delta_sec += 86400
@@ -393,7 +437,82 @@ class GTFSLoader:
             if len(departures) >= 20:
                 break
         
+        # ── FALLBACK: if nothing in the time window, find the earliest
+        #    departure from this stop on ANY active service today.
+        #    This makes routing work at 10 PM even though last bus was 7 PM.
+        if not departures:
+            departures = self._get_fallback_departures(stop_id, after_time)
+        
         departures.sort(key=lambda x: x[0])
+        return departures
+    
+    def _get_fallback_departures(self, stop_id: str, reference_time: datetime) -> List[Tuple[datetime, str, str]]:
+        """Find the earliest departures from a stop regardless of current time.
+        
+        Scans ALL departures from this stop, picks ones on active services,
+        and returns them scheduled for 'tomorrow' (so Dijkstra treats them
+        as reachable future events).
+        
+        This ensures that if Bus 75 serves this stop at all, we'll find it
+        even if it's 2 AM and the first bus isn't until 6 AM.
+        """
+        all_stop_times = self.stop_times_by_stop.get(stop_id, [])
+        if not all_stop_times:
+            return []
+        
+        seen_trips = set()
+        departures = []
+        
+        for stop_time in all_stop_times:
+            if stop_time.trip_id in seen_trips:
+                continue
+            
+            trip = self.trips.get(stop_time.trip_id)
+            if not trip:
+                continue
+            
+            # Use relaxed check — any day this service runs is fine
+            if not self._is_service_active_any_day(trip.service_id, reference_time):
+                continue
+            
+            # Find next stop on this trip
+            trip_stops = self.stop_times.get(stop_time.trip_id, [])
+            next_stop_id = None
+            for i, ts in enumerate(trip_stops):
+                if ts.stop_id == stop_id and i + 1 < len(trip_stops):
+                    next_stop_id = trip_stops[i + 1].stop_id
+                    break
+            if not next_stop_id:
+                continue
+            
+            seen_trips.add(stop_time.trip_id)
+            
+            # Build a departure time — use the scheduled time but push to
+            # "next occurrence" so it's always in the future from reference_time
+            dep_sec = stop_time.departure_time
+            sec_in_day = dep_sec % 86400
+            hours = sec_in_day // 3600
+            minutes = (sec_in_day % 3600) // 60
+            seconds = sec_in_day % 60
+            
+            try:
+                dep_dt = reference_time.replace(hour=hours, minute=minutes, second=seconds, microsecond=0)
+                # If this time already passed today, schedule for tomorrow
+                if dep_dt <= reference_time:
+                    dep_dt += timedelta(days=1)
+            except Exception:
+                dep_dt = reference_time + timedelta(hours=1)
+            
+            departures.append((dep_dt, stop_time.trip_id, next_stop_id))
+            
+            # We only need a handful — just enough for Dijkstra to find paths
+            if len(departures) >= 15:
+                break
+        
+        if departures:
+            logger.info(f"Fallback: found {len(departures)} departures from stop {stop_id} "
+                       f"(outside normal time window)")
+        
         return departures
     
     def get_travel_time(self, trip_id: str, from_stop_id: str, to_stop_id: str) -> Optional[int]:
@@ -423,7 +542,7 @@ class GTFSLoader:
             except Exception:
                 continue
         nearby.sort(key=lambda x: x[1])
-        return nearby[:20]  # Limit to 20 nearest stops
+        return nearby[:20]
     
     def _haversine_distance(self, lat1, lon1, lat2, lon2) -> float:
         R = 6371000
@@ -434,12 +553,11 @@ class GTFSLoader:
         return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     
     def get_stop_name(self, stop_id: str) -> str:
-        """Return human‑readable, title‑cased stop name."""
+        """Return human-readable, title-cased stop name."""
         if not self._loaded:
             return f"Stop {stop_id}"
         stop = self.stops.get(str(stop_id))
         if stop and stop.name:
-            # Convert ALL CAPS PRT names to Title Case
             return stop.name.title()
         return f"Stop {stop_id}"
     

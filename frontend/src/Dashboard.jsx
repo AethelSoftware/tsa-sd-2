@@ -3862,7 +3862,6 @@ export default function AccessibleMap() {
                   {[
                     { id: "walk", Icon: PersonStanding, l: "Walk" },
                     { id: "transit", Icon: Bus, l: "Transit" },
-                    { id: "wheelchair", Icon: Accessibility, l: "Access" },
                   ].map((t) => (
                     <button
                       key={t.id}
