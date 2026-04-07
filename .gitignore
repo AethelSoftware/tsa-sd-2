@@ -3,3 +3,4 @@ backend/models/*.pkl
 __pycache__/
 *.pyc
 .env
+vite.config.js.timestamp-*
