@@ -19,7 +19,7 @@ function makeLucideIcon(IconComponent, color, borderColor, size = 30) {
   const svg = renderToStaticMarkup(
     <IconComponent size={innerSize} color={color} strokeWidth={2.2} />,
   );
-  const html = `<div style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;background:rgba(16,8,3,0.92);border:${Math.max(1, size / 20)}px solid ${borderColor};border-radius:${Math.max(6, size / 4)}px;box-shadow:0 2px 8px rgba(0,0,0,0.45);backdrop-filter:blur(4px);cursor:pointer;">${svg}</div>`;
+  const html = `<div style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;background:rgba(16,8,3,0.92);border:${Math.max(1, size / 20)}px solid ${borderColor};border-radius:${Math.max(6, size / 4)}px;box-shadow:0 2px 8px rgba(0,0,0,0.45);cursor:pointer;">${svg}</div>`;
   const icon = L.divIcon({
     className: "custom-marker-icon",
     html,
