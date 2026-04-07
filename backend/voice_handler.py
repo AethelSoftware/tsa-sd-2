@@ -1,35 +1,26 @@
 """
-voice_handler.py — Vosk Speech Recognition for Tryver Accessibility
+voice_handler.py — Whisper Speech Recognition for Tryver Accessibility
 
-VERSION 3 — INTENT DETECTION APPROACH
+VERSION 4 — WHISPER + INTENT DETECTION
 
-The core insight: Vosk will NEVER perfectly transcribe "Acrisure" or even
-"current location" with its small model. Instead of trying to fix the text
-after the fact, we detect WHAT THE USER MEANT using multiple strategies:
+Replaces Vosk with OpenAI Whisper (local, offline, free).
+Whisper transcribes MUCH more accurately than Vosk, especially for:
+  - Proper nouns: "Acrisure Stadium", "Duquesne University"
+  - Addresses: "502 Third Street"
+  - Numbers: "five oh two" → "502"
 
-1. INTENT DETECTION: "it's a location" → user means "current location"
-   because we know the context (we just asked "what's your starting point?")
-   and the transcript contains location-related words.
+The correction pipeline (intent detection, phonetic matching, landmark
+matching) is kept as a safety net but fires much less often.
 
-2. PHONETIC FINGERPRINTING: Instead of exact string matching, we compare
-   how words SOUND using a simplified phonetic algorithm. "acri sure" and
-   "acrisure" have similar phonetic fingerprints even though the text differs.
-
-3. FUZZY MULTI-STRATEGY MATCHING: For landmarks, we don't just check one
-   similarity metric — we check character overlap, word overlap, phonetic
-   similarity, and substring containment. Any ONE strong signal is enough.
-
-4. CONTEXT-AWARE CORRECTION: The correction pipeline knows what kind of
-   answer we're expecting (location, mode, yes/no) and uses that context
-   to interpret ambiguous transcripts.
-
-NO AI/LLM WRAPPER NEEDED. All processing is deterministic and local.
+AUDIO FLOW:
+  Browser records full utterance → sends as binary blob via Socket.IO
+  → Backend saves to temp WAV → Whisper transcribes → correction pipeline
+  → returns transcript
 
 SETUP:
-  1) pip install vosk
-  2) Download model from https://alphacephei.com/vosk/models/
-  3) Extract to backend/vosk-model/
-  NO API KEY NEEDED. ALL PROCESSING IS LOCAL.
+  pip install openai-whisper torch
+  First run downloads ~150MB model to ~/.cache/whisper/ (needs internet once)
+  After that, fully offline.
 """
 
 import os
@@ -42,6 +33,9 @@ import time
 import random
 import re
 import math
+import wave
+import tempfile
+import io
 from typing import Dict, List, Optional, Tuple, Set
 from difflib import SequenceMatcher
 
@@ -51,23 +45,33 @@ logger = logging.getLogger(__name__)
 # SECTION 1: CONFIGURATION & AVAILABILITY
 # ═══════════════════════════════════════════════════════════════════════════════
 
-VOSK_AVAILABLE = False
-VOSK_MODEL_PATH = os.path.join(os.path.dirname(__file__), 'vosk-model')
-VOSK_SETUP_MESSAGE = """
+WHISPER_AVAILABLE = False
+WHISPER_MODEL_NAME = os.getenv('WHISPER_MODEL', 'base.en')
+WHISPER_SETUP_MESSAGE = """
 \033[1;33m══════════════════════════════════════════════════════════════════
-  VOSK NOT READY — Install: pip install vosk
-  Model: https://alphacephei.com/vosk/models/
-  Extract to: backend/vosk-model/
+  WHISPER NOT READY — Install:
+    pip install openai-whisper torch
+  Then pre-download the model (needs internet once):
+    python -c "import whisper; whisper.load_model('base.en')"
 ══════════════════════════════════════════════════════════════════\033[0m
 """
 
 try:
+    import whisper
+    WHISPER_AVAILABLE = True
+    logger.info("Whisper imported successfully")
+except ImportError:
+    logger.warning("Whisper not installed. Run: pip install openai-whisper torch")
+    print(WHISPER_SETUP_MESSAGE)
+
+# Keep Vosk as optional fallback
+VOSK_AVAILABLE = False
+try:
     import vosk
     VOSK_AVAILABLE = True
-    logger.info("Vosk imported successfully")
+    logger.info("Vosk also available as fallback")
 except ImportError:
-    logger.warning("Vosk not installed. Run: pip install vosk")
-    print(VOSK_SETUP_MESSAGE)
+    pass
 
 GEOAPIFY_AVAILABLE = False
 try:
@@ -80,28 +84,16 @@ except ImportError:
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SECTION 2: PHONETIC FINGERPRINTING
-#
-# A simplified phonetic algorithm that reduces words to their "sound skeleton."
-# "acrisure" → "AKRSR"   "a cri sure" → "AKRSR"   MATCH!
-# "current" → "KRNT"     "currant" → "KRNT"        MATCH!
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def phonetic_fingerprint(text: str) -> str:
-    """
-    Generate a rough phonetic fingerprint of text.
-    Strips vowels (except leading), collapses doubles, maps similar consonants.
-    """
     if not text:
         return ""
-    
     text = text.lower().strip()
     text = re.sub(r'[^a-z\s]', '', text)
-    text = re.sub(r'\s+', '', text)  # Remove spaces for cross-word matching
-    
+    text = re.sub(r'\s+', '', text)
     if not text:
         return ""
-    
-    # Map similar-sounding consonant clusters
     mappings = [
         ('ph', 'f'), ('gh', 'g'), ('ck', 'k'), ('sh', 'x'),
         ('th', 't'), ('wh', 'w'), ('qu', 'kw'),
@@ -109,8 +101,6 @@ def phonetic_fingerprint(text: str) -> str:
     ]
     for old, new in mappings:
         text = text.replace(old, new)
-    
-    # Character-level sound mapping
     char_map = {
         'b': 'B', 'f': 'F', 'p': 'P', 'v': 'F',
         'c': 'K', 'g': 'K', 'j': 'J', 'k': 'K', 'q': 'K',
@@ -119,10 +109,8 @@ def phonetic_fingerprint(text: str) -> str:
         'l': 'L', 'm': 'M', 'n': 'N', 'r': 'R',
         'w': 'W', 'y': 'Y', 'h': '',
     }
-    
     result = [text[0].upper()]
     prev = result[0]
-    
     for ch in text[1:]:
         if ch in 'aeiou':
             prev = ''
@@ -131,12 +119,10 @@ def phonetic_fingerprint(text: str) -> str:
         if mapped and mapped != prev:
             result.append(mapped)
             prev = mapped
-    
     return ''.join(result)[:8]
 
 
 def phonetic_similarity(text1: str, text2: str) -> float:
-    """Compare two strings by their phonetic fingerprints. Returns 0.0-1.0."""
     fp1 = phonetic_fingerprint(text1)
     fp2 = phonetic_fingerprint(text2)
     if not fp1 or not fp2:
@@ -148,24 +134,11 @@ def phonetic_similarity(text1: str, text2: str) -> float:
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SECTION 3: INTENT DETECTION
-#
-# Instead of checking if transcript == "current location", we check if the
-# transcript MEANS "current location" by looking for semantic signals.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def detect_current_location_intent(transcript: str) -> Tuple[bool, float]:
-    """
-    Detect if the user means "use my current location" regardless of
-    what Vosk actually transcribed.
-    
-    Catches: "current location", "it's a location", "my location", "here",
-    "where I am", "use GPS", "currant location", and dozens of other
-    Vosk mishearings we can't predict.
-    """
     t = transcript.lower().strip()
     words = set(t.split())
-    
-    # ── Tier 1: Exact/near-exact matches (confidence 1.0) ───────────────────
     exact_phrases = [
         "current location", "my current location", "use current location",
         "use my current location", "my location", "use my location",
@@ -175,94 +148,67 @@ def detect_current_location_intent(transcript: str) -> Tuple[bool, float]:
     for phrase in exact_phrases:
         if phrase in t:
             return True, 1.0
-    
-    # ── Tier 2: Keyword overlap (confidence 0.85) ────────────────────────────
-    # If transcript contains "location" + any signal word, it's probably
-    # "current location" — that's what we just asked for
     location_words = {"location", "locations", "locate", "located"}
     signal_words = {"current", "my", "this", "here", "use", "its", "it's",
                     "is", "the", "currant", "karen", "her", "a", "i"}
-    
     has_location = bool(words & location_words)
     has_signal = bool(words & signal_words)
-    
     if has_location and has_signal:
         return True, 0.85
-    
-    # "location" alone when we just asked "what's your starting point?"
     if has_location and len(words) <= 3:
         return True, 0.75
-    
-    # ── Tier 3: Phonetic matching (confidence 0.8) ───────────────────────────
     fp_current = phonetic_fingerprint("current location")
     fp_transcript = phonetic_fingerprint(t)
     phon_sim = SequenceMatcher(None, fp_current, fp_transcript).ratio()
     if phon_sim >= 0.7:
         return True, 0.8
-    
-    # ── Tier 4: "here" variants (confidence 0.9) ────────────────────────────
     here_variants = {"here", "hear", "her", "heer", "ear"}
     if words and len(words) <= 2 and (words & here_variants):
         return True, 0.9
-    
-    # ── Tier 5: "current" even without "location" ───────────────────────────
     current_variants = {"current", "currant", "curren", "karen", "curr"}
     if words & current_variants and len(words) <= 3:
         return True, 0.7
-    
     return False, 0.0
 
 
 def detect_travel_mode_intent(transcript: str) -> Tuple[Optional[str], float]:
-    """Detect travel mode from transcript. Returns (mode, confidence)."""
     t = transcript.lower().strip()
-    
     walk_signals = {"walk", "walking", "walked", "walks", "foot", "feet",
                     "on foot", "pedestrian"}
     if any(w in t for w in walk_signals):
         return "walk", 0.95
-    
     transit_signals = {"transit", "bus", "buses", "public", "train",
                        "subway", "trolley", "t line"}
     if any(w in t for w in transit_signals):
         return "transit", 0.95
-    
     wheelchair_signals = {"wheelchair", "wheel chair", "accessible",
                           "accessibility", "handicap", "handicapped",
                           "ada", "roll", "rolling"}
     if any(w in t for w in wheelchair_signals):
         return "wheelchair", 0.95
-    
     if phonetic_similarity(t, "walking") >= 0.7:
         return "walk", 0.7
     if phonetic_similarity(t, "transit") >= 0.7:
         return "transit", 0.7
     if phonetic_similarity(t, "wheelchair") >= 0.7:
         return "wheelchair", 0.7
-    
     return None, 0.0
 
 
 def detect_confirmation_intent(transcript: str) -> Tuple[Optional[bool], float]:
-    """Detect yes/no from transcript. Returns (is_yes, confidence)."""
     t = transcript.lower().strip()
     words = set(t.split())
-    
     yes_words = {"yes", "yeah", "yep", "yup", "correct", "right", "sure",
                  "okay", "ok", "confirm", "confirmed", "affirmative",
                  "absolutely", "definitely", "uh huh", "mhm", "ya", "ye"}
-    
     no_words = {"no", "nope", "nah", "wrong", "incorrect", "not right",
                 "start over", "restart", "different", "change", "redo",
                 "try again", "no way"}
-    
     for phrase in ["that's right", "that's correct", "start over", "try again"]:
         if phrase in t:
             return phrase in {"that's right", "that's correct"}, 0.95
-    
     has_yes = bool(words & yes_words)
     has_no = bool(words & no_words)
-    
     if has_yes and not has_no:
         return True, 0.9
     if has_no and not has_yes:
@@ -273,7 +219,6 @@ def detect_confirmation_intent(transcript: str) -> Tuple[Optional[bool], float]:
                 return True, 0.5
             if word in no_words:
                 return False, 0.5
-    
     return None, 0.0
 
 
@@ -282,7 +227,6 @@ def detect_confirmation_intent(transcript: str) -> Tuple[Optional[bool], float]:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 PHONETIC_CORRECTIONS: Dict[str, str] = {
-    # ── Acrisure Stadium ──
     "a cri sure": "Acrisure", "a cry sure": "Acrisure",
     "acri sure": "Acrisure", "a cree sure": "Acrisure",
     "a chris sure": "Acrisure", "a kri sure": "Acrisure",
@@ -294,8 +238,6 @@ PHONETIC_CORRECTIONS: Dict[str, str] = {
     "i cris sure": "Acrisure", "a krishna": "Acrisure",
     "a cris your": "Acrisure", "accrue sure": "Acrisure",
     "a crew sure": "Acrisure",
-    
-    # ── Pittsburgh landmarks ──
     "pea and see": "PNC", "p and c": "PNC",
     "pee and see": "PNC", "p n c": "PNC",
     "pine see": "PNC", "pee en see": "PNC", "pen see": "PNC",
@@ -328,8 +270,6 @@ PHONETIC_CORRECTIONS: Dict[str, str] = {
     "car nee gee melon": "Carnegie Mellon",
     "carnegie melon": "Carnegie Mellon",
     "car nee gee mel in": "Carnegie Mellon",
-    
-    # ── Street types ──
     "avenew": "Avenue", "av new": "Avenue", "a venue": "Avenue",
     "boule vard": "Boulevard", "bull of art": "Boulevard",
     "bull a vard": "Boulevard", "stree": "Street", "st reet": "Street",
@@ -408,33 +348,21 @@ AMBIGUOUS_NUMBER_WORDS = {"to", "too", "for", "fore", "oh", "o", "ate"}
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def match_landmark(text: str) -> Tuple[Optional[str], float]:
-    """
-    Try to match text against known landmarks using multiple strategies.
-    Returns (canonical_name, confidence) or (None, 0.0).
-    """
     if not text or len(text.strip()) < 2:
         return None, 0.0
-    
     text_lower = text.lower().strip()
     text_words = set(text_lower.split())
     text_phonetic = phonetic_fingerprint(text_lower)
-    
     best_match = None
     best_score = 0.0
-    
     for canonical_name, variants in KNOWN_LANDMARKS:
         all_targets = [canonical_name.lower()] + [v.lower() for v in variants]
-        
         for target in all_targets:
             score = 0.0
             target_words = set(target.split())
             target_phonetic = phonetic_fingerprint(target)
-            
-            # Strategy 1: Exact containment
             if target in text_lower or text_lower in target:
                 score = max(score, 0.95)
-            
-            # Strategy 2: Word overlap
             if target_words and text_words:
                 intersection = text_words & target_words
                 union = text_words | target_words
@@ -442,23 +370,16 @@ def match_landmark(text: str) -> Tuple[Optional[str], float]:
                 target_coverage = len(intersection) / len(target_words) if target_words else 0
                 word_score = (jaccard * 0.4 + target_coverage * 0.6)
                 score = max(score, word_score)
-            
-            # Strategy 3: Character-level fuzzy
             char_sim = SequenceMatcher(None, text_lower, target).ratio()
             score = max(score, char_sim)
-            
-            # Strategy 4: Phonetic fingerprint
             if text_phonetic and target_phonetic:
                 phon_sim = SequenceMatcher(None, text_phonetic, target_phonetic).ratio()
                 score = max(score, phon_sim * 0.95)
-            
             if score > best_score:
                 best_score = score
                 best_match = canonical_name
-    
     if best_match and best_score >= 0.65:
         return best_match, best_score
-    
     return None, 0.0
 
 
@@ -467,89 +388,68 @@ def match_landmark(text: str) -> Tuple[Optional[str], float]:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def correct_transcript(raw: str, context: str = "address") -> Tuple[str, float]:
-    """
-    Multi-pass correction pipeline.
-    
-    Args:
-        raw: Raw Vosk transcript
-        context: "address" | "mode" | "confirm" | "command"
-    
-    Returns (corrected_text, confidence_score).
-    """
     if not raw or not raw.strip():
         return ("", 0.0)
-    
     text = raw.strip().lower()
     original = text
-    confidence = 0.3
-    
-    # ── Context-specific intent detection ────────────────────────────────────
+    confidence = 0.7  # Higher base confidence with Whisper
+
+    # Context-specific intent detection
     if context == "address":
         is_current, current_conf = detect_current_location_intent(text)
         if is_current and current_conf >= 0.7:
             logger.info(f"Intent: '{raw}' → 'current location' (conf={current_conf:.2f})")
             return ("current location", current_conf)
-    
     elif context == "mode":
         mode, mode_conf = detect_travel_mode_intent(text)
         if mode and mode_conf >= 0.7:
             mode_labels = {"walk": "walking", "transit": "transit",
                            "wheelchair": "wheelchair"}
             return (mode_labels.get(mode, mode), mode_conf)
-    
     elif context == "confirm":
         is_yes, conf_conf = detect_confirmation_intent(text)
         if is_yes is not None and conf_conf >= 0.5:
             return ("yes" if is_yes else "no", conf_conf)
-    
-    # ── Pass 1: Direct phonetic corrections ──────────────────────────────────
+
+    # Pass 1: Direct phonetic corrections
     sorted_corrections = sorted(
         PHONETIC_CORRECTIONS.items(), key=lambda x: len(x[0]), reverse=True
     )
-    corrections_applied = 0
     for mishearing, correct in sorted_corrections:
         if mishearing in text:
             text = text.replace(mishearing, correct)
-            corrections_applied += 1
-            logger.info(f"Phonetic fix: '{mishearing}' → '{correct}'")
-    
-    if corrections_applied > 0:
-        confidence = max(confidence, 0.6)
-    
-    # ── Pass 2: Number normalization ─────────────────────────────────────────
+            confidence = max(confidence, 0.8)
+
+    # Pass 2: Number normalization
     text = _normalize_spoken_numbers(text)
-    
-    # ── Pass 3: Street type recovery ─────────────────────────────────────────
+
+    # Pass 3: Street type recovery
     text = _fix_street_types(text)
-    
-    # ── Pass 4: Multi-strategy landmark matching ─────────────────────────────
+
+    # Pass 4: Landmark matching
     landmark, landmark_score = match_landmark(text)
     if landmark and landmark_score >= 0.65:
         text = landmark
         confidence = max(confidence, min(landmark_score, 0.95))
-        logger.info(f"Landmark match: '{original}' → '{text}' (score={landmark_score:.2f})")
-    
-    # ── Pass 5: Title-case cleanup ───────────────────────────────────────────
+
+    # Pass 5: Title-case cleanup
     text = _smart_title_case(text)
-    
-    # ── Pass 6: Whitespace cleanup ───────────────────────────────────────────
+
+    # Pass 6: Whitespace cleanup
     text = re.sub(r'\s+', ' ', text).strip()
-    
+
     if text.lower() != original:
         logger.info(f"Corrected: '{raw}' → '{text}' (confidence={confidence:.2f})")
-    
+
     return (text, confidence)
 
 
 def _normalize_spoken_numbers(text: str) -> str:
-    """Convert spoken numbers to digits: "one oh four" → "104"."""
     words = text.split()
     result = []
     i = 0
-    
     while i < len(words):
         word = words[i].lower().strip(".,!?")
-        
         if word in SPOKEN_DIGITS and word not in AMBIGUOUS_NUMBER_WORDS:
             number_str, consumed = _accumulate_number(words, i)
             if number_str:
@@ -563,24 +463,18 @@ def _normalize_spoken_numbers(text: str) -> str:
                     result.append(number_str)
                     i += consumed
                     continue
-        
         result.append(words[i])
         i += 1
-    
     return ' '.join(result)
 
 
 def _accumulate_number(words: List[str], start: int) -> Tuple[Optional[str], int]:
-    """Accumulate consecutive number words into a digit string."""
     i = start
     parts = []
-    
     while i < len(words):
         word = words[i].lower().strip(".,!?")
-        
         if word in SPOKEN_DIGITS:
             val = SPOKEN_DIGITS[word]
-            
             if word == "hundred":
                 if parts:
                     last = int(''.join(parts)) if parts else 1
@@ -611,11 +505,9 @@ def _accumulate_number(words: List[str], start: int) -> Tuple[Optional[str], int
             i += 1
         else:
             break
-    
     consumed = i - start
     if consumed == 0:
         return None, 0
-    
     number = ''.join(parts)
     try:
         if int(number) > 99999:
@@ -625,12 +517,10 @@ def _accumulate_number(words: List[str], start: int) -> Tuple[Optional[str], int
             )
     except ValueError:
         pass
-    
     return number, consumed
 
 
 def _fix_street_types(text: str) -> str:
-    """Fix mangled street type suffixes."""
     replacements = [
         (r'\bst\b(?!\.|,)', 'Street'), (r'\bave\b', 'Avenue'),
         (r'\bblvd\b', 'Boulevard'), (r'\bdr\b', 'Drive'),
@@ -644,11 +534,9 @@ def _fix_street_types(text: str) -> str:
 
 
 def _smart_title_case(text: str) -> str:
-    """Title-case text but preserve acronyms."""
     uppercase_words = {"PNC", "PPG", "UPMC", "CMU", "AGH", "GTFS", "USA", "US"}
     lowercase_words = {"of", "the", "and", "in", "at", "to", "for", "on",
                        "by", "a", "an"}
-    
     words = text.split()
     result = []
     for i, word in enumerate(words):
@@ -665,177 +553,129 @@ def _smart_title_case(text: str) -> str:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 7: AUDIO PREPROCESSING
+# SECTION 7: WHISPER MODEL LOADING
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def normalize_audio_gain(raw_bytes: bytes, target_rms: int = 3000) -> bytes:
-    """Normalize 16-bit PCM audio to a target RMS amplitude."""
-    if len(raw_bytes) < 4:
-        return raw_bytes
-    try:
-        num_samples = len(raw_bytes) // 2
-        samples = list(struct.unpack(f'<{num_samples}h', raw_bytes))
-        sum_sq = sum(s * s for s in samples)
-        rms = math.sqrt(sum_sq / num_samples) if num_samples > 0 else 0
-        if rms < 10:
-            return raw_bytes
-        gain = max(0.5, min(target_rms / rms, 8.0))
-        if 0.9 <= gain <= 1.1:
-            return raw_bytes
-        normalized = [max(-32768, min(32767, int(s * gain))) for s in samples]
-        return struct.pack(f'<{num_samples}h', *normalized)
-    except Exception as e:
-        logger.warning(f"Audio normalization failed: {e}")
-        return raw_bytes
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 8: VOSK MODEL LOADING
-# ═══════════════════════════════════════════════════════════════════════════════
-
-_vosk_model = None
+_whisper_model = None
 _model_lock = threading.Lock()
-_recognizer_locks: Dict[str, threading.Lock] = {}
 
 
-def get_vosk_model():
-    """Lazy-load the Vosk model singleton. Thread-safe."""
-    global _vosk_model
-    if _vosk_model is not None:
-        return _vosk_model
+def get_whisper_model():
+    """Lazy-load Whisper model singleton. Thread-safe."""
+    global _whisper_model
+    if _whisper_model is not None:
+        return _whisper_model
     with _model_lock:
-        if _vosk_model is not None:
-            return _vosk_model
-        if not VOSK_AVAILABLE:
-            return None
-        possible_paths = [
-            VOSK_MODEL_PATH,
-            os.path.join(os.path.dirname(__file__), 'vosk-model-small-en-us-0.15'),
-            os.path.join(os.path.dirname(__file__), 'vosk-model-en-us-0.22'),
-        ]
-        model_path = None
-        for path in possible_paths:
-            if os.path.exists(path):
-                final_mdl = os.path.join(path, 'am', 'final.mdl')
-                if os.path.exists(final_mdl):
-                    model_path = path
-                    break
-        if model_path is None:
-            logger.error(f"Vosk model not found. Tried: {possible_paths}")
-            print(VOSK_SETUP_MESSAGE)
+        if _whisper_model is not None:
+            return _whisper_model
+        if not WHISPER_AVAILABLE:
             return None
         try:
-            logger.info(f"Loading Vosk model from {model_path}...")
-            vosk.SetLogLevel(-1)
-            _vosk_model = vosk.Model(model_path)
-            logger.info("Vosk model loaded successfully")
-            return _vosk_model
+            logger.info(f"Loading Whisper model '{WHISPER_MODEL_NAME}'...")
+            _whisper_model = whisper.load_model(WHISPER_MODEL_NAME)
+            logger.info(f"Whisper model '{WHISPER_MODEL_NAME}' loaded successfully")
+            return _whisper_model
         except Exception as e:
-            logger.error(f"Failed to load Vosk model: {e}")
+            logger.error(f"Failed to load Whisper model: {e}")
             return None
 
 
+def transcribe_audio_bytes(audio_bytes: bytes, context: str = "address") -> Tuple[str, float]:
+    """
+    Transcribe raw 16-bit 16kHz mono PCM audio bytes using Whisper.
+    Returns (corrected_text, confidence).
+    """
+    model = get_whisper_model()
+    if model is None:
+        return ("", 0.0)
+
+    # Write PCM bytes to a temporary WAV file
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:
+            tmp_path = tmp.name
+            with wave.open(tmp, 'wb') as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)  # 16-bit
+                wf.setframerate(16000)
+                wf.writeframes(audio_bytes)
+
+        # Transcribe with Whisper
+        result = model.transcribe(
+            tmp_path,
+            language='en',
+            fp16=False,  # CPU-safe
+            condition_on_previous_text=False,
+            no_speech_threshold=0.5,
+        )
+
+        raw_text = result.get('text', '').strip()
+        if not raw_text:
+            return ("", 0.0)
+
+        logger.info(f"Whisper raw: '{raw_text}'")
+
+        # Run through correction pipeline
+        corrected, confidence = correct_transcript(raw_text, context=context)
+        return (corrected, confidence)
+
+    except Exception as e:
+        logger.error(f"Whisper transcription failed: {e}")
+        return ("", 0.0)
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except:
+                pass
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 9: SESSION MANAGEMENT
+# SECTION 8: SESSION MANAGEMENT
 # ═══════════════════════════════════════════════════════════════════════════════
 
 _voice_sessions: Dict[str, Dict] = {}
 _sessions_lock = threading.Lock()
 
 
-def create_voice_session(socket_id: str, use_grammar: bool = False) -> Optional[str]:
-    """Create a new Vosk recognition session."""
-    model = get_vosk_model()
+def create_voice_session(socket_id: str) -> Optional[str]:
+    """Create a new voice session."""
+    if not WHISPER_AVAILABLE:
+        return None
+    # Pre-load model on first session
+    model = get_whisper_model()
     if model is None:
         return None
+
     session_id = f"vs-{int(time.time())}-{random.randint(1000, 9999)}"
-    try:
-        if use_grammar:
-            grammar_words = _build_grammar_word_list()
-            recognizer = vosk.KaldiRecognizer(model, 16000,
-                                               json.dumps(grammar_words))
-        else:
-            recognizer = vosk.KaldiRecognizer(model, 16000)
-        recognizer.SetWords(True)
-        recognizer.SetPartialWords(True)
-        with _sessions_lock:
-            _voice_sessions[session_id] = {
-                'recognizer': recognizer,
-                'created_at': time.time(),
-                'last_activity': time.time(),
-                'socket_id': socket_id,
-                'is_recording': False,
-                'chunk_count': 0,
-                'total_audio_bytes': 0,
-                'use_grammar': use_grammar,
-                'partial_history': [],
-                'final_results': [],
-                'correction_context': 'address',
-            }
-            _recognizer_locks[session_id] = threading.Lock()
-        return session_id
-    except Exception as e:
-        logger.error(f"Failed to create voice session: {e}")
-        return None
+    with _sessions_lock:
+        _voice_sessions[session_id] = {
+            'created_at': time.time(),
+            'last_activity': time.time(),
+            'socket_id': socket_id,
+            'audio_buffer': bytearray(),
+            'correction_context': 'address',
+            'final_results': [],
+        }
+    logger.info(f"Voice session created: {session_id}")
+    return session_id
 
 
 def set_session_context(session_id: str, context: str):
-    """Set what kind of answer we're expecting: address|mode|confirm|command."""
     with _sessions_lock:
         session = _voice_sessions.get(session_id)
         if session:
             session['correction_context'] = context
-            logger.info(f"Session {session_id} context → {context}")
-
-
-def _build_grammar_word_list() -> List[str]:
-    """Build a Vosk grammar word list from known landmarks and address words."""
-    words = set()
-    for canonical, variants in KNOWN_LANDMARKS:
-        for w in canonical.lower().split():
-            words.add(w)
-        for variant in variants:
-            for w in variant.lower().split():
-                words.add(w)
-    words.update([
-        "street", "avenue", "boulevard", "drive", "lane", "court", "place",
-        "road", "parkway", "highway", "way", "circle", "terrace", "pike",
-        "st", "ave", "blvd", "dr", "rd",
-    ])
-    words.update(SPOKEN_DIGITS.keys())
-    words.update(["north", "south", "east", "west", "northeast", "northwest",
-                   "southeast", "southwest"])
-    words.update([
-        "go", "take", "me", "to", "from", "navigate", "directions",
-        "walk", "walking", "drive", "bus", "transit", "wheelchair",
-        "accessible", "current", "location", "here", "my", "the", "and",
-        "at", "on", "near", "by", "between", "across", "next", "stop",
-        "start", "cancel", "yes", "no", "repeat", "help", "yeah", "yep",
-        "nope", "correct", "right", "wrong", "sure", "okay",
-    ])
-    words.update([
-        "acrisure", "heinz", "duquesne", "monongahela", "allegheny",
-        "youghiogheny", "shadyside", "squirrel", "lawrenceville",
-        "bloomfield", "primanti", "kennywood", "incline", "warhol",
-        "clemente", "smithfield", "pittsburgh", "pennsylvania",
-    ])
-    word_list = sorted(words)
-    word_list.append("[unk]")
-    return word_list
 
 
 def destroy_voice_session(session_id: str):
-    """Clean up session and free KaldiRecognizer memory."""
     with _sessions_lock:
         session = _voice_sessions.pop(session_id, None)
-        _recognizer_locks.pop(session_id, None)
     if session:
-        session['recognizer'] = None
         logger.info(f"Voice session {session_id} destroyed")
 
 
 def cleanup_stale_sessions():
-    """Remove sessions inactive for more than 30 minutes."""
     cutoff = time.time() - 1800
     with _sessions_lock:
         stale = [sid for sid, s in _voice_sessions.items()
@@ -844,115 +684,49 @@ def cleanup_stale_sessions():
         destroy_voice_session(sid)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 10: AUDIO PROCESSING
-# ═══════════════════════════════════════════════════════════════════════════════
-
-def process_pcm_chunk(session_id: str, raw_bytes: bytes) -> Tuple[Optional[str], Optional[str]]:
-    """Feed a chunk of raw PCM audio to Vosk with pre/post-processing."""
+def append_audio(session_id: str, audio_bytes: bytes):
+    """Append PCM audio chunk to session buffer."""
     with _sessions_lock:
         session = _voice_sessions.get(session_id)
-    if not session:
-        return None, None
-    recognizer_lock = _recognizer_locks.get(session_id)
-    if recognizer_lock is None:
-        return None, None
-    
-    with recognizer_lock:
-        session['last_activity'] = time.time()
-        session['chunk_count'] += 1
-        session['total_audio_bytes'] += len(raw_bytes)
-        recognizer = session['recognizer']
-        context = session.get('correction_context', 'address')
-        if recognizer is None:
-            return None, None
-        
-        processed_bytes = normalize_audio_gain(raw_bytes)
-        
-        try:
-            is_complete = recognizer.AcceptWaveform(processed_bytes)
-            if is_complete:
-                result_json = recognizer.Result()
-                result = json.loads(result_json)
-                raw_text = result.get('text', '').strip()
-                if raw_text:
-                    corrected, confidence = correct_transcript(raw_text,
-                                                                context=context)
-                    session['final_results'].append({
-                        'raw': raw_text, 'corrected': corrected,
-                        'confidence': confidence, 'context': context,
-                        'timestamp': time.time(),
-                    })
-                    session['partial_history'] = []
-                    logger.info(f"Final [{context}]: '{raw_text}' → "
-                                f"'{corrected}' (conf={confidence:.2f})")
-                    return None, corrected
-                return None, None
-            else:
-                partial_json = recognizer.PartialResult()
-                partial = json.loads(partial_json)
-                partial_text = partial.get('partial', '').strip()
-                if partial_text:
-                    corrected, _ = correct_transcript(partial_text,
-                                                       context=context)
-                    session['partial_history'].append(partial_text)
-                    return corrected, None
-                return None, None
-        except Exception as e:
-            logger.error(f"Error processing PCM chunk: {e}")
-            return None, None
+        if session:
+            session['audio_buffer'].extend(audio_bytes)
+            session['last_activity'] = time.time()
 
 
-def force_final_result(session_id: str) -> Optional[str]:
-    """Force Vosk to return whatever it has recognized so far."""
+def finalize_audio(session_id: str) -> Tuple[str, float]:
+    """Transcribe accumulated audio buffer and clear it."""
     with _sessions_lock:
         session = _voice_sessions.get(session_id)
-    if not session:
-        return None
-    recognizer_lock = _recognizer_locks.get(session_id)
-    if recognizer_lock is None:
-        return None
-    
-    with recognizer_lock:
-        recognizer = session['recognizer']
+        if not session:
+            return ("", 0.0)
+        audio_bytes = bytes(session['audio_buffer'])
         context = session.get('correction_context', 'address')
-        if recognizer is None:
-            return None
-        try:
-            final_json = recognizer.FinalResult()
-            result = json.loads(final_json)
-            raw_text = result.get('text', '').strip()
-            if raw_text:
-                corrected, confidence = correct_transcript(raw_text,
-                                                            context=context)
+        session['audio_buffer'] = bytearray()
+
+    if len(audio_bytes) < 3200:  # Less than 0.1s of audio
+        return ("", 0.0)
+
+    corrected, confidence = transcribe_audio_bytes(audio_bytes, context=context)
+
+    if corrected:
+        with _sessions_lock:
+            session = _voice_sessions.get(session_id)
+            if session:
                 session['final_results'].append({
-                    'raw': raw_text, 'corrected': corrected,
-                    'confidence': confidence, 'context': context,
-                    'timestamp': time.time(), 'forced': True,
+                    'corrected': corrected,
+                    'confidence': confidence,
+                    'context': context,
+                    'timestamp': time.time(),
                 })
-                logger.info(f"Forced [{context}]: '{raw_text}' → "
-                            f"'{corrected}' (conf={confidence:.2f})")
-                return corrected
-            return None
-        except Exception as e:
-            logger.error(f"Error getting final result: {e}")
-            return None
+
+    return (corrected, confidence)
 
 
-def validate_audio_chunk(raw_bytes: bytes) -> bool:
-    """Validate that incoming bytes look like 16-bit PCM audio."""
-    if not raw_bytes or len(raw_bytes) < 320 or len(raw_bytes) % 2 != 0:
-        return False
-    try:
-        num_samples = len(raw_bytes) // 2
-        samples = struct.unpack(f'<{num_samples}h', raw_bytes)
-        return max(abs(s) for s in samples) >= 50
-    except struct.error:
-        return False
-
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECTION 9: AUDIO UTILITIES
+# ═══════════════════════════════════════════════════════════════════════════════
 
 def convert_browser_audio_to_pcm(audio_data) -> Optional[bytes]:
-    """Convert incoming audio data from Socket.IO to raw PCM bytes."""
     if isinstance(audio_data, bytes):
         return audio_data
     elif isinstance(audio_data, bytearray):
@@ -969,17 +743,25 @@ def convert_browser_audio_to_pcm(audio_data) -> Optional[bytes]:
         return None
 
 
+def validate_audio_chunk(raw_bytes: bytes) -> bool:
+    if not raw_bytes or len(raw_bytes) < 320 or len(raw_bytes) % 2 != 0:
+        return False
+    try:
+        num_samples = len(raw_bytes) // 2
+        samples = struct.unpack(f'<{num_samples}h', raw_bytes)
+        return max(abs(s) for s in samples) >= 50
+    except struct.error:
+        return False
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 11: GEOCODING
+# SECTION 10: GEOCODING
 # ═══════════════════════════════════════════════════════════════════════════════
 
 TOMTOM_API_KEY = os.getenv('TOMTOM_API_KEY', 'pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM')
 
 
-# ── Local formatting helpers (avoid circular import from app.py) ─────────────
-
 def fmt_dist(meters):
-    """Format meters to readable string."""
     if not meters:
         return ""
     if meters >= 1000:
@@ -988,7 +770,6 @@ def fmt_dist(meters):
 
 
 def fmt_duration(seconds):
-    """Format seconds to readable string."""
     if not seconds:
         return ""
     if seconds < 60:
@@ -1004,15 +785,11 @@ def fmt_duration(seconds):
 def _geocode_address(address: str, use_bias: bool = True,
                      bias_lat: float = 40.4406,
                      bias_lng: float = -79.9959) -> Optional[Tuple[float, float, str, float]]:
-    """Geocode an address. Returns (lat, lng, formatted_address, confidence)."""
     if not address or len(address.strip()) < 2:
         return None
-    
     landmark, _ = match_landmark(address)
     if landmark:
         address = f"{landmark}, Pittsburgh, PA"
-        logger.info(f"Geocoding with landmark-corrected address: {address}")
-    
     if GEOAPIFY_AVAILABLE:
         try:
             geoapify = GeoapifyClient()
@@ -1030,7 +807,6 @@ def _geocode_address(address: str, use_bias: bool = True,
                             best.get('score', 0.8))
         except Exception as e:
             logger.warning(f"Geoapify geocoding failed: {e}")
-    
     try:
         import requests as http_requests
         url = (f"https://api.tomtom.com/search/2/geocode/"
@@ -1056,7 +832,7 @@ def _geocode_address(address: str, use_bias: bool = True,
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 12: VOICE ROUTE STORAGE
+# SECTION 11: VOICE ROUTE STORAGE
 # ═══════════════════════════════════════════════════════════════════════════════
 
 _voice_routes: Dict[str, Dict] = {}
@@ -1086,7 +862,7 @@ def _get_voice_route(route_id: str) -> Optional[Dict]:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 13: BACKGROUND CLEANUP
+# SECTION 12: BACKGROUND CLEANUP
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def _cleanup_loop():
@@ -1099,32 +875,34 @@ def _cleanup_loop():
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 14: SOCKET.IO & HTTP ENDPOINTS
+# SECTION 13: SOCKET.IO & HTTP ENDPOINTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def init_voice_handler(app, socketio):
     """Register all voice-related Socket.IO handlers and HTTP endpoints."""
     cleanup_thread = threading.Thread(target=_cleanup_loop, daemon=True)
     cleanup_thread.start()
-    
+
+    # ── Socket.IO handlers ───────────────────────────────────────────────────
+
     @socketio.on('voice_start_session')
     def handle_voice_start_session(data):
         from flask_socketio import emit
         from flask import request as flask_request
         sid = flask_request.sid
-        use_grammar = data.get('use_grammar', False)
-        if not VOSK_AVAILABLE:
+
+        if not WHISPER_AVAILABLE:
             emit('voice_error', {
-                'error': 'Vosk not installed. Run: pip install vosk',
-                'code': 'VOSK_NOT_INSTALLED'})
+                'error': 'Whisper not installed. Run: pip install openai-whisper torch',
+                'code': 'WHISPER_NOT_INSTALLED'})
             return
-        model = get_vosk_model()
+        model = get_whisper_model()
         if model is None:
             emit('voice_error', {
-                'error': 'Vosk model not found. See backend/vosk-model/',
-                'code': 'MODEL_NOT_FOUND'})
+                'error': 'Whisper model failed to load',
+                'code': 'MODEL_LOAD_FAILED'})
             return
-        session_id = create_voice_session(sid, use_grammar=use_grammar)
+        session_id = create_voice_session(sid)
         if session_id is None:
             emit('voice_error', {
                 'error': 'Failed to create session',
@@ -1132,114 +910,72 @@ def init_voice_handler(app, socketio):
             return
         emit('voice_session_created', {
             'session_id': session_id,
-            'model_path': VOSK_MODEL_PATH,
+            'engine': 'whisper',
+            'model': WHISPER_MODEL_NAME,
             'sample_rate': 16000,
-            'grammar_mode': use_grammar,
         })
         logger.info(f"Session created: {session_id} for socket {sid}")
-    
+
     @socketio.on('voice_set_context')
     def handle_voice_set_context(data):
-        """Frontend tells us what kind of answer to expect."""
         session_id = data.get('session_id')
         context = data.get('context', 'address')
         if session_id:
             set_session_context(session_id, context)
-    
+
     @socketio.on('voice_audio_chunk')
     def handle_voice_audio_chunk(data):
         from flask_socketio import emit
         session_id = data.get('session_id')
         audio_data = data.get('audio_data')
         is_final = data.get('is_final', False)
-        
+
         if not session_id:
-            emit('voice_error', {'error': 'Missing session_id',
-                                 'code': 'NO_SESSION'})
+            emit('voice_error', {'error': 'Missing session_id', 'code': 'NO_SESSION'})
             return
         raw_bytes = convert_browser_audio_to_pcm(audio_data)
         if raw_bytes is None:
-            emit('voice_error', {'error': 'Invalid audio data',
-                                 'code': 'INVALID_AUDIO'})
             return
-        
+
+        # Accumulate audio in session buffer
+        if raw_bytes and validate_audio_chunk(raw_bytes):
+            append_audio(session_id, raw_bytes)
+
+        # If this is the final chunk, transcribe everything
         if is_final:
-            if raw_bytes and validate_audio_chunk(raw_bytes):
-                process_pcm_chunk(session_id, raw_bytes)
-            final_transcript = force_final_result(session_id)
-            with _sessions_lock:
-                session = _voice_sessions.get(session_id)
-            last_raw = None
-            last_confidence = 0.5
-            if session and session.get('final_results'):
-                entry = session['final_results'][-1]
-                last_raw = entry.get('raw')
-                last_confidence = entry.get('confidence', 0.5)
+            transcript, confidence = finalize_audio(session_id)
             emit('voice_final_result', {
-                'transcript': final_transcript or '',
-                'raw_transcript': last_raw,
-                'confidence': last_confidence,
+                'transcript': transcript,
+                'raw_transcript': transcript,
+                'confidence': confidence,
                 'session_id': session_id,
-                'is_forced': True
+                'is_forced': True,
+                'engine': 'whisper',
             })
-            return
-        
-        if not validate_audio_chunk(raw_bytes):
-            return
-        
-        partial, final = process_pcm_chunk(session_id, raw_bytes)
-        if final is not None:
-            with _sessions_lock:
-                session = _voice_sessions.get(session_id)
-            last_raw = None
-            last_confidence = 0.5
-            if session and session.get('final_results'):
-                entry = session['final_results'][-1]
-                last_raw = entry.get('raw')
-                last_confidence = entry.get('confidence', 0.5)
-            emit('voice_final_result', {
-                'transcript': final,
-                'raw_transcript': last_raw,
-                'confidence': last_confidence,
-                'session_id': session_id,
-                'is_forced': False
-            })
-        elif partial is not None and partial != '':
-            emit('voice_partial_result', {
-                'transcript': partial,
-                'session_id': session_id
-            })
-    
+
     @socketio.on('voice_stop_recording')
     def handle_voice_stop_recording(data):
         from flask_socketio import emit
         session_id = data.get('session_id')
         if not session_id:
             return
-        final_transcript = force_final_result(session_id)
-        with _sessions_lock:
-            session = _voice_sessions.get(session_id)
-        last_raw = None
-        last_confidence = 0.5
-        if session and session.get('final_results'):
-            entry = session['final_results'][-1]
-            last_raw = entry.get('raw')
-            last_confidence = entry.get('confidence', 0.5)
+        transcript, confidence = finalize_audio(session_id)
         emit('voice_final_result', {
-            'transcript': final_transcript or '',
-            'raw_transcript': last_raw,
-            'confidence': last_confidence,
+            'transcript': transcript,
+            'raw_transcript': transcript,
+            'confidence': confidence,
             'session_id': session_id,
             'is_forced': True,
-            'triggered_by': 'stop_recording'
+            'triggered_by': 'stop_recording',
+            'engine': 'whisper',
         })
-    
+
     @socketio.on('voice_destroy_session')
     def handle_voice_destroy_session(data):
         session_id = data.get('session_id')
         if session_id:
             destroy_voice_session(session_id)
-    
+
     @socketio.on('disconnect')
     def handle_voice_disconnect():
         from flask import request as flask_request
@@ -1249,120 +985,91 @@ def init_voice_handler(app, socketio):
                         if s.get('socket_id') == sid]
         for session_id in orphaned:
             destroy_voice_session(session_id)
-    
+
     # ── HTTP endpoints ───────────────────────────────────────────────────────
-    
+
     @app.route('/api/voice/status', methods=['GET'])
     def voice_status():
         from flask import jsonify
-        model = get_vosk_model() if VOSK_AVAILABLE else None
+        model = get_whisper_model() if WHISPER_AVAILABLE else None
         return jsonify({
-            'vosk_installed': VOSK_AVAILABLE,
+            'vosk_installed': True,  # Compat flag for frontend
             'model_loaded': model is not None,
-            'model_path': VOSK_MODEL_PATH,
-            'model_exists': os.path.exists(VOSK_MODEL_PATH),
+            'engine': 'whisper',
+            'model_name': WHISPER_MODEL_NAME,
+            'whisper_available': WHISPER_AVAILABLE,
             'active_sessions': len(_voice_sessions),
             'correction_dictionary_size': len(PHONETIC_CORRECTIONS),
             'known_landmarks': len(KNOWN_LANDMARKS),
-            'setup_instructions': (VOSK_SETUP_MESSAGE
-                                   if not (VOSK_AVAILABLE and model) else None),
         })
-    
+
     @app.route('/api/voice/test-correction', methods=['POST'])
     def test_correction():
-        """
-        Debug endpoint: test the correction pipeline.
-        POST {"text": "it's a location", "context": "address"}
-        → {"corrected": "current location", "confidence": 0.85}
-        """
         from flask import request as flask_request, jsonify
         data = flask_request.json or {}
         raw_text = data.get('text', '')
         context = data.get('context', 'address')
         corrected, confidence = correct_transcript(raw_text, context=context)
-        
         is_current, current_conf = detect_current_location_intent(raw_text)
         landmark, landmark_score = match_landmark(raw_text)
         mode, mode_conf = detect_travel_mode_intent(raw_text)
-        
         return jsonify({
-            'raw': raw_text,
-            'context': context,
-            'corrected': corrected,
-            'confidence': confidence,
+            'raw': raw_text, 'context': context,
+            'corrected': corrected, 'confidence': confidence,
             'debug': {
-                'current_location_intent': {
-                    'detected': is_current, 'confidence': current_conf},
-                'landmark_match': {
-                    'name': landmark, 'score': landmark_score},
-                'mode_intent': {
-                    'mode': mode, 'confidence': mode_conf},
+                'current_location_intent': {'detected': is_current, 'confidence': current_conf},
+                'landmark_match': {'name': landmark, 'score': landmark_score},
+                'mode_intent': {'mode': mode, 'confidence': mode_conf},
                 'phonetic_fingerprint': phonetic_fingerprint(raw_text),
             }
         })
-    
+
     @app.route('/api/voice-route', methods=['POST'])
     def voice_route():
         from flask import request as flask_request, jsonify
         import requests as http_requests
-        
+
         data = flask_request.json or {}
         start_raw = data.get('start', '').strip()
         destination_raw = data.get('destination', '').strip()
         mode_raw = data.get('mode', 'walk').strip()
         user_lat = float(data.get('user_lat', 40.4406))
         user_lng = float(data.get('user_lng', -79.9959))
-        
+
         if not start_raw or not destination_raw:
-            return jsonify({'success': False,
-                            'error': 'Missing start or destination'}), 400
-        
-        start_corrected, start_conf = correct_transcript(start_raw,
-                                                          context="address")
-        dest_corrected, dest_conf = correct_transcript(destination_raw,
-                                                        context="address")
-        
-        logger.info(f"Route: start '{start_raw}' → '{start_corrected}' "
-                     f"(conf={start_conf:.2f})")
-        logger.info(f"Route: dest  '{destination_raw}' → '{dest_corrected}' "
-                     f"(conf={dest_conf:.2f})")
-        
-        # Check for current location intent on BOTH raw and corrected
+            return jsonify({'success': False, 'error': 'Missing start or destination'}), 400
+
+        start_corrected, start_conf = correct_transcript(start_raw, context="address")
+        dest_corrected, dest_conf = correct_transcript(destination_raw, context="address")
+
         is_current, _ = detect_current_location_intent(start_raw)
         if not is_current:
             is_current, _ = detect_current_location_intent(start_corrected)
-        
+
         if is_current:
-            start_lat = user_lat
-            start_lng = user_lng
+            start_lat, start_lng = user_lat, user_lng
             start_address = "Your Current Location"
         else:
-            geocoded_start = _geocode_address(
-                start_corrected, use_bias=True,
-                bias_lat=user_lat, bias_lng=user_lng)
+            geocoded_start = _geocode_address(start_corrected, use_bias=True,
+                                               bias_lat=user_lat, bias_lng=user_lng)
             if geocoded_start is None:
                 return jsonify({
-                    'success': False,
-                    'error': f'Could not find: {start_corrected}',
-                    'original_input': start_raw,
-                    'corrected_input': start_corrected,
+                    'success': False, 'error': f'Could not find: {start_corrected}',
+                    'original_input': start_raw, 'corrected_input': start_corrected,
                     'code': 'GEOCODE_FAILED_START'
                 }), 422
             start_lat, start_lng, start_address, _ = geocoded_start
-        
-        geocoded_dest = _geocode_address(
-            dest_corrected, use_bias=True,
-            bias_lat=user_lat, bias_lng=user_lng)
+
+        geocoded_dest = _geocode_address(dest_corrected, use_bias=True,
+                                          bias_lat=user_lat, bias_lng=user_lng)
         if geocoded_dest is None:
             return jsonify({
-                'success': False,
-                'error': f'Could not find: {dest_corrected}',
-                'original_input': destination_raw,
-                'corrected_input': dest_corrected,
+                'success': False, 'error': f'Could not find: {dest_corrected}',
+                'original_input': destination_raw, 'corrected_input': dest_corrected,
                 'code': 'GEOCODE_FAILED_DEST'
             }), 422
         dest_lat, dest_lng, dest_address, _ = geocoded_dest
-        
+
         mode_map = {
             'walk': 'pedestrian', 'walking': 'pedestrian',
             'wheelchair': 'pedestrian', 'accessible': 'pedestrian',
@@ -1374,7 +1081,7 @@ def init_voice_handler(app, socketio):
             if mode_raw.lower() in ['wheelchair', 'accessible', 'roll']
             else []
         )
-        
+
         route_result = None
         provider_used = None
         try:
@@ -1407,13 +1114,11 @@ def init_voice_handler(app, socketio):
                     provider_used = route_result.get('provider', 'osrm/tomtom')
         except Exception as e:
             logger.error(f"Routing failed: {e}", exc_info=True)
-            return jsonify({'success': False,
-                            'error': f'Routing error: {str(e)}'}), 500
-        
+            return jsonify({'success': False, 'error': f'Routing error: {str(e)}'}), 500
+
         if not route_result:
-            return jsonify({'success': False,
-                            'error': 'No route found'}), 404
-        
+            return jsonify({'success': False, 'error': 'No route found'}), 404
+
         if not route_result.get('instructions'):
             points = route_result.get('points', [])
             if points and len(points) > 1:
@@ -1431,7 +1136,7 @@ def init_voice_handler(app, socketio):
                 ]
             else:
                 route_result['instructions'] = []
-        
+
         from app import get_safety_ai_instance
         safety_ai = get_safety_ai_instance()
         route_coords_list = [{'lat': p[0], 'lng': p[1]}
@@ -1445,16 +1150,13 @@ def init_voice_handler(app, socketio):
                     'recommendations': safety_result.get('recommendations', [])
                 }
             except Exception:
-                safety_dict = {'overall_safety': 0.8, 'risk_level': 'low',
-                               'recommendations': []}
+                safety_dict = {'overall_safety': 0.8, 'risk_level': 'low', 'recommendations': []}
         else:
-            safety_dict = {'overall_safety': 0.8, 'risk_level': 'low',
-                           'recommendations': []}
-        
+            safety_dict = {'overall_safety': 0.8, 'risk_level': 'low', 'recommendations': []}
+
         distance_m = route_result.get('distance_meters', 0)
         duration_s = route_result.get('duration_seconds', 0)
-        distance_str = (f"{distance_m/1000:.1f} km" if distance_m >= 1000
-                        else f"{int(distance_m)} m")
+        distance_str = f"{distance_m/1000:.1f} km" if distance_m >= 1000 else f"{int(distance_m)} m"
         if duration_s < 60:
             duration_str = f"{int(duration_s)} seconds"
         elif duration_s < 3600:
@@ -1462,52 +1164,43 @@ def init_voice_handler(app, socketio):
         else:
             hours = int(duration_s / 3600)
             mins = int((duration_s % 3600) / 60)
-            duration_str = (f"{hours} hour{'s' if hours > 1 else ''}"
-                            f" and {mins} minutes")
-        
+            duration_str = f"{hours} hour{'s' if hours > 1 else ''} and {mins} minutes"
+
         route_id = f"VR-{int(time.time()) % 10000}-{random.randint(100, 999)}"
         _store_voice_route(route_id, {
             'route_id': route_id,
-            'start_address': start_address,
-            'end_address': dest_address,
+            'start_address': start_address, 'end_address': dest_address,
             'distance': distance_str, 'duration': duration_str,
             'steps': route_result.get('instructions', []),
             'route_coords': route_result.get('points', []),
-            'safety': safety_dict,
-            'travel_mode': travel_mode,
-            'provider': provider_used,
-            'created_at': time.time(),
+            'safety': safety_dict, 'travel_mode': travel_mode,
+            'provider': provider_used, 'created_at': time.time(),
             'voice_corrections': {
-                'start_raw': start_raw,
-                'start_corrected': start_corrected,
-                'dest_raw': destination_raw,
-                'dest_corrected': dest_corrected,
+                'start_raw': start_raw, 'start_corrected': start_corrected,
+                'dest_raw': destination_raw, 'dest_corrected': dest_corrected,
             }
         })
-        
+
         return jsonify({
             'success': True, 'route_id': route_id,
-            'start_address': start_address,
-            'end_address': dest_address,
+            'start_address': start_address, 'end_address': dest_address,
             'distance': distance_str, 'duration': duration_str,
             'steps': route_result.get('instructions', []),
             'route_coords': route_result.get('points', []),
-            'safety': safety_dict,
-            'travel_mode': travel_mode,
+            'safety': safety_dict, 'travel_mode': travel_mode,
             'provider': provider_used,
         })
-    
+
     @app.route('/api/voice-route/<route_id>', methods=['GET'])
     def get_voice_route(route_id):
         from flask import jsonify
         route = _get_voice_route(route_id)
         if route is None:
-            return jsonify({'success': False,
-                            'error': 'Route not found or expired'}), 404
+            return jsonify({'success': False, 'error': 'Route not found or expired'}), 404
         return jsonify({'success': True, **route})
-    
+
     logger.info(
-        f"Voice handler v3 initialized — intent detection + "
-        f"phonetic fingerprinting ({len(PHONETIC_CORRECTIONS)} rules, "
-        f"{len(KNOWN_LANDMARKS)} landmarks)")
+        f"Voice handler v4 initialized — Whisper '{WHISPER_MODEL_NAME}' + "
+        f"intent detection + phonetic fingerprinting "
+        f"({len(PHONETIC_CORRECTIONS)} rules, {len(KNOWN_LANDMARKS)} landmarks)")
     return app

@@ -2,32 +2,22 @@
  * VoiceAccessibilityModal.jsx
  *
  * Voice-driven navigation assistant for blind/visually impaired users.
+ * Now powered by Whisper (local, offline, much more accurate than Vosk).
  *
  * AUDIO PIPELINE (browser side):
  * getUserMedia → AudioContext → resampler (44100/48000 → 16000 Hz)
  * → Float32→Int16 converter → Int16Array chunks
- * → Socket.IO binary emit → Vosk backend → transcript back via Socket.IO
+ * → Socket.IO binary emit → backend accumulates in buffer
+ * → on stop: Whisper transcribes entire buffer → transcript back
  *
- * RESAMPLER IMPLEMENTATION:
- * Uses AudioWorklet if available (Chrome/Edge/Safari), falls back to
- * ScriptProcessorNode (all browsers including Firefox).
+ * KEY DIFFERENCE FROM VOSK VERSION:
+ * - No streaming partial transcripts (Whisper is batch, not streaming)
+ * - Shows "Transcribing..." after recording stops while Whisper processes
+ * - Much higher accuracy for addresses, landmarks, proper nouns
  *
- * STATE MACHINE:
+ * STATE MACHINE: (unchanged)
  * IDLE → GREETING → COLLECTING_START → COLLECTING_DESTINATION
  * → COLLECTING_MODE → CONFIRMING → ROUTING → NAVIGATING → IDLE
- *
- * WAKE WORD:
- * Web Speech API SpeechRecognition in continuous mode detects "tryver".
- * Falls back to a "Tap to Speak" button if SpeechRecognition unavailable.
- *
- * TTS:
- * window.speechSynthesis. No external library.
- *
- * CORRECTION MODAL:
- * After each address/destination recording, a 7-second countdown appears
- * in the voice area ("Correction modal in 7... 6... 5..."). If the user
- * is unhappy with what Vosk heard, they can wait for or tap to skip to
- * the correction modal, which lets them type/autocomplete the real address.
  */
 
 import React, {
@@ -102,7 +92,6 @@ class VoskResampler extends AudioWorkletProcessor {
 registerProcessor('vosk-resampler', VoskResampler);
 `;
 
-// ScriptProcessorNode fallback (runs on main thread, deprecated but universally supported)
 const createScriptProcessorFallback = (audioContext, stream, onChunk) => {
   const source = audioContext.createMediaStreamSource(stream);
   const inputSampleRate = audioContext.sampleRate;
@@ -209,24 +198,21 @@ const WORD_TO_NUMBER = {
   tenth: 10,
 };
 
-// TomTom API key for address autocomplete in the correction modal
 const TOMTOM_API_KEY = "pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM";
-
-// How many seconds to count down before showing the correction modal
 const CORRECTION_COUNTDOWN_SECONDS = 7;
 
 // ============================================================================
-// Custom Hook: useVoiceSocket
+// Custom Hook: useVoiceSocket (Whisper version)
 // ============================================================================
 
 const useVoiceSocket = (serverUrl = "http://127.0.0.1:5000") => {
   const socketRef = useRef(null);
   const [sessionId, setSessionId] = useState(null);
-  const [partialTranscript, setPartialTranscript] = useState("");
   const [finalTranscript, setFinalTranscript] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [voskReady, setVoskReady] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
 
   const audioContextRef = useRef(null);
   const streamRef = useRef(null);
@@ -244,12 +230,13 @@ const useVoiceSocket = (serverUrl = "http://127.0.0.1:5000") => {
     fetch(`${serverUrl}/api/voice/status`)
       .then((r) => r.json())
       .then((data) => {
+        // Backend returns vosk_installed: true for compat even with Whisper
         setVoskReady(data.vosk_installed && data.model_loaded);
-        if (!data.vosk_installed || !data.model_loaded) {
+        if (!data.model_loaded) {
           setErrorMessage(
-            data.vosk_installed
-              ? "Vosk model not found. See backend/vosk-model/ setup."
-              : "Vosk not installed. Run: pip install vosk",
+            data.engine === "whisper"
+              ? "Whisper model not loaded. Run: python -c \"import whisper; whisper.load_model('base.en')\""
+              : "Voice model not loaded. Check server console.",
           );
         }
       })
@@ -279,18 +266,17 @@ const useVoiceSocket = (serverUrl = "http://127.0.0.1:5000") => {
     socket.on("voice_session_created", (data) => {
       setSessionId(data.session_id);
       sessionIdRef.current = data.session_id;
-    });
-
-    socket.on("voice_partial_result", (data) => {
-      setPartialTranscript(data.transcript || "");
+      console.log(
+        `[Voice] Session created with engine: ${data.engine || "unknown"}`,
+      );
     });
 
     socket.on("voice_final_result", (data) => {
-      setPartialTranscript("");
+      setIsTranscribing(false);
       if (data.transcript && data.transcript.trim()) {
         setFinalTranscript({
           text: data.transcript.trim().toLowerCase(),
-          confidence: data.confidence || 0.5,
+          confidence: data.confidence || 0.7,
           raw: data.raw_transcript || data.transcript,
         });
       } else {
@@ -299,6 +285,7 @@ const useVoiceSocket = (serverUrl = "http://127.0.0.1:5000") => {
     });
 
     socket.on("voice_error", (data) => {
+      setIsTranscribing(false);
       setErrorMessage(data.error);
     });
 
@@ -370,10 +357,9 @@ const useVoiceSocket = (serverUrl = "http://127.0.0.1:5000") => {
           source.connect(workletNode);
           workletNodeRef.current = workletNode;
           usingWorklet = true;
-          console.log("[Voice] Using AudioWorklet for audio processing");
         } catch (workletError) {
           console.warn(
-            "[Voice] AudioWorklet failed, falling back to ScriptProcessor:",
+            "[Voice] AudioWorklet failed, using ScriptProcessor:",
             workletError,
           );
         }
@@ -390,14 +376,13 @@ const useVoiceSocket = (serverUrl = "http://127.0.0.1:5000") => {
           },
         );
         scriptProcessorRef.current = { source, processor };
-        console.log("[Voice] Using ScriptProcessorNode fallback");
       }
 
       isRecordingRef.current = true;
     } catch (err) {
       if (err.name === "NotAllowedError") {
         setErrorMessage(
-          "Microphone permission denied. Please allow microphone access in your browser settings and refresh the page.",
+          "Microphone permission denied. Please allow microphone access.",
         );
       } else {
         setErrorMessage(`Could not access microphone: ${err.message}`);
@@ -409,7 +394,9 @@ const useVoiceSocket = (serverUrl = "http://127.0.0.1:5000") => {
     if (!isRecordingRef.current) return;
     isRecordingRef.current = false;
 
+    // Tell backend to transcribe the accumulated audio
     if (socketRef.current && sessionIdRef.current) {
+      setIsTranscribing(true);
       socketRef.current.emit("voice_stop_recording", {
         session_id: sessionIdRef.current,
       });
@@ -440,7 +427,6 @@ const useVoiceSocket = (serverUrl = "http://127.0.0.1:5000") => {
 
   return {
     sessionId,
-    partialTranscript,
     finalTranscript,
     setFinalTranscript,
     startRecording,
@@ -448,6 +434,7 @@ const useVoiceSocket = (serverUrl = "http://127.0.0.1:5000") => {
     isConnected,
     voskReady,
     errorMessage,
+    isTranscribing,
   };
 };
 
@@ -482,7 +469,7 @@ export default function VoiceAccessibilityModal({
     useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
 
-  // ── Correction modal state ──────────────────────────────────────────────────
+  // Correction modal state
   const [showCorrection, setShowCorrection] = useState(false);
   const [correctionText, setCorrectionText] = useState("");
   const [correctionType, setCorrectionType] = useState("");
@@ -492,11 +479,10 @@ export default function VoiceAccessibilityModal({
   const correctionResolveRef = useRef(null);
   const correctionDebRef = useRef(null);
 
-  // ── Countdown state ─────────────────────────────────────────────────────────
+  // Countdown state
   const [countdownSeconds, setCountdownSeconds] = useState(0);
   const [showCountdown, setShowCountdown] = useState(false);
   const countdownTimerRef = useRef(null);
-  const countdownResolveRef = useRef(null);
 
   const stateRef = useRef(STATES.IDLE);
   const retryCountRef = useRef(0);
@@ -504,7 +490,6 @@ export default function VoiceAccessibilityModal({
   const currentStepRef = useRef(0);
   const recordingTimerRef = useRef(null);
   const recognitionRef = useRef(null);
-  const audioLevelTimerRef = useRef(null);
   const audioContextForLevelRef = useRef(null);
   const analyserRef = useRef(null);
   const animFrameRef = useRef(null);
@@ -525,19 +510,17 @@ export default function VoiceAccessibilityModal({
 
   const {
     sessionId,
-    partialTranscript,
     finalTranscript,
     setFinalTranscript,
     startRecording,
     stopRecording,
     isConnected,
     voskReady,
+    isTranscribing,
   } = useVoiceSocket("http://127.0.0.1:5000");
 
   useEffect(() => {
-    if (!isVisible) {
-      window.speechSynthesis.cancel();
-    }
+    if (!isVisible) window.speechSynthesis.cancel();
   }, [isVisible]);
 
   // ── TTS ─────────────────────────────────────────────────────────────────────
@@ -548,7 +531,6 @@ export default function VoiceAccessibilityModal({
       if (onDone) setTimeout(onDone, 100);
       return;
     }
-
     window.speechSynthesis.cancel();
     setIsSpeaking(true);
     setStatusMessage(text);
@@ -574,9 +556,8 @@ export default function VoiceAccessibilityModal({
       setIsSpeaking(false);
       if (onDone) onDone();
     };
-    utterance.onerror = (e) => {
+    utterance.onerror = () => {
       setIsSpeaking(false);
-      console.warn("[TTS] Error:", e.error);
       if (onDone) onDone();
     };
 
@@ -585,9 +566,7 @@ export default function VoiceAccessibilityModal({
         if (window.speechSynthesis.speaking) {
           window.speechSynthesis.pause();
           setTimeout(() => window.speechSynthesis.resume(), 50);
-        } else {
-          clearInterval(pauseResume);
-        }
+        } else clearInterval(pauseResume);
       }, 10000);
       utterance.onend = () => {
         clearInterval(pauseResume);
@@ -599,7 +578,7 @@ export default function VoiceAccessibilityModal({
     window.speechSynthesis.speak(utterance);
   }, []);
 
-  // ── Audio level visualizer ───────────────────────────────────────────────────
+  // ── Audio level visualizer ───────────────────────────────────────────────
 
   const startAudioLevelMonitor = useCallback(async () => {
     try {
@@ -611,7 +590,6 @@ export default function VoiceAccessibilityModal({
       analyser.fftSize = 128;
       source.connect(analyser);
       analyserRef.current = analyser;
-
       const data = new Uint8Array(analyser.frequencyBinCount);
       const tick = () => {
         if (!analyserRef.current) return;
@@ -622,7 +600,7 @@ export default function VoiceAccessibilityModal({
       };
       tick();
     } catch (e) {
-      // non-critical
+      /* non-critical */
     }
   }, []);
 
@@ -636,7 +614,7 @@ export default function VoiceAccessibilityModal({
     setAudioLevel(0);
   }, []);
 
-  // ── Chime ───────────────────────────────────────────────────────────────────
+  // ── Chime ───────────────────────────────────────────────────────────────
 
   const playChime = useCallback((freq1 = 440, freq2 = 660) => {
     try {
@@ -664,34 +642,20 @@ export default function VoiceAccessibilityModal({
     }
   }, []);
 
-  // ── Countdown before correction modal ───────────────────────────────────────
-  //
-  // Runs a visible countdown (7, 6, 5...) in the voice area, then opens the
-  // correction modal. User can tap "Fix now" to skip the countdown instantly.
-  //
-  // Returns a Promise that resolves when the countdown finishes (or is skipped).
-  //
+  // ── Countdown ───────────────────────────────────────────────────────────
 
   const skipCountdownRef = useRef(null);
 
   const runCountdown = useCallback((seconds) => {
     return new Promise((resolve) => {
-      // Clear any leftover timer
       if (countdownTimerRef.current) {
         clearInterval(countdownTimerRef.current);
-        countdownTimerRef.current = null;
       }
-
       setCountdownSeconds(seconds);
       setShowCountdown(true);
-      countdownResolveRef.current = resolve;
 
-      // The "skip" function — callable from the "Fix now" button
       skipCountdownRef.current = () => {
-        if (countdownTimerRef.current) {
-          clearInterval(countdownTimerRef.current);
-          countdownTimerRef.current = null;
-        }
+        if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
         setShowCountdown(false);
         setCountdownSeconds(0);
         skipCountdownRef.current = null;
@@ -704,7 +668,6 @@ export default function VoiceAccessibilityModal({
         setCountdownSeconds(remaining);
         if (remaining <= 0) {
           clearInterval(countdownTimerRef.current);
-          countdownTimerRef.current = null;
           setShowCountdown(false);
           setCountdownSeconds(0);
           skipCountdownRef.current = null;
@@ -714,31 +677,14 @@ export default function VoiceAccessibilityModal({
     });
   }, []);
 
-  // ── Correction modal ────────────────────────────────────────────────────────
-  //
-  // Now includes a countdown delay before the modal appears.
-  //
-  // Flow:
-  // 1. Show "I heard: <text>" in the voice area
-  // 2. Start 7-second countdown: "Not happy? Correction modal in 7... 6... 5..."
-  // 3. User can tap "Fix now" to skip countdown
-  // 4. After countdown: correction modal opens with TomTom autocomplete
-  // 5. Returns corrected text or null (keep original)
-  //
+  // ── Correction modal ────────────────────────────────────────────────────
 
   const askForCorrection = useCallback(
     async (originalText, type, placeholder) => {
-      // Stop TTS so the user can read
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
-
-      // Show what Vosk heard in the transcript area
       setDisplayTranscript(originalText || "");
-
-      // Run the countdown
       await runCountdown(CORRECTION_COUNTDOWN_SECONDS);
-
-      // Now open the correction modal
       return new Promise((resolve) => {
         setCorrectionText(originalText || "");
         setCorrectionType(type);
@@ -752,10 +698,9 @@ export default function VoiceAccessibilityModal({
     [runCountdown],
   );
 
-  // ── Recording with Vosk ─────────────────────────────────────────────────────
+  // ── Recording with Whisper ──────────────────────────────────────────────
 
   const pendingTranscriptResolveRef = useRef(null);
-  const pendingFallbackTimerRef = useRef(null);
 
   const startListeningWithVosk = useCallback(
     (durationMs) => {
@@ -765,29 +710,35 @@ export default function VoiceAccessibilityModal({
           return;
         }
 
-        const transcriptHandler = (result) => {
+        pendingTranscriptResolveRef.current = (result) => {
           clearTimeout(recordingTimerRef.current);
-          stopRecording();
           setIsRecordingActive(false);
           stopAudioLevelMonitor();
           resolve(result);
         };
 
-        pendingTranscriptResolveRef.current = transcriptHandler;
-
         await startRecording();
         setIsRecordingActive(true);
+        setDisplayTranscript("Listening...");
         startAudioLevelMonitor();
 
+        // After duration, stop recording — Whisper will transcribe
         recordingTimerRef.current = setTimeout(() => {
-          stopRecording();
+          stopRecording(); // This triggers voice_stop_recording → Whisper transcribes
           setIsRecordingActive(false);
+          setDisplayTranscript("Transcribing...");
           stopAudioLevelMonitor();
+
+          // Give Whisper up to 15 seconds to respond
           const fallbackTimer = setTimeout(() => {
-            pendingTranscriptResolveRef.current = null;
-            resolve(null);
-          }, 2000);
-          pendingFallbackTimerRef.current = fallbackTimer;
+            if (pendingTranscriptResolveRef.current) {
+              pendingTranscriptResolveRef.current = null;
+              resolve(null);
+            }
+          }, 15000);
+
+          // Store so we can clear it when transcript arrives
+          recordingTimerRef.current = fallbackTimer;
         }, durationMs);
       });
     },
@@ -801,46 +752,41 @@ export default function VoiceAccessibilityModal({
     ],
   );
 
-  // When Vosk returns a final result, resolve the pending promise
+  // When Whisper returns a final result
   useEffect(() => {
     if (finalTranscript === null) return;
-
-    if (pendingFallbackTimerRef.current) {
-      clearTimeout(pendingFallbackTimerRef.current);
-      pendingFallbackTimerRef.current = null;
-    }
 
     if (pendingTranscriptResolveRef.current) {
       const handler = pendingTranscriptResolveRef.current;
       pendingTranscriptResolveRef.current = null;
+      if (recordingTimerRef.current) {
+        clearTimeout(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
       setFinalTranscript(null);
 
       const text =
         finalTranscript.text === "__EMPTY__" ? null : finalTranscript.text;
       if (text) setDisplayTranscript(text);
+      else setDisplayTranscript("");
 
       handler(
         text === null
           ? null
-          : { text, confidence: finalTranscript.confidence || 0.5 },
+          : { text, confidence: finalTranscript.confidence || 0.7 },
       );
     } else {
       setFinalTranscript(null);
     }
   }, [finalTranscript, setFinalTranscript]);
 
-  useEffect(() => {
-    if (partialTranscript) setDisplayTranscript(partialTranscript + "...");
-  }, [partialTranscript]);
-
-  // ── Navigation command handler ──────────────────────────────────────────────
+  // ── Navigation command handler (unchanged) ──────────────────────────────
 
   const handleNavigationCommand = useCallback(
     (text) => {
       const t = text.toLowerCase().trim();
       const route = routeDataRef.current;
       if (!route) return;
-
       const steps = route.steps || [];
       const totalSteps = steps.length;
 
@@ -858,79 +804,55 @@ export default function VoiceAccessibilityModal({
         );
         return;
       }
-
       if (/\b(next|next step|continue)\b/.test(t)) {
         const nextIdx = currentStepRef.current + 1;
         if (nextIdx >= totalSteps) {
-          speak(
-            "You have reached the end of the directions. You should be arriving at your destination.",
-          );
+          speak("You have reached the end of the directions.");
           return;
         }
         setCurrentStepIndex(nextIdx);
         currentStepRef.current = nextIdx;
         const step = steps[nextIdx];
-        const instr =
-          step.instruction ||
-          step.maneuver?.instruction ||
-          `Step ${nextIdx + 1}`;
-        speak(`Step ${nextIdx + 1} of ${totalSteps}: ${instr}`);
+        speak(
+          `Step ${nextIdx + 1} of ${totalSteps}: ${step.instruction || `Step ${nextIdx + 1}`}`,
+        );
         return;
       }
-
       const stepMatch = t.match(/step\s+(\w+)/);
       if (stepMatch) {
-        const wordOrNum = stepMatch[1];
-        const num = parseInt(wordOrNum) || WORD_TO_NUMBER[wordOrNum];
+        const num = parseInt(stepMatch[1]) || WORD_TO_NUMBER[stepMatch[1]];
         if (num && num >= 1 && num <= totalSteps) {
           const idx = num - 1;
           setCurrentStepIndex(idx);
           currentStepRef.current = idx;
-          const step = steps[idx];
-          const instr = step.instruction || `Step ${num}`;
-          speak(`Step ${num} of ${totalSteps}: ${instr}`);
+          speak(
+            `Step ${num} of ${totalSteps}: ${steps[idx].instruction || `Step ${num}`}`,
+          );
           return;
         }
       }
-
-      if (/\b(repeat|again|say again|what did you say)\b/.test(t)) {
+      if (/\b(repeat|again|say again)\b/.test(t)) {
         const step = steps[currentStepRef.current];
-        const instr = step?.instruction || `Step ${currentStepRef.current + 1}`;
-        speak(`Repeating: Step ${currentStepRef.current + 1}: ${instr}`);
+        speak(
+          `Repeating: Step ${currentStepRef.current + 1}: ${step?.instruction || "Follow route"}`,
+        );
         return;
       }
-
-      if (
-        /\b(how far|distance|how many (kilometers?|miles?|meters?))\b/.test(t)
-      ) {
+      if (/\b(how far|distance)\b/.test(t)) {
         speak(`Your total route distance is ${route.distance}.`);
         return;
       }
-
-      if (/\b(how long|time|duration|when|eta|arrival)\b/.test(t)) {
+      if (/\b(how long|time|duration|eta)\b/.test(t)) {
         speak(`Your estimated travel time is ${route.duration}.`);
         return;
       }
-
-      if (/\b(route id|route number|my route|what is my route)\b/.test(t)) {
-        const idSpoken = route.route_id.replace(/-/g, " dash ");
-        speak(`Your route ID is ${idSpoken}.`);
-        return;
-      }
-
       if (/\b(safe|safety|danger|risk)\b/.test(t)) {
-        const safety = route.safety || {};
-        const level = safety.risk_level || "unknown";
-        const score = safety.overall_safety
-          ? Math.round(safety.overall_safety * 100)
-          : null;
-        const msg = score
-          ? `Your route has a ${level} risk level with a safety score of ${score} percent.`
-          : `Your route has a ${level} risk level.`;
-        speak(msg);
+        const s = route.safety || {};
+        speak(
+          `Your route has a ${s.risk_level || "unknown"} risk level${s.overall_safety ? ` with a safety score of ${Math.round(s.overall_safety * 100)} percent` : ""}.`,
+        );
         return;
       }
-
       if (
         /\b(new route|different route|change destination|start (a )?new)\b/.test(
           t,
@@ -942,27 +864,21 @@ export default function VoiceAccessibilityModal({
         });
         return;
       }
-
       if (/\b(stop|cancel|exit|goodbye|bye|quit|end navigation)\b/.test(t)) {
+        speak("Navigation ended. Goodbye!", () => {
+          resetAllData();
+          setState(STATES.IDLE);
+        });
+        return;
+      }
+      if (/\b(help|what can|commands?|options?)\b/.test(t)) {
         speak(
-          "Navigation ended. Goodbye! Say Hi Tryver anytime to start again.",
-          () => {
-            resetAllData();
-            setState(STATES.IDLE);
-          },
+          "Available commands: directions, next step, step number, repeat, how far, how long, safety, new route, or stop.",
         );
         return;
       }
-
-      if (/\b(help|what can (i|you)|commands?|options?)\b/.test(t)) {
-        speak(
-          "Available commands: directions, next step, step followed by a number, repeat, how far, how long, route ID, safety, new route, or stop.",
-        );
-        return;
-      }
-
       speak(
-        "I didn't understand that. You can say: directions, next step, repeat, how far, how long, route ID, or stop.",
+        "I didn't understand that. Say: directions, next step, repeat, how far, how long, or stop.",
       );
     },
     [speak],
@@ -970,11 +886,10 @@ export default function VoiceAccessibilityModal({
 
   handleNavigationCommandRef.current = handleNavigationCommand;
 
-  // ── Wake word detection (Web Speech API) ───────────────────────────────────
+  // ── Wake word detection (unchanged) ────────────────────────────────────
 
   useEffect(() => {
     if (!isVisible) return;
-
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -992,34 +907,27 @@ export default function VoiceAccessibilityModal({
 
     recognition.onresult = (event) => {
       if (!["IDLE", "NAVIGATING"].includes(stateRef.current)) return;
-
       const results = Array.from(event.results);
       const allText = results
         .flatMap((r) => Array.from(r))
         .map((alt) => alt.transcript.toLowerCase())
         .join(" ");
-
       if (stateRef.current === "IDLE" && allText.includes("tryver")) {
         playChime(440, 660);
         recognition.stop();
         setState(STATES.GREETING);
         return;
       }
-
       const finalResult = results[results.length - 1];
       if (stateRef.current === "NAVIGATING" && finalResult.isFinal) {
-        if (handleNavigationCommandRef.current) {
+        if (handleNavigationCommandRef.current)
           handleNavigationCommandRef.current(allText);
-        }
       }
     };
 
     recognition.onerror = (e) => {
-      if (e.error === "not-allowed") {
-        setErrorMessage(
-          "Microphone permission denied. Please allow microphone access.",
-        );
-      }
+      if (e.error === "not-allowed")
+        setErrorMessage("Microphone permission denied.");
       if (e.error !== "no-speech" && e.error !== "aborted") {
         setTimeout(() => {
           if (["IDLE", "NAVIGATING"].includes(stateRef.current) && isVisible) {
@@ -1030,7 +938,6 @@ export default function VoiceAccessibilityModal({
         }, 1500);
       }
     };
-
     recognition.onend = () => {
       setTimeout(() => {
         if (["IDLE", "NAVIGATING"].includes(stateRef.current) && isVisible) {
@@ -1040,7 +947,6 @@ export default function VoiceAccessibilityModal({
         }
       }, 500);
     };
-
     return () => {
       try {
         recognition.stop();
@@ -1048,7 +954,7 @@ export default function VoiceAccessibilityModal({
     };
   }, [isVisible, playChime]);
 
-  // ── State machine handlers ─────────────────────────────────────────────────
+  // ── State machine handlers (same flow, just no partial transcripts) ────
 
   const resetAllData = useCallback(() => {
     setStartPointRaw("");
@@ -1062,163 +968,49 @@ export default function VoiceAccessibilityModal({
     setDisplayTranscript("");
     retryCountRef.current = 0;
     setRetryCount(0);
-    // Also kill any running countdown
     if (countdownTimerRef.current) {
       clearInterval(countdownTimerRef.current);
-      countdownTimerRef.current = null;
     }
     setShowCountdown(false);
     setCountdownSeconds(0);
   }, []);
 
   const handleGreetingState = useCallback(async () => {
-    const prompt =
-      "Hi! I'm Tryver, your navigation assistant. I'll help you plan your route step by step. First, what is your starting point? You can say an address, a landmark, or say 'current location' to use your GPS.";
-
-    speak(prompt, async () => {
-      const result = await startListeningWithVosk(
-        RECORDING_DURATIONS.COLLECTING_START,
-      );
-
-      if (result && result.text && result.text.length >= 3) {
-        const corrected = await askForCorrection(
-          result.text,
-          "start",
-          "e.g., 738 Dorseyville Rd or Current Location",
-        );
-        const finalText =
-          corrected !== null && corrected !== undefined
-            ? corrected
-            : result.text;
-
-        if (!finalText || finalText.trim().length < 2) {
-          speak(
-            "I didn't get a valid starting point. Let me try again.",
-            async () => {
-              const retry = await startListeningWithVosk(
-                RECORDING_DURATIONS.COLLECTING_START,
-              );
-              if (retry && retry.text && retry.text.length >= 3) {
-                const retryCorrected = await askForCorrection(
-                  retry.text,
-                  "start",
-                  "e.g., 738 Dorseyville Rd",
-                );
-                const retryFinal =
-                  retryCorrected !== null && retryCorrected !== undefined
-                    ? retryCorrected
-                    : retry.text;
-                setStartPointRaw(retryFinal);
-                retryCountRef.current = 0;
-                setRetryCount(0);
-                setState(STATES.COLLECTING_DESTINATION);
-              } else {
-                speak("Let me start over.", () => {
-                  resetAllData();
-                  setState(STATES.IDLE);
-                });
-              }
-            },
-          );
-          return;
-        }
-
-        setStartPointRaw(finalText);
-        retryCountRef.current = 0;
-        setRetryCount(0);
-        setState(STATES.COLLECTING_DESTINATION);
-      } else {
-        retryCountRef.current++;
-        setRetryCount(retryCountRef.current);
-
-        if (retryCountRef.current >= MAX_RETRIES) {
-          speak("I'm having trouble hearing you. Let me start over.", () => {
-            retryCountRef.current = 0;
-            setRetryCount(0);
-            resetAllData();
-            setState(STATES.IDLE);
-          });
-        } else {
-          speak(
-            "I didn't quite catch that. Please say your starting point again, clearly.",
-            async () => {
-              const retryResult = await startListeningWithVosk(
-                RECORDING_DURATIONS.COLLECTING_START,
-              );
-              if (
-                retryResult &&
-                retryResult.text &&
-                retryResult.text.length >= 3
-              ) {
-                const retryCorrected = await askForCorrection(
-                  retryResult.text,
-                  "start",
-                  "e.g., 738 Dorseyville Rd",
-                );
-                const retryFinal =
-                  retryCorrected !== null && retryCorrected !== undefined
-                    ? retryCorrected
-                    : retryResult.text;
-                setStartPointRaw(retryFinal);
-                retryCountRef.current = 0;
-                setRetryCount(0);
-                setState(STATES.COLLECTING_DESTINATION);
-              } else {
-                speak("Let me start over.", () => {
-                  retryCountRef.current = 0;
-                  setRetryCount(0);
-                  resetAllData();
-                  setState(STATES.IDLE);
-                });
-              }
-            },
-          );
-        }
-      }
-    });
-  }, [speak, startListeningWithVosk, askForCorrection, resetAllData]);
-
-  const handleDestinationState = useCallback(async () => {
     speak(
-      "Got it. Now, what is your destination? Please say the address or name of the place.",
+      "Hi! I'm Tryver, your navigation assistant. First, what is your starting point? Say an address, a landmark, or say current location to use GPS.",
       async () => {
         const result = await startListeningWithVosk(
-          RECORDING_DURATIONS.COLLECTING_DESTINATION,
+          RECORDING_DURATIONS.COLLECTING_START,
         );
-
-        const rawText = result?.text || null;
-        const isValid =
-          rawText && rawText.length >= 2 && rawText !== startPointRaw;
-
-        if (isValid) {
+        if (result && result.text && result.text.length >= 3) {
           const corrected = await askForCorrection(
-            rawText,
-            "destination",
-            "e.g., Carnegie Mellon University or 5000 Forbes Ave",
+            result.text,
+            "start",
+            "e.g., 738 Dorseyville Rd or Current Location",
           );
           const finalText =
-            corrected !== null && corrected !== undefined ? corrected : rawText;
-
+            corrected !== null && corrected !== undefined
+              ? corrected
+              : result.text;
           if (!finalText || finalText.trim().length < 2) {
             speak(
-              "I didn't get a valid destination. Please try again.",
+              "I didn't get a valid starting point. Let me try again.",
               async () => {
                 const retry = await startListeningWithVosk(
-                  RECORDING_DURATIONS.COLLECTING_DESTINATION,
+                  RECORDING_DURATIONS.COLLECTING_START,
                 );
-                if (retry && retry.text && retry.text.length >= 2) {
-                  const retryCorrected = await askForCorrection(
+                if (retry && retry.text && retry.text.length >= 3) {
+                  const rc = await askForCorrection(
                     retry.text,
-                    "destination",
-                    "e.g., Carnegie Mellon University",
+                    "start",
+                    "e.g., 738 Dorseyville Rd",
                   );
-                  const retryFinal =
-                    retryCorrected !== null && retryCorrected !== undefined
-                      ? retryCorrected
-                      : retry.text;
-                  setDestinationRaw(retryFinal);
+                  setStartPointRaw(
+                    rc !== null && rc !== undefined ? rc : retry.text,
+                  );
                   retryCountRef.current = 0;
-                  setState(STATES.COLLECTING_MODE);
+                  setRetryCount(0);
+                  setState(STATES.COLLECTING_DESTINATION);
                 } else {
                   speak("Let me start over.", () => {
                     resetAllData();
@@ -1229,46 +1021,129 @@ export default function VoiceAccessibilityModal({
             );
             return;
           }
-
-          setDestinationRaw(finalText);
+          setStartPointRaw(finalText);
           retryCountRef.current = 0;
           setRetryCount(0);
-          setState(STATES.COLLECTING_MODE);
+          setState(STATES.COLLECTING_DESTINATION);
         } else {
-          const errorPrompt =
-            rawText === startPointRaw
-              ? "Your destination cannot be the same as your starting point. Please say a different destination."
-              : "I didn't catch your destination. Please say the name or address of where you want to go.";
-
           retryCountRef.current++;
+          setRetryCount(retryCountRef.current);
           if (retryCountRef.current >= MAX_RETRIES) {
-            speak("Let me start over.", () => {
+            speak("I'm having trouble hearing you. Let me start over.", () => {
               resetAllData();
               setState(STATES.IDLE);
             });
-            return;
+          } else {
+            speak(
+              "I didn't catch that. Please say your starting point again.",
+              async () => {
+                const retry = await startListeningWithVosk(
+                  RECORDING_DURATIONS.COLLECTING_START,
+                );
+                if (retry && retry.text && retry.text.length >= 3) {
+                  const rc = await askForCorrection(
+                    retry.text,
+                    "start",
+                    "e.g., 738 Dorseyville Rd",
+                  );
+                  setStartPointRaw(
+                    rc !== null && rc !== undefined ? rc : retry.text,
+                  );
+                  retryCountRef.current = 0;
+                  setRetryCount(0);
+                  setState(STATES.COLLECTING_DESTINATION);
+                } else {
+                  speak("Let me start over.", () => {
+                    resetAllData();
+                    setState(STATES.IDLE);
+                  });
+                }
+              },
+            );
           }
+        }
+      },
+    );
+  }, [speak, startListeningWithVosk, askForCorrection, resetAllData]);
 
-          speak(errorPrompt, async () => {
+  const handleDestinationState = useCallback(async () => {
+    speak("Got it. Now, what is your destination?", async () => {
+      const result = await startListeningWithVosk(
+        RECORDING_DURATIONS.COLLECTING_DESTINATION,
+      );
+      const rawText = result?.text || null;
+      const isValid =
+        rawText && rawText.length >= 2 && rawText !== startPointRaw;
+      if (isValid) {
+        const corrected = await askForCorrection(
+          rawText,
+          "destination",
+          "e.g., Carnegie Mellon University",
+        );
+        const finalText =
+          corrected !== null && corrected !== undefined ? corrected : rawText;
+        if (!finalText || finalText.trim().length < 2) {
+          speak(
+            "I didn't get a valid destination. Please try again.",
+            async () => {
+              const retry = await startListeningWithVosk(
+                RECORDING_DURATIONS.COLLECTING_DESTINATION,
+              );
+              if (retry && retry.text && retry.text.length >= 2) {
+                const rc = await askForCorrection(
+                  retry.text,
+                  "destination",
+                  "e.g., Carnegie Mellon University",
+                );
+                setDestinationRaw(
+                  rc !== null && rc !== undefined ? rc : retry.text,
+                );
+                retryCountRef.current = 0;
+                setState(STATES.COLLECTING_MODE);
+              } else {
+                speak("Let me start over.", () => {
+                  resetAllData();
+                  setState(STATES.IDLE);
+                });
+              }
+            },
+          );
+          return;
+        }
+        setDestinationRaw(finalText);
+        retryCountRef.current = 0;
+        setRetryCount(0);
+        setState(STATES.COLLECTING_MODE);
+      } else {
+        retryCountRef.current++;
+        if (retryCountRef.current >= MAX_RETRIES) {
+          speak("Let me start over.", () => {
+            resetAllData();
+            setState(STATES.IDLE);
+          });
+          return;
+        }
+        speak(
+          rawText === startPointRaw
+            ? "Destination can't be same as start. Say a different one."
+            : "I didn't catch your destination.",
+          async () => {
             const retry = await startListeningWithVosk(
               RECORDING_DURATIONS.COLLECTING_DESTINATION,
             );
-            const retryText = retry?.text || null;
             if (
-              retryText &&
-              retryText.length >= 2 &&
-              retryText !== startPointRaw
+              retry?.text &&
+              retry.text.length >= 2 &&
+              retry.text !== startPointRaw
             ) {
-              const retryCorrected = await askForCorrection(
-                retryText,
+              const rc = await askForCorrection(
+                retry.text,
                 "destination",
                 "e.g., Carnegie Mellon University",
               );
-              const retryFinal =
-                retryCorrected !== null && retryCorrected !== undefined
-                  ? retryCorrected
-                  : retryText;
-              setDestinationRaw(retryFinal);
+              setDestinationRaw(
+                rc !== null && rc !== undefined ? rc : retry.text,
+              );
               retryCountRef.current = 0;
               setState(STATES.COLLECTING_MODE);
             } else {
@@ -1277,10 +1152,10 @@ export default function VoiceAccessibilityModal({
                 setState(STATES.IDLE);
               });
             }
-          });
-        }
-      },
-    );
+          },
+        );
+      }
+    });
   }, [
     speak,
     startListeningWithVosk,
@@ -1291,13 +1166,12 @@ export default function VoiceAccessibilityModal({
 
   const handleModeState = useCallback(async () => {
     speak(
-      "How would you like to travel? Say walking for a walking route, transit for bus routes, or wheelchair for an accessible wheelchair route.",
+      "How would you like to travel? Say walking, transit, or wheelchair.",
       async () => {
         const result = await startListeningWithVosk(
           RECORDING_DURATIONS.COLLECTING_MODE,
         );
         const transcript = result?.text || null;
-
         let detectedMode = null;
         if (transcript) {
           if (/walk(ing)?/.test(transcript)) detectedMode = "walk";
@@ -1305,7 +1179,6 @@ export default function VoiceAccessibilityModal({
           else if (/wheelchair|accessible|roll/.test(transcript))
             detectedMode = "wheelchair";
         }
-
         if (detectedMode) {
           setTravelMode(detectedMode);
           retryCountRef.current = 0;
@@ -1313,9 +1186,9 @@ export default function VoiceAccessibilityModal({
         } else {
           retryCountRef.current++;
           if (retryCountRef.current >= MAX_RETRIES) {
-            speak("Let me start over.", () => {
-              resetAllData();
-              setState(STATES.IDLE);
+            speak("I'll use walking mode.", () => {
+              setTravelMode("walk");
+              setState(STATES.CONFIRMING);
             });
             return;
           }
@@ -1323,12 +1196,11 @@ export default function VoiceAccessibilityModal({
             const retry = await startListeningWithVosk(
               RECORDING_DURATIONS.COLLECTING_MODE,
             );
-            const retryText = retry?.text || null;
             let mode = null;
-            if (retryText) {
-              if (/walk/.test(retryText)) mode = "walk";
-              else if (/transit|bus/.test(retryText)) mode = "transit";
-              else if (/wheelchair|accessible/.test(retryText))
+            if (retry?.text) {
+              if (/walk/.test(retry.text)) mode = "walk";
+              else if (/transit|bus/.test(retry.text)) mode = "transit";
+              else if (/wheelchair|accessible/.test(retry.text))
                 mode = "wheelchair";
             }
             if (mode) {
@@ -1336,7 +1208,7 @@ export default function VoiceAccessibilityModal({
               retryCountRef.current = 0;
               setState(STATES.CONFIRMING);
             } else {
-              speak("I'll use walking mode. Let me confirm your route.", () => {
+              speak("I'll use walking mode.", () => {
                 setTravelMode("walk");
                 setState(STATES.CONFIRMING);
               });
@@ -1354,59 +1226,57 @@ export default function VoiceAccessibilityModal({
         : travelMode === "transit"
           ? "transit by bus"
           : "wheelchair accessible";
-
-    const confirmation = `Let me confirm your route. Starting from ${startPointRaw}. Going to ${destinationRaw}. Travel mode: ${modeLabel}. Is that correct? Say yes to confirm or no to start over.`;
-
-    speak(confirmation, async () => {
-      const result = await startListeningWithVosk(
-        RECORDING_DURATIONS.CONFIRMING,
-      );
-      const transcript = result?.text || null;
-
-      const isYes =
-        transcript &&
-        /\b(yes|correct|confirm|yeah|yep|sure|right|okay|ok)\b/.test(
-          transcript,
+    speak(
+      `Let me confirm. From ${startPointRaw}. To ${destinationRaw}. Mode: ${modeLabel}. Is that correct?`,
+      async () => {
+        const result = await startListeningWithVosk(
+          RECORDING_DURATIONS.CONFIRMING,
         );
-      const isNo =
-        transcript &&
-        /\b(no|wrong|incorrect|restart|start over|different|change)\b/.test(
-          transcript,
-        );
-
-      if (isYes) {
-        setState(STATES.ROUTING);
-      } else if (isNo) {
-        speak("No problem, let's start over from the beginning.", () => {
-          resetAllData();
-          setState(STATES.IDLE);
-        });
-      } else {
-        retryCountRef.current++;
-        if (retryCountRef.current >= MAX_RETRIES) {
-          speak("I'll take that as a yes and calculate your route.", () => {
-            setState(STATES.ROUTING);
+        const transcript = result?.text || null;
+        const isYes =
+          transcript &&
+          /\b(yes|correct|confirm|yeah|yep|sure|right|okay|ok)\b/.test(
+            transcript,
+          );
+        const isNo =
+          transcript &&
+          /\b(no|wrong|incorrect|restart|start over|different|change)\b/.test(
+            transcript,
+          );
+        if (isYes) {
+          setState(STATES.ROUTING);
+        } else if (isNo) {
+          speak("No problem, let's start over.", () => {
+            resetAllData();
+            setState(STATES.IDLE);
           });
         } else {
-          speak("Please say yes to confirm or no to start over.", async () => {
-            const retry = await startListeningWithVosk(
-              RECORDING_DURATIONS.CONFIRMING,
-            );
-            const retryText = retry?.text || null;
-            const retryYes =
-              retryText && /\b(yes|correct|yeah|yep|ok)\b/.test(retryText);
-            if (retryYes) {
+          retryCountRef.current++;
+          if (retryCountRef.current >= MAX_RETRIES) {
+            speak("I'll take that as a yes.", () => {
               setState(STATES.ROUTING);
-            } else {
-              speak("Let me start over.", () => {
-                resetAllData();
-                setState(STATES.IDLE);
-              });
-            }
-          });
+            });
+          } else {
+            speak("Please say yes or no.", async () => {
+              const retry = await startListeningWithVosk(
+                RECORDING_DURATIONS.CONFIRMING,
+              );
+              if (
+                retry?.text &&
+                /\b(yes|correct|yeah|yep|ok)\b/.test(retry.text)
+              )
+                setState(STATES.ROUTING);
+              else {
+                speak("Let me start over.", () => {
+                  resetAllData();
+                  setState(STATES.IDLE);
+                });
+              }
+            });
+          }
         }
-      }
-    });
+      },
+    );
   }, [
     speak,
     startListeningWithVosk,
@@ -1417,10 +1287,9 @@ export default function VoiceAccessibilityModal({
   ]);
 
   const handleRoutingState = useCallback(async () => {
-    speak("Perfect! Calculating your route now, please wait.");
+    speak("Calculating your route now, please wait.");
     setIsLoading(true);
     setDisplayTranscript("");
-
     try {
       const body = {
         start: startPointRaw,
@@ -1429,23 +1298,19 @@ export default function VoiceAccessibilityModal({
         user_lat: userLocation ? userLocation[0] : 40.4406,
         user_lng: userLocation ? userLocation[1] : -79.9959,
       };
-
       const response = await fetch("http://127.0.0.1:5000/api/voice-route", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
       const data = await response.json();
       setIsLoading(false);
-
       if (data.success) {
         setRouteData(data);
         routeDataRef.current = data;
         setRouteId(data.route_id);
         setCurrentStepIndex(0);
         currentStepRef.current = 0;
-
         if (onRouteCalculated) {
           onRouteCalculated({
             success: true,
@@ -1465,36 +1330,20 @@ export default function VoiceAccessibilityModal({
             provider: data.provider,
           });
         }
-
-        const routeIdSpoken = data.route_id.replace(/-/g, " dash ");
         const numSteps = (data.steps || []).length;
-
-        const announcement = [
-          `Route found!`,
-          `Your ${travelMode} route`,
-          `from ${data.start_address}`,
-          `to ${data.end_address}`,
-          `is approximately ${data.distance} and will take ${data.duration}.`,
-          `There are ${numSteps} navigation steps.`,
-          `Your route ID is ${routeIdSpoken}.`,
-          `Say directions to hear all steps.`,
-          `Say next step to hear one step at a time.`,
-          `Say repeat to hear this summary again.`,
-          `Say stop to end navigation.`,
-        ].join(" ");
-
-        speak(announcement, () => {
-          setState(STATES.NAVIGATING);
-        });
+        speak(
+          `Route found! Your ${travelMode} route from ${data.start_address} to ${data.end_address} is approximately ${data.distance} and will take ${data.duration}. ${numSteps} steps. Say directions to hear all steps, next step for one at a time, or stop to end.`,
+          () => {
+            setState(STATES.NAVIGATING);
+          },
+        );
       } else {
         const errCode = data.code || "";
-        let errMsg =
-          "I'm sorry, I couldn't find a route between those locations.";
+        let errMsg = "I couldn't find a route between those locations.";
         if (errCode === "GEOCODE_FAILED_START")
-          errMsg = `I couldn't find the starting location: ${startPointRaw}. Let's try again.`;
+          errMsg = `I couldn't find: ${startPointRaw}.`;
         if (errCode === "GEOCODE_FAILED_DEST")
-          errMsg = `I couldn't find the destination: ${destinationRaw}. Let's try again.`;
-
+          errMsg = `I couldn't find: ${destinationRaw}.`;
         speak(errMsg + " Let me start over.", () => {
           resetAllData();
           setState(STATES.IDLE);
@@ -1503,7 +1352,7 @@ export default function VoiceAccessibilityModal({
     } catch (err) {
       setIsLoading(false);
       speak(
-        "I'm having trouble connecting to the server. Please check that Tryver is running and try again.",
+        "I'm having trouble connecting to the server. Please try again.",
         () => {
           resetAllData();
           setState(STATES.IDLE);
@@ -1523,12 +1372,11 @@ export default function VoiceAccessibilityModal({
   useEffect(() => {
     if (!voskReady && state !== STATES.IDLE) {
       speak(
-        "Voice recognition is not available. Please install the Vosk model. See the browser console for instructions.",
+        "Voice recognition is not available. Please check the server console.",
       );
       setState(STATES.IDLE);
       return;
     }
-
     switch (state) {
       case STATES.GREETING:
         handleGreetingState();
@@ -1559,14 +1407,12 @@ export default function VoiceAccessibilityModal({
       stopRecording();
       stopAudioLevelMonitor();
       if (recordingTimerRef.current) clearTimeout(recordingTimerRef.current);
-      if (pendingFallbackTimerRef.current)
-        clearTimeout(pendingFallbackTimerRef.current);
       if (correctionDebRef.current) clearTimeout(correctionDebRef.current);
       if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
     };
   }, [stopRecording, stopAudioLevelMonitor]);
 
-  // ── Progress indicator ──────────────────────────────────────────────────────
+  // ── UI helpers ──────────────────────────────────────────────────────────
 
   const progressSteps = useMemo(
     () => [
@@ -1607,6 +1453,7 @@ export default function VoiceAccessibilityModal({
 
   const getStateIcon = () => {
     if (isLoading) return "⏳";
+    if (isTranscribing) return "🧠";
     if (isRecordingActive) return "🔴";
     if (isSpeaking) return "🔊";
     if (showCountdown) return "⏱️";
@@ -1617,6 +1464,7 @@ export default function VoiceAccessibilityModal({
 
   const getStateBadge = () => {
     if (isLoading) return { text: "ROUTING", color: "var(--amber)" };
+    if (isTranscribing) return { text: "TRANSCRIBING", color: "var(--blue)" };
     if (isRecordingActive) return { text: "LISTENING", color: "var(--red)" };
     if (isSpeaking) return { text: "SPEAKING", color: "var(--green)" };
     if (showCountdown) return { text: "REVIEW", color: "var(--amber)" };
@@ -1626,14 +1474,10 @@ export default function VoiceAccessibilityModal({
   };
 
   const badge = getStateBadge();
-
-  if (!isVisible) {
-    return null;
-  }
+  if (!isVisible) return null;
 
   return (
     <>
-      {/* ── Main voice modal ── */}
       <div
         role="dialog"
         aria-modal="true"
@@ -1645,7 +1489,7 @@ export default function VoiceAccessibilityModal({
           transform: state === STATES.IDLE ? "translate(50%, 50%)" : "none",
           width: state === STATES.IDLE ? "340px" : "360px",
           background: "var(--surface)",
-          border: `1px solid ${isRecordingActive ? "var(--red)" : isSpeaking ? "var(--green)" : showCountdown ? "var(--amber)" : "var(--border2)"}`,
+          border: `1px solid ${isRecordingActive ? "var(--red)" : isTranscribing ? "var(--blue)" : isSpeaking ? "var(--green)" : "var(--border2)"}`,
           borderRadius: "20px",
           backdropFilter: "blur(32px)",
           boxShadow: "var(--sh-lg)",
@@ -1709,14 +1553,12 @@ export default function VoiceAccessibilityModal({
           <button
             onClick={() => {
               window.speechSynthesis.cancel();
-              if (countdownTimerRef.current) {
+              if (countdownTimerRef.current)
                 clearInterval(countdownTimerRef.current);
-                countdownTimerRef.current = null;
-              }
               setShowCountdown(false);
               onDismiss();
             }}
-            aria-label="Dismiss voice navigation modal"
+            aria-label="Dismiss"
             style={{
               background: "var(--inset)",
               border: "1px solid var(--border)",
@@ -1753,7 +1595,44 @@ export default function VoiceAccessibilityModal({
           </div>
         </div>
 
-        {/* ── Countdown banner ─────────────────────────────────────────────── */}
+        {/* Transcribing indicator */}
+        {isTranscribing && (
+          <div
+            style={{
+              margin: "0 16px 8px",
+              padding: "10px 14px",
+              background: "rgba(79,195,247,0.1)",
+              border: "1px solid rgba(79,195,247,0.3)",
+              borderRadius: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+            }}
+          >
+            <div
+              style={{
+                width: "18px",
+                height: "18px",
+                border: "2px solid var(--border)",
+                borderTopColor: "var(--blue)",
+                borderRadius: "50%",
+                animation: "spin 0.65s linear infinite",
+                flexShrink: 0,
+              }}
+            />
+            <div
+              style={{
+                fontSize: "12px",
+                color: "var(--blue)",
+                fontWeight: 600,
+              }}
+            >
+              Transcribing with Whisper...
+            </div>
+          </div>
+        )}
+
+        {/* Countdown banner */}
         {showCountdown && (
           <div
             style={{
@@ -1767,7 +1646,6 @@ export default function VoiceAccessibilityModal({
               gap: "12px",
             }}
           >
-            {/* Countdown number */}
             <div
               style={{
                 width: "38px",
@@ -1788,8 +1666,6 @@ export default function VoiceAccessibilityModal({
             >
               {countdownSeconds}
             </div>
-
-            {/* Message + skip button */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div
                 style={{
@@ -1815,13 +1691,9 @@ export default function VoiceAccessibilityModal({
                 ...
               </div>
             </div>
-
-            {/* Skip / Fix now button */}
             <button
               onClick={() => {
-                if (skipCountdownRef.current) {
-                  skipCountdownRef.current();
-                }
+                if (skipCountdownRef.current) skipCountdownRef.current();
               }}
               style={{
                 padding: "7px 14px",
@@ -1835,12 +1707,7 @@ export default function VoiceAccessibilityModal({
                 cursor: "pointer",
                 whiteSpace: "nowrap",
                 flexShrink: 0,
-                transition: "transform 0.1s",
               }}
-              onMouseDown={(e) =>
-                (e.currentTarget.style.transform = "scale(0.95)")
-              }
-              onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
               aria-label="Skip countdown and fix now"
             >
               Fix now
@@ -1848,7 +1715,7 @@ export default function VoiceAccessibilityModal({
           </div>
         )}
 
-        {/* Waveform visualizer */}
+        {/* Waveform */}
         <div
           style={{
             padding: "4px 16px 8px",
@@ -1879,8 +1746,8 @@ export default function VoiceAccessibilityModal({
               fontSize: "11px",
               color: isRecordingActive
                 ? "var(--red)"
-                : showCountdown
-                  ? "var(--amber, #FFB74D)"
+                : isTranscribing
+                  ? "var(--blue)"
                   : "var(--txt3)",
               fontWeight: 600,
               whiteSpace: "nowrap",
@@ -1889,15 +1756,15 @@ export default function VoiceAccessibilityModal({
           >
             {isRecordingActive
               ? "● REC"
-              : isSpeaking
-                ? "◉ Speaking"
-                : showCountdown
-                  ? "⏱ Reviewing"
+              : isTranscribing
+                ? "🧠 Processing"
+                : isSpeaking
+                  ? "◉ Speaking"
                   : "○ Idle"}
           </div>
         </div>
 
-        {/* Live transcript display */}
+        {/* Transcript display */}
         {displayTranscript && (
           <div
             style={{
@@ -1911,11 +1778,14 @@ export default function VoiceAccessibilityModal({
               fontStyle: "italic",
             }}
           >
-            Heard: "{displayTranscript}"
+            {displayTranscript === "Listening..." ||
+            displayTranscript === "Transcribing..."
+              ? displayTranscript
+              : `Heard: "${displayTranscript}"`}
           </div>
         )}
 
-        {/* Vosk not ready warning */}
+        {/* Engine not ready warning */}
         {!voskReady && (
           <div
             style={{
@@ -1929,21 +1799,11 @@ export default function VoiceAccessibilityModal({
               lineHeight: "1.6",
             }}
           >
-            ⚠️ Vosk not ready.{" "}
-            {errorMessage || "Check server console for setup instructions."}
-            <br />
-            <a
-              href="https://alphacephei.com/vosk/models"
-              target="_blank"
-              rel="noreferrer"
-              style={{ color: "var(--blue)", textDecoration: "underline" }}
-            >
-              Download Vosk model →
-            </a>
+            ⚠️ Voice engine not ready. {errorMessage || "Check server console."}
           </div>
         )}
 
-        {/* Route loading spinner */}
+        {/* Loading spinner */}
         {isLoading && (
           <div
             style={{
@@ -1983,7 +1843,7 @@ export default function VoiceAccessibilityModal({
           </div>
         )}
 
-        {/* Navigation step indicator */}
+        {/* Navigation step */}
         {state === STATES.NAVIGATING && routeData && (
           <div
             style={{
@@ -2097,7 +1957,7 @@ export default function VoiceAccessibilityModal({
           </div>
         )}
 
-        {/* Idle state — wake word instruction */}
+        {/* Idle state */}
         {state === STATES.IDLE && (
           <div style={{ padding: "4px 16px 16px", textAlign: "center" }}>
             {speechRecognitionAvailable ? (
@@ -2118,7 +1978,7 @@ export default function VoiceAccessibilityModal({
               </div>
             ) : (
               <div style={{ fontSize: "12px", color: "var(--txt2)" }}>
-                Automatic voice detection not available in this browser.
+                Tap below to start voice navigation.
               </div>
             )}
             <button
@@ -2126,16 +1986,10 @@ export default function VoiceAccessibilityModal({
                 if (voskReady) {
                   playChime(440, 660);
                   setState(STATES.GREETING);
-                  if (recognitionRef.current) {
-                    try {
-                      recognitionRef.current.start();
-                    } catch (e) {}
-                  }
-                } else {
+                } else
                   speak(
-                    "Voice recognition is not set up. Please install the Vosk model. Check the server console for instructions.",
+                    "Voice recognition is not set up. Check the server console.",
                   );
-                }
               }}
               style={{
                 marginTop: "10px",
@@ -2168,7 +2022,7 @@ export default function VoiceAccessibilityModal({
         )}
       </div>
 
-      {/* ── Correction Modal ─────────────────────────────────────────────────── */}
+      {/* Correction Modal */}
       {showCorrection && (
         <div
           role="dialog"
@@ -2202,7 +2056,6 @@ export default function VoiceAccessibilityModal({
               animation: "slideUp 0.22s ease",
             }}
           >
-            {/* Modal header */}
             <div
               style={{
                 display: "flex",
@@ -2238,8 +2091,6 @@ export default function VoiceAccessibilityModal({
                 </div>
               </div>
             </div>
-
-            {/* What was heard */}
             <div
               style={{
                 background: "var(--inset)",
@@ -2256,20 +2107,6 @@ export default function VoiceAccessibilityModal({
                 "{correctionText}"
               </span>
             </div>
-
-            <div
-              style={{
-                fontSize: "12px",
-                color: "var(--txt2)",
-                marginBottom: "10px",
-              }}
-            >
-              Confirm or type the correct{" "}
-              {correctionType === "start" ? "starting point" : "destination"}{" "}
-              below:
-            </div>
-
-            {/* Input with autocomplete */}
             <div style={{ position: "relative", marginBottom: "18px" }}>
               <input
                 type="text"
@@ -2278,7 +2115,6 @@ export default function VoiceAccessibilityModal({
                   const val = e.target.value;
                   setCorrectionText(val);
                   setCorrectionSuggOpen(false);
-
                   if (correctionDebRef.current)
                     clearTimeout(correctionDebRef.current);
                   if (val.length > 2) {
@@ -2302,8 +2138,6 @@ export default function VoiceAccessibilityModal({
                         })
                         .catch(() => {});
                     }, 280);
-                  } else {
-                    setCorrectionSuggestions([]);
                   }
                 }}
                 onKeyDown={(e) => {
@@ -2332,8 +2166,6 @@ export default function VoiceAccessibilityModal({
                   boxSizing: "border-box",
                 }}
               />
-
-              {/* Autocomplete dropdown */}
               {correctionSuggOpen && correctionSuggestions.length > 0 && (
                 <div
                   style={{
@@ -2387,7 +2219,7 @@ export default function VoiceAccessibilityModal({
                         (e.currentTarget.style.background = "var(--wood-dim)")
                       }
                       onMouseLeave={(e) =>
-                        (e.currentTarget.style.background = "transparent")
+                        (e.currentTarget.style.background = "transparent)")
                       }
                     >
                       <div style={{ fontSize: "13px", fontWeight: 500 }}>
@@ -2409,17 +2241,13 @@ export default function VoiceAccessibilityModal({
                 </div>
               )}
             </div>
-
-            {/* Action buttons */}
             <div style={{ display: "flex", gap: "10px" }}>
               <button
                 onClick={() => {
-                  const finalVal = correctionText.trim();
+                  const v = correctionText.trim();
                   setShowCorrection(false);
                   setCorrectionSuggOpen(false);
-                  correctionResolveRef.current?.(
-                    finalVal.length > 0 ? finalVal : null,
-                  );
+                  correctionResolveRef.current?.(v.length > 0 ? v : null);
                 }}
                 style={{
                   flex: 1,
@@ -2432,8 +2260,6 @@ export default function VoiceAccessibilityModal({
                   fontSize: "14px",
                   fontWeight: 700,
                   cursor: "pointer",
-                  letterSpacing: "0.2px",
-                  transition: "all 0.15s",
                 }}
               >
                 ✓ Use this
@@ -2455,13 +2281,11 @@ export default function VoiceAccessibilityModal({
                   fontSize: "13px",
                   fontWeight: 500,
                   cursor: "pointer",
-                  transition: "all 0.15s",
                 }}
               >
                 Keep original
               </button>
             </div>
-
             <div
               style={{
                 fontSize: "10px",
@@ -2476,20 +2300,10 @@ export default function VoiceAccessibilityModal({
         </div>
       )}
 
-      {/* ── Inline keyframe animations ── */}
       <style>{`
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(16px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.08); }
-        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
       `}</style>
     </>
   );

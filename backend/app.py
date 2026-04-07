@@ -3017,7 +3017,7 @@ def main():
     global socketio, tracker_instance
     socketio = SocketIO(app, 
                     cors_allowed_origins="*",
-                    async_mode='threading',
+                    async_mode='eventlet',
                     logger=False,
                     engineio_logger=False,
                     ping_timeout=60,
