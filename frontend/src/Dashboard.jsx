@@ -77,6 +77,17 @@ import {
 import { renderToStaticMarkup } from "react-dom/server";
 import VoiceAccessibilityModal from "./VoiceAccessibilityModal";
 
+// ─── Add these near the top of your component (after imports) ───
+
+// Map emergency type → icon component (replaces the inline ternary chain)
+const EMERGENCY_ICONS = {
+  accident: CarFront,
+  fire: Flame,
+  medical: Stethoscope,
+  hazardous: TriangleAlert,
+  rescue: Siren,
+};
+
 // Lazy imports
 const Walking3DView = lazy(() => import("./Walking3DView"));
 const DirectionsPanel = lazy(() => import("./components/DirectionsPanel"));
@@ -486,7 +497,6 @@ const ChangeView = React.memo(({ center, zoom, routeBounds }) => {
   return null;
 });
 
-// CSS string (includes all fixes and new styles)
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -505,20 +515,176 @@ const CSS = `
     --sh-lg: 0 18px 56px rgba(0,0,0,0.72),0 4px 18px rgba(0,0,0,0.4);
     --sh-w: 0 4px 20px rgba(232,168,112,0.25);
   }
+
+  /* ── Animations ── */
   @keyframes slideDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
   @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
   @keyframes pulse-overlay { 0%,100%{opacity:0.45} 50%{opacity:0.65} }
   @keyframes dash-flow { to{stroke-dashoffset:-16} }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  @keyframes fd { from{opacity:0;transform:translateY(-5px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes blk { 0%,100%{opacity:1;transform:translateY(-50%) scale(1)} 50%{opacity:.55;transform:translateY(-50%) scale(1.4)} }
+  @keyframes su { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes dash-flow-road-top { to{stroke-dashoffset:-36} }
+  @keyframes altPulse { 0%, 100% { stroke-opacity: 0.72; } 50% { stroke-opacity: 1.0; } }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  @keyframes arrival-pulse { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(3); opacity: 0; } }
+  @keyframes step-slide-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
   .obstruction-overlay { animation: pulse-overlay 2s ease-in-out infinite; }
   .obstruction-border { animation: dash-flow 0.5s linear infinite; stroke-dashoffset:0; }
+  .obstructed-road-border-top { animation:dash-flow-road-top 0.8s linear infinite;stroke-dashoffset:0;filter:drop-shadow(0 0 2px rgba(255,255,255,0.5)); }
+
+  /* ── Root ── */
   .root { font-family:var(--ff-b);background:var(--bg);color:var(--txt);width:100vw;height:100vh;overflow:hidden;position:relative; }
   .map-wrap { position:absolute;inset:0;z-index:0; }
+
+  /* ── Leaflet overrides ── */
   .leaflet-container { background:#0e0804 !important; }
   .leaflet-tile-pane { filter:saturate(.7) brightness(.82) sepia(.08); }
   .leaflet-popup-content-wrapper { background:var(--card) !important;border:1px solid var(--border2) !important;border-radius:12px !important;color:var(--txt) !important;box-shadow:var(--sh) !important;font-family:var(--ff-b) !important; }
   .leaflet-popup-tip { background:rgba(42,26,12,.98) !important; }
   .leaflet-control-zoom { display:none !important; }
   .leaflet-control-attribution { display:none; }
+
+  /* ── Popup utility classes (extracted from inline styles) ── */
+  .popup-dest { font-family: DM Sans, sans-serif; }
+  .popup-dest strong { display: block; }
+  .popup-dest small { color: #e0c8b0; }
+  .popup-distance { font-size: 11px; color: #b09878; }
+  .popup-severity { font-size: 11px; }
+  .popup-segment-label { font-family: DM Sans, sans-serif; }
+  .popup-sub { color: #b09878; }
+  .popup-icon-transit { vertical-align: middle; color: #4fc3f7; }
+  .popup-icon-walk { vertical-align: middle; color: #8cd69c; }
+  .popup-alt-name { font-weight: 700; color: var(--wood); margin-bottom: 4px; }
+  .popup-alt-safe { font-size: 11px; color: #8cd69c; margin-top: 4px; }
+  .popup-compare-btn {
+    margin-top: 8px; padding: 5px 10px; background: #c06c30; border: none;
+    border-radius: 8px; color: #fff; font-size: 11px; font-weight: 700; cursor: pointer;
+  }
+  .popup-compare-btn:hover { filter: brightness(1.15); }
+
+  /* ── Emergency popup classes ── */
+  .emergency-popup { font-family: DM Sans, sans-serif; min-width: 200px; }
+  .emergency-popup-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 12px; padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,68,68,0.3);
+  }
+  .emergency-popup-title { color: #ff6666; font-size: 14px; }
+  .emergency-popup-desc { font-size: 13px; font-weight: bold; color: #fff; margin-bottom: 6px; }
+  .emergency-popup-meta { font-size: 11px; color: #e0c8b0; margin-bottom: 4px; }
+  .emergency-popup-tag { display: inline-block; margin-right: 12px; }
+  .emergency-popup-time { font-size: 10px; color: #b09878; margin-top: 4px; }
+  .emergency-popup-footer {
+    font-size: 10px; color: #ff8888; margin-top: 8px;
+    padding-top: 6px; border-top: 1px solid rgba(255,68,68,0.2);
+  }
+
+  /* ── 3D loading fallback ── */
+  .nav-3d-loading {
+    width: 100%; height: 100%; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center; color: white;
+    font-family: var(--ff-b);
+  }
+
+  /* ── Route alert (extracted from inline) ── */
+  .route-alert {
+    position: absolute; top: 100px; left: calc(var(--rail-w) + 14px); right: 14px;
+    max-width: 400px; background: var(--surface); border: 1px solid #ff7b6b;
+    border-radius: 16px; padding: 16px; z-index: 100;
+    backdrop-filter: blur(24px); box-shadow: var(--sh-lg); animation: slideDown 0.3s ease;
+  }
+  .route-alert-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .route-alert-msg { flex: 1; font-weight: bold; color: var(--txt); }
+  .route-alert-close { background: transparent; border: none; color: var(--txt2); cursor: pointer; padding: 4px; }
+  .route-alert-alts-title { font-size: 12px; font-weight: bold; margin-bottom: 8px; color: var(--wood); }
+  .route-alert-alts { display: flex; flex-direction: column; gap: 8px; }
+  .route-alert-alt-btn {
+    background: var(--inset); border: 1px solid var(--border); border-radius: 12px;
+    padding: 10px; text-align: left; cursor: pointer; width: 100%;
+    transition: border-color .15s, background .15s;
+  }
+  .route-alert-alt-btn:hover { border-color: var(--border2); background: var(--wood-dim); }
+  .route-alert-alt-row { display: flex; align-items: center; gap: 8px; }
+  .route-alert-alt-label { font-weight: 500; font-size: 13px; }
+  .icon-wood { color: var(--wood); }
+  .icon-green { color: var(--green); }
+
+  /* ── Transit modal (extracted from inline) ── */
+  .transit-modal {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 90%; max-width: 500px; max-height: 80vh;
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 20px; z-index: 200; backdrop-filter: blur(32px);
+    box-shadow: var(--sh-lg); overflow: hidden; display: flex; flex-direction: column;
+  }
+  .transit-modal-body { overflow-y: auto; padding: 16px; }
+  .transit-modal-route { margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+  .transit-modal-route-title { font-weight: bold; color: var(--wood); margin-bottom: 8px; }
+  .transit-modal-route-meta { font-size: 12px; color: var(--txt2); margin-bottom: 8px; }
+  .transit-modal-line {
+    background: var(--inset); padding: 10px 12px; border-radius: 10px;
+    margin-bottom: 8px; border: 1px solid rgba(79,195,247,0.2);
+  }
+  .transit-modal-line-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .transit-modal-line-name { color: #4fc3f7; }
+  .transit-modal-line-vehicle { font-size: 11px; color: var(--txt2); }
+  .transit-modal-line-stops { font-size: 12px; color: var(--txt2); }
+  .transit-modal-stop { color: var(--txt); }
+  .transit-modal-line-time { font-size: 11px; color: var(--txt3); margin-top: 4px; }
+  .transit-modal-close-btn {
+    margin: 12px 16px 16px; padding: 10px; background: var(--wood-g);
+    border: none; border-radius: 12px; color: white; font-weight: bold; cursor: pointer;
+  }
+  .transit-modal-close-btn:hover { filter: brightness(1.1); }
+
+  /* ── Directions loading ── */
+  .dir-loading { padding: 12px; color: var(--txt2); font-size: 12px; }
+
+  /* ── Route bar value colors ── */
+  .rs-v-green { color: var(--green); }
+  .rs-v-red { color: #ff7b6b; }
+  .rs-v-crit { color: #ff4444; }
+
+  /* ── Side panel list container ── */
+  .p-list { display: flex; flex-direction: column; gap: 6px; }
+  .p-item-text { flex: 1; min-width: 0; }
+  .p-sub-icon { color: var(--green); }
+  .p-arr-active { margin-left: auto; color: var(--wood); }
+
+  /* ── Search card head icon ── */
+  .sc-head-icon { color: var(--wood); flex-shrink: 0; }
+
+  /* ── Spinner positioning ── */
+  .ri-spinner-wrap { position: absolute; right: 34px; top: 50%; transform: translateY(-50%); }
+  .ri-spinner-wrap-right { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); }
+
+  /* ── Search content collapse ── */
+  .sc-content { max-height: 70vh; overflow-y: auto; transition: max-height 0.25s ease, opacity 0.2s ease; }
+  .sc-content-collapsed { max-height: 0 !important; overflow: hidden; opacity: 0; }
+
+  /* ── Alt comp drawer classes (extracted from inline) ── */
+  .alt-comp-header-row { display: flex; align-items: center; gap: 8px; }
+  .alt-comp-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .alt-comp-label { font-family: var(--ff-d); font-size: 15px; font-weight: 700; color: var(--txt); }
+  .alt-comp-sublabel { font-size: 11px; color: var(--txt2); }
+  .alt-comp-close {
+    margin-left: auto; background: var(--inset); border: 1px solid var(--border);
+    border-radius: 7px; width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--txt2);
+  }
+  .alt-comp-close:hover { color: var(--red); border-color: rgba(255,123,107,.3); background: var(--red-dim); }
+  .alt-comp-hazard-banner.safe {
+    background: rgba(140,214,156,0.1); border: 1px solid rgba(140,214,156,0.3); color: var(--green);
+  }
+  .alt-comp-hazard-banner.warn {
+    background: rgba(255,179,71,0.08); border: 1px solid rgba(255,179,71,0.25); color: var(--amber);
+  }
+
+  /* ═══ RAIL ═══ */
   .rail { position:absolute;left:0;top:0;bottom:0;width:var(--rail-w);background:var(--surface);border-right:1px solid var(--border);backdrop-filter:blur(28px);z-index:60;display:flex;flex-direction:column;align-items:center;padding:14px 0 18px;gap:3px; }
   .r-logo { width:38px;height:38px;background:var(--wood-g);border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;flex-shrink:0;box-shadow:var(--sh-w),0 0 16px var(--wood-glow);color:#fff8f0; }
   .r-btn { width:44px;height:44px;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:transparent;border:1px solid transparent;cursor:pointer;color:var(--txt3);transition:all .18s;position:relative; }
@@ -529,6 +695,8 @@ const CSS = `
   .r-space { flex:1; }
   .r-btn[data-tip]::after { content:attr(data-tip);position:absolute;left:calc(100% + 11px);top:50%;transform:translateY(-50%);background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:5px 12px;font-family:var(--ff-b);font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;z-index:999;box-shadow:var(--sh); }
   .r-btn[data-tip]:hover::after { opacity:1; }
+
+  /* ═══ SIDE PANEL ═══ */
   .panel { position:absolute;left:var(--rail-w);top:0;bottom:0;width:var(--panel-w);background:var(--surface);border-right:1px solid var(--border);backdrop-filter:blur(28px);z-index:55;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);box-shadow:var(--sh-lg); }
   .panel.open { transform:translateX(0); }
   .p-head { padding:20px 18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0; }
@@ -561,17 +729,25 @@ const CSS = `
   .ab.on .ab-l { color:var(--txt); }
   .ab-c { width:15px;height:15px;border-radius:4px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;color:transparent; }
   .ab.on .ab-c { background:var(--wood);border-color:var(--wood);color:#1a0c04; }
+
+  /* ═══ SEARCH CARD ═══ */
   .sc { position:absolute;top:14px;left:calc(var(--rail-w) + 14px);z-index:50;width:348px;background:var(--surface);border:1px solid var(--border);border-radius:20px;backdrop-filter:blur(32px);box-shadow:var(--sh-lg),var(--sh-w);transition:border-color .2s; }
   .sc:focus-within { border-color:var(--border2); }
+  .sc.collapsed { border-radius: 20px; }
   .sc-head { padding:14px 16px 6px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border); }
   .sc-brand { font-family:var(--ff-d);font-size:15px;font-weight:700;color:var(--txt);letter-spacing:.2px;flex:1; }
   .sc-brand span { color:var(--wood); }
+  .sc-collapse-btn {
+    background: var(--inset); border: 1px solid var(--border); border-radius: 7px;
+    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--txt2); transition: all .15s; flex-shrink: 0;
+  }
+  .sc-collapse-btn:hover { color: var(--wood); border-color: var(--border2); }
   .sc-inputs { padding:12px 14px 8px;display:flex;flex-direction:column;gap:6px; }
   .rr { position:relative; }
   .rr-dot { position:absolute;left:13px;top:50%;transform:translateY(-50%);width:8px;height:8px;border-radius:50%;pointer-events:none;z-index:1; }
   .rr-dot-g { background:var(--green);box-shadow:0 0 6px var(--green);animation:blk 2.4s ease infinite; }
   .rr-dot-r { background:var(--red);box-shadow:0 0 6px var(--red); }
-  @keyframes blk { 0%,100%{opacity:1;transform:translateY(-50%) scale(1)} 50%{opacity:.55;transform:translateY(-50%) scale(1.4)} }
   .ri { width:100%;background:var(--inset);border:1px solid var(--border);border-radius:10px;padding:10px 34px 10px 28px;color:var(--txt);font-family:var(--ff-b);font-size:13.5px;outline:none;transition:border-color .18s,box-shadow .18s,background .18s; }
   .ri::placeholder { color:var(--txt2); }
   .ri:focus { border-color:var(--wood);background:rgba(232,168,112,.06);box-shadow:0 0 0 3px var(--wood-dim); }
@@ -582,7 +758,6 @@ const CSS = `
   .ri-conn-lbl { font-size:11px;color:var(--txt2); }
   .ac { position:relative; }
   .ac-drop { position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--card);border:1px solid var(--border2);border-radius:14px;overflow:hidden;z-index:300;box-shadow:var(--sh-lg);animation:fd .14s ease; }
-  @keyframes fd { from{opacity:0;transform:translateY(-5px)} to{opacity:1;transform:translateY(0)} }
   .ac-hd { padding:8px 13px 6px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--txt2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px; }
   .ac-row { display:flex;align-items:center;gap:10px;padding:9px 13px;background:transparent;border:none;width:100%;text-align:left;cursor:pointer;transition:background .12s;color:var(--txt); }
   .ac-row:hover,.ac-row.hi { background:var(--wood-dim); }
@@ -592,7 +767,6 @@ const CSS = `
   .ac-addr { font-size:11px;color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px; }
   .ac-tag { margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--txt);background:var(--wood-dim);border:1px solid rgba(232,168,112,.3);border-radius:4px;padding:2px 7px;white-space:nowrap;flex-shrink:0;max-width:72px;overflow:hidden;text-overflow:ellipsis; }
   .ac-wait { display:flex;align-items:center;gap:8px;padding:14px;font-size:12px;color:var(--txt2); }
-  @keyframes spin { to{transform:rotate(360deg)} }
   .spn { width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--wood);border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0; }
   .spn2 { width:14px;height:14px;border:2px solid rgba(255,255,255,.15);border-top-color:var(--wood);border-radius:50%;animation:spin .65s linear infinite; }
   .sc-modes { display:flex;gap:6px;padding:2px 14px 4px; }
@@ -604,18 +778,11 @@ const CSS = `
   .sc-find { margin:6px 14px 12px;width:calc(100% - 28px);padding:13px;background:var(--wood-g);border:none;border-radius:13px;color:#fff;font-family:var(--ff-d);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;box-shadow:var(--sh-w);letter-spacing:.2px; }
   .sc-find:hover:not(:disabled) { transform:translateY(-1px);box-shadow:0 8px 28px rgba(232,168,112,.5);filter:brightness(1.1); }
   .sc-find:disabled { background:var(--inset);color:var(--txt2);box-shadow:none;cursor:not-allowed;filter:none; }
-  .sc-leg-btn { display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:1px solid var(--border);background:transparent;border-left:none;border-right:none;border-bottom:none;width:100%;cursor:pointer;color:var(--txt2);font-family:var(--ff-b);transition:color .15s; }
-  .sc-leg-btn:hover { color:var(--txt); }
-  .sc-leg-lbl { font-size:10.5px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:inherit; }
-  .leg-chv { transition:transform .2s; }
-  .leg-chv.open { transform:rotate(180deg); }
-  .sc-leg-body { padding:4px 14px 14px;display:flex;flex-direction:column;gap:8px; }
-  .leg-row { display:flex;align-items:center;gap:10px; }
-  .leg-lbl { font-size:12px;color:var(--txt2); }
-  .rbar { position:absolute;bottom:22px;left:calc(var(--rail-w) + 14px);z-index:50;background:var(--surface);border:1px solid var(--border2);border-radius:16px;backdrop-filter:blur(24px);padding:13px 18px;display:flex;align-items:center;gap:14px;box-shadow:var(--sh),var(--sh-w);animation:su .24s ease; }
-  @keyframes su { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ═══ ROUTE INFO BAR ═══ */
+  .rbar { position:absolute;bottom:22px;left:calc(var(--rail-w) + 14px);z-index:50;background:var(--surface);border:1px solid var(--border2);border-radius:16px;backdrop-filter:blur(24px);padding:13px 18px;display:flex;align-items:center;gap:14px;box-shadow:var(--sh),var(--sh-w);animation:su .24s ease;flex-wrap:wrap; }
   .rs { display:flex;flex-direction:column;align-items:center;gap:2px; }
-  .rs-v { font-family:var(--ff-d);font-size:15px;font-weight:700;color:var(--wood); }
+  .rs-v { font-family:var(--ff-d);font-size:15px;font-weight:700;color:var(--wood);display:flex;align-items:center;gap:4px; }
   .rs-l { font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--txt2); }
   .rs-d { width:1px;height:24px;background:var(--border); }
   .rs-cl { background:var(--red-dim);border:1px solid rgba(255,123,107,.3);border-radius:8px;padding:5px 10px;color:var(--red);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;margin-left:4px; }
@@ -624,6 +791,15 @@ const CSS = `
   .rs-dir-btn { background:var(--blue-dim);border:1px solid var(--blue);border-radius:8px;padding:5px 10px;color:var(--blue);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px; }
   .rs-dir-btn:hover { background:rgba(79,195,247,0.25); }
   .rs-dir-btn.on { background:rgba(79,195,247,0.25); }
+  .rs-3d-btn {
+    background: var(--blue-dim); border: 1px solid var(--blue); border-radius: 8px;
+    padding: 5px 10px; color: var(--blue); font-size: 11px; font-weight: 700;
+    cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 5px;
+  }
+  .rs-3d-btn:hover { background: rgba(79,195,247,0.25); }
+  .rs-3d-btn.on { background: var(--wood-g); border-color: var(--wood); color: #fff; }
+
+  /* ═══ MAP CONTROLS ═══ */
   .mt-bar { position:absolute;top:16px;right:14px;z-index:50;display:flex;gap:5px; }
   .mt-btn { background:var(--surface);border:1px solid var(--border);border-radius:9px;backdrop-filter:blur(20px);padding:7px 12px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--txt2);font-family:var(--ff-b);font-size:12px;font-weight:500;transition:all .15s;white-space:nowrap; }
   .mt-btn:hover { color:var(--txt);border-color:var(--border2); }
@@ -631,80 +807,39 @@ const CSS = `
   .mctrl { position:absolute;right:14px;bottom:80px;z-index:50;display:flex;flex-direction:column;gap:5px; }
   .mc { width:40px;height:40px;background:var(--surface);border:1px solid var(--border);border-radius:10px;backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);transition:all .15s; }
   .mc:hover { border-color:var(--border2);color:var(--wood);background:var(--wood-dim); }
-  .mc-z { font-size:10px;font-weight:700;letter-spacing:.3px;color:var(--txt2);text-align:center;padding:3px 0; }
+
+  /* ═══ TOAST ═══ */
   .toast { position:absolute;bottom:24px;left:50%;z-index:200;transform:translateX(-50%) translateY(12px);background:var(--surface);border:1px solid var(--border2);border-radius:50px;backdrop-filter:blur(20px);padding:9px 22px;font-size:12.5px;font-weight:500;color:var(--txt);white-space:nowrap;opacity:0;pointer-events:none;transition:all .24s;max-width:calc(100vw - 100px);text-align:center;overflow:hidden;text-overflow:ellipsis;box-shadow:var(--sh); }
   .toast.vis { opacity:1;transform:translateX(-50%) translateY(0); }
   .sr { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0; }
-  @keyframes dash-flow-road-top { to{stroke-dashoffset:-36} }
-  .obstructed-road-border-top { animation:dash-flow-road-top 0.8s linear infinite;stroke-dashoffset:0;filter:drop-shadow(0 0 2px rgba(255,255,255,0.5)); }
 
-  /* ── Directions Panel ── */
+  /* ═══ DIRECTIONS PANEL ═══ */
   .dir-panel {
-    position: absolute;
-    left: calc(var(--rail-w) + 14px);
-    bottom: 90px;
-    width: 348px;
-    max-height: 380px;
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    border-radius: 18px;
-    backdrop-filter: blur(28px);
-    box-shadow: var(--sh-lg);
-    z-index: 48;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    animation: slideUp 0.24s ease;
+    overflow: visible !important; max-height: none !important;
+    border-radius: 0 0 20px 20px; border: none !important;
+    backdrop-filter: none !important; box-shadow: none !important;
+    animation: none !important; position: relative !important;
+    font-family: var(--ff-b);
   }
   .dir-header {
-    padding: 12px 16px 10px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-shrink: 0;
+    padding: 12px 16px 10px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
   }
   .dir-title {
-    font-family: var(--ff-d);
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--txt);
-    display: flex;
-    align-items: center;
-    gap: 7px;
+    font-family: var(--ff-d); font-size: 14px; font-weight: 700; color: var(--txt);
+    display: flex; align-items: center; gap: 7px;
   }
   .dir-close {
-    background: var(--inset);
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    width: 26px;
-    height: 26px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: var(--txt2);
-    transition: all .14s;
-    flex-shrink: 0;
+    background: var(--inset); border: 1px solid var(--border); border-radius: 7px;
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--txt2); transition: all .14s; flex-shrink: 0;
   }
   .dir-close:hover { color: var(--red); border-color: rgba(255,123,107,.3); background: var(--red-dim); }
-  .dir-list {
-    overflow-y: auto;
-    flex: 1;
-    padding: 8px 0;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-  .dir-list::-webkit-scrollbar { width: 3px; }
-  .dir-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .dir-list { overflow: visible !important; max-height: none !important; padding: 8px 0; }
   .dir-step {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 9px 14px;
-    transition: background .12s;
-    cursor: default;
-    border-left: 3px solid transparent;
+    display: flex; align-items: flex-start; gap: 10px; padding: 9px 14px;
+    transition: background .12s; cursor: default; border-left: 3px solid transparent;
+    min-height: 44px; /* touch target */
   }
   .dir-step:hover { background: var(--inset); }
   .dir-step.transit-step { background: rgba(79,195,247,0.05); border-left-color: var(--blue); }
@@ -713,14 +848,8 @@ const CSS = `
   .dir-step.last-step { border-left-color: var(--red); }
   .dir-step + .dir-step { border-top: 1px solid rgba(255,255,255,0.04); }
   .dir-icon {
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    margin-top: 1px;
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
   }
   .dir-icon.walk-icon { background: var(--green-dim); color: var(--green); }
   .dir-icon.transit-icon { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(79,195,247,0.3); }
@@ -728,583 +857,274 @@ const CSS = `
   .dir-icon.start-icon { background: rgba(140,214,156,0.2); color: var(--green); }
   .dir-icon.end-icon { background: var(--red-dim); color: var(--red); }
   .dir-content { flex: 1; min-width: 0; }
-  .dir-instruction {
-    font-size: 12.5px;
-    font-weight: 500;
-    color: var(--txt);
-    line-height: 1.45;
-    word-break: break-word;
-  }
-  .dir-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 3px;
-  }
+  .dir-instruction { font-size: 12.5px; font-weight: 500; color: var(--txt); line-height: 1.45; word-break: break-word; }
+  .dir-meta { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
   .dir-dist { font-size: 11px; color: var(--txt3); }
   .dir-dur { font-size: 11px; color: var(--txt3); }
   .transit-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: var(--blue-dim);
-    border: 1px solid rgba(79,195,247,0.3);
-    border-radius: 4px;
-    padding: 1px 6px;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--blue);
-    text-transform: uppercase;
-    letter-spacing: .4px;
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--blue-dim); border: 1px solid rgba(79,195,247,0.3);
+    border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 700;
+    color: var(--blue); text-transform: uppercase; letter-spacing: .4px;
   }
   .walk-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: var(--green-dim);
-    border: 1px solid rgba(140,214,156,0.3);
-    border-radius: 4px;
-    padding: 1px 6px;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--green);
-    text-transform: uppercase;
-    letter-spacing: .4px;
-  }
-  .dir-divider {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 14px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .8px;
-    text-transform: uppercase;
-    color: var(--txt3);
-  }
-  .dir-divider::before, .dir-divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--green-dim); border: 1px solid rgba(140,214,156,0.3);
+    border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 700;
+    color: var(--green); text-transform: uppercase; letter-spacing: .4px;
   }
 
-  /* ── 3D View ── */
-  .view3d-panel {
-    position: absolute;
-    bottom: 80px;
-    right: 60px;
-    width: 520px;
-    height: 320px;
-    z-index: 45;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: var(--sh-lg);
-    border: 1px solid var(--border2);
-    transition: all 0.3s cubic-bezier(.4,0,.2,1);
+  /* ═══ DIRECTIONS ATTACHED ═══ */
+  .directions-attached {
+    position: absolute; left: calc(var(--rail-w) + 14px); width: 348px;
+    background: var(--surface); border-top: 1px solid var(--border);
+    border-radius: 0 0 20px 20px; margin-top: 0;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2); animation: slideDown 0.3s ease;
+    z-index: 49; overflow-y: auto !important; overflow-x: hidden !important;
+    max-height: 45vh; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
   }
-  .view3d-panel.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+  .directions-attached::-webkit-scrollbar { width: 5px; }
+  .directions-attached::-webkit-scrollbar-track { background: transparent; border-radius: 10px; }
+  .directions-attached::-webkit-scrollbar-thumb { background: var(--wood); border-radius: 10px; opacity: 0.7; }
+
+  /* ═══ 3D VIEW ═══ */
   .view3d-toggle {
-    position: absolute;
-    bottom: 80px;
-    right: 60px;
-    z-index: 50;
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    border-radius: 10px;
-    padding: 7px 13px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-    color: var(--wood);
-    font-family: var(--ff-b);
-    font-size: 12px;
-    font-weight: 600;
-    transition: all .15s;
-    backdrop-filter: blur(20px);
-    box-shadow: var(--sh-w);
+    position: absolute; bottom: 80px; right: 60px; z-index: 50;
+    background: var(--surface); border: 1px solid var(--border2); border-radius: 10px;
+    padding: 7px 13px; display: flex; align-items: center; gap: 6px;
+    cursor: pointer; color: var(--wood); font-family: var(--ff-b); font-size: 12px;
+    font-weight: 600; transition: all .15s; backdrop-filter: blur(20px); box-shadow: var(--sh-w);
   }
   .view3d-toggle:hover { background: var(--wood-dim); }
-
-  /* ── New 3D Navigation Panel Styles ── */
   .nav-3d-panel {
-    position: fixed;
-    z-index: 45;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 18px 56px rgba(0,0,0,0.72), 0 4px 18px rgba(0,0,0,0.4);
-    border: 1px solid rgba(232,168,112,0.22);
-    transition: all 0.3s cubic-bezier(.4,0,.2,1);
-    background: #110a04;
+    position: fixed; z-index: 45; border-radius: 16px; overflow: hidden;
+    box-shadow: var(--sh-lg); border: 1px solid rgba(232,168,112,0.22);
+    transition: all 0.3s cubic-bezier(.4,0,.2,1); background: #110a04;
   }
   @media (min-width: 1024px) {
-    .nav-3d-panel {
-      bottom: 90px;
-      right: 60px;
-      width: 520px;
-      height: 330px;
-    }
+    .nav-3d-panel { bottom: 90px; right: 60px; width: 520px; height: 330px; }
   }
   @media (min-width: 768px) and (max-width: 1023px) {
-    .nav-3d-panel {
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 280px;
-      border-radius: 16px 16px 0 0;
-    }
+    .nav-3d-panel { bottom: 0; left: 0; right: 0; height: 280px; border-radius: 16px 16px 0 0; }
   }
   @media (max-width: 767px) {
-    .nav-3d-panel {
-      inset: 0;
-      border-radius: 0;
-      z-index: 100;
-    }
+    .nav-3d-panel { inset: 0; border-radius: 0; z-index: 100; }
   }
-  .nav-3d-panel.hidden {
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(20px);
-  }
-  .rs-3d-btn {
-    background: var(--blue-dim);
-    border: 1px solid var(--blue);
-    border-radius: 8px;
-    padding: 5px 10px;
-    color: var(--blue);
-    font-size: 11px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all .15s;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-  .rs-3d-btn:hover { background: rgba(79,195,247,0.25); }
-  .rs-3d-btn.on {
-    background: var(--wood-g);
-    border-color: var(--wood);
-    color: #fff;
-  }
-  @keyframes arrival-pulse {
-    0% { transform: scale(0.5); opacity: 1; }
-    100% { transform: scale(3); opacity: 0; }
-  }
+  .nav-3d-panel.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
   .arrival-ring {
-    position: absolute;
-    inset: 0;
-    border: 3px solid #14b8a6;
-    border-radius: 50%;
-    animation: arrival-pulse 1.5s ease-out infinite;
-    pointer-events: none;
+    position: absolute; inset: 0; border: 3px solid #14b8a6; border-radius: 50%;
+    animation: arrival-pulse 1.5s ease-out infinite; pointer-events: none;
   }
-  @keyframes step-slide-in {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .hud-instruction-main.new-step {
-    animation: step-slide-in 0.25s ease forwards;
-  }
+  .hud-instruction-main.new-step { animation: step-slide-in 0.25s ease forwards; }
 
-  /* ── ALTERNATE DESTINATIONS ─────────────────────────── */
+  /* ═══ ALTERNATE DESTINATIONS ═══ */
   .alt-dest-panel {
-    position: absolute;
-    left: calc(var(--rail-w) + 14px);
-    bottom: 90px;
-    width: 380px;
-    max-width: calc(100vw - var(--rail-w) - 28px);
-    background: var(--surface);
-    border: 1px solid rgba(232,168,112,0.30);
-    border-radius: 20px;
-    backdrop-filter: blur(28px);
-    box-shadow: var(--sh-lg);
-    z-index: 52;
-    overflow: hidden;
-    animation: slideUp 0.26s ease;
+    position: absolute; left: calc(var(--rail-w) + 14px); bottom: 90px;
+    width: 380px; max-width: calc(100vw - var(--rail-w) - 28px);
+    background: var(--surface); border: 1px solid rgba(232,168,112,0.30);
+    border-radius: 20px; backdrop-filter: blur(28px); box-shadow: var(--sh-lg);
+    z-index: 52; overflow: hidden; animation: slideUp 0.26s ease;
   }
   .alt-dest-header {
-    padding: 12px 16px 10px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 10px;
+    padding: 12px 16px 10px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
     background: rgba(255,123,107,0.06);
   }
   .alt-dest-header-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background: rgba(255,123,107,0.15);
-    border: 1px solid rgba(255,123,107,0.35);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    color: #ff7b6b;
+    width: 32px; height: 32px; border-radius: 8px;
+    background: rgba(255,123,107,0.15); border: 1px solid rgba(255,123,107,0.35);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #ff7b6b;
   }
   .alt-dest-header-text { flex: 1; min-width: 0; }
-  .alt-dest-title {
-    font-family: var(--ff-d);
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--txt);
-    margin-bottom: 2px;
-  }
-  .alt-dest-subtitle {
-    font-size: 10px;
-    color: var(--txt2);
-    letter-spacing: 0.2px;
-  }
+  .alt-dest-title { font-family: var(--ff-d); font-size: 13px; font-weight: 700; color: var(--txt); margin-bottom: 2px; }
+  .alt-dest-subtitle { font-size: 10px; color: var(--txt2); letter-spacing: 0.2px; }
   .alt-dest-close {
-    background: var(--inset);
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    width: 26px;
-    height: 26px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: var(--txt2);
-    transition: all .14s;
-    flex-shrink: 0;
+    background: var(--inset); border: 1px solid var(--border); border-radius: 7px;
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--txt2); transition: all .14s; flex-shrink: 0;
   }
   .alt-dest-close:hover { color: var(--red); border-color: rgba(255,123,107,.35); background: var(--red-dim); }
   .alt-dest-scroll {
-    display: flex;
-    gap: 10px;
-    padding: 12px 14px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    display: flex; gap: 10px; padding: 12px 14px;
+    overflow-x: auto; scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
   }
   .alt-dest-scroll::-webkit-scrollbar { display: none; }
   .alt-card {
-    flex-shrink: 0;
-    width: 136px;
-    scroll-snap-align: start;
-    background: var(--inset);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 10px;
-    cursor: pointer;
-    transition: all .18s;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    position: relative;
-    overflow: hidden;
+    flex-shrink: 0; width: 136px; scroll-snap-align: start;
+    background: var(--inset); border: 1px solid var(--border); border-radius: 14px;
+    padding: 10px; cursor: pointer; transition: all .18s;
+    display: flex; flex-direction: column; gap: 6px; position: relative; overflow: hidden;
   }
   .alt-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: var(--alt-color, var(--wood));
-    opacity: 0;
-    transition: opacity .18s;
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--alt-color, var(--wood)); opacity: 0; transition: opacity .18s;
   }
   .alt-card.hovered, .alt-card:hover {
-    border-color: var(--alt-color, var(--wood));
-    background: var(--wood-dim);
-    transform: translateY(-2px);
+    border-color: var(--alt-color, var(--wood)); background: var(--wood-dim); transform: translateY(-2px);
   }
   .alt-card.hovered::before, .alt-card:hover::before { opacity: 1; }
   .alt-card-badge {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    color: var(--alt-color, var(--wood));
+    display: flex; align-items: center; gap: 5px; font-size: 9px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase; color: var(--alt-color, var(--wood));
   }
-  .alt-card-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--alt-color, var(--wood));
-    flex-shrink: 0;
-  }
+  .alt-card-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--alt-color, var(--wood)); flex-shrink: 0; }
   .alt-card-name {
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--txt);
-    line-height: 1.35;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    font-size: 11.5px; font-weight: 600; color: var(--txt); line-height: 1.35;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
-  .alt-card-stat {
-    font-size: 10px;
-    color: var(--txt2);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
+  .alt-card-stat { font-size: 10px; color: var(--txt2); display: flex; align-items: center; gap: 4px; }
   .alt-card-stat.safe { color: var(--green); }
   .alt-card-stat.warn { color: var(--amber); }
   .alt-card-compare-btn {
-    margin-top: auto;
-    padding: 5px 0;
-    background: transparent;
-    border: 1px solid var(--alt-color, var(--border));
-    border-radius: 8px;
-    color: var(--alt-color, var(--wood));
-    font-size: 10px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all .14s;
-    text-align: center;
+    margin-top: auto; padding: 5px 0; background: transparent;
+    border: 1px solid var(--alt-color, var(--border)); border-radius: 8px;
+    color: var(--alt-color, var(--wood)); font-size: 10px; font-weight: 700;
+    cursor: pointer; transition: all .14s; text-align: center;
   }
-  .alt-card-compare-btn:hover {
-    background: rgba(232,168,112,0.12);
-  }
-  .alt-dest-footer {
-    padding: 8px 14px 12px;
-    border-top: 1px solid var(--border);
-  }
+  .alt-card-compare-btn:hover { background: rgba(232,168,112,0.12); }
+  .alt-dest-footer { padding: 8px 14px 12px; border-top: 1px solid var(--border); }
   .alt-dest-continue-btn {
-    width: 100%;
-    padding: 9px;
-    background: transparent;
-    border: 1px solid rgba(255,123,107,0.3);
-    border-radius: 12px;
-    color: var(--red);
-    font-family: var(--ff-b);
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all .15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
+    width: 100%; padding: 9px; background: transparent;
+    border: 1px solid rgba(255,123,107,0.3); border-radius: 12px;
+    color: var(--red); font-family: var(--ff-b); font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px;
   }
-  .alt-dest-continue-btn:hover {
-    background: var(--red-dim);
-    border-color: rgba(255,123,107,0.6);
-  }
-  .alt-loading-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 16px;
-    font-size: 12px;
-    color: var(--txt2);
-  }
+  .alt-dest-continue-btn:hover { background: var(--red-dim); border-color: rgba(255,123,107,0.6); }
+  .alt-loading-row { display: flex; align-items: center; gap: 10px; padding: 14px 16px; font-size: 12px; color: var(--txt2); }
+
   /* Comparison Drawer */
   .alt-comparison-drawer {
-    position: absolute;
-    z-index: 55;
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    backdrop-filter: blur(28px);
-    box-shadow: var(--sh-lg);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    position: absolute; z-index: 55; background: var(--surface);
+    border: 1px solid var(--border2); backdrop-filter: blur(28px);
+    box-shadow: var(--sh-lg); overflow: hidden; display: flex; flex-direction: column;
   }
   .alt-comparison-drawer.desktop {
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: min(460px, 100vw);
-    border-radius: 0;
-    border-right: none;
-    animation: slideDown 0.28s ease;
+    top: 0; right: 0; bottom: 0; width: min(460px, 100vw);
+    border-radius: 0; border-right: none; animation: slideDown 0.28s ease;
   }
   .alt-comparison-drawer.mobile {
-    left: 0;
-    right: 0;
-    bottom: 0;
-    max-height: 92dvh;
-    border-radius: 20px 20px 0 0;
-    animation: slideUp 0.28s ease;
+    left: 0; right: 0; bottom: 0; max-height: 92dvh;
+    border-radius: 20px 20px 0 0; animation: slideUp 0.28s ease;
   }
-  .comp-section {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-  }
+  .comp-section { padding: 12px 16px; border-bottom: 1px solid var(--border); }
   .comp-section-label {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: var(--txt2);
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--txt2); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
   }
-  .comp-section-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-  .comp-route-stats {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 8px;
-  }
-  .comp-stat {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .comp-stat-value {
-    font-family: var(--ff-d);
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--txt);
-  }
-  .comp-stat-label {
-    font-size: 9px;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    color: var(--txt2);
-  }
+  .comp-section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .comp-route-stats { display: flex; gap: 12px; margin-bottom: 8px; }
+  .comp-stat { display: flex; flex-direction: column; gap: 2px; }
+  .comp-stat-value { font-family: var(--ff-d); font-size: 14px; font-weight: 700; color: var(--txt); }
+  .comp-stat-label { font-size: 9px; letter-spacing: 0.8px; text-transform: uppercase; color: var(--txt2); }
   .comp-steps-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    max-height: 200px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
+    display: flex; flex-direction: column; gap: 0; max-height: 200px;
+    overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent;
   }
   .comp-step {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 7px 4px;
-    border-left: 3px solid transparent;
-    transition: background .12s;
-    font-size: 11.5px;
-    color: var(--txt);
-    line-height: 1.4;
+    display: flex; align-items: flex-start; gap: 8px; padding: 7px 4px;
+    border-left: 3px solid transparent; transition: background .12s;
+    font-size: 11.5px; color: var(--txt); line-height: 1.4;
   }
-  .comp-step.hazard {
-    border-left-color: #ff7b6b;
-    background: rgba(255,123,107,0.05);
-  }
+  .comp-step.hazard { border-left-color: #ff7b6b; background: rgba(255,123,107,0.05); }
   .comp-step-icon {
-    width: 22px;
-    height: 22px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    font-size: 11px;
+    width: 22px; height: 22px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px;
   }
   .comp-hazard-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    background: rgba(255,123,107,0.15);
-    border: 1px solid rgba(255,123,107,0.35);
-    border-radius: 4px;
-    padding: 1px 5px;
-    font-size: 9px;
-    font-weight: 700;
-    color: #ff7b6b;
-    margin-left: 6px;
+    display: inline-flex; align-items: center; gap: 3px;
+    background: rgba(255,123,107,0.15); border: 1px solid rgba(255,123,107,0.35);
+    border-radius: 4px; padding: 1px 5px; font-size: 9px; font-weight: 700;
+    color: #ff7b6b; margin-left: 6px;
   }
   .comp-sim-item, .comp-draw-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-    font-size: 11.5px;
-    padding: 3px 0;
-    line-height: 1.4;
+    display: flex; align-items: flex-start; gap: 6px; font-size: 11.5px; padding: 3px 0; line-height: 1.4;
   }
   .comp-sim-item { color: var(--green); }
   .comp-draw-item { color: var(--amber); }
   .comp-accept-btn {
-    margin: 12px 16px;
-    padding: 13px;
-    background: var(--wood-g);
-    border: none;
-    border-radius: 14px;
-    color: #fff;
-    font-family: var(--ff-d);
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all .2s;
-    box-shadow: var(--sh-w);
+    margin: 12px 16px; padding: 13px; background: var(--wood-g);
+    border: none; border-radius: 14px; color: #fff; font-family: var(--ff-d);
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all .2s; box-shadow: var(--sh-w);
   }
-  .comp-accept-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 28px rgba(232,168,112,0.5);
-    filter: brightness(1.1);
+  .comp-accept-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(232,168,112,0.5); filter: brightness(1.1); }
+
+  /* ═══ ALT COMP DRAWER (inline route comparison) ═══ */
+  .alt-comp-drawer {
+    position: absolute; bottom: 90px; left: calc(var(--rail-w) + 14px);
+    width: 380px; max-width: calc(100vw - var(--rail-w) - 28px);
+    background: var(--surface); border: 1px solid var(--border2);
+    border-top: 3px solid var(--wood); border-radius: 16px;
+    backdrop-filter: blur(28px); box-shadow: var(--sh-lg);
+    z-index: 53; animation: slideUp 0.26s ease;
   }
-  /* ── ALTERNATE DEST ANIMATIONS ────────────────────── */
-  @keyframes altPulse {
-    0%, 100% { stroke-opacity: 0.72; }
-    50%       { stroke-opacity: 1.0; }
+  .alt-comp-header { padding: 12px 16px 10px; border-bottom: 1px solid var(--border); }
+  .alt-comp-stats-grid { display: flex; gap: 0; padding: 12px 16px; }
+  .alt-comp-stat-col { flex: 1; text-align: center; }
+  .alt-comp-stat-col + .alt-comp-stat-col { border-left: 1px solid var(--border); }
+  .alt-comp-col-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+  .alt-comp-stat-value { font-family: var(--ff-d); font-size: 15px; font-weight: 700; color: var(--txt); }
+  .alt-comp-stat-sub { font-size: 11px; color: var(--txt2); margin-top: 2px; }
+  .alt-comp-hazard-banner {
+    margin: 0 16px; padding: 8px 12px; border-radius: 10px;
+    font-size: 12px; font-weight: 600; text-align: center;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes shimmer {
-    0%   { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+  .alt-comp-action-area { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .alt-comp-accept {
+    width: 100%; padding: 12px; background: var(--wood-g); border: none;
+    border-radius: 12px; color: #fff; font-family: var(--ff-d); font-size: 14px;
+    font-weight: 700; cursor: pointer; transition: all .2s; box-shadow: var(--sh-w);
+  }
+  .alt-comp-accept:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .alt-comp-decline {
+    width: 100%; padding: 10px; background: transparent;
+    border: 1px solid var(--border); border-radius: 12px; color: var(--txt2);
+    font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s;
+  }
+  .alt-comp-decline:hover { border-color: var(--border2); color: var(--txt); }
+
+  /* ═══ MOBILE RESPONSIVE ═══ */
+  @media (max-width: 639px) {
+    :root { --rail-w: 52px; }
+    .r-btn { width: 38px; height: 38px; }
+    .r-lbl { font-size: 8px; }
+    .r-btn[data-tip]::after { display: none; }
+    .sc { left: calc(var(--rail-w) + 8px); width: calc(100vw - var(--rail-w) - 16px); max-width: 360px; top: 10px; }
+    .directions-attached { left: calc(var(--rail-w) + 8px); width: calc(100vw - var(--rail-w) - 16px); max-width: 360px; max-height: 55vh; }
+    .rbar {
+      left: calc(var(--rail-w) + 8px); right: 8px; bottom: 16px;
+      padding: 10px 12px; gap: 10px; border-radius: 14px;
+      overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap;
+    }
+    .rbar::-webkit-scrollbar { display: none; }
+    .rs-v { font-size: 13px; }
+    .rs-l { font-size: 9px; }
+    .mt-bar { top: 10px; right: 8px; }
+    .mt-btn { padding: 5px 8px; font-size: 11px; }
+    .mctrl { right: 8px; bottom: 70px; }
+    .mc { width: 36px; height: 36px; }
+    .panel { width: calc(100vw - var(--rail-w)); max-width: var(--panel-w); }
+    .alt-dest-panel { left: calc(var(--rail-w) + 8px); width: calc(100vw - var(--rail-w) - 16px); }
+    .alt-comp-drawer { left: calc(var(--rail-w) + 8px); width: calc(100vw - var(--rail-w) - 16px); }
+    .route-alert { left: calc(var(--rail-w) + 8px); right: 8px; max-width: none; }
+    .view3d-toggle { right: 8px; bottom: 70px; }
   }
 
-  /* ── DIRECTIONS PANEL — SCROLLABLE (FIX) ───────── */
-  .directions-attached {
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    max-height: 45vh;
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
+  /* ── Focus visible for keyboard nav ── */
+  .r-btn:focus-visible, .p-item:focus-visible, .ab:focus-visible,
+  .mp:focus-visible, .sc-find:focus-visible, .mc:focus-visible,
+  .mt-btn:focus-visible, .rs-dir-btn:focus-visible, .rs-cl:focus-visible,
+  .dir-close:focus-visible, .p-close:focus-visible, .alt-comp-accept:focus-visible,
+  .alt-comp-decline:focus-visible, .ri:focus-visible {
+    outline: 2px solid var(--wood);
+    outline-offset: 2px;
   }
-  @media (max-width: 639px) {
-    .directions-attached {
-      max-height: 55vh;
-    }
-  }
-  .directions-attached::-webkit-scrollbar {
-    width: 5px;
-  }
-  .directions-attached::-webkit-scrollbar-track {
-    background: transparent;
-    border-radius: 10px;
-  }
-  .directions-attached::-webkit-scrollbar-thumb {
-    background: var(--wood);
-    border-radius: 10px;
-    opacity: 0.7;
-  }
-  .directions-attached::-webkit-scrollbar-thumb:hover {
-    opacity: 1;
-  }
-  .dir-panel {
-    overflow: visible !important;
-    max-height: none !important;
-    border-radius: 0 0 20px 20px;
-    border: none !important;
-    backdrop-filter: none !important;
-    box-shadow: none !important;
-    animation: none !important;
-    position: relative !important;
-  }
-  .dir-list {
-    overflow: visible !important;
-    max-height: none !important;
-  }
+
+  /* ── High contrast mode ── */
+  .hc { --border: rgba(255,255,255,0.35); --border2: rgba(255,255,255,0.55); --txt2: #fff; --txt3: #ddd; }
+  .hc .leaflet-tile-pane { filter: contrast(1.4) brightness(0.9); }
 `;
 
 const A11Y_FEATS = [
@@ -1985,6 +1805,19 @@ export default function AccessibleMap() {
       routeSegments.length
     );
   }, [routeSegments]);
+
+  // Memoize nearby emergency count so it's not computed twice per render
+  const nearbyEmergencyCount = useMemo(() => {
+    if (!routePath.length || !emergencies911.length) return 0;
+    return emergencies911.filter((e) => {
+      let minDist = Infinity;
+      for (const point of routePath) {
+        const dist = haversineDistance(point[0], point[1], e.lat, e.lng);
+        minDist = Math.min(minDist, dist);
+      }
+      return minDist < 500;
+    }).length;
+  }, [routePath, emergencies911]);
 
   useEffect(() => {
     if (walkerIntervalRef.current) clearInterval(walkerIntervalRef.current);
@@ -3570,7 +3403,8 @@ export default function AccessibleMap() {
         >
           {toast}
         </div>
-        {/* MAP */}
+
+        {/* ═══ MAP ═══ */}
         <div className="map-wrap">
           <MapContainer
             center={validCenter}
@@ -3592,6 +3426,8 @@ export default function AccessibleMap() {
               attribution={mapTypes[mapType].attribution}
               url={mapTypes[mapType].url}
             />
+
+            {/* User location */}
             {isValidLatLngArray(loc) && (
               <CircleMarker
                 center={loc}
@@ -3608,15 +3444,20 @@ export default function AccessibleMap() {
                 </Popup>
               </CircleMarker>
             )}
+
+            {/* Destination */}
             {dest && isValidLatLngArray(dest) && (
               <Marker position={dest} icon={destinationIcon}>
                 <Popup>
-                  <strong>Destination</strong>
-                  <br />
-                  <small style={{ color: "#e0c8b0" }}>{toVal}</small>
+                  <div className="popup-dest">
+                    <strong>Destination</strong>
+                    <small>{toVal}</small>
+                  </div>
                 </Popup>
               </Marker>
             )}
+
+            {/* Construction zones */}
             {constructionZones.map((zone, idx) => (
               <ObstructionMarker
                 key={`cz-${idx}`}
@@ -3629,13 +3470,15 @@ export default function AccessibleMap() {
                 zoomLevel={currentZoom}
                 extra={
                   zone.distance_meters ? (
-                    <div style={{ fontSize: 11, color: "#b09878" }}>
+                    <div className="popup-distance">
                       📍 {zone.distance_meters.toFixed(0)}m from route
                     </div>
                   ) : null
                 }
               />
             ))}
+
+            {/* Active hazards */}
             {activeHazards.map((hazard, idx) => (
               <ObstructionMarker
                 key={`hz-${idx}`}
@@ -3648,7 +3491,7 @@ export default function AccessibleMap() {
                 zoomLevel={currentZoom}
                 extra={
                   hazard.severity ? (
-                    <div style={{ fontSize: 11 }}>
+                    <div className="popup-severity">
                       <span
                         style={{
                           color: hazard.severity > 0.7 ? "#ff7b6b" : "#ffb347",
@@ -3661,6 +3504,8 @@ export default function AccessibleMap() {
                 }
               />
             ))}
+
+            {/* Obstructed roads */}
             {obstructedRoads.map((seg, idx) => (
               <ObstructedRoadSegment
                 key={`road-${idx}`}
@@ -3668,127 +3513,73 @@ export default function AccessibleMap() {
                 zoomLevel={currentZoom}
               />
             ))}
-            {emergencies911.map((emergency, idx) => (
-              <Marker
-                key={`emergency-${idx}`}
-                position={[emergency.lat, emergency.lng]}
-                icon={makeLucideIcon(
-                  emergency.type === "accident"
-                    ? CarFront
-                    : emergency.type === "fire"
-                      ? Flame
-                      : emergency.type === "medical"
-                        ? Stethoscope
-                        : emergency.type === "hazardous"
-                          ? TriangleAlert
-                          : emergency.type === "rescue"
-                            ? Siren
-                            : ShieldAlert,
-                  emergency.severity > 0.7 ? "#ff4444" : "#ff8844",
-                  "#ff0000",
-                  Math.min(
-                    42,
-                    Math.max(28, 28 + ((currentZoom - 12) / 6) * 14),
-                  ),
-                )}
-              >
-                <Popup>
-                  <div
-                    style={{ fontFamily: "DM Sans,sans-serif", minWidth: 200 }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        marginBottom: 12,
-                        paddingBottom: 8,
-                        borderBottom: "1px solid rgba(255,68,68,0.3)",
-                      }}
-                    >
-                      {emergency.type === "accident" && (
-                        <CarFront size={18} color="#ff4444" />
-                      )}
-                      {emergency.type === "fire" && (
-                        <Flame size={18} color="#ff4444" />
-                      )}
-                      {emergency.type === "medical" && (
-                        <Stethoscope size={18} color="#ff4444" />
-                      )}
-                      {emergency.type === "hazardous" && (
-                        <TriangleAlert size={18} color="#ff8844" />
-                      )}
-                      {emergency.type === "rescue" && (
-                        <Siren size={18} color="#ff4444" />
-                      )}
-                      {!emergency.type && (
-                        <ShieldAlert size={18} color="#ff4444" />
-                      )}
-                      <strong style={{ color: "#ff6666", fontSize: 14 }}>
-                        🚨 911 EMERGENCY
-                      </strong>
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 13,
-                        fontWeight: "bold",
-                        color: "#fff",
-                        marginBottom: 6,
-                      }}
-                    >
-                      {emergency.description ||
-                        `${emergency.type?.toUpperCase()} incident`}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: "#e0c8b0",
-                        marginBottom: 4,
-                      }}
-                    >
-                      {emergency.subtype && (
-                        <span
-                          style={{ display: "inline-block", marginRight: 12 }}
-                        >
-                          📋 {emergency.subtype}
-                        </span>
-                      )}
-                      {emergency.severity && (
-                        <span>
-                          ⚡ Severity: {Math.round(emergency.severity * 100)}%
-                        </span>
-                      )}
-                    </div>
-                    {emergency.timestamp && (
-                      <div
-                        style={{ fontSize: 10, color: "#b09878", marginTop: 6 }}
-                      >
-                        🕒 Reported:{" "}
-                        {new Date(emergency.timestamp).toLocaleString()}
-                      </div>
-                    )}
-                    {emergency.distance_meters && (
-                      <div style={{ fontSize: 10, color: "#b09878" }}>
-                        📍 {emergency.distance_meters.toFixed(0)}m from center
-                      </div>
-                    )}
-                    <div
-                      style={{
-                        fontSize: 10,
-                        color: "#ff8888",
-                        marginTop: 8,
-                        paddingTop: 6,
-                        borderTop: "1px solid rgba(255,68,68,0.2)",
-                      }}
-                    >
-                      ⚠️ Active emergency response in area
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
 
-            {/* TRANSIT / WALKING ROUTES */}
+            {/* ── 911 Emergencies ── */}
+            {emergencies911.map((emergency, idx) => {
+              const EmIcon = EMERGENCY_ICONS[emergency.type] || ShieldAlert;
+              const isHigh = emergency.severity > 0.7;
+              const iconColor = isHigh ? "#ff4444" : "#ff8844";
+              const markerSize = Math.min(
+                42,
+                Math.max(28, 28 + ((currentZoom - 12) / 6) * 14),
+              );
+
+              return (
+                <Marker
+                  key={`emergency-${idx}`}
+                  position={[emergency.lat, emergency.lng]}
+                  icon={makeLucideIcon(
+                    EmIcon,
+                    iconColor,
+                    "#ff0000",
+                    markerSize,
+                  )}
+                >
+                  <Popup>
+                    <div className="emergency-popup">
+                      <div className="emergency-popup-header">
+                        <EmIcon size={18} color="#ff4444" />
+                        <strong className="emergency-popup-title">
+                          🚨 911 EMERGENCY
+                        </strong>
+                      </div>
+                      <div className="emergency-popup-desc">
+                        {emergency.description ||
+                          `${emergency.type?.toUpperCase()} incident`}
+                      </div>
+                      <div className="emergency-popup-meta">
+                        {emergency.subtype && (
+                          <span className="emergency-popup-tag">
+                            📋 {emergency.subtype}
+                          </span>
+                        )}
+                        {emergency.severity && (
+                          <span>
+                            ⚡ Severity: {Math.round(emergency.severity * 100)}%
+                          </span>
+                        )}
+                      </div>
+                      {emergency.timestamp && (
+                        <div className="emergency-popup-time">
+                          🕒 Reported:{" "}
+                          {new Date(emergency.timestamp).toLocaleString()}
+                        </div>
+                      )}
+                      {emergency.distance_meters && (
+                        <div className="emergency-popup-time">
+                          📍 {emergency.distance_meters.toFixed(0)}m from center
+                        </div>
+                      )}
+                      <div className="emergency-popup-footer">
+                        ⚠️ Active emergency response in area
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+
+            {/* ── TRANSIT / WALKING ROUTES ── */}
             {transitSegments.length > 0
               ? transitSegments.map((seg, idx) => {
                   const isTransit = seg.type === "transit";
@@ -3816,26 +3607,17 @@ export default function AccessibleMap() {
                         }}
                       >
                         <Popup>
-                          <div style={{ fontFamily: "DM Sans,sans-serif" }}>
+                          <div className="popup-segment-label">
                             {isTransit ? (
                               <>
-                                <Bus
-                                  size={12}
-                                  style={{
-                                    verticalAlign: "middle",
-                                    color: "#4fc3f7",
-                                  }}
-                                />{" "}
+                                <Bus size={12} className="popup-icon-transit" />{" "}
                                 <strong>Transit segment</strong>
                               </>
                             ) : (
                               <>
                                 <Footprints
                                   size={12}
-                                  style={{
-                                    verticalAlign: "middle",
-                                    color: "#8cd69c",
-                                  }}
+                                  className="popup-icon-walk"
                                 />{" "}
                                 <strong>Walking segment</strong>
                               </>
@@ -3979,6 +3761,8 @@ export default function AccessibleMap() {
                       />
                     </>
                   )}
+
+            {/* Alternative routes */}
             {alternativeRoutes.map(
               (alt, idx) =>
                 alt.waypoints?.length > 0 && (
@@ -4004,6 +3788,8 @@ export default function AccessibleMap() {
                   </Polyline>
                 ),
             )}
+
+            {/* Transit alternatives */}
             {transitAlternatives.map(
               (alt, altIdx) =>
                 alt.coords &&
@@ -4021,12 +3807,12 @@ export default function AccessibleMap() {
                     }}
                   >
                     <Popup>
-                      <div style={{ fontFamily: "DM Sans,sans-serif" }}>
+                      <div className="popup-segment-label">
                         <strong>Alternative {alt.index}</strong>
                         <br />
                         {alt.route_summary}
                         <br />
-                        <small style={{ color: "#b09878" }}>
+                        <small className="popup-sub">
                           {Math.round(alt.total_time_seconds / 60)} min ·
                           Safety: {Math.round((alt.safety || 0.7) * 100)}%
                         </small>
@@ -4036,7 +3822,7 @@ export default function AccessibleMap() {
                 ),
             )}
 
-            {/* ALTERNATE DESTINATION ROUTES (with fallback coords) */}
+            {/* ── ALTERNATE DESTINATION ROUTES ── */}
             {showAlternateDestinations &&
               !alternatesDismissed &&
               alternateDestinations.map((alt, idx) => {
@@ -4048,6 +3834,12 @@ export default function AccessibleMap() {
                         [loc[0], loc[1]],
                         [alt.lat, alt.lng],
                       ];
+
+                const handleSelect = () => {
+                  setSelectedAlternate(alt);
+                  setShowAlternateComparison(true);
+                };
+
                 return (
                   <React.Fragment key={`alt-dest-${idx}`}>
                     {isHovered && (
@@ -4077,10 +3869,7 @@ export default function AccessibleMap() {
                       eventHandlers={{
                         mouseover: () => setHoveredAlternate(idx),
                         mouseout: () => setHoveredAlternate(null),
-                        click: () => {
-                          setSelectedAlternate(alt);
-                          setShowAlternateComparison(true);
-                        },
+                        click: handleSelect,
                       }}
                       pathOptions={{
                         color: ALTERNATE_COLORS.ALT_DEST.line,
@@ -4106,59 +3895,26 @@ export default function AccessibleMap() {
                       eventHandlers={{
                         mouseover: () => setHoveredAlternate(idx),
                         mouseout: () => setHoveredAlternate(null),
-                        click: () => {
-                          setSelectedAlternate(alt);
-                          setShowAlternateComparison(true);
-                        },
+                        click: handleSelect,
                       }}
                     >
                       <Popup>
-                        <div
-                          style={{
-                            fontFamily: "DM Sans, sans-serif",
-                            minWidth: 180,
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontWeight: 700,
-                              color: ALTERNATE_COLORS.ALT_DEST.line,
-                              marginBottom: 4,
-                            }}
-                          >
+                        <div className="popup-segment-label">
+                          <div className="popup-alt-name">
                             Alt Destination: {alt.name}
                           </div>
-                          <div style={{ fontSize: 11, color: "#b09878" }}>
+                          <div className="popup-sub">
                             {alt.routeDistance} · {alt.routeDuration}
                           </div>
-                          <div
-                            style={{
-                              fontSize: 11,
-                              color: "#8cd69c",
-                              marginTop: 4,
-                            }}
-                          >
+                          <div className="popup-alt-safe">
                             ✓{" "}
                             {alt.hazardCount === 0
                               ? "No hazards on route"
                               : `${alt.hazardCount} hazard(s) — safer than original`}
                           </div>
                           <button
-                            onClick={() => {
-                              setSelectedAlternate(alt);
-                              setShowAlternateComparison(true);
-                            }}
-                            style={{
-                              marginTop: 8,
-                              padding: "5px 10px",
-                              background: "#c06c30",
-                              border: "none",
-                              borderRadius: 8,
-                              color: "#fff",
-                              fontSize: 11,
-                              fontWeight: 700,
-                              cursor: "pointer",
-                            }}
+                            className="popup-compare-btn"
+                            onClick={handleSelect}
                           >
                             Compare →
                           </button>
@@ -4188,12 +3944,7 @@ export default function AccessibleMap() {
                             position={midPt}
                             icon={icon}
                             interactive={true}
-                            eventHandlers={{
-                              click: () => {
-                                setSelectedAlternate(alt);
-                                setShowAlternateComparison(true);
-                              },
-                            }}
+                            eventHandlers={{ click: handleSelect }}
                           />
                         );
                       })()}
@@ -4201,11 +3952,17 @@ export default function AccessibleMap() {
                 );
               })}
 
-            {/* NEW: ALTERNATE ROUTES TO SAME DESTINATION with floating clickable labels */}
+            {/* ── ALTERNATE ROUTES TO SAME DESTINATION ── */}
             {alternateRoutes.map((altRoute, idx) => {
               const isHovered = hoveredAlternateRoute === idx;
               if (!altRoute.routeCoords || altRoute.routeCoords.length < 2)
                 return null;
+
+              const handleSelectRoute = () => {
+                setSelectedAlternateRoute(altRoute);
+                setShowAlternateRouteComparison(true);
+              };
+
               return (
                 <React.Fragment key={altRoute.id}>
                   <Polyline
@@ -4235,10 +3992,7 @@ export default function AccessibleMap() {
                     eventHandlers={{
                       mouseover: () => setHoveredAlternateRoute(idx),
                       mouseout: () => setHoveredAlternateRoute(null),
-                      click: () => {
-                        setSelectedAlternateRoute(altRoute);
-                        setShowAlternateRouteComparison(true);
-                      },
+                      click: handleSelectRoute,
                     }}
                     pathOptions={{
                       color: altRoute.color,
@@ -4264,10 +4018,7 @@ export default function AccessibleMap() {
                       eventHandlers={{
                         mouseover: () => setHoveredAlternateRoute(idx),
                         mouseout: () => setHoveredAlternateRoute(null),
-                        click: () => {
-                          setSelectedAlternateRoute(altRoute);
-                          setShowAlternateRouteComparison(true);
-                        },
+                        click: handleSelectRoute,
                       }}
                     />
                   )}
@@ -4296,10 +4047,7 @@ export default function AccessibleMap() {
                           icon={icon}
                           interactive={true}
                           eventHandlers={{
-                            click: () => {
-                              setSelectedAlternateRoute(altRoute);
-                              setShowAlternateRouteComparison(true);
-                            },
+                            click: handleSelectRoute,
                             mouseover: () => setHoveredAlternateRoute(idx),
                             mouseout: () => setHoveredAlternateRoute(null),
                           }}
@@ -4312,24 +4060,12 @@ export default function AccessibleMap() {
           </MapContainer>
         </div>
 
-        {/* 3D Navigation Panel (unchanged) */}
+        {/* ═══ 3D NAVIGATION PANEL ═══ */}
         {navigationActive && routePath.length > 0 && (
           <div className="nav-3d-panel">
             <Suspense
               fallback={
-                <div
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    background: "rgba(0,0,0,0.7)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "white",
-                  }}
-                >
-                  Loading 3D View...
-                </div>
+                <div className="nav-3d-loading">Loading 3D View...</div>
               }
             >
               <Walking3DView
@@ -4368,7 +4104,7 @@ export default function AccessibleMap() {
           </button>
         )}
 
-        {/* Rail Navigation */}
+        {/* ═══ RAIL NAVIGATION ═══ */}
         <nav className="rail" role="navigation" aria-label="Main navigation">
           <div className="r-logo" aria-hidden="true">
             <Accessibility size={20} />
@@ -4434,7 +4170,7 @@ export default function AccessibleMap() {
           </button>
         </nav>
 
-        {/* Side Panels (unchanged) */}
+        {/* ═══ SIDE PANELS ═══ */}
         <aside
           ref={panelRef}
           className={`panel${panel ? " open" : ""}`}
@@ -4448,7 +4184,11 @@ export default function AccessibleMap() {
                   ? "Recent Routes"
                   : "Accessibility"}
             </div>
-            <button className="p-close" onClick={() => setPanel(null)}>
+            <button
+              className="p-close"
+              onClick={() => setPanel(null)}
+              aria-label="Close panel"
+            >
               <X size={14} />
             </button>
           </div>
@@ -4457,9 +4197,7 @@ export default function AccessibleMap() {
               <>
                 <div>
                   <div className="p-sec">Pinned</div>
-                  <div
-                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
-                  >
+                  <div className="p-list">
                     {SAVED_PLACES.map((d) => (
                       <button
                         key={d.name}
@@ -4473,13 +4211,10 @@ export default function AccessibleMap() {
                         <div className={`p-ico ${d.color}`}>
                           <d.Icon size={15} />
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="p-item-text">
                           <div className="p-name">{d.name}</div>
                           <div className="p-sub">
-                            <Accessibility
-                              size={10}
-                              style={{ color: "var(--green)" }}
-                            />{" "}
+                            <Accessibility size={10} className="p-sub-icon" />{" "}
                             {d.sub}
                           </div>
                         </div>
@@ -4492,9 +4227,7 @@ export default function AccessibleMap() {
                 </div>
                 <div>
                   <div className="p-sec">Nearby in Pittsburgh</div>
-                  <div
-                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
-                  >
+                  <div className="p-list">
                     {NEARBY_PITTSBURGH.map((d) => (
                       <button
                         key={d.name}
@@ -4508,7 +4241,7 @@ export default function AccessibleMap() {
                         <div className={`p-ico ${d.color}`}>
                           <d.Icon size={15} />
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="p-item-text">
                           <div className="p-name">{d.name}</div>
                           <div className="p-sub">{d.sub}</div>
                         </div>
@@ -4531,9 +4264,7 @@ export default function AccessibleMap() {
                     Routes you calculate will appear here.
                   </div>
                 ) : (
-                  <div
-                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
-                  >
+                  <div className="p-list">
                     {recents.map((r, i) => (
                       <button
                         key={i}
@@ -4547,7 +4278,7 @@ export default function AccessibleMap() {
                         <div className="p-ico">
                           <Clock size={15} />
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="p-item-text">
                           <div className="p-name">{r.name}</div>
                           <div className="p-sub">Recent destination</div>
                         </div>
@@ -4585,9 +4316,7 @@ export default function AccessibleMap() {
                 </div>
                 <div>
                   <div className="p-sec">Map Style</div>
-                  <div
-                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
-                  >
+                  <div className="p-list">
                     {Object.entries(mapTypes).map(([k, v]) => {
                       const MIcon = MAP_TYPE_ICONS[k] || Layers;
                       return (
@@ -4604,12 +4333,7 @@ export default function AccessibleMap() {
                           </div>
                           <div className="p-name">{v.name}</div>
                           {mapType === k && (
-                            <span
-                              style={{
-                                marginLeft: "auto",
-                                color: "var(--wood)",
-                              }}
-                            >
+                            <span className="p-arr-active">
                               <ChevronRight size={14} />
                             </span>
                           )}
@@ -4643,7 +4367,7 @@ export default function AccessibleMap() {
           </div>
         </aside>
 
-        {/* Search Card with ref */}
+        {/* ═══ SEARCH CARD ═══ */}
         <div
           ref={searchCardRef}
           className={`sc${searchPanelCollapsed ? " collapsed" : ""}`}
@@ -4651,7 +4375,7 @@ export default function AccessibleMap() {
           aria-label="Route planner"
         >
           <div className="sc-head">
-            <Route size={16} style={{ color: "var(--wood)", flexShrink: 0 }} />
+            <Route size={16} className="sc-head-icon" />
             <div className="sc-brand">
               Try<span>ver</span>
             </div>
@@ -4672,12 +4396,7 @@ export default function AccessibleMap() {
             </button>
           </div>
           <div
-            className="sc-content"
-            style={{
-              maxHeight: searchPanelCollapsed ? 0 : "70vh",
-              overflowY: "auto",
-              transition: "max-height 0.2s ease",
-            }}
+            className={`sc-content${searchPanelCollapsed ? " sc-content-collapsed" : ""}`}
           >
             {!searchPanelCollapsed && (
               <>
@@ -4703,14 +4422,7 @@ export default function AccessibleMap() {
                         autoComplete="off"
                       />
                       {fromSuggLoad && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            right: 34,
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                          }}
-                        >
+                        <div className="ri-spinner-wrap">
                           <div className="spn" />
                         </div>
                       )}
@@ -4760,14 +4472,7 @@ export default function AccessibleMap() {
                         autoComplete="off"
                       />
                       {suggLoad && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            right: 9,
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                          }}
-                        >
+                        <div className="ri-spinner-wrap-right">
                           <div className="spn" />
                         </div>
                       )}
@@ -4820,6 +4525,8 @@ export default function AccessibleMap() {
                         clearRoute();
                         say(`${t.l} mode`);
                       }}
+                      role="radio"
+                      aria-checked={mode === t.id}
                     >
                       <span className="mp-i">
                         <t.Icon size={18} />
@@ -4848,32 +4555,16 @@ export default function AccessibleMap() {
           </div>
         </div>
 
-        {/* Directions Panel with dynamic top position */}
+        {/* ═══ DIRECTIONS PANEL ═══ */}
         {showDirections && routeSteps.length > 0 && (
           <div
             className="directions-attached"
             style={{
-              position: "absolute",
-              left: "calc(var(--rail-w) + 14px)",
               top: searchCardBottom,
-              width: "348px",
-              background: "var(--surface)",
-              borderTop: "1px solid var(--border)",
-              borderRadius: "0 0 20px 20px",
-              marginTop: 0,
-              boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
-              animation: "slideDown 0.3s ease",
-              zIndex: 49,
             }}
           >
             <Suspense
-              fallback={
-                <div
-                  style={{ padding: 12, color: "var(--txt2)", fontSize: 12 }}
-                >
-                  Loading directions…
-                </div>
-              }
+              fallback={<div className="dir-loading">Loading directions…</div>}
             >
               <DirectionsPanel
                 steps={routeSteps}
@@ -4884,7 +4575,7 @@ export default function AccessibleMap() {
           </div>
         )}
 
-        {/* Alternate Destinations Panel (visible if either alternateRoutes or alternateDestinations exist) */}
+        {/* ═══ ALTERNATE DESTINATIONS PANEL ═══ */}
         {(showAlternateDestinations || alternateRoutes.length > 0) &&
           !alternatesDismissed && (
             <Suspense fallback={null}>
@@ -4928,55 +4619,31 @@ export default function AccessibleMap() {
             </Suspense>
           )}
 
-        {/* Alternate Route Comparison Drawer (inline) */}
+        {/* ═══ ALTERNATE ROUTE COMPARISON DRAWER ═══ */}
         {showAlternateRouteComparison && selectedAlternateRoute && (
           <div
             className="alt-comp-drawer"
             style={{ borderTopColor: selectedAlternateRoute.color }}
           >
             <div className="alt-comp-header">
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "8px" }}
-              >
+              <div className="alt-comp-header-row">
                 <div
-                  style={{
-                    width: "10px",
-                    height: "10px",
-                    borderRadius: "50%",
-                    background: selectedAlternateRoute.color,
-                  }}
-                ></div>
-                <div
-                  style={{
-                    fontFamily: "var(--ff-d)",
-                    fontSize: "15px",
-                    fontWeight: "700",
-                    color: "var(--txt)",
-                  }}
-                >
+                  className="alt-comp-dot"
+                  style={{ background: selectedAlternateRoute.color }}
+                />
+                <div className="alt-comp-label">
                   {selectedAlternateRoute.label}
                 </div>
-                <div style={{ fontSize: "11px", color: "var(--txt2)" }}>
+                <div className="alt-comp-sublabel">
                   Same destination — different path
                 </div>
                 <button
+                  className="alt-comp-close"
                   onClick={() => {
                     setShowAlternateRouteComparison(false);
                     setSelectedAlternateRoute(null);
                   }}
-                  style={{
-                    marginLeft: "auto",
-                    background: "var(--inset)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "7px",
-                    width: "26px",
-                    height: "26px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    color: "var(--txt2)",
-                  }}
+                  aria-label="Close comparison"
                 >
                   <X size={12} />
                 </button>
@@ -5013,56 +4680,11 @@ export default function AccessibleMap() {
               </div>
             </div>
             <div
-              className={`alt-comp-hazard-banner`}
-              style={{
-                background:
-                  selectedAlternateRoute.hazardCount === 0
-                    ? "rgba(140,214,156,0.1)"
-                    : "rgba(255,179,71,0.08)",
-                border: `1px solid ${selectedAlternateRoute.hazardCount === 0 ? "rgba(140,214,156,0.3)" : "rgba(255,179,71,0.25)"}`,
-                color:
-                  selectedAlternateRoute.hazardCount === 0
-                    ? "var(--green)"
-                    : "var(--amber)",
-              }}
+              className={`alt-comp-hazard-banner ${selectedAlternateRoute.hazardCount === 0 ? "safe" : "warn"}`}
             >
               {selectedAlternateRoute.hazardCount === 0
                 ? "✓ No hazards detected on this path"
                 : `⚠ ${selectedAlternateRoute.hazardCount} hazard(s) still present on this path`}
-            </div>
-            <div
-              className="alt-comp-steps-toggle"
-              onClick={() => {
-                /* toggle steps */
-              }}
-            >
-              Show steps ▼
-            </div>
-            <div className="alt-comp-steps-list" style={{ display: "none" }}>
-              {selectedAlternateRoute.steps?.map((step, i) => (
-                <div key={i} className="comp-step">
-                  <div
-                    className="comp-step-icon"
-                    style={{ background: "var(--inset)", borderRadius: "6px" }}
-                  >
-                    {React.createElement(
-                      getStepIcon(step.instruction, step.travel_mode),
-                      { size: 12 },
-                    )}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div>{step.instruction}</div>
-                    <div style={{ fontSize: "10px", color: "var(--txt2)" }}>
-                      {fmtDist(step.distance_meters)} ·{" "}
-                      {step.duration_seconds
-                        ? step.duration_seconds >= 60
-                          ? `${Math.round(step.duration_seconds / 60)} min`
-                          : `${Math.round(step.duration_seconds)} sec`
-                        : "—"}
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
             <div className="alt-comp-action-area">
               <button
@@ -5086,7 +4708,7 @@ export default function AccessibleMap() {
           </div>
         )}
 
-        {/* Map Type Bar, Zoom Controls, Route Info Bar (unchanged) */}
+        {/* ═══ MAP TYPE BAR ═══ */}
         <div className="mt-bar" role="radiogroup">
           {Object.entries(mapTypes).map(([k, v]) => {
             const MIcon = MAP_TYPE_ICONS[k] || Layers;
@@ -5105,20 +4727,26 @@ export default function AccessibleMap() {
             );
           })}
         </div>
+
+        {/* ═══ ZOOM CONTROLS ═══ */}
         <div className="mctrl">
           <button
             className="mc"
             onClick={() => throttledSetZoom(Math.min(zoom + 1, 18))}
+            aria-label="Zoom in"
           >
             <Plus size={16} />
           </button>
           <button
             className="mc"
             onClick={() => throttledSetZoom(Math.max(zoom - 1, 10))}
+            aria-label="Zoom out"
           >
             <Minus size={16} />
           </button>
         </div>
+
+        {/* ═══ ROUTE INFO BAR ═══ */}
         {routeInfo && (
           <div className="rbar" role="region" aria-label="Route information">
             <div className="rs">
@@ -5132,7 +4760,7 @@ export default function AccessibleMap() {
             </div>
             <div className="rs-d" />
             <div className="rs">
-              <div className="rs-v" style={{ color: "var(--green)" }}>
+              <div className="rs-v rs-v-green">
                 <Accessibility size={16} />
               </div>
               <div className="rs-l">Accessible</div>
@@ -5141,47 +4769,19 @@ export default function AccessibleMap() {
               <>
                 <div className="rs-d" />
                 <div className="rs">
-                  <div className="rs-v" style={{ color: "#ff7b6b" }}>
+                  <div className="rs-v rs-v-red">
                     <Construction size={14} /> {constructionZones.length}
                   </div>
                   <div className="rs-l">Obstructions</div>
                 </div>
               </>
             )}
-            {emergencies911.filter((e) => {
-              if (!routePath.length) return false;
-              let minDist = Infinity;
-              for (const point of routePath) {
-                const dist = haversineDistance(
-                  point[0],
-                  point[1],
-                  e.lat,
-                  e.lng,
-                );
-                minDist = Math.min(minDist, dist);
-              }
-              return minDist < 500;
-            }).length > 0 && (
+            {nearbyEmergencyCount > 0 && (
               <>
                 <div className="rs-d" />
                 <div className="rs">
-                  <div className="rs-v" style={{ color: "#ff4444" }}>
-                    <Siren size={14} />{" "}
-                    {
-                      emergencies911.filter((e) => {
-                        let minDist = Infinity;
-                        for (const point of routePath) {
-                          const dist = haversineDistance(
-                            point[0],
-                            point[1],
-                            e.lat,
-                            e.lng,
-                          );
-                          minDist = Math.min(minDist, dist);
-                        }
-                        return minDist < 500;
-                      }).length
-                    }
+                  <div className="rs-v rs-v-crit">
+                    <Siren size={14} /> {nearbyEmergencyCount}
                   </div>
                   <div className="rs-l">Emergencies</div>
                 </div>
@@ -5227,68 +4827,31 @@ export default function AccessibleMap() {
             )}
           </div>
         )}
+
+        {/* ═══ ROUTE ALERT ═══ */}
         {showRouteAlert && routeAlert && (
-          <div
-            style={{
-              position: "absolute",
-              top: 100,
-              left: "calc(var(--rail-w) + 14px)",
-              right: 14,
-              maxWidth: 400,
-              background: "var(--surface)",
-              border: "1px solid #ff7b6b",
-              borderRadius: 16,
-              padding: 16,
-              zIndex: 100,
-              backdropFilter: "blur(24px)",
-              boxShadow: "var(--sh-lg)",
-              animation: "slideDown 0.3s ease",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 12,
-              }}
-            >
+          <div className="route-alert">
+            <div className="route-alert-header">
               <ShieldAlert size={22} color="#ff7b6b" />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: "bold", color: "var(--txt)" }}>
-                  {routeAlert.message}
-                </div>
-              </div>
+              <div className="route-alert-msg">{routeAlert.message}</div>
               <button
+                className="route-alert-close"
                 onClick={() => setShowRouteAlert(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "var(--txt2)",
-                  cursor: "pointer",
-                }}
+                aria-label="Dismiss alert"
               >
                 <X size={16} />
               </button>
             </div>
             {routeAlternatives.length > 0 && (
               <div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    fontWeight: "bold",
-                    marginBottom: 8,
-                    color: "var(--wood)",
-                  }}
-                >
+                <div className="route-alert-alts-title">
                   Alternative Routes:
                 </div>
-                <div
-                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
-                >
+                <div className="route-alert-alts">
                   {routeAlternatives.slice(0, 3).map((alt, idx) => (
                     <button
                       key={idx}
+                      className="route-alert-alt-btn"
                       onClick={() => {
                         setRoutePath(alt.waypoints);
                         setDest(alt.waypoints[alt.waypoints.length - 1]);
@@ -5299,32 +4862,14 @@ export default function AccessibleMap() {
                         setShowRouteAlert(false);
                         say(`Switched to ${alt.type} route`);
                       }}
-                      style={{
-                        background: "var(--inset)",
-                        border: "1px solid var(--border)",
-                        borderRadius: 12,
-                        padding: 10,
-                        textAlign: "left",
-                        cursor: "pointer",
-                        width: "100%",
-                      }}
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                        }}
-                      >
+                      <div className="route-alert-alt-row">
                         {alt.type === "transit" ? (
-                          <Bus size={14} style={{ color: "var(--wood)" }} />
+                          <Bus size={14} className="icon-wood" />
                         ) : (
-                          <PersonStanding
-                            size={14}
-                            style={{ color: "var(--green)" }}
-                          />
+                          <PersonStanding size={14} className="icon-green" />
                         )}
-                        <span style={{ fontWeight: 500, fontSize: 13 }}>
+                        <span className="route-alert-alt-label">
                           {alt.type === "transit" ? "Transit" : "Walking"} •{" "}
                           {alt.duration_minutes} min
                         </span>
@@ -5336,115 +4881,58 @@ export default function AccessibleMap() {
             )}
           </div>
         )}
+
+        {/* ═══ TRANSIT INFO MODAL ═══ */}
         {showTransitInfo && transitInfo && (
-          <div
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%,-50%)",
-              width: "90%",
-              maxWidth: 500,
-              maxHeight: "80vh",
-              background: "var(--surface)",
-              border: "1px solid var(--border2)",
-              borderRadius: 20,
-              zIndex: 200,
-              backdropFilter: "blur(32px)",
-              boxShadow: "var(--sh-lg)",
-              overflow: "hidden",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
+          <div className="transit-modal">
             <div className="p-head">
               <div className="p-title">Transit Information</div>
               <button
                 className="p-close"
                 onClick={() => setShowTransitInfo(false)}
+                aria-label="Close transit info"
               >
                 <X size={14} />
               </button>
             </div>
-            <div style={{ overflowY: "auto", padding: 16 }}>
+            <div className="transit-modal-body">
               {transitInfo.map((route, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    marginBottom: 20,
-                    borderBottom: "1px solid var(--border)",
-                    paddingBottom: 12,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontWeight: "bold",
-                      color: "var(--wood)",
-                      marginBottom: 8,
-                    }}
-                  >
+                <div key={idx} className="transit-modal-route">
+                  <div className="transit-modal-route-title">
                     Option {idx + 1}:{" "}
                     {route.duration_str || `${route.duration_minutes} min`}
                   </div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "var(--txt2)",
-                      marginBottom: 8,
-                    }}
-                  >
+                  <div className="transit-modal-route-meta">
                     🚶 Walk: {route.walking_minutes} min · 🚌 Ride:{" "}
                     {route.transit_minutes} min
                   </div>
                   {route.transit_lines.map((line, li) => (
-                    <div
-                      key={li}
-                      style={{
-                        background: "var(--inset)",
-                        padding: "10px 12px",
-                        borderRadius: 10,
-                        marginBottom: 8,
-                        border: "1px solid rgba(79,195,247,0.2)",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          marginBottom: 4,
-                        }}
-                      >
+                    <div key={li} className="transit-modal-line">
+                      <div className="transit-modal-line-header">
                         <Bus size={14} color="#4fc3f7" />
-                        <strong style={{ color: "#4fc3f7" }}>
+                        <strong className="transit-modal-line-name">
                           {line.line}
                         </strong>
-                        <span style={{ fontSize: 11, color: "var(--txt2)" }}>
+                        <span className="transit-modal-line-vehicle">
                           {line.vehicle}
                         </span>
                       </div>
-                      <div style={{ fontSize: 12, color: "var(--txt2)" }}>
+                      <div className="transit-modal-line-stops">
                         <span>
                           From:{" "}
-                          <strong style={{ color: "var(--txt)" }}>
+                          <strong className="transit-modal-stop">
                             {line.from_stop}
                           </strong>
                         </span>
                         <br />
                         <span>
                           To:{" "}
-                          <strong style={{ color: "var(--txt)" }}>
+                          <strong className="transit-modal-stop">
                             {line.to_stop}
                           </strong>
                         </span>
                       </div>
-                      <div
-                        style={{
-                          fontSize: 11,
-                          color: "var(--txt3)",
-                          marginTop: 4,
-                        }}
-                      >
+                      <div className="transit-modal-line-time">
                         Departs {line.departure_time} · Arrives{" "}
                         {line.arrival_time}
                       </div>
@@ -5454,22 +4942,15 @@ export default function AccessibleMap() {
               ))}
             </div>
             <button
+              className="transit-modal-close-btn"
               onClick={() => setShowTransitInfo(false)}
-              style={{
-                margin: "12px 16px 16px",
-                padding: 10,
-                background: "var(--wood-g)",
-                border: "none",
-                borderRadius: 12,
-                color: "white",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
             >
               Close
             </button>
           </div>
         )}
+
+        {/* Toast */}
         <div
           className={`toast${toast ? " vis" : ""}`}
           role="status"
@@ -5477,6 +4958,8 @@ export default function AccessibleMap() {
         >
           {toast}
         </div>
+
+        {/* Voice Modal */}
         <VoiceAccessibilityModal
           isVisible={showVoiceModal}
           onVisibilityChange={setShowVoiceModal}
