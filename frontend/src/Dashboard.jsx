@@ -1630,6 +1630,7 @@ export default function AccessibleMap() {
   const [fromSuggLoad, setFromSuggLoad] = useState(false);
   const [fromHiIdx, setFromHiIdx] = useState(-1);
   const [emergencies911, setEmergencies911] = useState([]);
+  const [mapBounds, setMapBounds] = useState(null);
 
   // ResizeObserver for search card
   useEffect(() => {
@@ -1818,6 +1819,29 @@ export default function AccessibleMap() {
       return minDist < 500;
     }).length;
   }, [routePath, emergencies911]);
+
+  const isInBounds = useCallback(
+    (lat, lng) => {
+      if (!mapBounds) return true;
+      return mapBounds.contains([lat, lng]);
+    },
+    [mapBounds],
+  );
+  
+  const visibleConstructionZones = useMemo(
+    () => constructionZones.filter((z) => isInBounds(z.lat, z.lng)),
+    [constructionZones, isInBounds],
+  );
+  
+  const visibleActiveHazards = useMemo(
+    () => activeHazards.filter((h) => isInBounds(h.lat, h.lng)),
+    [activeHazards, isInBounds],
+  );
+  
+  const visibleEmergencies = useMemo(
+    () => emergencies911.filter((e) => isInBounds(e.lat, e.lng)),
+    [emergencies911, isInBounds],
+  );
 
   useEffect(() => {
     if (walkerIntervalRef.current) clearInterval(walkerIntervalRef.current);
@@ -3335,10 +3359,18 @@ export default function AccessibleMap() {
   const MapZoomTracker = () => {
     const map = useMap();
     useEffect(() => {
-      const u = () => setCurrentZoom(map.getZoom());
-      map.on("zoomend", u);
-      u();
-      return () => map.off("zoomend", u);
+      const update = () => {
+        setCurrentZoom(map.getZoom());
+        const b = map.getBounds();
+        setMapBounds(b);
+      };
+      map.on("zoomend", update);
+      map.on("moveend", update);
+      update();
+      return () => {
+        map.off("zoomend", update);
+        map.off("moveend", update);
+      };
     }, [map]);
     return null;
   };
@@ -3458,28 +3490,28 @@ export default function AccessibleMap() {
             )}
 
             {/* Construction zones */}
-            {constructionZones.map((zone, idx) => (
-              <ObstructionMarker
-                key={`cz-${idx}`}
-                lat={zone.lat}
-                lng={zone.lng}
-                type="construction"
-                iconCategory={zone.icon_category}
-                description={zone.description}
-                radius={zone.radius}
-                zoomLevel={currentZoom}
-                extra={
-                  zone.distance_meters ? (
-                    <div className="popup-distance">
-                      📍 {zone.distance_meters.toFixed(0)}m from route
-                    </div>
-                  ) : null
-                }
-              />
-            ))}
+{visibleConstructionZones.map((zone, idx) => (
+  <ObstructionMarker
+    key={`cz-${idx}`}
+    lat={zone.lat}
+    lng={zone.lng}
+    type="construction"
+    iconCategory={zone.icon_category}
+    description={zone.description}
+    radius={zone.radius}
+    zoomLevel={currentZoom}
+    extra={
+      zone.distance_meters ? (
+        <div className="popup-distance">
+          📍 {zone.distance_meters.toFixed(0)}m from route
+        </div>
+      ) : null
+    }
+  />
+))}
 
             {/* Active hazards */}
-            {activeHazards.map((hazard, idx) => (
+            {visibleActiveHazards.map((hazard, idx) => (
               <ObstructionMarker
                 key={`hz-${idx}`}
                 lat={hazard.lat}
@@ -3515,7 +3547,7 @@ export default function AccessibleMap() {
             ))}
 
             {/* ── 911 Emergencies ── */}
-            {emergencies911.map((emergency, idx) => {
+            {visibleEmergencies.map((emergency, idx) => {
               const EmIcon = EMERGENCY_ICONS[emergency.type] || ShieldAlert;
               const isHigh = emergency.severity > 0.7;
               const iconColor = isHigh ? "#ff4444" : "#ff8844";
