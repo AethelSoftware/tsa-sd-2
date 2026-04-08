@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import uuid
 import math
+import random
 from math import radians, sin, cos, sqrt, atan2
 import googlemaps
 from authlib.integrations.flask_client import OAuth
@@ -1611,6 +1612,199 @@ def add_model_endpoints(app):
                 'success': False,
                 'error': str(e)
             }), 500
+
+    @app.route('/api/voice-route', methods=['POST', 'OPTIONS'])
+    def voice_route():
+        """Voice-activated route endpoint - returns coordinates for mapping"""
+        if request.method == 'OPTIONS':
+            return jsonify({'success': True}), 200
+        
+        try:
+            data = request.json
+            start = data.get('start', '')
+            destination = data.get('destination', '')
+            mode = data.get('mode', 'walk')
+            user_lat = float(data.get('user_lat', 40.4406))
+            user_lng = float(data.get('user_lng', -79.9959))
+            
+            logger.info(f"Voice route request: from '{start}' to '{destination}' mode '{mode}'")
+            
+            # Import geocoding functions
+            from voice_handler import geocode_address, correct_transcript, detect_current_location_intent
+            
+            # ========== GEOCODE START LOCATION ==========
+            is_current = detect_current_location_intent(start) if hasattr(detect_current_location_intent, '__call__') else False
+            is_current = is_current or start.lower() == 'current location'
+            
+            if is_current:
+                start_lat, start_lng = user_lat, user_lng
+                start_address = "Your Current Location"
+                logger.info(f"Start is current location: ({start_lat}, {start_lng})")
+            else:
+                # Try to geocode the start
+                geocoded = geocode_address(start, bias_lat=user_lat, bias_lng=user_lng)
+                if not geocoded:
+                    # Try with corrected transcript
+                    corrected, _ = correct_transcript(start, context="address")
+                    if corrected != start:
+                        logger.info(f"Corrected start from '{start}' to '{corrected}'")
+                        geocoded = geocode_address(corrected, bias_lat=user_lat, bias_lng=user_lng)
+                
+                if not geocoded:
+                    return jsonify({
+                        'success': False,
+                        'error': f'Could not find starting location: {start}',
+                        'code': 'GEOCODE_FAILED_START'
+                    }), 422
+                
+                start_lat, start_lng, start_address = geocoded
+                logger.info(f"Start geocoded: '{start_address}' → ({start_lat:.6f}, {start_lng:.6f})")
+            
+            # ========== GEOCODE DESTINATION ==========
+            geocoded = geocode_address(destination, bias_lat=user_lat, bias_lng=user_lng)
+            if not geocoded:
+                corrected, _ = correct_transcript(destination, context="address")
+                if corrected != destination:
+                    logger.info(f"Corrected destination from '{destination}' to '{corrected}'")
+                    geocoded = geocode_address(corrected, bias_lat=user_lat, bias_lng=user_lng)
+            
+            if not geocoded:
+                return jsonify({
+                    'success': False,
+                    'error': f'Could not find destination: {destination}',
+                    'code': 'GEOCODE_FAILED_DEST'
+                }), 422
+            
+            dest_lat, dest_lng, dest_address = geocoded
+            logger.info(f"Destination geocoded: '{dest_address}' → ({dest_lat:.6f}, {dest_lng:.6f})")
+            
+            # ========== CALCULATE ROUTE ==========
+            route_coords = []
+            steps = []
+            distance_str = ""
+            duration_str = ""
+            safety_dict = {'overall_safety': 0.8, 'risk_level': 'low', 'recommendations': []}
+            provider_used = "geocoding_only"
+            
+            # Try to get actual route from TomTom
+            if tomtom_router:
+                try:
+                    travel_mode = 'pedestrian' if mode != 'transit' else 'pedestrian'
+                    accessibility = ['wheelchair'] if mode == 'wheelchair' else None
+                    
+                    route_result = tomtom_router.calculate_route(
+                        start_lat, start_lng,
+                        dest_lat, dest_lng,
+                        travel_mode=travel_mode,
+                        accessibility_needs=accessibility
+                    )
+                    
+                    if route_result and route_result.get('points'):
+                        route_coords = route_result.get('points', [])
+                        dist_m = route_result.get('distance_meters', 0)
+                        dur_s = route_result.get('duration_seconds', 0)
+                        
+                        # Format distance
+                        if dist_m >= 1000:
+                            distance_str = f"{dist_m/1000:.1f} km"
+                        else:
+                            distance_str = f"{int(dist_m)} m"
+                        
+                        # Format duration
+                        if dur_s < 60:
+                            duration_str = f"{int(dur_s)} seconds"
+                        elif dur_s < 3600:
+                            mins = int(dur_s / 60)
+                            duration_str = f"{mins} minute{'s' if mins != 1 else ''}"
+                        else:
+                            hours = int(dur_s / 3600)
+                            mins = int((dur_s % 3600) / 60)
+                            duration_str = f"{hours} hour{'s' if hours != 1 else ''} and {mins} minute{'s' if mins != 1 else ''}"
+                        
+                        # Get steps
+                        steps = route_result.get('instructions', [])
+                        if not steps:
+                            steps = [
+                                {'instruction': f"Head towards {dest_address}", 'distance': distance_str, 'duration': duration_str},
+                                {'instruction': f"Arrive at {dest_address}", 'distance': '0 m', 'duration': '0 sec'}
+                            ]
+                        
+                        provider_used = "tomtom"
+                        logger.info(f"TomTom route found with {len(route_coords)} points")
+                        
+                        # Get safety score
+                        safety_ai_instance = get_safety_ai_instance()
+                        if safety_ai_instance and safety_ai_instance.is_trained and route_coords:
+                            try:
+                                route_coords_for_safety = [{'lat': p[0], 'lng': p[1]} for p in route_coords]
+                                safety_result = safety_ai_instance.calculate_route_safety(route_coords_for_safety)
+                                safety_dict = {
+                                    'overall_safety': safety_result.get('overall_safety', 0.8),
+                                    'risk_level': safety_result.get('risk_level', 'low'),
+                                    'recommendations': safety_result.get('recommendations', [])
+                                }
+                            except:
+                                pass
+                                
+                except Exception as e:
+                    logger.warning(f"TomTom routing failed, using direct line: {e}")
+            
+            # Fallback to direct line route if TomTom failed
+            if not route_coords:
+                # Calculate straight line distance
+                dist_m = haversine_distance(start_lat, start_lng, dest_lat, dest_lng)
+                if dist_m >= 1000:
+                    distance_str = f"{dist_m/1000:.1f} km"
+                else:
+                    distance_str = f"{int(dist_m)} m"
+                
+                if dist_m / 1.4 < 60:
+                    duration_str = f"{int(dist_m / 1.4)} seconds"
+                else:
+                    mins = int(dist_m / 1.4 / 60)
+                    duration_str = f"{mins} minute{'s' if mins != 1 else ''}"
+                
+                # Generate simple route points
+                route_coords = []
+                for i in range(11):
+                    t = i / 10
+                    route_coords.append([
+                        start_lat + (dest_lat - start_lat) * t,
+                        start_lng + (dest_lng - start_lng) * t
+                    ])
+                
+                steps = [
+                    {'instruction': f"Head from {start_address} to {dest_address}", 'distance': distance_str, 'duration': duration_str},
+                    {'instruction': f"Arrive at {dest_address}", 'distance': '0 m', 'duration': '0 sec'}
+                ]
+                provider_used = "direct_line"
+            
+            # ========== GENERATE RESPONSE WITH COORDINATES ==========
+            response = {
+                'success': True,
+                'route_id': f"VR-{int(time.time())}-{random.randint(100, 999)}",
+                'start_address': start_address,
+                'end_address': dest_address,
+                'start_lat': start_lat,
+                'start_lng': start_lng,
+                'end_lat': dest_lat,
+                'end_lng': dest_lng,
+                'distance': distance_str,
+                'distance_meters': dist_m if 'dist_m' in dir() else 0,
+                'duration': duration_str,
+                'steps': steps,
+                'route_coords': route_coords,
+                'safety': safety_dict,
+                'travel_mode': mode,
+                'provider': provider_used
+            }
+            
+            logger.info(f"Voice route successful: {start_address} → {dest_address}")
+            return jsonify(response)
+            
+        except Exception as e:
+            logger.error(f"Voice route error: {e}", exc_info=True)
+            return jsonify({'success': False, 'error': str(e)}), 500
         
     # ============================================================================
     # NEW TRANSIT AND OBSTRUCTION ENDPOINTS
