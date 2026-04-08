@@ -14752,3 +14752,52 @@ AssertionError: write() before start_response
 2026-04-08 17:03:12,439 - news_hazard_fetcher - INFO - Filtered out 0 low-threat incidents
 2026-04-08 17:03:12,439 - __main__ - INFO - Found 0 news-based hazards in area
 2026-04-08 17:03:12,483 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2026 17:03:12] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-08 18:01:08,215 - tomtom_router - INFO - Route cache cleared
+2026-04-08 18:01:08,217 - __main__ - INFO - TomTom router cache cleared on startup
+2026-04-08 18:01:08,308 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-04-08 18:01:11,211 - gtfs_loader - INFO - Loaded GTFS from cache (age: 2.2 days)
+2026-04-08 18:01:11,212 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-04-08 18:01:33,536 - transit_router - INFO - Loaded 305 shapes
+2026-04-08 18:01:34,357 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-08 18:01:34,385 - transit_router - INFO - Loaded 101 routes
+2026-04-08 18:01:34,533 - transit_router - INFO - Cached 15826 trips
+2026-04-08 18:01:34,628 - transit_router - INFO - Loaded 5 walking routes from cache
+2026-04-08 18:01:34,796 - transit_router - INFO - Route-stops index: 100 routes
+2026-04-08 18:01:34,869 - transit_router - INFO - Shape index: 305 shapes
+2026-04-08 18:01:34,870 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-08 18:01:34,894 - __main__ - INFO - Safety AI loaded successfully
+2026-04-08 18:01:43,043 - voice_handler - ERROR - No whisper backend available
+2026-04-08 18:01:43,050 - voice_handler - INFO - Voice handler initialized with address resolution + number hyphen fix
+2026-04-08 18:01:43,050 - __main__ - INFO - Voice handler registered successfully
+2026-04-08 18:01:43,116 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-04-08 18:01:43,118 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-04-08 18:01:43,119 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-04-08 18:01:43,394 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-04-08 18:01:43,394 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-04-08 18:01:46,215 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2026 18:01:46] "GET /api/hello HTTP/1.1" 200 -
+2026-04-08 18:01:46,368 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2026 18:01:46] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-04-08 18:03:06,024 - tomtom_router - INFO - Route cache cleared
+2026-04-08 18:03:06,024 - __main__ - INFO - TomTom router cache cleared on startup
+2026-04-08 18:03:06,049 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-04-08 18:03:08,131 - gtfs_loader - INFO - Loaded GTFS from cache (age: 2.2 days)
+2026-04-08 18:03:08,131 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-04-08 18:03:30,574 - transit_router - INFO - Loaded 305 shapes
+2026-04-08 18:03:31,254 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-08 18:03:31,292 - transit_router - INFO - Loaded 101 routes
+2026-04-08 18:03:31,416 - transit_router - INFO - Cached 15826 trips
+2026-04-08 18:03:31,417 - transit_router - INFO - Loaded 5 walking routes from cache
+2026-04-08 18:03:31,511 - transit_router - INFO - Route-stops index: 100 routes
+2026-04-08 18:03:31,561 - transit_router - INFO - Shape index: 305 shapes
+2026-04-08 18:03:31,561 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-08 18:03:31,571 - __main__ - INFO - Safety AI loaded successfully
+2026-04-08 18:03:34,121 - voice_handler - ERROR - No whisper backend available
+2026-04-08 18:03:34,128 - voice_handler - INFO - Voice handler initialized with address resolution + number hyphen fix
+2026-04-08 18:03:34,129 - __main__ - INFO - Voice handler registered successfully
+2026-04-08 18:03:34,146 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-04-08 18:03:34,146 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-04-08 18:03:34,148 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-04-08 18:03:34,227 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-04-08 18:03:34,228 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-04-08 18:03:37,120 - werkzeug - INFO - 127.0.0.1 - - [08/Apr/2026 18:03:37] "GET /api/hello HTTP/1.1" 200 -

@@ -183,9 +183,14 @@ class NewsHazardFetcher:
             logger.info(f"Crime hazards: {len(crime_hazards)}")
             
             # Fetch real-time incidents from PulsePoint
-            pulsepoint_hazards = self._fetch_pulsepoint_incidents()
-            all_hazards.extend(pulsepoint_hazards)
-            logger.info(f"PulsePoint real-time hazards: {len(pulsepoint_hazards)}")
+            # pulsepoint_hazards = self._fetch_pulsepoint_incidents()
+            # all_hazards.extend(pulsepoint_hazards)
+            # logger.info(f"PulsePoint real-time hazards: {len(pulsepoint_hazards)}")
+
+            gdelt_hazards = self._fetch_gdelt_events()
+            all_hazards.extend(gdelt_hazards)
+
+            logger.info(f"GDELT hazards: {len(gdelt_hazards)}")
             
             # Filter by severity threshold
             filtered_hazards = [h for h in all_hazards if h.get('severity', 0) >= MIN_SEVERITY_THRESHOLD]
@@ -210,72 +215,147 @@ class NewsHazardFetcher:
             # Clean up pending request
             self._pending_requests.pop(request_key, None)
 
-    def _fetch_pulsepoint_incidents(self) -> List[Dict[str, Any]]:
-        """Fetch real-time incidents from PulsePoint API."""
+    def _fetch_gdelt_events(self) -> List[Dict[str, Any]]:
+        """Fetch near real-time hazards from GDELT."""
         hazards = []
-        
-        if not self.pulsepoint_agency_id:
-            logger.debug("No PulsePoint agency ID available")
-            return []
-        
+
         try:
-            url = f"{PULSEPOINT_BASE_URL}/agencies/{self.pulsepoint_agency_id}/incidents"
-            response = requests.get(url, timeout=10)
-            
-            if response.status_code == 200:
-                incidents = response.json()
-                logger.info(f"PulsePoint returned {len(incidents)} active incidents")
-                
-                for incident in incidents:
-                    incident_type = incident.get('type', '').lower()
-                    description = incident.get('description', incident.get('type', 'Emergency Incident'))
-                    latitude = incident.get('latitude')
-                    longitude = incident.get('longitude')
-                    
-                    if not latitude or not longitude:
-                        continue
-                    
-                    hazard_type = PULSEPOINT_TYPE_MAP.get(incident.get('type', ''), 'emergency')
-                    
-                    severity = 0.7
-                    if 'fire' in incident_type or 'structure' in incident_type:
-                        severity = 0.85
-                    elif 'accident' in incident_type or 'crash' in incident_type:
-                        severity = 0.75
-                    elif 'rescue' in incident_type:
-                        severity = 0.8
-                    elif 'hazmat' in incident_type:
-                        severity = 0.85
-                    
-                    hazard = {
-                        'type': hazard_type,
-                        'description': f"[REAL-TIME] {incident.get('type', 'Emergency')}: {description}",
-                        'full_description': f"Active emergency: {description}",
-                        'lat': latitude,
-                        'lng': longitude,
-                        'location_name': incident.get('address', 'Pittsburgh area'),
-                        'severity': severity,
-                        'source': 'pulsepoint',
-                        'title': f"🚨 ACTIVE: {incident.get('type', 'Emergency')}",
-                        'url': '',
-                        'publisher': 'PulsePoint',
-                        'published_date': datetime.now().isoformat(),
-                        'is_active': True,
-                        'units': incident.get('units', [])
-                    }
-                    hazards.append(hazard)
-                    
-            elif response.status_code == 404:
-                logger.debug("No active incidents from PulsePoint")
-            else:
-                logger.warning(f"PulsePoint API returned {response.status_code}")
-                
-        except requests.exceptions.Timeout:
-            logger.warning("PulsePoint API timeout")
+            url = "https://api.gdeltcloud.com/api/v2/query/execute"
+
+            headers = {
+                "Authorization": f"Bearer {os.environ.get('GDELT_API_KEY')}",
+
+                "Content-Type": "application/json"
+            }
+
+            query = """
+            SELECT ActionGeo_Lat, ActionGeo_Long, EventCode, GoldsteinScale, SQLDATE
+            FROM events
+            WHERE ActionGeo_CountryCode = 'US'
+            AND ActionGeo_Lat BETWEEN 40.2 AND 40.8
+            AND ActionGeo_Long BETWEEN -80.8 AND -79.5
+            AND EventCode IN ('190','193','204','172')  -- crime/violence/accident
+            ORDER BY SQLDATE DESC
+            LIMIT 50
+            """
+
+            response = requests.post(
+                url,
+                json={"query": query},
+                headers=headers,
+                timeout=10
+            )
+
+            if response.status_code != 200:
+                logger.warning(f"GDELT API returned {response.status_code}")
+                return []
+
+            data = response.json()
+            rows = data.get("rows", [])
+
+            logger.info(f"GDELT returned {len(rows)} events")
+
+            for row in rows:
+                lat = row.get("ActionGeo_Lat")
+                lng = row.get("ActionGeo_Long")
+
+                if lat is None or lng is None:
+                    continue
+
+                event_code = row.get("EventCode", "")
+                tone = row.get("GoldsteinScale", 0)
+
+                # Map severity
+                severity = min(1.0, max(0.3, abs(tone) / 10))
+
+                hazard_type = "incident"
+                if event_code.startswith("19"):
+                    hazard_type = "crime"
+                elif event_code.startswith("17"):
+                    hazard_type = "accident"
+
+                hazards.append({
+                    "type": hazard_type,
+                    "description": f"[NEWS] Event code {event_code}",
+                    "lat": float(lat),
+                    "lng": float(lng),
+                    "severity": severity,
+                    "source": "gdelt",
+                    "is_active": True,
+                    "published_date": row.get("SQLDATE")
+                })
+
         except Exception as e:
-            logger.warning(f"PulsePoint fetch failed: {e}")
-        
+            logger.error(f"GDELT fetch failed: {e}")
+
         return hazards
+
+    # def _fetch_pulsepoint_incidents(self) -> List[Dict[str, Any]]:
+    #     """Fetch real-time incidents from PulsePoint API."""
+    #     hazards = []
+        
+    #     if not self.pulsepoint_agency_id:
+    #         logger.debug("No PulsePoint agency ID available")
+    #         return []
+        
+    #     try:
+    #         url = f"{PULSEPOINT_BASE_URL}/agencies/{self.pulsepoint_agency_id}/incidents"
+    #         response = requests.get(url, timeout=10)
+            
+    #         if response.status_code == 200:
+    #             incidents = response.json()
+    #             logger.info(f"PulsePoint returned {len(incidents)} active incidents")
+                
+    #             for incident in incidents:
+    #                 incident_type = incident.get('type', '').lower()
+    #                 description = incident.get('description', incident.get('type', 'Emergency Incident'))
+    #                 latitude = incident.get('latitude')
+    #                 longitude = incident.get('longitude')
+                    
+    #                 if not latitude or not longitude:
+    #                     continue
+                    
+    #                 hazard_type = PULSEPOINT_TYPE_MAP.get(incident.get('type', ''), 'emergency')
+                    
+    #                 severity = 0.7
+    #                 if 'fire' in incident_type or 'structure' in incident_type:
+    #                     severity = 0.85
+    #                 elif 'accident' in incident_type or 'crash' in incident_type:
+    #                     severity = 0.75
+    #                 elif 'rescue' in incident_type:
+    #                     severity = 0.8
+    #                 elif 'hazmat' in incident_type:
+    #                     severity = 0.85
+                    
+    #                 hazard = {
+    #                     'type': hazard_type,
+    #                     'description': f"[REAL-TIME] {incident.get('type', 'Emergency')}: {description}",
+    #                     'full_description': f"Active emergency: {description}",
+    #                     'lat': latitude,
+    #                     'lng': longitude,
+    #                     'location_name': incident.get('address', 'Pittsburgh area'),
+    #                     'severity': severity,
+    #                     'source': 'pulsepoint',
+    #                     'title': f"🚨 ACTIVE: {incident.get('type', 'Emergency')}",
+    #                     'url': '',
+    #                     'publisher': 'PulsePoint',
+    #                     'published_date': datetime.now().isoformat(),
+    #                     'is_active': True,
+    #                     'units': incident.get('units', [])
+    #                 }
+    #                 hazards.append(hazard)
+                    
+    #         elif response.status_code == 404:
+    #             logger.debug("No active incidents from PulsePoint")
+    #         else:
+    #             logger.warning(f"PulsePoint API returned {response.status_code}")
+                
+    #     except requests.exceptions.Timeout:
+    #         logger.warning("PulsePoint API timeout")
+    #     except Exception as e:
+    #         logger.warning(f"PulsePoint fetch failed: {e}")
+        
+    #     return hazards
 
     def _get_severity_and_type(self, offense: str) -> tuple:
         """Determine severity and type based on offense description."""
