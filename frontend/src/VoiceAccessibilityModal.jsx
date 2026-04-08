@@ -310,85 +310,41 @@ const useVoiceSocket = (serverUrl = "http://127.0.0.1:5000") => {
 
   const startRecording = useCallback(async () => {
     if (isRecordingRef.current) return;
-
+    
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
+        audio: { channelCount: 1, echoCancellation: true }
       });
-      streamRef.current = stream;
-
-      const audioContext = new (
-        window.AudioContext || window.webkitAudioContext
-      )();
+      
+      const audioContext = new AudioContext({ sampleRate: 16000 }); // Request 16kHz directly!
       audioContextRef.current = audioContext;
-      const nativeSampleRate = audioContext.sampleRate;
-
-      let usingWorklet = false;
-      if (audioContext.audioWorklet && audioContext.audioWorklet.addModule) {
-        try {
-          const blob = new Blob([AUDIO_WORKLET_CODE], {
-            type: "application/javascript",
-          });
-          const blobUrl = URL.createObjectURL(blob);
-          workletBlobUrlRef.current = blobUrl;
-
-          await audioContext.audioWorklet.addModule(blobUrl);
-
-          const source = audioContext.createMediaStreamSource(stream);
-          const workletNode = new AudioWorkletNode(
-            audioContext,
-            "vosk-resampler",
-            {
-              processorOptions: { inputSampleRate: nativeSampleRate },
-            },
-          );
-
-          workletNode.port.onmessage = (event) => {
-            if (isRecordingRef.current) {
-              sendAudioChunk(event.data.pcmData, false);
-            }
-          };
-
-          source.connect(workletNode);
-          workletNodeRef.current = workletNode;
-          usingWorklet = true;
-        } catch (workletError) {
-          console.warn(
-            "[Voice] AudioWorklet failed, using ScriptProcessor:",
-            workletError,
-          );
+      
+      // Load worklet ONCE, not every recording
+      if (!workletLoadedRef.current) {
+        const blob = new Blob([AUDIO_WORKLET_CODE], { type: "application/javascript" });
+        const blobUrl = URL.createObjectURL(blob);
+        await audioContext.audioWorklet.addModule(blobUrl);
+        URL.revokeObjectURL(blobUrl);
+        workletLoadedRef.current = true;
+      }
+      
+      const source = audioContext.createMediaStreamSource(stream);
+      const workletNode = new AudioWorkletNode(audioContext, "vosk-resampler");
+      workletNode.port.onmessage = (event) => {
+        if (isRecordingRef.current) {
+          sendAudioChunk(event.data.pcmData, false);
         }
-      }
-
-      if (!usingWorklet) {
-        const { source, processor } = createScriptProcessorFallback(
-          audioContext,
-          stream,
-          (pcmBuffer) => {
-            if (isRecordingRef.current) {
-              sendAudioChunk(pcmBuffer, false);
-            }
-          },
-        );
-        scriptProcessorRef.current = { source, processor };
-      }
-
+      };
+      
+      source.connect(workletNode);
+      workletNodeRef.current = workletNode;
       isRecordingRef.current = true;
+      
     } catch (err) {
-      if (err.name === "NotAllowedError") {
-        setErrorMessage(
-          "Microphone permission denied. Please allow microphone access.",
-        );
-      } else {
-        setErrorMessage(`Could not access microphone: ${err.message}`);
-      }
+      setErrorMessage("Your browser doesn't support voice input");
     }
   }, [sendAudioChunk]);
+  
 
   const stopRecording = useCallback(() => {
     if (!isRecordingRef.current) return;
@@ -645,6 +601,9 @@ export default function VoiceAccessibilityModal({
   // ── Countdown ───────────────────────────────────────────────────────────
 
   const skipCountdownRef = useRef(null);
+
+  const waveformBarsRef = useRef([4, 4, 4, 4, 4, 4, 4]);
+const rafIdRef = useRef(null);
 
   const runCountdown = useCallback((seconds) => {
     return new Promise((resolve) => {
@@ -1412,6 +1371,27 @@ export default function VoiceAccessibilityModal({
     };
   }, [stopRecording, stopAudioLevelMonitor]);
 
+  useEffect(() => {
+    if (!isRecordingActive) return;
+    
+    const updateWaveform = () => {
+      if (!analyserRef.current) return;
+      const data = new Uint8Array(analyserRef.current.frequencyBinCount);
+      analyserRef.current.getByteFrequencyData(data);
+      const avg = data.reduce((a, b) => a + b, 0) / data.length;
+      const newBars = waveformBarsRef.current.map((_, i) => {
+        const phase = (Date.now() / 200 + i * 0.7) % (Math.PI * 2);
+        return Math.round(Math.max(8, (avg / 100) * 48 + Math.sin(phase) * 12));
+      });
+      waveformBarsRef.current = newBars;
+      rafIdRef.current = requestAnimationFrame(updateWaveform);
+    };
+    
+    updateWaveform();
+    return () => cancelAnimationFrame(rafIdRef.current);
+  }, [isRecordingActive]);
+  
+
   // ── UI helpers ──────────────────────────────────────────────────────────
 
   const progressSteps = useMemo(
@@ -1725,7 +1705,7 @@ export default function VoiceAccessibilityModal({
             height: "44px",
           }}
         >
-          {waveformBars.map((height, i) => (
+          {waveformBarsRef.current.map((height, i) => (
             <div
               key={i}
               style={{

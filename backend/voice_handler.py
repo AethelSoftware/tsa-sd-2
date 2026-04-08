@@ -38,8 +38,45 @@ import tempfile
 import io
 from typing import Dict, List, Optional, Tuple, Set
 from difflib import SequenceMatcher
+from cachetools import TTLCache
+from dataclasses import dataclass
+import numpy as np
 
 logger = logging.getLogger(__name__)
+
+SCALE_WORDS = {
+    "hundred": 100,
+    "thousand": 1000,
+}
+
+TENS = {
+    "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50,
+    "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90
+}
+
+UNITS = {
+    "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4,
+    "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9
+}
+
+TEENS = {
+    "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13,
+    "fourteen": 14, "fifteen": 15, "sixteen": 16,
+    "seventeen": 17, "eighteen": 18, "nineteen": 19
+}
+
+NUMBER_WORDS = set(UNITS) | set(TENS) | set(TEENS) | set(SCALE_WORDS)
+
+@dataclass
+class Confidence:
+    base: float
+    boosts: float = 0.0
+
+    def add_boost(self, value: float):
+        self.boosts += value
+
+    def final(self) -> float:
+        return min(0.98, self.base + self.boosts)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SECTION 1: CONFIGURATION & AVAILABILITY
@@ -57,7 +94,7 @@ WHISPER_SETUP_MESSAGE = """
 """
 
 try:
-    import whisper
+    import faster_whisper
     WHISPER_AVAILABLE = True
     logger.info("Whisper imported successfully")
 except ImportError:
@@ -387,12 +424,51 @@ def match_landmark(text: str) -> Tuple[Optional[str], float]:
 # SECTION 6: TRANSCRIPT CORRECTION PIPELINE
 # ═══════════════════════════════════════════════════════════════════════════════
 
+def _parse_number_sequence(words: List[str], start: int) -> Tuple[Optional[str], int]:
+    total = 0
+    current = 0
+    i = start
+
+    while i < len(words):
+        w = words[i].lower().strip(".,!?")
+
+        if w not in NUMBER_WORDS:
+            break
+
+        if w in UNITS:
+            current += UNITS[w]
+
+        elif w in TEENS:
+            current += TEENS[w]
+
+        elif w in TENS:
+            current += TENS[w]
+
+        elif w == "hundred":
+            if current == 0:
+                current = 1
+            current *= 100
+
+        elif w == "thousand":
+            if current == 0:
+                current = 1
+            total += current * 1000
+            current = 0
+
+        i += 1
+
+    final_value = total + current
+    if i == start:
+        return None, 0
+
+    return str(final_value), i - start
+
 def correct_transcript(raw: str, context: str = "address") -> Tuple[str, float]:
     if not raw or not raw.strip():
         return ("", 0.0)
     text = raw.strip().lower()
     original = text
-    confidence = 0.7  # Higher base confidence with Whisper
+    conf = Confidence(base=0.7)  # Higher base confidence with Whisper
 
     # Context-specific intent detection
     if context == "address":
@@ -418,7 +494,7 @@ def correct_transcript(raw: str, context: str = "address") -> Tuple[str, float]:
     for mishearing, correct in sorted_corrections:
         if mishearing in text:
             text = text.replace(mishearing, correct)
-            confidence = max(confidence, 0.8)
+            conf.add_boost(0.08)
 
     # Pass 2: Number normalization
     text = _normalize_spoken_numbers(text)
@@ -430,7 +506,7 @@ def correct_transcript(raw: str, context: str = "address") -> Tuple[str, float]:
     landmark, landmark_score = match_landmark(text)
     if landmark and landmark_score >= 0.65:
         text = landmark
-        confidence = max(confidence, min(landmark_score, 0.95))
+        conf.add_boost(landmark_score * 0.2)
 
     # Pass 5: Title-case cleanup
     text = _smart_title_case(text)
@@ -439,85 +515,84 @@ def correct_transcript(raw: str, context: str = "address") -> Tuple[str, float]:
     text = re.sub(r'\s+', ' ', text).strip()
 
     if text.lower() != original:
-        logger.info(f"Corrected: '{raw}' → '{text}' (confidence={confidence:.2f})")
+        logger.info(f"Corrected: '{raw}' → '{text}' (confidence={conf.final():.2f})")
 
-    return (text, confidence)
+    return (text, conf.final())
 
 
 def _normalize_spoken_numbers(text: str) -> str:
     words = text.split()
     result = []
+
     i = 0
     while i < len(words):
-        word = words[i].lower().strip(".,!?")
-        if word in SPOKEN_DIGITS and word not in AMBIGUOUS_NUMBER_WORDS:
-            number_str, consumed = _accumulate_number(words, i)
-            if number_str:
-                result.append(number_str)
+        w = words[i].lower().strip(".,!?")
+
+        if w in NUMBER_WORDS:
+            num, consumed = _parse_number_sequence(words, i)
+            if num:
+                result.append(num)
                 i += consumed
                 continue
-        elif word in AMBIGUOUS_NUMBER_WORDS:
-            if i + 1 < len(words) and words[i + 1].lower().strip(".,!?") in SPOKEN_DIGITS:
-                number_str, consumed = _accumulate_number(words, i)
-                if number_str:
-                    result.append(number_str)
-                    i += consumed
-                    continue
+
         result.append(words[i])
         i += 1
-    return ' '.join(result)
+
+    return " '.join(result)'"
 
 
-def _accumulate_number(words: List[str], start: int) -> Tuple[Optional[str], int]:
-    i = start
-    parts = []
-    while i < len(words):
-        word = words[i].lower().strip(".,!?")
-        if word in SPOKEN_DIGITS:
-            val = SPOKEN_DIGITS[word]
-            if word == "hundred":
-                if parts:
-                    last = int(''.join(parts)) if parts else 1
-                    parts = [str(last * 100)]
-                else:
-                    parts.append("100")
-            elif word == "thousand":
-                if parts:
-                    last = int(''.join(parts)) if parts else 1
-                    parts = [str(last * 1000)]
-                else:
-                    parts.append("1000")
-            elif word in ("twenty", "thirty", "forty", "fifty", "sixty",
-                          "seventy", "eighty", "ninety"):
-                parts.append(val)
-            elif word in ("ten", "eleven", "twelve", "thirteen", "fourteen",
-                          "fifteen", "sixteen", "seventeen", "eighteen",
-                          "nineteen"):
-                parts.append(val)
-            else:
-                if (parts and len(parts[-1]) == 2 and
-                    parts[-1].endswith("0") and len(val) == 1):
-                    tens = int(parts[-1])
-                    ones = int(val)
-                    parts[-1] = str(tens + ones)
-                else:
-                    parts.append(val)
-            i += 1
-        else:
-            break
-    consumed = i - start
-    if consumed == 0:
-        return None, 0
-    number = ''.join(parts)
-    try:
-        if int(number) > 99999:
-            number = ''.join(
-                SPOKEN_DIGITS.get(words[j].lower().strip(".,!?"), words[j])
-                for j in range(start, i)
-            )
-    except ValueError:
-        pass
-    return number, consumed
+# def _accumulate_number(words: List[str], start: int) -> Tuple[Optional[str], int]:
+#     i = start
+#     parts = []
+#     total = 0
+#     current = 0
+#     while i < len(words):
+#         word = words[i].lower().strip(".,!?")
+#         if word in SPOKEN_DIGITS:
+#             val = SPOKEN_DIGITS[word]
+#             if word == "hundred":
+#                 if parts:
+#                     last = int(''.join(parts)) if parts else 1
+#                     parts = [str(last * 100)]
+#                 else:
+#                     parts.append("100")
+#             elif word == "thousand":
+#                 if parts:
+#                     last = int(''.join(parts)) if parts else 1
+#                     parts = [str(last * 1000)]
+#                 else:
+#                     parts.append("1000")
+#             elif word in ("twenty", "thirty", "forty", "fifty", "sixty",
+#                           "seventy", "eighty", "ninety"):
+#                 parts.append(val)
+#             elif word in ("ten", "eleven", "twelve", "thirteen", "fourteen",
+#                           "fifteen", "sixteen", "seventeen", "eighteen",
+#                           "nineteen"):
+#                 parts.append(val)
+#             else:
+#                 if (parts and len(parts[-1]) == 2 and
+#                     parts[-1].endswith("0") and len(val) == 1):
+#                     tens = int(parts[-1])
+#                     ones = int(val)
+#                     parts[-1] = str(tens + ones)
+#                 else:
+#                     parts.append(val)
+#             i += 1
+#         else:
+#             break
+#     consumed = i - start
+#     if consumed == 0:
+#         return None, 0
+#     number = ''.join(parts)
+#     try:
+#         if int(number) > 99999:
+#             number = ''.join(
+#                 SPOKEN_DIGITS.get(words[j].lower().strip(".,!?"), words[j])
+#                 for j in range(start, i)
+#             )
+#     except ValueError:
+#         pass
+#     return number, consumed
 
 
 def _fix_street_types(text: str) -> str:
@@ -572,7 +647,7 @@ def get_whisper_model():
             return None
         try:
             logger.info(f"Loading Whisper model '{WHISPER_MODEL_NAME}'...")
-            _whisper_model = whisper.load_model(WHISPER_MODEL_NAME)
+            _whisper_model = WhisperModel(WHISPER_MODEL_NAME, device="cuda", compute_type="float16")
             logger.info(f"Whisper model '{WHISPER_MODEL_NAME}' loaded successfully")
             return _whisper_model
         except Exception as e:
@@ -590,44 +665,65 @@ def transcribe_audio_bytes(audio_bytes: bytes, context: str = "address") -> Tupl
         return ("", 0.0)
 
     # Write PCM bytes to a temporary WAV file
-    tmp_path = None
+    # tmp_path = None
     try:
-        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:
-            tmp_path = tmp.name
-            with wave.open(tmp, 'wb') as wf:
-                wf.setnchannels(1)
-                wf.setsampwidth(2)  # 16-bit
-                wf.setframerate(16000)
-                wf.writeframes(audio_bytes)
+        # with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:
+        #     tmp_path = tmp.name
+        #     with wave.open(tmp, 'wb') as wf:
+        #         wf.setnchannels(1)
+        #         wf.setsampwidth(2)  # 16-bit
+        #         wf.setframerate(16000)
+        #         wf.writeframes(audio_bytes)
 
-        # Transcribe with Whisper
-        result = model.transcribe(
-            tmp_path,
-            language='en',
-            fp16=False,  # CPU-safe
+        # # Transcribe with Whisper
+        # result = model.transcribe(
+        #     tmp_path,
+        #     language='en',
+        #     fp16=False,  # CPU-safe
+        #     condition_on_previous_text=False,
+        #     no_speech_threshold=0.5,
+        # )
+
+        # raw_text = result.get('text', '').strip()
+        # if not raw_text:
+        #     return ("", 0.0)
+
+        # logger.info(f"Whisper raw: '{raw_text}'")
+
+        # # Run through correction pipeline
+        # corrected, confidence = correct_transcript(raw_text, context=context)
+        # return (corrected, confidence)
+        # Convert PCM bytes → numpy float32 array
+        audio = np.frombuffer(audio_bytes, np.int16).astype(np.float32) / 32768.0
+
+        # Run transcription
+        segments, info = model.transcribe(
+            audio,
+            language="en",
+            beam_size=1,                 # 🔥 faster decoding
             condition_on_previous_text=False,
-            no_speech_threshold=0.5,
+            vad_filter=True              # 🔥 removes silence automatically
         )
 
-        raw_text = result.get('text', '').strip()
+        raw_text = "".join(segment.text for segment in segments).strip()
+
         if not raw_text:
             return ("", 0.0)
 
         logger.info(f"Whisper raw: '{raw_text}'")
 
-        # Run through correction pipeline
         corrected, confidence = correct_transcript(raw_text, context=context)
         return (corrected, confidence)
 
     except Exception as e:
         logger.error(f"Whisper transcription failed: {e}")
         return ("", 0.0)
-    finally:
-        if tmp_path and os.path.exists(tmp_path):
-            try:
-                os.unlink(tmp_path)
-            except:
-                pass
+    # finally:
+    #     if tmp_path and os.path.exists(tmp_path):
+    #         try:
+    #             os.unlink(tmp_path)
+    #         except:
+    #             pass
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -678,7 +774,7 @@ def destroy_voice_session(session_id: str):
 def cleanup_stale_sessions():
     cutoff = time.time() - 1800
     with _sessions_lock:
-        stale = [sid for sid, s in _voice_sessions.items()
+        stale = [sid for sid, s in list(_voice_sessions.items())
                  if s['last_activity'] < cutoff]
     for sid in stale:
         destroy_voice_session(sid)
@@ -747,9 +843,17 @@ def validate_audio_chunk(raw_bytes: bytes) -> bool:
     if not raw_bytes or len(raw_bytes) < 320 or len(raw_bytes) % 2 != 0:
         return False
     try:
-        num_samples = len(raw_bytes) // 2
-        samples = struct.unpack(f'<{num_samples}h', raw_bytes)
-        return max(abs(s) for s in samples) >= 50
+        # sample only first N bytes (fast heuristic)
+        step = 20  # skip samples
+        samples = struct.iter_unpack('<h', raw_bytes[::step])
+
+        for i, (s,) in enumerate(samples):
+            if abs(s) >= 50:
+                return True
+            if i > 200:  # limit work
+                break
+
+        return False
     except struct.error:
         return False
 
@@ -835,7 +939,7 @@ def _geocode_address(address: str, use_bias: bool = True,
 # SECTION 11: VOICE ROUTE STORAGE
 # ═══════════════════════════════════════════════════════════════════════════════
 
-_voice_routes: Dict[str, Dict] = {}
+_voice_routes = TTLCache(maxsize=5000, ttl=7200)
 _routes_lock = threading.Lock()
 
 
@@ -850,15 +954,19 @@ def _store_voice_route(route_id: str, data: Dict):
 
 
 def _get_voice_route(route_id: str) -> Optional[Dict]:
-    with _routes_lock:
-        route = _voice_routes.get(route_id)
-    if route is None:
-        return None
-    if time.time() - route.get('created_at', 0) > 7200:
+        now = time.time()
+
         with _routes_lock:
-            _voice_routes.pop(route_id, None)
-        return None
-    return route
+            route = _voice_routes.get(route_id)
+
+            if route is None:
+                return None
+
+            if now - route.get('created_at', 0) > 7200:
+                _voice_routes.pop(route_id, None)
+                return None
+
+            return route
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
