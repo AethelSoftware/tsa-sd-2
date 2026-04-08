@@ -1,4 +1,3 @@
-// Dashboard.jsx
 import React, {
   useState,
   useRef,
@@ -120,7 +119,7 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-const TOMTOM_API_KEY = "pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM";
+const TOMTOM_API_KEY = import.meta.env.VITE_TOMTOM_API_KEY || "pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM";
 
 const destinationIcon = new L.Icon({
   iconUrl:
@@ -378,6 +377,15 @@ function isDestinationInHazardZone(
 
 function inferCategory(destinationName, destinationAddress = "") {
   const name = (destinationName + " " + destinationAddress).toLowerCase();
+  
+  // ── Sports & large venues FIRST (before generic patterns that might partially match) ──
+  if (/stadium|arena|ballpark|acrisure|pnc park|ppg paints|petersen|consol|heinz field|coliseum|amphitheater|pavilion|sportsplex/.test(name)) return 'stadium';
+  if (/theater|theatre|cinema|imax|playhouse|concert hall|performance hall|opera house/.test(name)) return 'theater';
+  if (/zoo|aquarium|botanical|planetarium|nature center|natural history|children.s museum/.test(name)) return 'attraction';
+  if (/hotel|inn|motel|marriott|hilton|hyatt|sheraton|westin|hampton|courtyard|residence inn/.test(name)) return 'hotel';
+  if (/gym|fitness|ymca|rec center|recreation center|crossfit|planet fitness/.test(name)) return 'gym';
+
+  // ── Existing patterns ──
   if (/museum|gallery|exhibit|art|science center/.test(name)) return "museum";
   if (
     /hospital|medical|upmc|allegheny health|urgent care|clinic|er |emergency room/.test(
@@ -1526,6 +1534,7 @@ export default function AccessibleMap() {
   const [mapType, setMapType] = useState("openstreetmap");
   const [zoom, setZoom] = useState(13);
   const [loc, setLoc] = useState([40.472, -79.94]);
+  const [startMarker, setStartMarker] = useState(null); // BUG 1: custom start pin
   const [routePath, setRoutePath] = useState([]);
   const [routeSegments, setRouteSegments] = useState([]);
   const [dest, setDest] = useState(null);
@@ -1613,6 +1622,7 @@ export default function AccessibleMap() {
   const [showAlternateComparison, setShowAlternateComparison] = useState(false);
   const [routeHazardSummary, setRouteHazardSummary] = useState(null);
   const [alternatesDismissed, setAlternatesDismissed] = useState(false);
+  const [noHazardNotice, setNoHazardNotice] = useState(false);
   const alternateCheckDoneRef = useRef(false);
 
   // Search card position for directions panel
@@ -2654,7 +2664,7 @@ export default function AccessibleMap() {
   // ================== ALTERNATE ROUTES FETCH ==================
   const fetchAlternateRoutes = useCallback(
     async (startLat, startLng, endLat, endLng, mode, primaryRouteCoords) => {
-      const TOMTOM_KEY = "pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM";
+      const TOMTOM_KEY = import.meta.env.VITE_TOMTOM_API_KEY || "pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM";
       const travelMode = mode === "transit" ? "pedestrian" : "pedestrian";
       const routeVariants = [
         {
@@ -2663,13 +2673,17 @@ export default function AccessibleMap() {
           color: ALTERNATE_COLORS.ROUTE_1.line,
         },
         {
-          params: { routeType: "eco", traffic: "false" },
+          params: { routeType: "eco", avoid: "unpavedRoads", hilliness: "low" },
           label: "Alt Route 2",
           color: ALTERNATE_COLORS.ROUTE_2.line,
         },
+        {
+          params: { routeType: "thrilling", windingness: "normal", hilliness: "normal" },
+          label: "Alt Route 3",
+          color: "#f97316",
+        },
       ];
       const results = [];
-      let forcedFallback = null;
       for (const variant of routeVariants) {
         try {
           const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${endLat},${endLng}/json`;
@@ -2727,7 +2741,6 @@ export default function AccessibleMap() {
           const deviationRatio =
             deviatingPoints / Math.ceil(pts.length / checkInterval);
           if (deviationRatio < 0.1) {
-            if (!forcedFallback) forcedFallback = variant;
             continue;
           }
           const instructions = [];
@@ -2779,82 +2792,30 @@ export default function AccessibleMap() {
           );
         }
       }
-      if (results.length === 0 && forcedFallback) {
-        // Force-include the best variant
-        const variant = forcedFallback;
-        try {
-          const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${endLat},${endLng}/json`;
-          const params = new URLSearchParams({
-            key: TOMTOM_KEY,
-            travelMode,
-            routeRepresentation: "polyline",
-            computeTravelTimeFor: "all",
-            instructionsType: "text",
-            language: "en-US",
-            ...variant.params,
-          });
-          const resp = await fetch(`${url}?${params}`);
-          if (resp.ok) {
-            const data = await resp.json();
-            const route = data.routes?.[0];
-            if (route) {
-              const legs = route.legs || [];
-              const pts = [];
-              for (const leg of legs) {
-                const points = leg.points || [];
-                for (const pt of points) pts.push([pt.latitude, pt.longitude]);
-              }
-              if (pts.length >= 2) {
-                const instructions = [];
-                for (const leg of legs) {
-                  for (const point of leg.guidance?.instructions || []) {
-                    instructions.push({
-                      instruction: stripHtml(
-                        point.message || point.combinedMessage || "",
-                      ),
-                      travel_mode: "WALKING",
-                      distance_meters: point.routeOffsetInMeters || 0,
-                      duration_seconds: point.travelTimeInSeconds || 0,
-                    });
-                  }
-                }
-                const summary = route.summary || {};
-                const distM = summary.lengthInMeters || 0;
-                const durS = summary.travelTimeInSeconds || 0;
-                const hazardCheck = doesRoutePassThroughHazards(
-                  pts,
-                  activeHazards,
-                  constructionZones,
-                  80,
-                );
-                results.push({
-                  id: `alt_route_${variant.label.replace(/\s/g, "_")}_${Date.now()}`,
-                  label: variant.label,
-                  routeCoords: pts,
-                  distance:
-                    distM >= 1000
-                      ? `${(distM / 1000).toFixed(1)} km`
-                      : `${Math.round(distM)} m`,
-                  duration:
-                    durS >= 3600
-                      ? `${Math.floor(durS / 3600)}h ${Math.round((durS % 3600) / 60)}m`
-                      : `${Math.round(durS / 60)} min`,
-                  hazardCount: hazardCheck.count,
-                  hazardsOnRoute: hazardCheck.hazards,
-                  color: variant.color,
-                  steps: instructions,
-                  routeType: variant.params.routeType,
-                  distanceMeters: distM,
-                  durationSeconds: durS,
-                });
-              }
-            }
-          }
-        } catch (err) {
-          console.warn(`Forced fallback fetch failed:`, err);
-        }
+      // Deduplicate: if two routes share their 10% and 90% waypoints within 50m, keep the safer one
+      const deduped = [];
+      for (const route of results) {
+        const q1idx = Math.floor(route.routeCoords.length * 0.10);
+        const q3idx = Math.floor(route.routeCoords.length * 0.90);
+        const q1 = route.routeCoords[q1idx];
+        const q3 = route.routeCoords[q3idx];
+        const isDuplicate = deduped.some(existing => {
+          const eq1 = existing.routeCoords[Math.floor(existing.routeCoords.length * 0.10)];
+          const eq3 = existing.routeCoords[Math.floor(existing.routeCoords.length * 0.90)];
+          return (
+            haversineDistance(q1[0], q1[1], eq1[0], eq1[1]) < 50 &&
+            haversineDistance(q3[0], q3[1], eq3[0], eq3[1]) < 50
+          );
+        });
+        if (!isDuplicate) deduped.push(route);
       }
+      results.length = 0;
+      results.push(...deduped);
       results.sort((a, b) => a.hazardCount - b.hazardCount);
+      // Tag each result with whether it's the only one found
+      results.forEach((r, i) => {
+        r.isOnlyRoute = results.length === 1;
+      });
       return results;
     },
     [activeHazards, constructionZones],
@@ -2862,7 +2823,12 @@ export default function AccessibleMap() {
 
   const handleAcceptAlternateRoute = useCallback(
     (altRoute) => {
+      // BUG 5: Full implementation
+      // 1. Update all route state atomically
       setRoutePath(altRoute.routeCoords);
+      setDest(altRoute.routeCoords[altRoute.routeCoords.length - 1]);  // ← UPDATE DESTINATION MARKER
+      
+      // 2. Build segments from the new route
       const segs = [];
       for (let i = 0; i < altRoute.routeCoords.length - 1; i++) {
         segs.push({
@@ -2873,19 +2839,31 @@ export default function AccessibleMap() {
         });
       }
       setRouteSegments(segs);
-      setRouteInfo({
-        distance: altRoute.distance,
-        duration: altRoute.duration,
-        type: mode,
-      });
-      setRouteSteps(altRoute.steps || []);
+      
+      // 3. Update route info bar
+      setRouteInfo({ distance: altRoute.distance, duration: altRoute.duration, type: mode });
+      
+      // 4. Update directions panel with alternate route's steps
+      setRouteSteps(altRoute.steps && altRoute.steps.length > 0
+        ? altRoute.steps
+        : [
+            { instruction: `Follow ${altRoute.label} to destination`, travel_mode: 'WALKING', distance_meters: altRoute.distanceMeters, duration_seconds: altRoute.durationSeconds },
+            { instruction: `Arrive at destination`, travel_mode: 'ARRIVE', distance_meters: 0, duration_seconds: 0 },
+          ]
+      );
       setShowDirections(true);
+      
+      // 5. Dismiss all alternate UI (do NOT set alternatesDismissed)
       setAlternateRoutes([]);
+      setAlternateDestinations([]);
+      setShowAlternateDestinations(false);
       setShowAlternateRouteComparison(false);
       setSelectedAlternateRoute(null);
       setHoveredAlternateRoute(null);
-      setAlternatesDismissed(true);
-      setShowAlternateDestinations(false);
+      // alternatesDismissed remains unchanged
+      alternateCheckDoneRef.current = true;  // prevent re-triggering
+      
+      // 6. Start navigation on new route
       say(`Route updated — using ${altRoute.label}`);
       setTimeout(() => startNavigation(altRoute.routeCoords), 300);
     },
@@ -2920,11 +2898,13 @@ export default function AccessibleMap() {
     setShowAlternateComparison(false);
     setRouteHazardSummary(null);
     setAlternatesDismissed(false);
+    setNoHazardNotice(false);
     setAlternateRoutes([]);
     setHoveredAlternateRoute(null);
     setSelectedAlternateRoute(null);
     setShowAlternateRouteComparison(false);
     setHoveredAltDest(false);
+    setStartMarker(null); // BUG 1: reset custom start marker
     alternateCheckDoneRef.current = false;
   };
 
@@ -2941,6 +2921,7 @@ export default function AccessibleMap() {
     setTransitAlternatives([]);
     alternateCheckDoneRef.current = false;
     setAlternatesDismissed(false);
+    setNoHazardNotice(false);
     setAlternateDestinations([]);
     setShowAlternateDestinations(false);
     setRouteHazardSummary(null);
@@ -2957,6 +2938,13 @@ export default function AccessibleMap() {
     ) => {
       if (alternateCheckDoneRef.current) return;
       alternateCheckDoneRef.current = true;
+      
+      // Alternate suggestions only apply to walking/wheelchair — not transit
+      if (mode === 'transit') {
+        console.log('Transit mode — skipping alternate route suggestions');
+        return;
+      }
+      
       let freshHazards = activeHazards;
       let freshZones = constructionZones;
       try {
@@ -3017,6 +3005,8 @@ export default function AccessibleMap() {
         routeHazardCheck.hasHazards || destHazardCheck.inHazard;
       if (!shouldSuggest) {
         console.log("No hazards detected — skipping alternates");
+        setNoHazardNotice(true);
+        setTimeout(() => setNoHazardNotice(false), 6000);
         return;
       }
       console.log(
@@ -3112,7 +3102,16 @@ export default function AccessibleMap() {
         if (startGeoData.results?.length > 0) {
           const sp = startGeoData.results[0].position;
           startCoords = { lat: sp.lat, lng: sp.lon };
+          // BUG 1: update loc and startMarker when using custom "From"
+          setLoc([startCoords.lat, startCoords.lng]);
+          setStartMarker([startCoords.lat, startCoords.lng]);
+        } else {
+          // if geocoding fails, keep current location
+          setStartMarker(null);
         }
+      } else {
+        // "Current Location" selected – reset startMarker to null
+        setStartMarker(null);
       }
 
       // TRANSIT MODE
@@ -3188,21 +3187,7 @@ export default function AccessibleMap() {
             setShow3D(true);
             setTimeout(() => checkRouteForObstructions(allCoords), 500);
             setTimeout(() => startNavigation(allCoords), 300);
-            // Call alternate suggestion for transit too
-            const capturedTransitCoords = allCoords;
-            const capturedDestLat = destCoords.lat;
-            const capturedDestLng = destCoords.lng;
-            const capturedDestName = toVal;
-            setTimeout(
-              () =>
-                checkAndSuggestAlternates(
-                  capturedTransitCoords,
-                  capturedDestLat,
-                  capturedDestLng,
-                  capturedDestName,
-                ),
-              100,
-            );
+            // NO call to checkAndSuggestAlternates here (removed)
             setIsLoading(false);
             return;
           } else
@@ -3351,6 +3336,7 @@ export default function AccessibleMap() {
       (p) => {
         setLoc([p.coords.latitude, p.coords.longitude]);
         setFromVal("Current Location");
+        setStartMarker(null); // clear custom start pin when using GPS
         say("Location updated ✓");
       },
       () => say("Couldn't get location. Using default."),
@@ -3388,7 +3374,7 @@ export default function AccessibleMap() {
   const handleAcceptAlternate = useCallback(
     (alt) => {
       setToVal(alt.name);
-      setDest([alt.lat, alt.lng]);
+      setDest([alt.lat, alt.lng]);          // ← BUG 2: update destination marker
       setRoutePath(alt.routeCoords);
       const segs = [];
       for (let i = 0; i < alt.routeCoords.length - 1; i++)
@@ -3410,7 +3396,7 @@ export default function AccessibleMap() {
       setAlternateDestinations([]);
       setShowAlternateComparison(false);
       setSelectedAlternate(null);
-      setAlternatesDismissed(true);
+      // alternatesDismissed remains unchanged
       say(`Route updated — navigating to ${alt.name}`);
       setTimeout(() => startNavigation(alt.routeCoords), 300);
     },
@@ -3459,21 +3445,14 @@ export default function AccessibleMap() {
               url={mapTypes[mapType].url}
             />
 
-            {/* User location */}
-            {isValidLatLngArray(loc) && (
-              <CircleMarker
-                center={loc}
-                radius={11}
-                pathOptions={{
-                  color: "#e8a870",
-                  fillColor: "#e8a870",
-                  fillOpacity: 0.28,
-                  weight: 2,
-                }}
-              >
-                <Popup>
-                  <strong>You are here</strong>
-                </Popup>
+            {/* User location or custom start pin (BUG 1) */}
+            {startMarker && fromVal !== "Current Location" ? (
+              <CircleMarker center={startMarker} radius={11} pathOptions={{ color: "#8cd69c", fillColor: "#8cd69c", fillOpacity: 0.9, weight: 2 }}>
+                <Popup><strong>Start: {fromVal}</strong></Popup>
+              </CircleMarker>
+            ) : isValidLatLngArray(loc) && (
+              <CircleMarker center={loc} radius={11} pathOptions={{ color: "#e8a870", fillColor: "#e8a870", fillOpacity: 0.28, weight: 2 }}>
+                <Popup><strong>You are here</strong></Popup>
               </CircleMarker>
             )}
 
@@ -3855,7 +3834,8 @@ export default function AccessibleMap() {
             )}
 
             {/* ── ALTERNATE DESTINATION ROUTES ── */}
-            {showAlternateDestinations &&
+            {mode !== 'transit' &&
+              showAlternateDestinations &&
               !alternatesDismissed &&
               alternateDestinations.map((alt, idx) => {
                 const isHovered = hoveredAlternate === idx;
@@ -3985,110 +3965,111 @@ export default function AccessibleMap() {
               })}
 
             {/* ── ALTERNATE ROUTES TO SAME DESTINATION ── */}
-            {alternateRoutes.map((altRoute, idx) => {
-              const isHovered = hoveredAlternateRoute === idx;
-              if (!altRoute.routeCoords || altRoute.routeCoords.length < 2)
-                return null;
+            {mode !== 'transit' &&
+              alternateRoutes.map((altRoute, idx) => {
+                const isHovered = hoveredAlternateRoute === idx;
+                if (!altRoute.routeCoords || altRoute.routeCoords.length < 2)
+                  return null;
 
-              const handleSelectRoute = () => {
-                setSelectedAlternateRoute(altRoute);
-                setShowAlternateRouteComparison(true);
-              };
+                const handleSelectRoute = () => {
+                  setSelectedAlternateRoute(altRoute);
+                  setShowAlternateRouteComparison(true);
+                };
 
-              return (
-                <React.Fragment key={altRoute.id}>
-                  <Polyline
-                    positions={altRoute.routeCoords}
-                    pathOptions={{
-                      color: "#000",
-                      weight: isHovered ? 12 : 8,
-                      opacity: 0.2,
-                      lineCap: "round",
-                      lineJoin: "round",
-                    }}
-                  />
-                  {isHovered && (
+                return (
+                  <React.Fragment key={altRoute.id}>
                     <Polyline
                       positions={altRoute.routeCoords}
                       pathOptions={{
-                        color: altRoute.color,
-                        weight: 20,
-                        opacity: 0.12,
+                        color: "#000",
+                        weight: isHovered ? 12 : 8,
+                        opacity: 0.2,
                         lineCap: "round",
                         lineJoin: "round",
                       }}
                     />
-                  )}
-                  <Polyline
-                    positions={altRoute.routeCoords}
-                    eventHandlers={{
-                      mouseover: () => setHoveredAlternateRoute(idx),
-                      mouseout: () => setHoveredAlternateRoute(null),
-                      click: handleSelectRoute,
-                    }}
-                    pathOptions={{
-                      color: altRoute.color,
-                      weight: isHovered ? 7 : 4,
-                      opacity: isHovered ? 1 : 0.85,
-                      dashArray: "11,7",
-                      lineCap: "round",
-                      lineJoin: "round",
-                    }}
-                  />
-                  {dest && isValidLatLngArray(dest) && (
-                    <CircleMarker
-                      center={dest}
-                      radius={isHovered ? 11 : 8}
-                      pathOptions={{
-                        color: altRoute.color,
-                        fillColor: isHovered
-                          ? altRoute.color
-                          : "rgba(16,8,3,0.9)",
-                        fillOpacity: 1,
-                        weight: 2.5,
-                      }}
+                    {isHovered && (
+                      <Polyline
+                        positions={altRoute.routeCoords}
+                        pathOptions={{
+                          color: altRoute.color,
+                          weight: 20,
+                          opacity: 0.12,
+                          lineCap: "round",
+                          lineJoin: "round",
+                        }}
+                      />
+                    )}
+                    <Polyline
+                      positions={altRoute.routeCoords}
                       eventHandlers={{
                         mouseover: () => setHoveredAlternateRoute(idx),
                         mouseout: () => setHoveredAlternateRoute(null),
                         click: handleSelectRoute,
                       }}
+                      pathOptions={{
+                        color: altRoute.color,
+                        weight: isHovered ? 7 : 4,
+                        opacity: isHovered ? 1 : 0.85,
+                        dashArray: "11,7",
+                        lineCap: "round",
+                        lineJoin: "round",
+                      }}
                     />
-                  )}
-                  {altRoute.routeCoords.length > 2 &&
-                    (() => {
-                      const midIdx = Math.floor(
-                        altRoute.routeCoords.length / 2,
-                      );
-                      const midPt = altRoute.routeCoords[midIdx];
-                      const labelHtml = makeAltRouteLabel(
-                        altRoute.label,
-                        altRoute.distance,
-                        altRoute.hazardCount,
-                        altRoute.color,
-                        false,
-                      );
-                      const icon = L.divIcon({
-                        className: "alt-route-label",
-                        html: labelHtml,
-                        iconAnchor: [0, 14],
-                        iconSize: null,
-                      });
-                      return (
-                        <Marker
-                          position={midPt}
-                          icon={icon}
-                          interactive={true}
-                          eventHandlers={{
-                            click: handleSelectRoute,
-                            mouseover: () => setHoveredAlternateRoute(idx),
-                            mouseout: () => setHoveredAlternateRoute(null),
-                          }}
-                        />
-                      );
-                    })()}
-                </React.Fragment>
-              );
-            })}
+                    {dest && isValidLatLngArray(dest) && (
+                      <CircleMarker
+                        center={dest}
+                        radius={isHovered ? 11 : 8}
+                        pathOptions={{
+                          color: altRoute.color,
+                          fillColor: isHovered
+                            ? altRoute.color
+                            : "rgba(16,8,3,0.9)",
+                          fillOpacity: 1,
+                          weight: 2.5,
+                        }}
+                        eventHandlers={{
+                          mouseover: () => setHoveredAlternateRoute(idx),
+                          mouseout: () => setHoveredAlternateRoute(null),
+                          click: handleSelectRoute,
+                        }}
+                      />
+                    )}
+                    {altRoute.routeCoords.length > 2 &&
+                      (() => {
+                        const midIdx = Math.floor(
+                          altRoute.routeCoords.length / 2,
+                        );
+                        const midPt = altRoute.routeCoords[midIdx];
+                        const labelHtml = makeAltRouteLabel(
+                          altRoute.label,
+                          altRoute.distance,
+                          altRoute.hazardCount,
+                          altRoute.color,
+                          false,
+                        );
+                        const icon = L.divIcon({
+                          className: "alt-route-label",
+                          html: labelHtml,
+                          iconAnchor: [0, 14],
+                          iconSize: null,
+                        });
+                        return (
+                          <Marker
+                            position={midPt}
+                            icon={icon}
+                            interactive={true}
+                            eventHandlers={{
+                              click: handleSelectRoute,
+                              mouseover: () => setHoveredAlternateRoute(idx),
+                              mouseout: () => setHoveredAlternateRoute(null),
+                            }}
+                          />
+                        );
+                      })()}
+                  </React.Fragment>
+                );
+              })}
           </MapContainer>
         </div>
 
@@ -4587,6 +4568,52 @@ export default function AccessibleMap() {
           </div>
         </div>
 
+        {/* ═══ NO HAZARD NOTICE (BUG 1) ═══ */}
+        {routeInfo && noHazardNotice && mode !== 'transit' && (
+          <div style={{
+            position: 'absolute',
+            left: 'calc(var(--rail-w) + 14px)',
+            top: searchCardBottom,
+            width: 348,
+            maxWidth: 'calc(100vw - var(--rail-w) - 28px)',
+            background: 'var(--surface)',
+            border: '1px solid rgba(140,214,156,0.35)',
+            borderRadius: 14,
+            padding: '10px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            zIndex: 51,
+            backdropFilter: 'blur(20px)',
+            boxShadow: 'var(--sh)',
+            animation: 'su 0.2s ease',
+            fontFamily: 'var(--ff-b)',
+          }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: 8,
+              background: 'var(--green-dim)',
+              border: '1px solid rgba(140,214,156,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0, color: 'var(--green)'
+            }}>
+              <ShieldAlert size={14} />
+            </div>
+            <div style={{ flex: 1, fontSize: 12, color: 'var(--txt2)', lineHeight: 1.4 }}>
+              <strong style={{ color: 'var(--green)', display: 'block', fontSize: 12 }}>
+                Route looks clear
+              </strong>
+              No hazards detected — no alternate routes needed.
+            </div>
+            <button
+              onClick={() => setNoHazardNotice(false)}
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--txt3)', padding: 4 }}
+              aria-label="Dismiss notice"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        )}
+
         {/* ═══ DIRECTIONS PANEL ═══ */}
         {showDirections && routeSteps.length > 0 && (
           <div
@@ -4608,7 +4635,8 @@ export default function AccessibleMap() {
         )}
 
         {/* ═══ ALTERNATE DESTINATIONS PANEL ═══ */}
-        {(showAlternateDestinations || alternateRoutes.length > 0) &&
+        {mode !== 'transit' &&
+          (alternateRoutes.length > 0 || (showAlternateDestinations && alternateDestinations.length > 0)) &&
           !alternatesDismissed && (
             <Suspense fallback={null}>
               <AlternateDestinationsPanel
@@ -4652,7 +4680,7 @@ export default function AccessibleMap() {
           )}
 
         {/* ═══ ALTERNATE ROUTE COMPARISON DRAWER ═══ */}
-        {showAlternateRouteComparison && selectedAlternateRoute && (
+        {mode !== 'transit' && showAlternateRouteComparison && selectedAlternateRoute && (
           <div
             className="alt-comp-drawer"
             style={{ borderTopColor: selectedAlternateRoute.color }}
@@ -4853,7 +4881,8 @@ export default function AccessibleMap() {
                   }}
                 >
                   <Navigation size={13} />
-                  {navigationActive ? "Stop Nav" : "Navigate"}
+                  {/* BUG 6: Rename button label */}
+                  {navigationActive ? "Stop Nav" : "See 3d walking view"}
                 </button>
               </>
             )}
@@ -4991,7 +5020,6 @@ export default function AccessibleMap() {
           {toast}
         </div>
 
-        {/* Voice Modal */}
         {/* Voice Modal */}
         <VoiceAccessibilityModal
           isVisible={showVoiceModal}

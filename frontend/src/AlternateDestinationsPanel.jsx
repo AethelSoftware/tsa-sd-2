@@ -1,3 +1,4 @@
+// AlternateDestinationsPanel.jsx
 import React, { useState, useCallback } from "react";
 import {
   MapPin,

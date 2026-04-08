@@ -1,6 +1,7 @@
+// useAlternateDestinations.js
 import { useState, useRef, useCallback } from 'react';
 
-const TOMTOM_API_KEY = 'pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM';
+const TOMTOM_API_KEY = import.meta.env.VITE_TOMTOM_API_KEY || 'pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM';
 const ALTERNATE_SEARCH_RADIUS_M = 1500;
 const ALTERNATE_MAX_DISTANCE_M = 2500;
 const MAX_ALTERNATE_DESTINATIONS = 4;
@@ -19,6 +20,15 @@ function haversineDistance(lat1, lng1, lat2, lng2) {
 
 function inferCategory(destinationName, destinationAddress = '') {
   const name = (destinationName + ' ' + destinationAddress).toLowerCase();
+  
+  // ── Sports & large venues FIRST ──
+  if (/stadium|arena|ballpark|acrisure|pnc park|ppg paints|petersen|consol|heinz field|coliseum|amphitheater|pavilion|sportsplex/.test(name)) return 'stadium';
+  if (/theater|theatre|cinema|imax|playhouse|concert hall|performance hall|opera house/.test(name)) return 'theater';
+  if (/zoo|aquarium|botanical|planetarium|nature center|natural history|children.s museum/.test(name)) return 'attraction';
+  if (/hotel|inn|motel|marriott|hilton|hyatt|sheraton|westin|hampton|courtyard|residence inn/.test(name)) return 'hotel';
+  if (/gym|fitness|ymca|rec center|recreation center|crossfit|planet fitness/.test(name)) return 'gym';
+
+  // ── Existing patterns ──
   if (/museum|gallery|exhibit|art|science center/.test(name)) return 'museum';
   if (/hospital|medical|upmc|allegheny health|urgent care|clinic|er |emergency room/.test(name)) return 'medical';
   if (/university|college|school|campus|academy/.test(name)) return 'education';
@@ -176,18 +186,36 @@ const useAlternateDestinations = () => {
     try {
       const category = inferCategory(destName, '');
       const CATEGORY_SEARCH_MAP = {
-        museum: 'museum', medical: 'hospital', education: 'university',
-        cafe: 'coffee shop', restaurant: 'restaurant', park: 'park',
-        shopping: 'shopping mall', pharmacy: 'pharmacy', library: 'library',
-        transit: 'transit station', general: 'point of interest',
+        stadium:    'stadium arena sports venue',
+        theater:    'theater cinema performing arts',
+        attraction: 'tourist attraction',
+        hotel:      'hotel',
+        gym:        'gym fitness center',
+        museum:     'museum',
+        medical:    'hospital',
+        education:  'university',
+        cafe:       'coffee shop',
+        restaurant: 'restaurant',
+        park:       'park',
+        shopping:   'shopping mall',
+        pharmacy:   'pharmacy',
+        library:    'library',
+        transit:    'transit station',
+        general:    'point of interest',
       };
       const categoryQuery = CATEGORY_SEARCH_MAP[category] || 'point of interest';
+      
+      const RARE_VENUE_CATEGORIES = ['stadium', 'theater', 'attraction', 'hotel'];
+      const isRareVenue = RARE_VENUE_CATEGORIES.includes(category);
+      const searchRadius = isRareVenue ? 12000 : ALTERNATE_SEARCH_RADIUS_M;
+      const maxAllowedDistance = isRareVenue ? 15000 : ALTERNATE_MAX_DISTANCE_M;
+      
       const searchUrl = `https://api.tomtom.com/search/2/categorySearch/${encodeURIComponent(categoryQuery)}.json`;
       const searchParams = new URLSearchParams({
         key: TOMTOM_API_KEY,
         lat: destLat,
         lon: destLng,
-        radius: ALTERNATE_SEARCH_RADIUS_M,
+        radius: searchRadius,
         limit: 12,
         language: 'en-US',
       });
@@ -196,19 +224,22 @@ const useAlternateDestinations = () => {
       if (!poiResponse.ok) throw new Error(`TomTom search failed: ${poiResponse.status}`);
       const poiData = await poiResponse.json();
 
+      // Robust mapping of lat/lng, handle both 'lon' and 'lng'
       const candidates = (poiData.results || []).map(r => ({
         id: r.id,
         name: r.poi?.name || r.address?.freeformAddress || 'Unknown',
         address: r.address?.freeformAddress || '',
-        lat: r.position.lat,
-        lng: r.position.lon,
+        lat: parseFloat(r.position?.lat ?? 0),
+        lng: parseFloat(r.position?.lon ?? r.position?.lng ?? 0),
         category,
-      }));
+      })).filter(c => c.lat !== 0 && c.lng !== 0 && !isNaN(c.lat) && !isNaN(c.lng));
 
+      // Tighter distance guard + NaN check
       const validCandidates = candidates.filter(c => {
         const distFromOriginal = haversineDistance(c.lat, c.lng, destLat, destLng);
+        if (isNaN(distFromOriginal)) return false;
         if (distFromOriginal < 80) return false;
-        if (distFromOriginal > ALTERNATE_MAX_DISTANCE_M) return false;
+        if (distFromOriginal > maxAllowedDistance) return false;
         const { inHazard } = isDestinationInHazardZone(c.lat, c.lng, hazards, constructionZones);
         if (inHazard) return false;
         return true;
@@ -234,7 +265,7 @@ const useAlternateDestinations = () => {
 
       const routePromises = top4.map(async candidate => {
         try {
-          const routeRes = await fetch('/api/calculate-route', {
+          const routeRes = await fetch('http://127.0.0.1:5000/api/calculate-route', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             signal: controller.signal,
@@ -260,6 +291,7 @@ const useAlternateDestinations = () => {
           const drawbacks = [];
 
           const CATEGORY_LABELS = {
+            stadium: 'Stadium / Arena', theater: 'Theater / Cinema', attraction: 'Tourist Attraction', gym: 'Fitness Center', hotel: 'Hotel',
             museum: 'Museum & Gallery', medical: 'Medical Facility', education: 'Educational Institution',
             cafe: 'Café & Coffee', restaurant: 'Restaurant & Dining', park: 'Park & Green Space',
             shopping: 'Shopping', pharmacy: 'Pharmacy', library: 'Library', transit: 'Transit Stop',
