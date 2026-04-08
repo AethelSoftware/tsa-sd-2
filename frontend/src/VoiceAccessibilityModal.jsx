@@ -120,7 +120,6 @@ const STATES = {
   COLLECTING_START: "COLLECTING_START",
   COLLECTING_DESTINATION: "COLLECTING_DESTINATION",
   COLLECTING_MODE: "COLLECTING_MODE",
-  CONFIRMING: "CONFIRMING",
   ROUTING: "ROUTING",
   NAVIGATING: "NAVIGATING",
 };
@@ -131,7 +130,6 @@ const RECORDING_DURATIONS = {
   COLLECTING_START: 10000,
   COLLECTING_DESTINATION: 10000,
   COLLECTING_MODE: 3000,
-  CONFIRMING: 2000,
   NAVIGATING: 4000,
 };
 
@@ -1156,13 +1154,13 @@ export default function VoiceAccessibilityModal({
         if (detectedMode) {
           setTravelMode(detectedMode);
           retryCountRef.current = 0;
-          setState(STATES.CONFIRMING);
+          setState(STATES.ROUTING);
         } else {
           retryCountRef.current++;
           if (retryCountRef.current >= MAX_RETRIES) {
             speak("I'll use walking mode.", () => {
               setTravelMode("walk");
-              setState(STATES.CONFIRMING);
+              setState(STATES.ROUTING);
             });
             return;
           }
@@ -1192,100 +1190,6 @@ export default function VoiceAccessibilityModal({
       },
     );
   }, [speak, startListeningWithVosk, resetAllData]);
-
-  const handleConfirmingState = useCallback(async () => {
-    const modeLabel = travelMode === "walk" ? "walking" : travelMode === "transit" ? "transit by bus" : "wheelchair accessible";
-    speak(
-      `Let me confirm. From ${startPointRaw}. To ${destinationRaw}. Mode: ${modeLabel}. Is that correct?`,
-      async () => {
-        const result = await startListeningWithVosk(RECORDING_DURATIONS.CONFIRMING);
-        const transcript = result?.text || null;
-        
-        // Log what was heard for debugging
-        console.log(`[CONFIRMATION] Raw transcript: "${transcript}"`);
-        
-        // Clean the transcript
-        const cleaned = transcript?.toLowerCase().trim().replace(/[.,!?;:]/g, '') || '';
-        console.log(`[CONFIRMATION] Cleaned transcript: "${cleaned}"`);
-        
-        const isYes = cleaned && (
-          cleaned === 'yes' ||
-          cleaned === 'yeah' ||
-          cleaned === 'yep' ||
-          cleaned === 'you' ||  // Common mishearing
-          cleaned === 'u' ||
-          cleaned === 'ye' ||
-          /^y/.test(cleaned) ||  // Starts with y
-          cleaned.includes('yes') ||
-          cleaned.includes('yeah') ||
-          cleaned.includes('correct') ||
-          cleaned.includes('right') ||
-          cleaned.includes('okay') ||
-          cleaned.includes('ok') ||
-          cleaned.includes('sure') ||
-          cleaned === 'y' ||
-          cleaned === 'ya'
-        );
-        
-        const isNo = cleaned && (
-          cleaned === 'no' ||
-          cleaned === 'nope' ||
-          cleaned === 'nah' ||
-          cleaned === 'n' ||
-          cleaned.includes('no') ||
-          cleaned.includes('wrong') ||
-          cleaned.includes('incorrect') ||
-          cleaned.includes('start over')
-        );
-        
-        console.log(`[CONFIRMATION] isYes: ${isYes}, isNo: ${isNo}`);
-        
-        if (isYes) {
-          console.log("[CONFIRMATION] User said YES, routing...");
-          setState(STATES.ROUTING);
-        } else if (isNo) {
-          console.log("[CONFIRMATION] User said NO, restarting...");
-          speak("No problem, let's start over.", () => {
-            resetAllData();
-            setState(STATES.IDLE);
-          });
-        } else {
-          retryCountRef.current++;
-          if (retryCountRef.current >= MAX_RETRIES) {
-            console.log("[CONFIRMATION] Max retries reached, taking as yes");
-            speak("I'll take that as a yes.", () => {
-              setState(STATES.ROUTING);
-            });
-          } else {
-            console.log(`[CONFIRMATION] Unclear response, retry ${retryCountRef.current}/${MAX_RETRIES}`);
-            speak("Please say yes or no.", async () => {
-              const retry = await startListeningWithVosk(RECORDING_DURATIONS.CONFIRMING);
-              const retryText = retry?.text || "";
-              const retryCleaned = retryText.toLowerCase().trim().replace(/[.,!?;:]/g, '');
-              
-              const retryIsYes = retryCleaned && (
-                retryCleaned === 'yes' ||
-                retryCleaned === 'yeah' ||
-                retryCleaned === 'you' ||
-                /^y/.test(retryCleaned) ||
-                retryCleaned.includes('yes') ||
-                retryCleaned.includes('ok')
-              );
-              
-              if (retryIsYes) {
-                setState(STATES.ROUTING);
-              } else {
-                speak("Let me start over.", () => {
-                  resetAllData();
-                  setState(STATES.IDLE);
-                });
-              }
-            });
-          }
-        }
-      }
-    );
-  }, [speak, startListeningWithVosk, startPointRaw, destinationRaw, travelMode, resetAllData]);
 
   const handleRoutingState = useCallback(async () => {
     speak("Calculating your route now, please wait.");
@@ -1388,9 +1292,6 @@ export default function VoiceAccessibilityModal({
       case STATES.COLLECTING_MODE:
         handleModeState();
         break;
-      case STATES.CONFIRMING:
-        handleConfirmingState();
-        break;
       case STATES.ROUTING:
         handleRoutingState();
         break;
@@ -1429,11 +1330,6 @@ export default function VoiceAccessibilityModal({
         label: "Mode",
         done: !!travelMode,
         active: state === STATES.COLLECTING_MODE,
-      },
-      {
-        label: "Confirm",
-        done: state === STATES.ROUTING || state === STATES.NAVIGATING,
-        active: state === STATES.CONFIRMING,
       },
     ],
     [startPointRaw, destinationRaw, travelMode, state],
@@ -1892,7 +1788,6 @@ export default function VoiceAccessibilityModal({
           STATES.COLLECTING_START,
           STATES.COLLECTING_DESTINATION,
           STATES.COLLECTING_MODE,
-          STATES.CONFIRMING,
         ].includes(state) && (
           <div
             style={{
