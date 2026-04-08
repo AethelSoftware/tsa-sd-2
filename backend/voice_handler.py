@@ -458,7 +458,7 @@ _RE_CURRENT_LOCATION = re.compile(r'\b(current|my|use|gps)\s+(location|locate|gp
 _RE_WALK_MODE = re.compile(r'\b(walk|walking|foot|pedestrian)\b', re.I)
 _RE_TRANSIT_MODE = re.compile(r'\b(transit|bus|train|subway|trolley)\b', re.I)
 _RE_WHEELCHAIR_MODE = re.compile(r'\b(wheelchair|wheel chair|accessible|handicap|ada)\b', re.I)
-_RE_YES = re.compile(r'\b(yes|yeah|yep|correct|right|sure|okay|ok|confirm)\b', re.I)
+_RE_YES = re.compile(r'\b(yes|yeah|yep|yup|yea|ya|you|yew|yoo|correct|right|sure|okay|ok|confirm|mmhmm|uh huh|mhm)\b', re.I)
 _RE_NO = re.compile(r'\b(no|nope|wrong|incorrect|start over|restart)\b', re.I)
 
 def detect_current_location_intent(transcript: str) -> bool:
@@ -469,21 +469,116 @@ def detect_current_location_intent(transcript: str) -> bool:
 def detect_travel_mode_intent(transcript: str) -> Tuple[Optional[str], float]:
     if not transcript:
         return None, 0.0
+    
+    t = transcript.lower().strip()
+    
+    # Direct matches
     if _RE_WALK_MODE.search(transcript):
         return "walk", 0.95
     if _RE_TRANSIT_MODE.search(transcript):
         return "transit", 0.95
     if _RE_WHEELCHAIR_MODE.search(transcript):
         return "wheelchair", 0.95
+
+    transit_mishearings = [
+        'transit', 'trans it', 'tran sit', 'transit', 'transat',
+        'did', 'did it', 'did i', 'did he', 'did she', 'did we',
+        'that sit', 'that\'s it', 'that is it', 'this it',
+        'trans', 'tranzit', 'tranzet', 'trancid',
+        'traffic', 'trance', 'transcript',
+        'tans it', 'tens it', 'tents it', '10 sit', 'Friends it', 'Friends it!'
+    ]
+    
+    for variation in transit_mishearings:
+        if variation in t:
+            return "transit", 0.85
+    
+    # Phonetic matching for "transit"
+    transit_phonetic = phonetic_fingerprint("transit")
+    transcript_phonetic = phonetic_fingerprint(t)
+    
+    if transit_phonetic and transcript_phonetic:
+        phon_match = SequenceMatcher(None, transit_phonetic, transcript_phonetic).ratio()
+        if phon_match >= 0.6:
+            return "transit", phon_match
+    
+    # Check for similar sounding words
+    # "did" sounds like "transit" in some contexts - check if user was responding to mode question
+    if t in ['did', 'did it', 'did i', 'did you']:
+        # This is ambiguous, return with lower confidence
+        return "transit", 0.6
+    
+    # Also check if the transcript contains any transit-related keywords
+    transit_keywords = ['bus', 'train', 'subway', 'trolley', 'public', 'transport']
+    for keyword in transit_keywords:
+        if keyword in t:
+            return "transit", 0.9
+    
     return None, 0.0
 
 def detect_confirmation_intent(transcript: str) -> Tuple[Optional[bool], float]:
     if not transcript:
         return None, 0.0
+    
+    t = transcript.lower().strip()
+    # Remove punctuation for better matching
+    t = re.sub(r'[^\w\s]', '', t)
+    
+    # Common mishearings for "yes"
+    yes_mishearings = [
+        'yes', 'yeah', 'yep', 'yup', 'yea', 'ya', 'y', 'yah',
+        'you', 'u', 'ew', 'yew', 'yoo', 'yuh', 'ye',
+        'correct', 'right', 'sure', 'okay', 'ok', 'k',
+        'confirm', 'confirmed', 'affirmative', 'absolutely', 'definitely',
+        'mmhmm', 'uh huh', 'mhm', 'uhuh',
+        'that\'s right', 'that is right', 'that correct', 'that is correct',
+        'sounds good', 'works for me', 'fine', 'good'
+    ]
+    
+    # Common mishearings for "no"
+    no_mishearings = [
+        'no', 'nope', 'nah', 'na', 'n', 'nu', 'naw',
+        'wrong', 'incorrect', 'not right', 'not correct',
+        'start over', 'restart', 'try again', 'different', 'change',
+        'redo', 'cancel', 'nevermind'
+    ]
+    
+    # Check for exact matches first
+    if t in yes_mishearings:
+        return True, 0.95
+    if t in no_mishearings:
+        return False, 0.95
+    
+    # Check if any yes word appears (and not a no word)
+    has_yes = any(word in t for word in yes_mishearings if len(word) > 1)
+    has_no = any(word in t for word in no_mishearings if len(word) > 1)
+    
+    if has_yes and not has_no:
+        return True, 0.85
+    if has_no and not has_yes:
+        return False, 0.85
+    
+    # Phonetic matching for "yes" vs "you"
+    yes_phonetic = phonetic_fingerprint("yes")
+    you_phonetic = phonetic_fingerprint("you")
+    t_phonetic = phonetic_fingerprint(t)
+    
+    if t_phonetic:
+        yes_similarity = SequenceMatcher(None, t_phonetic, yes_phonetic).ratio()
+        you_similarity = SequenceMatcher(None, t_phonetic, you_phonetic).ratio()
+        
+        if yes_similarity > 0.6 and yes_similarity > you_similarity:
+            return True, 0.75
+        if you_similarity > 0.6:
+            # "you" might be misheard - check context
+            return True, 0.6
+    
+    # Use regex as fallback
     if _RE_YES.search(transcript):
         return True, 0.9
     if _RE_NO.search(transcript):
         return False, 0.9
+    
     return None, 0.0
 
 # ============================================================================
