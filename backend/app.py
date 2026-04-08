@@ -1641,10 +1641,8 @@ def add_model_endpoints(app):
                 start_address = "Your Current Location"
                 logger.info(f"Start is current location: ({start_lat}, {start_lng})")
             else:
-                # Try to geocode the start
                 geocoded = geocode_address(start, bias_lat=user_lat, bias_lng=user_lng)
                 if not geocoded:
-                    # Try with corrected transcript
                     corrected, _ = correct_transcript(start, context="address")
                     if corrected != start:
                         logger.info(f"Corrected start from '{start}' to '{corrected}'")
@@ -1678,7 +1676,7 @@ def add_model_endpoints(app):
             dest_lat, dest_lng, dest_address = geocoded
             logger.info(f"Destination geocoded: '{dest_address}' → ({dest_lat:.6f}, {dest_lng:.6f})")
             
-            # ========== CALCULATE ROUTE ==========
+            # ========== CALCULATE ROUTE BASED ON MODE ==========
             route_coords = []
             steps = []
             distance_str = ""
@@ -1686,31 +1684,50 @@ def add_model_endpoints(app):
             safety_dict = {'overall_safety': 0.8, 'risk_level': 'low', 'recommendations': []}
             provider_used = "geocoding_only"
             
-            # Try to get actual route from TomTom
-            if tomtom_router:
+            # ========== TRANSIT MODE - USE GTFS TRANSIT ROUTER ==========
+            if mode == 'transit' and transit_router:
                 try:
-                    travel_mode = 'pedestrian' if mode != 'transit' else 'pedestrian'
-                    accessibility = ['wheelchair'] if mode == 'wheelchair' else None
+                    logger.info(f"Using GTFS transit router for route from ({start_lat},{start_lng}) to ({dest_lat},{dest_lng})")
                     
-                    route_result = tomtom_router.calculate_route(
+                    # Get current time
+                    from datetime import datetime
+                    current_time = datetime.now()
+                    
+                    # Find transit route
+                    routes = transit_router.find_route(
                         start_lat, start_lng,
                         dest_lat, dest_lng,
-                        travel_mode=travel_mode,
-                        accessibility_needs=accessibility
+                        current_time,
+                        max_walk_distance=800,
+                        max_transfers=4,
+                        time_window_minutes=120,
+                        num_alternatives=1
                     )
                     
-                    if route_result and route_result.get('points'):
-                        route_coords = route_result.get('points', [])
-                        dist_m = route_result.get('distance_meters', 0)
-                        dur_s = route_result.get('duration_seconds', 0)
+                    if routes and len(routes) > 0:
+                        best_route = routes[0]
                         
-                        # Format distance
+                        # Extract route coordinates from steps
+                        all_coords = []
+                        for step in best_route.get('steps', []):
+                            geom = step.get('path_geometry', [])
+                            for pt in geom:
+                                if isinstance(pt, list) and len(pt) == 2:
+                                    all_coords.append([pt[0], pt[1]])
+                                elif isinstance(pt, dict):
+                                    all_coords.append([pt.get('lat', 0), pt.get('lng', 0)])
+                        
+                        route_coords = all_coords if all_coords else [[start_lat, start_lng], [dest_lat, dest_lng]]
+                        
+                        # Format distance and duration
+                        dist_m = best_route.get('total_distance_meters', 0)
+                        dur_s = best_route.get('total_time_seconds', 0)
+                        
                         if dist_m >= 1000:
                             distance_str = f"{dist_m/1000:.1f} km"
                         else:
                             distance_str = f"{int(dist_m)} m"
                         
-                        # Format duration
                         if dur_s < 60:
                             duration_str = f"{int(dur_s)} seconds"
                         elif dur_s < 3600:
@@ -1721,16 +1738,39 @@ def add_model_endpoints(app):
                             mins = int((dur_s % 3600) / 60)
                             duration_str = f"{hours} hour{'s' if hours != 1 else ''} and {mins} minute{'s' if mins != 1 else ''}"
                         
-                        # Get steps
-                        steps = route_result.get('instructions', [])
+                        # Build steps for frontend
+                        steps = []
+                        for step in best_route.get('steps', []):
+                            if step.get('type') == 'walk':
+                                steps.append({
+                                    'instruction': step.get('instruction', 'Walk'),
+                                    'distance': fmt_dist(step.get('distance_meters', 0)),
+                                    'duration': fmt_duration(step.get('duration_seconds', 0)),
+                                    'travel_mode': 'WALKING'
+                                })
+                            elif step.get('type') == 'transit':
+                                route_name = step.get('route_short_name', 'Bus')
+                                from_stop = step.get('start_stop', 'Stop')
+                                to_stop = step.get('end_stop', 'Stop')
+                                steps.append({
+                                    'instruction': f"Take {route_name} from {from_stop} to {to_stop}",
+                                    'distance': fmt_dist(step.get('distance_meters', 0)),
+                                    'duration': fmt_duration(step.get('duration_seconds', 0)),
+                                    'travel_mode': 'TRANSIT',
+                                    'transit_line': route_name,
+                                    'departure_stop': from_stop,
+                                    'arrival_stop': to_stop
+                                })
+                        
+                        # Add start and end steps if missing
                         if not steps:
                             steps = [
-                                {'instruction': f"Head towards {dest_address}", 'distance': distance_str, 'duration': duration_str},
+                                {'instruction': f"Head from {start_address} to {dest_address}", 'distance': distance_str, 'duration': duration_str},
                                 {'instruction': f"Arrive at {dest_address}", 'distance': '0 m', 'duration': '0 sec'}
                             ]
                         
-                        provider_used = "tomtom"
-                        logger.info(f"TomTom route found with {len(route_coords)} points")
+                        provider_used = "gtfs_transit"
+                        logger.info(f"GTFS transit route found: {distance_str}, {duration_str}")
                         
                         # Get safety score
                         safety_ai_instance = get_safety_ai_instance()
@@ -1745,13 +1785,75 @@ def add_model_endpoints(app):
                                 }
                             except:
                                 pass
+                    else:
+                        logger.warning("GTFS transit router found no routes, falling back to walking")
+                        mode = 'walk'  # Fall back to walking
+                        
+                except Exception as e:
+                    logger.error(f"GTFS transit routing failed: {e}", exc_info=True)
+                    mode = 'walk'  # Fall back to walking
+            
+            # ========== WALK/WHEELCHAIR MODE - USE TOMTOM ==========
+            if mode != 'transit' and tomtom_router:
+                try:
+                    travel_mode = 'pedestrian'
+                    accessibility = ['wheelchair'] if mode == 'wheelchair' else None
+                    
+                    route_result = tomtom_router.calculate_route(
+                        start_lat, start_lng,
+                        dest_lat, dest_lng,
+                        travel_mode=travel_mode,
+                        accessibility_needs=accessibility
+                    )
+                    
+                    if route_result and route_result.get('points'):
+                        route_coords = route_result.get('points', [])
+                        dist_m = route_result.get('distance_meters', 0)
+                        dur_s = route_result.get('duration_seconds', 0)
+                        
+                        if dist_m >= 1000:
+                            distance_str = f"{dist_m/1000:.1f} km"
+                        else:
+                            distance_str = f"{int(dist_m)} m"
+                        
+                        if dur_s < 60:
+                            duration_str = f"{int(dur_s)} seconds"
+                        elif dur_s < 3600:
+                            mins = int(dur_s / 60)
+                            duration_str = f"{mins} minute{'s' if mins != 1 else ''}"
+                        else:
+                            hours = int(dur_s / 3600)
+                            mins = int((dur_s % 3600) / 60)
+                            duration_str = f"{hours} hour{'s' if hours != 1 else ''} and {mins} minute{'s' if mins != 1 else ''}"
+                        
+                        steps = route_result.get('instructions', [])
+                        if not steps:
+                            steps = [
+                                {'instruction': f"Head towards {dest_address}", 'distance': distance_str, 'duration': duration_str},
+                                {'instruction': f"Arrive at {dest_address}", 'distance': '0 m', 'duration': '0 sec'}
+                            ]
+                        
+                        provider_used = "tomtom"
+                        logger.info(f"TomTom route found with {len(route_coords)} points")
+                        
+                        safety_ai_instance = get_safety_ai_instance()
+                        if safety_ai_instance and safety_ai_instance.is_trained and route_coords:
+                            try:
+                                route_coords_for_safety = [{'lat': p[0], 'lng': p[1]} for p in route_coords]
+                                safety_result = safety_ai_instance.calculate_route_safety(route_coords_for_safety)
+                                safety_dict = {
+                                    'overall_safety': safety_result.get('overall_safety', 0.8),
+                                    'risk_level': safety_result.get('risk_level', 'low'),
+                                    'recommendations': safety_result.get('recommendations', [])
+                                }
+                            except:
+                                pass
                                 
                 except Exception as e:
-                    logger.warning(f"TomTom routing failed, using direct line: {e}")
+                    logger.warning(f"TomTom routing failed: {e}")
             
-            # Fallback to direct line route if TomTom failed
+            # ========== FALLBACK TO DIRECT LINE ==========
             if not route_coords:
-                # Calculate straight line distance
                 dist_m = haversine_distance(start_lat, start_lng, dest_lat, dest_lng)
                 if dist_m >= 1000:
                     distance_str = f"{dist_m/1000:.1f} km"
@@ -1764,7 +1866,6 @@ def add_model_endpoints(app):
                     mins = int(dist_m / 1.4 / 60)
                     duration_str = f"{mins} minute{'s' if mins != 1 else ''}"
                 
-                # Generate simple route points
                 route_coords = []
                 for i in range(11):
                     t = i / 10
@@ -1779,7 +1880,7 @@ def add_model_endpoints(app):
                 ]
                 provider_used = "direct_line"
             
-            # ========== GENERATE RESPONSE WITH COORDINATES ==========
+            # ========== GENERATE RESPONSE ==========
             response = {
                 'success': True,
                 'route_id': f"VR-{int(time.time())}-{random.randint(100, 999)}",
@@ -1799,7 +1900,7 @@ def add_model_endpoints(app):
                 'provider': provider_used
             }
             
-            logger.info(f"Voice route successful: {start_address} → {dest_address}")
+            logger.info(f"Voice route successful: {start_address} → {dest_address} using {provider_used}")
             return jsonify(response)
             
         except Exception as e:

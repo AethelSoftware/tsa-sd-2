@@ -1237,7 +1237,7 @@ export default function VoiceAccessibilityModal({
         }
         const numSteps = (data.steps || []).length;
         speak(
-          `Route found! Your ${travelMode} route from ${data.start_address} to ${data.end_address} is approximately ${data.distance} and will take ${data.duration}. ${numSteps} steps. Say directions to hear all steps, next step for one at a time, or stop to end.`,
+          `Route found! Your ${travelMode} route from ${data.start_address} to ${data.end_address} is approximately ${data.distance} and will take ${data.duration}. ${numSteps} steps.`,
           () => {
             setState(STATES.NAVIGATING);
           },
@@ -1764,20 +1764,6 @@ export default function VoiceAccessibilityModal({
             >
               {routeData.steps?.[currentStepIndex]?.instruction ||
                 "Follow route"}
-            </div>
-            <div
-              style={{
-                marginTop: "6px",
-                fontSize: "10px",
-                color: "var(--txt3)",
-                display: "flex",
-                gap: "12px",
-                flexWrap: "wrap",
-              }}
-            >
-              <span>Say "next step"</span>
-              <span>Say "directions"</span>
-              <span>Say "stop"</span>
             </div>
           </div>
         )}
