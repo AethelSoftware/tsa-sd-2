@@ -128,10 +128,10 @@ const STATES = {
 const MAX_RETRIES = 2;
 const RECORDING_DURATIONS = {
   GREETING: 8000,
-  COLLECTING_START: 5000,
-  COLLECTING_DESTINATION: 5000,
-  COLLECTING_MODE: 5000,
-  CONFIRMING: 5000,
+  COLLECTING_START: 10000,
+  COLLECTING_DESTINATION: 10000,
+  COLLECTING_MODE: 3000,
+  CONFIRMING: 2000,
   NAVIGATING: 4000,
 };
 
@@ -552,7 +552,7 @@ export default function VoiceAccessibilityModal({
       voices.find(
         (v) =>
           v.name.includes("Samantha") ||
-          v.name.includes("Google US English Female") ||
+          v.name.includes("Google UK English Female") ||
           v.name.includes("Microsoft Zira") ||
           (v.lang === "en-US" && v.localService),
       ) || voices.find((v) => v.lang === "en-US");
@@ -1975,7 +1975,7 @@ export default function VoiceAccessibilityModal({
               }}
               aria-label="Tap to start voice navigation"
             >
-              🎤 Tap to Start Navigation
+              Tap to Start Navigation
             </button>
             <div
               style={{
