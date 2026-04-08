@@ -1827,17 +1827,17 @@ export default function AccessibleMap() {
     },
     [mapBounds],
   );
-  
+
   const visibleConstructionZones = useMemo(
     () => constructionZones.filter((z) => isInBounds(z.lat, z.lng)),
     [constructionZones, isInBounds],
   );
-  
+
   const visibleActiveHazards = useMemo(
     () => activeHazards.filter((h) => isInBounds(h.lat, h.lng)),
     [activeHazards, isInBounds],
   );
-  
+
   const visibleEmergencies = useMemo(
     () => emergencies911.filter((e) => isInBounds(e.lat, e.lng)),
     [emergencies911, isInBounds],
@@ -3490,25 +3490,25 @@ export default function AccessibleMap() {
             )}
 
             {/* Construction zones */}
-{visibleConstructionZones.map((zone, idx) => (
-  <ObstructionMarker
-    key={`cz-${idx}`}
-    lat={zone.lat}
-    lng={zone.lng}
-    type="construction"
-    iconCategory={zone.icon_category}
-    description={zone.description}
-    radius={zone.radius}
-    zoomLevel={currentZoom}
-    extra={
-      zone.distance_meters ? (
-        <div className="popup-distance">
-          📍 {zone.distance_meters.toFixed(0)}m from route
-        </div>
-      ) : null
-    }
-  />
-))}
+            {visibleConstructionZones.map((zone, idx) => (
+              <ObstructionMarker
+                key={`cz-${idx}`}
+                lat={zone.lat}
+                lng={zone.lng}
+                type="construction"
+                iconCategory={zone.icon_category}
+                description={zone.description}
+                radius={zone.radius}
+                zoomLevel={currentZoom}
+                extra={
+                  zone.distance_meters ? (
+                    <div className="popup-distance">
+                      📍 {zone.distance_meters.toFixed(0)}m from route
+                    </div>
+                  ) : null
+                }
+              />
+            ))}
 
             {/* Active hazards */}
             {visibleActiveHazards.map((hazard, idx) => (
@@ -4992,10 +4992,17 @@ export default function AccessibleMap() {
         </div>
 
         {/* Voice Modal */}
+        {/* Voice Modal */}
         <VoiceAccessibilityModal
           isVisible={showVoiceModal}
           onVisibilityChange={setShowVoiceModal}
-          onDismiss={() => setShowVoiceModal(false)}
+          onDismiss={() => {
+            setShowVoiceModal(false);
+            // Small delay to ensure modal closes first
+            setTimeout(() => {
+              clearRoute();
+            }, 100);
+          }}
           onRouteCalculated={(routeData) => {
             if (routeData.success && routeData.route.coordinates?.length >= 2) {
               const coords = routeData.route.coordinates.map((c) => [

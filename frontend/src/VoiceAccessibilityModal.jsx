@@ -1,25 +1,3 @@
-/**
- * VoiceAccessibilityModal.jsx
- *
- * Voice-driven navigation assistant for blind/visually impaired users.
- * Now powered by Whisper (local, offline, much more accurate than Vosk).
- *
- * AUDIO PIPELINE (browser side):
- * getUserMedia → AudioContext → resampler (44100/48000 → 16000 Hz)
- * → Float32→Int16 converter → Int16Array chunks
- * → Socket.IO binary emit → backend accumulates in buffer
- * → on stop: Whisper transcribes entire buffer → transcript back
- *
- * KEY DIFFERENCE FROM VOSK VERSION:
- * - No streaming partial transcripts (Whisper is batch, not streaming)
- * - Shows "Transcribing..." after recording stops while Whisper processes
- * - Much higher accuracy for addresses, landmarks, proper nouns
- *
- * STATE MACHINE: (unchanged)
- * IDLE → GREETING → COLLECTING_START → COLLECTING_DESTINATION
- * → COLLECTING_MODE → CONFIRMING → ROUTING → NAVIGATING → IDLE
- */
-
 import React, {
   useState,
   useEffect,
@@ -28,10 +6,6 @@ import React, {
   useMemo,
 } from "react";
 import { io } from "socket.io-client";
-
-// ============================================================================
-// AudioWorklet Processor Code (injected as Blob URL)
-// ============================================================================
 
 const AUDIO_WORKLET_CODE = `
 class VoskResampler extends AudioWorkletProcessor {
@@ -140,10 +114,6 @@ const createScriptProcessorFallback = (audioContext, stream, onChunk) => {
   return { source, processor };
 };
 
-// ============================================================================
-// Constants
-// ============================================================================
-
 const STATES = {
   IDLE: "IDLE",
   GREETING: "GREETING",
@@ -158,8 +128,8 @@ const STATES = {
 const MAX_RETRIES = 2;
 const RECORDING_DURATIONS = {
   GREETING: 8000,
-  COLLECTING_START: 10000,
-  COLLECTING_DESTINATION: 10000,
+  COLLECTING_START: 5000,
+  COLLECTING_DESTINATION: 5000,
   COLLECTING_MODE: 5000,
   CONFIRMING: 5000,
   NAVIGATING: 4000,
@@ -201,10 +171,6 @@ const WORD_TO_NUMBER = {
 const TOMTOM_API_KEY = "pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM";
 const CORRECTION_COUNTDOWN_SECONDS = 7;
 
-// ============================================================================
-// Custom Hook: useVoiceSocket (Whisper version)
-// ============================================================================
-
 const useVoiceSocket = (serverUrl = "http://127.0.0.1:5000") => {
   const socketRef = useRef(null);
   const [sessionId, setSessionId] = useState(null);
@@ -230,7 +196,6 @@ const useVoiceSocket = (serverUrl = "http://127.0.0.1:5000") => {
     fetch(`${serverUrl}/api/voice/status`)
       .then((r) => r.json())
       .then((data) => {
-        // Backend returns vosk_installed: true for compat even with Whisper
         setVoskReady(data.vosk_installed && data.model_loaded);
         if (!data.model_loaded) {
           setErrorMessage(
@@ -394,7 +359,6 @@ const useVoiceSocket = (serverUrl = "http://127.0.0.1:5000") => {
     if (!isRecordingRef.current) return;
     isRecordingRef.current = false;
 
-    // Tell backend to transcribe the accumulated audio
     if (socketRef.current && sessionIdRef.current) {
       setIsTranscribing(true);
       socketRef.current.emit("voice_stop_recording", {
@@ -438,10 +402,6 @@ const useVoiceSocket = (serverUrl = "http://127.0.0.1:5000") => {
   };
 };
 
-// ============================================================================
-// Main Component
-// ============================================================================
-
 export default function VoiceAccessibilityModal({
   onRouteCalculated,
   onDismiss,
@@ -469,7 +429,6 @@ export default function VoiceAccessibilityModal({
     useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
 
-  // Correction modal state
   const [showCorrection, setShowCorrection] = useState(false);
   const [correctionText, setCorrectionText] = useState("");
   const [correctionType, setCorrectionType] = useState("");
@@ -479,7 +438,6 @@ export default function VoiceAccessibilityModal({
   const correctionResolveRef = useRef(null);
   const correctionDebRef = useRef(null);
 
-  // Countdown state
   const [countdownSeconds, setCountdownSeconds] = useState(0);
   const [showCountdown, setShowCountdown] = useState(false);
   const countdownTimerRef = useRef(null);
@@ -519,11 +477,59 @@ export default function VoiceAccessibilityModal({
     isTranscribing,
   } = useVoiceSocket("http://127.0.0.1:5000");
 
+  const resetAllData = useCallback(() => {
+    setStartPointRaw("");
+    setDestinationRaw("");
+    setTravelMode("");
+    setRouteData(null);
+    routeDataRef.current = null;
+    setRouteId("");
+    setCurrentStepIndex(0);
+    currentStepRef.current = 0;
+    setDisplayTranscript("");
+    retryCountRef.current = 0;
+    setRetryCount(0);
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+    }
+    setShowCountdown(false);
+    setCountdownSeconds(0);
+  }, []);
+
+  const cancelEverything = useCallback(() => {
+    if (recordingTimerRef.current) {
+      clearTimeout(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+
+    stopRecording();
+
+    resetAllData();
+
+    setState(STATES.IDLE);
+    setIsRecordingActive(false);
+    setIsLoading(false);
+    setIsSpeaking(false);
+    setDisplayTranscript("");
+    setShowCorrection(false);
+    setShowCountdown(false);
+
+    if (pendingTranscriptResolveRef.current) {
+      pendingTranscriptResolveRef.current = null;
+    }
+
+    window.speechSynthesis.cancel();
+
+    onDismiss();
+  }, [stopRecording, resetAllData, onDismiss]);
+
   useEffect(() => {
     if (!isVisible) window.speechSynthesis.cancel();
   }, [isVisible]);
-
-  // ── TTS ─────────────────────────────────────────────────────────────────────
 
   const speak = useCallback((text, onDone = null) => {
     if (!window.speechSynthesis) {
@@ -614,8 +620,6 @@ export default function VoiceAccessibilityModal({
     setAudioLevel(0);
   }, []);
 
-  // ── Chime ───────────────────────────────────────────────────────────────
-
   const playChime = useCallback((freq1 = 440, freq2 = 660) => {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -642,7 +646,6 @@ export default function VoiceAccessibilityModal({
     }
   }, []);
 
-  // ── Countdown ───────────────────────────────────────────────────────────
 
   const skipCountdownRef = useRef(null);
 
@@ -677,7 +680,6 @@ export default function VoiceAccessibilityModal({
     });
   }, []);
 
-  // ── Correction modal ────────────────────────────────────────────────────
 
   const askForCorrection = useCallback(
     async (originalText, type, placeholder) => {
@@ -698,9 +700,9 @@ export default function VoiceAccessibilityModal({
     [runCountdown],
   );
 
-  // ── Recording with Whisper ──────────────────────────────────────────────
-
   const pendingTranscriptResolveRef = useRef(null);
+
+  const resolveTranscriptRef = useRef(null);
 
   const startListeningWithVosk = useCallback(
     (durationMs) => {
@@ -722,14 +724,12 @@ export default function VoiceAccessibilityModal({
         setDisplayTranscript("Listening...");
         startAudioLevelMonitor();
 
-        // After duration, stop recording — Whisper will transcribe
         recordingTimerRef.current = setTimeout(() => {
-          stopRecording(); // This triggers voice_stop_recording → Whisper transcribes
+          stopRecording();
           setIsRecordingActive(false);
           setDisplayTranscript("Transcribing...");
           stopAudioLevelMonitor();
 
-          // Give Whisper up to 15 seconds to respond
           const fallbackTimer = setTimeout(() => {
             if (pendingTranscriptResolveRef.current) {
               pendingTranscriptResolveRef.current = null;
@@ -737,7 +737,6 @@ export default function VoiceAccessibilityModal({
             }
           }, 15000);
 
-          // Store so we can clear it when transcript arrives
           recordingTimerRef.current = fallbackTimer;
         }, durationMs);
       });
@@ -752,7 +751,6 @@ export default function VoiceAccessibilityModal({
     ],
   );
 
-  // When Whisper returns a final result
   useEffect(() => {
     if (finalTranscript === null) return;
 
@@ -780,7 +778,6 @@ export default function VoiceAccessibilityModal({
     }
   }, [finalTranscript, setFinalTranscript]);
 
-  // ── Navigation command handler (unchanged) ──────────────────────────────
 
   const handleNavigationCommand = useCallback(
     (text) => {
@@ -886,8 +883,6 @@ export default function VoiceAccessibilityModal({
 
   handleNavigationCommandRef.current = handleNavigationCommand;
 
-  // ── Wake word detection (unchanged) ────────────────────────────────────
-
   useEffect(() => {
     if (!isVisible) return;
     const SpeechRecognition =
@@ -954,30 +949,9 @@ export default function VoiceAccessibilityModal({
     };
   }, [isVisible, playChime]);
 
-  // ── State machine handlers (same flow, just no partial transcripts) ────
-
-  const resetAllData = useCallback(() => {
-    setStartPointRaw("");
-    setDestinationRaw("");
-    setTravelMode("");
-    setRouteData(null);
-    routeDataRef.current = null;
-    setRouteId("");
-    setCurrentStepIndex(0);
-    currentStepRef.current = 0;
-    setDisplayTranscript("");
-    retryCountRef.current = 0;
-    setRetryCount(0);
-    if (countdownTimerRef.current) {
-      clearInterval(countdownTimerRef.current);
-    }
-    setShowCountdown(false);
-    setCountdownSeconds(0);
-  }, []);
-
   const handleGreetingState = useCallback(async () => {
     speak(
-      "Hi! I'm Tryver, your navigation assistant. First, what is your starting point? Say an address, a landmark, or say current location to use GPS.",
+      "Hi! First, what is your starting point? Say an address, a landmark, or say current location to use GPS.",
       async () => {
         const result = await startListeningWithVosk(
           RECORDING_DURATIONS.COLLECTING_START,
@@ -1166,7 +1140,7 @@ export default function VoiceAccessibilityModal({
 
   const handleModeState = useCallback(async () => {
     speak(
-      "How would you like to travel? Say walking, transit, or wheelchair.",
+      "How would you like to travel? Say walking or transit.",
       async () => {
         const result = await startListeningWithVosk(
           RECORDING_DURATIONS.COLLECTING_MODE,
@@ -1412,8 +1386,6 @@ export default function VoiceAccessibilityModal({
     };
   }, [stopRecording, stopAudioLevelMonitor]);
 
-  // ── UI helpers ──────────────────────────────────────────────────────────
-
   const progressSteps = useMemo(
     () => [
       {
@@ -1552,11 +1524,7 @@ export default function VoiceAccessibilityModal({
           </div>
           <button
             onClick={() => {
-              window.speechSynthesis.cancel();
-              if (countdownTimerRef.current)
-                clearInterval(countdownTimerRef.current);
-              setShowCountdown(false);
-              onDismiss();
+              cancelEverything();
             }}
             aria-label="Dismiss"
             style={{
