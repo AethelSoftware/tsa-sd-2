@@ -2921,6 +2921,14 @@ export default function AccessibleMap() {
     setAlternateRoutes([]);
     setShowAlternateRouteComparison(false);
     setSelectedAlternateRoute(null);
+    setAlternateDestinationsLoading(false);
+    setHoveredAlternate(null);
+    setSelectedAlternate(null);
+    setShowAlternateComparison(false);
+    setHoveredAlternateRoute(null);
+    setHoveredAltDest(false);
+    setAlternateDestinations([]);
+    setShowAlternateDestinations(false);
 
     // --- Alternate suggestion helper (hoisted) ---
     const checkAndSuggestAlternates = async (
@@ -3047,6 +3055,9 @@ export default function AccessibleMap() {
       } else {
         setStartMarker(null);
       }
+
+      // Capture a frozen copy of startCoords to use in the async closure (Fix 2)
+      const frozenStart = { lat: startCoords.lat, lng: startCoords.lng };
 
       // TRANSIT MODE (no alternates)
       if (mode === "transit") {
@@ -3238,12 +3249,11 @@ export default function AccessibleMap() {
         setShow3D(true);
         setTimeout(() => checkRouteForObstructions(coords), 500);
         setTimeout(() => startNavigation(coords), 300);
-        // Call alternate suggestion with the correct startCoords
+        // Call alternate suggestion with the frozen start coordinates (Fix 2)
         const capturedDestLat = destCoords.lat;
         const capturedDestLng = destCoords.lng;
         const capturedDestName = toVal;
         const capturedCoords = coords;
-        const capturedStartCoords = startCoords;
         setTimeout(
           () =>
             checkAndSuggestAlternates(
@@ -3251,7 +3261,7 @@ export default function AccessibleMap() {
               capturedDestLat,
               capturedDestLng,
               capturedDestName,
-              capturedStartCoords,
+              frozenStart,
             ),
           100,
         );
