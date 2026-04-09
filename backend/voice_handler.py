@@ -8,6 +8,7 @@ Key improvements:
 - Fuzzy address matching
 - Landmark resolution
 - Full address normalization
+- Enhanced walking detection with phonetic matching
 """
 
 import os
@@ -158,6 +159,39 @@ def remove_number_hyphens(text: str) -> str:
     text = re.sub(r'(\d)\s+(\d)', r'\1\2', text)
     
     return text
+
+# ============================================================================
+# PHONETIC FINGERPRINT FOR FUZZY MATCHING
+# ============================================================================
+
+def phonetic_fingerprint(text: str) -> str:
+    """Create a simple phonetic fingerprint for fuzzy matching."""
+    if not text:
+        return ""
+    
+    # Convert to lowercase
+    text = text.lower()
+    
+    # Replace common phonetic patterns
+    replacements = {
+        'walk': 'wok', 'talk': 'tok', 'rock': 'rok',
+        'ing': 'ink', 'in': 'in', 'en': 'in',
+        'c': 'k', 'ck': 'k', 'x': 'ks', 'ph': 'f',
+        'th': 't', 'gh': '', 'kn': 'n', 'wr': 'r',
+        'tion': 'shun', 'sion': 'zhun'
+    }
+    
+    result = text
+    for pattern, replacement in replacements.items():
+        result = result.replace(pattern, replacement)
+    
+    # Remove vowels (simple vowel removal for consonant matching)
+    result = re.sub(r'[aeiou]', '', result)
+    
+    # Remove duplicate consonants
+    result = re.sub(r'(.)\1+', r'\1', result)
+    
+    return result.strip()
 
 # ============================================================================
 # ADVANCED ADDRESS NORMALIZATION
@@ -480,13 +514,67 @@ def detect_travel_mode_intent(transcript: str) -> Tuple[Optional[str], float]:
     if _RE_WHEELCHAIR_MODE.search(transcript):
         return "wheelchair", 0.95
 
+    # ========== ENHANCED WALKING DETECTION ==========
+    # Common mishearings for "walking" / "walk"
+    walking_mishearings = [
+        'walking', 'walkin', 'walken', 'wakin', 'wok in', 'woking',
+        'talking', 'talkin', 'talk en', 'tok en', 'talk',
+        'rocking', 'rock in', 'wacking', 'whacking',
+        'working', 'work in', 'walked', 'walk it',
+        'walling', 'wall in', 'waxing', 'wax in',
+        'tock in', 'tacking', 'tracking', 'waking'
+    ]
+    
+    # Check for walking mishearings
+    for variation in walking_mishearings:
+        if variation in t or t == variation:
+            logger.info(f"Detected walking from mishearing: '{variation}' in '{t}'")
+            return "walk", 0.85
+    
+    # Phonetic matching for "walking" vs "talking"
+    walking_phonetic = phonetic_fingerprint("walking")
+    talking_phonetic = phonetic_fingerprint("talking")
+    t_phonetic = phonetic_fingerprint(t)
+    
+    if t_phonetic:
+        walk_similarity = SequenceMatcher(None, t_phonetic, walking_phonetic).ratio()
+        talk_similarity = SequenceMatcher(None, t_phonetic, talking_phonetic).ratio()
+        
+        # If it sounds more like walking than talking
+        if walk_similarity > 0.55 and walk_similarity > talk_similarity:
+            logger.info(f"Phonetic match for walking: '{t}' (score={walk_similarity:.2f})")
+            return "walk", min(0.8, walk_similarity)
+        
+        # Also check if it's close to walking even if not compared to talking
+        if walk_similarity > 0.6:
+            logger.info(f"Strong phonetic match for walking: '{t}' (score={walk_similarity:.2f})")
+            return "walk", min(0.85, walk_similarity)
+
+    # Check for single syllable "walk" mishearings
+    walk_short_mishearings = [
+        'walk', 'wok', 'wock', 'wawk', 'wark', 'wax', 
+        'talk', 'tok', 'tock', 'tawk', 'tark',
+        'rock', 'wack', 'whack', 'work', 'wax',
+        'wok', 'walked', 'walking'
+    ]
+    
+    # Clean transcript - remove common filler words and punctuation
+    clean_t = re.sub(r'[^\w\s]', '', t)
+    words = clean_t.split()
+    
+    for word in words:
+        if word in walk_short_mishearings:
+            logger.info(f"Detected walk from short word: '{word}'")
+            return "walk", 0.8
+
+    # ========== TRANSIT DETECTION (existing) ==========
     transit_mishearings = [
         'transit', 'trans it', 'tran sit', 'transit', 'transat',
         'did', 'did it', 'did i', 'did he', 'did she', 'did we',
         'that sit', 'that\'s it', 'that is it', 'this it',
         'trans', 'tranzit', 'tranzet', 'trancid',
         'traffic', 'trance', 'transcript',
-        'tans it', 'tens it', 'tents it', '10 sit', 'Friends it', 'Friends it!'
+        'tans it', 'tens it', 'tents it', '10 sit', 'Friends it', 'Friends it!', 'Transits'
     ]
     
     for variation in transit_mishearings:
@@ -503,9 +591,7 @@ def detect_travel_mode_intent(transcript: str) -> Tuple[Optional[str], float]:
             return "transit", phon_match
     
     # Check for similar sounding words
-    # "did" sounds like "transit" in some contexts - check if user was responding to mode question
     if t in ['did', 'did it', 'did i', 'did you']:
-        # This is ambiguous, return with lower confidence
         return "transit", 0.6
     
     # Also check if the transcript contains any transit-related keywords
@@ -846,5 +932,5 @@ def init_voice_handler(app, socketio):
         results = fuzzy_search_address(query, limit)
         return jsonify({'results': results})
     
-    logger.info(f"Voice handler initialized with address resolution + number hyphen fix")
+    logger.info(f"Voice handler initialized with address resolution + number hyphen fix + enhanced walking detection")
     return app

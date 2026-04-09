@@ -1164,7 +1164,7 @@ export default function VoiceAccessibilityModal({
             });
             return;
           }
-          speak("Please say walking, transit, or wheelchair.", async () => {
+          speak("Please say walking, or transit.", async () => {
             const retry = await startListeningWithVosk(
               RECORDING_DURATIONS.COLLECTING_MODE,
             );
