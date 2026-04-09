@@ -107,7 +107,7 @@ PITTSBURGH_BOUNDS = {
 
 # Cache configuration
 CACHE_DURATION = 300  # 5 minutes (increased from 300 seconds)
-MIN_SEVERITY_THRESHOLD = 0.6
+MIN_SEVERITY_THRESHOLD = 0.5
 
 # ============================================================================
 # HAZARD FETCHER CLASS
@@ -183,14 +183,9 @@ class NewsHazardFetcher:
             logger.info(f"Crime hazards: {len(crime_hazards)}")
             
             # Fetch real-time incidents from PulsePoint
-            # pulsepoint_hazards = self._fetch_pulsepoint_incidents()
-            # all_hazards.extend(pulsepoint_hazards)
-            # logger.info(f"PulsePoint real-time hazards: {len(pulsepoint_hazards)}")
-
-            gdelt_hazards = self._fetch_gdelt_doc()
-            all_hazards.extend(gdelt_hazards)
-
-            logger.info(f"GDELT hazards: {len(gdelt_hazards)}")
+            pulsepoint_hazards = self._fetch_pulsepoint_incidents()
+            all_hazards.extend(pulsepoint_hazards)
+            logger.info(f"PulsePoint real-time hazards: {len(pulsepoint_hazards)}")
             
             # Filter by severity threshold
             filtered_hazards = [h for h in all_hazards if h.get('severity', 0) >= MIN_SEVERITY_THRESHOLD]
@@ -215,69 +210,72 @@ class NewsHazardFetcher:
             # Clean up pending request
             self._pending_requests.pop(request_key, None)
 
-    def _fetch_gdelt_doc(self) -> List[Dict[str, Any]]:
+    def _fetch_pulsepoint_incidents(self) -> List[Dict[str, Any]]:
+        """Fetch real-time incidents from PulsePoint API."""
         hazards = []
-
+        
+        if not self.pulsepoint_agency_id:
+            logger.debug("No PulsePoint agency ID available")
+            return []
+        
         try:
-            url = "https://api.gdeltproject.org/api/v2/doc/doc"
-
-            params = {
-                "query": "crime OR shooting OR robbery OR accident",
-                "format": "json",
-                "maxrecords": 50,
-                "sort": "datedesc",
-                "format": "json"
-            }
-
-            resp = requests.get(url, params=params, timeout=10)
-
-            # 🔥 IMPORTANT DEBUG STEP
-            if resp.status_code != 200:
-                logger.error(f"GDELT HTTP {resp.status_code}: {resp.text[:200]}")
-                return []
-
-            # 🔥 SAFE JSON PARSE
-            try:
-                data = resp.json()
-            except Exception:
-                logger.error(f"GDELT returned non-JSON: {resp.text[:200]}")
-                return []
-
-            articles = data.get("articles", [])
-            logger.info(f"GDELT DOC returned {len(articles)} articles")
-
-            for a in articles:
-                title = (a.get("title") or "").lower()
-
-                # keep it simple first (DON'T over-filter yet)
-                if not title:
-                    continue
-
-                severity = 0.5
-                if "shooting" in title or "homicide" in title:
-                    severity = 0.85
-                elif "robbery" in title or "assault" in title:
+            url = f"{PULSEPOINT_BASE_URL}/agencies/{self.pulsepoint_agency_id}/incidents"
+            response = requests.get(url, timeout=10)
+            
+            if response.status_code == 200:
+                incidents = response.json()
+                logger.info(f"PulsePoint returned {len(incidents)} active incidents")
+                
+                for incident in incidents:
+                    incident_type = incident.get('type', '').lower()
+                    description = incident.get('description', incident.get('type', 'Emergency Incident'))
+                    latitude = incident.get('latitude')
+                    longitude = incident.get('longitude')
+                    
+                    if not latitude or not longitude:
+                        continue
+                    
+                    hazard_type = PULSEPOINT_TYPE_MAP.get(incident.get('type', ''), 'emergency')
+                    
                     severity = 0.7
-                elif "accident" in title:
-                    severity = 0.6
-
-                hazards.append({
-                    "type": "news",
-                    "description": a.get("title", ""),
-                    "lat": 40.4406,
-                    "lng": -79.9959,
-                    "severity": severity,
-                    "source": "gdelt",
-                    "url": a.get("url"),
-                    "published_date": a.get("seendate"),
-                    "is_active": True
-                })
-
+                    if 'fire' in incident_type or 'structure' in incident_type:
+                        severity = 0.85
+                    elif 'accident' in incident_type or 'crash' in incident_type:
+                        severity = 0.75
+                    elif 'rescue' in incident_type:
+                        severity = 0.8
+                    elif 'hazmat' in incident_type:
+                        severity = 0.85
+                    
+                    hazard = {
+                        'type': hazard_type,
+                        'description': f"[REAL-TIME] {incident.get('type', 'Emergency')}: {description}",
+                        'full_description': f"Active emergency: {description}",
+                        'lat': latitude,
+                        'lng': longitude,
+                        'location_name': incident.get('address', 'Pittsburgh area'),
+                        'severity': severity,
+                        'source': 'pulsepoint',
+                        'title': f"🚨 ACTIVE: {incident.get('type', 'Emergency')}",
+                        'url': '',
+                        'publisher': 'PulsePoint',
+                        'published_date': datetime.now().isoformat(),
+                        'is_active': True,
+                        'units': incident.get('units', [])
+                    }
+                    hazards.append(hazard)
+                    
+            elif response.status_code == 404:
+                logger.debug("No active incidents from PulsePoint")
+            else:
+                logger.warning(f"PulsePoint API returned {response.status_code}")
+                
+        except requests.exceptions.Timeout:
+            logger.warning("PulsePoint API timeout")
         except Exception as e:
-            logger.error(f"GDELT failed completely: {e}")
-
+            logger.warning(f"PulsePoint fetch failed: {e}")
+        
         return hazards
-
 
     def _get_severity_and_type(self, offense: str) -> tuple:
         """Determine severity and type based on offense description."""
@@ -298,83 +296,83 @@ class NewsHazardFetcher:
         return 0.4, 'crime'
 
     def _fetch_crime_data(self) -> List[Dict[str, Any]]:
-        """Download crime data from WPRDC and parse incidents from last 7 days."""
+        """Fetch recent crime data from WPRDC using the CKAN SQL API (fast, no Excel download)."""
         hazards = []
         
         try:
-            logger.info(f"Downloading crime data from WPRDC...")
-            response = requests.get(CRIME_DATA_URL, timeout=30)
+            cutoff_date = (datetime.now() - timedelta(days=42)).strftime('%Y-%m-%d')
+            
+            # Use CKAN datastore SQL API — returns JSON, fast, no giant file download
+            sql = (
+                f"SELECT * FROM \"bd41992a-987a-4cca-8798-fbe1cd946b07\" "
+                f"WHERE \"ReportedDate\" >= '{cutoff_date}' "
+                f"LIMIT 500"
+            )
+            
+            url = "https://data.wprdc.org/api/3/action/datastore_search_sql"
+            
+            logger.info(f"Fetching crime data from WPRDC SQL API (cutoff: {cutoff_date})...")
+            response = requests.get(url, params={"sql": sql}, timeout=15)
+            logger.info(f"WPRDC API response: status={response.status_code}, size={len(response.content)} bytes")
+            
             response.raise_for_status()
+            data = response.json()
             
-            excel_data = BytesIO(response.content)
-            df = pd.read_excel(excel_data)
+            if not data.get('success'):
+                logger.error(f"WPRDC API returned success=false: {data.get('error')}")
+                return []
             
-            logger.info(f"Loaded {len(df)} total crime records")
+            records = data.get('result', {}).get('records', [])
+            logger.info(f"WPRDC returned {len(records)} crime records")
             
-            cutoff_date = datetime.now() - timedelta(days=10)
-            recent_incidents = 0
+            if records:
+                sample = records[0]
+                logger.info(f"Sample record keys: {list(sample.keys())}")
+                logger.info(f"Sample XCOORD={sample.get('XCOORD')}, YCOORD={sample.get('YCOORD')}")
+            
             filtered_low_threat = 0
             
-            for _, row in df.iterrows():
+            for row in records:
                 try:
-                    reported_date_str = row.get('ReportedDate')
-                    if pd.isna(reported_date_str):
-                        continue
-                    
-                    try:
-                        if isinstance(reported_date_str, datetime):
-                            reported_date = reported_date_str
-                        else:
-                            reported_date = pd.to_datetime(reported_date_str)
-                    except Exception:
-                        continue
-                    
-                    if reported_date < cutoff_date:
-                        continue
-                    
-                    recent_incidents += 1
-                    
-                    lng = None
-                    lat = None
-                    
                     x_coord = row.get('XCOORD')
                     y_coord = row.get('YCOORD')
                     
-                    if pd.notna(x_coord) and pd.notna(y_coord):
-                        try:
-                            lng = float(x_coord)
-                            lat = float(y_coord)
-                        except (ValueError, TypeError):
-                            continue
-                    
-                    if lat is None or lng is None:
+                    if x_coord is None or y_coord is None:
                         continue
+                    
+                    try:
+                        lng = float(x_coord)
+                        lat = float(y_coord)
+                    except (ValueError, TypeError):
+                        continue
+                    
+                    # Log first coord to debug coordinate system
+                    if len(hazards) == 0 and filtered_low_threat == 0:
+                        logger.info(f"First coordinate pair: lat={lat}, lng={lng}")
                     
                     if not (PITTSBURGH_BOUNDS['min_lat'] <= lat <= PITTSBURGH_BOUNDS['max_lat'] and
                             PITTSBURGH_BOUNDS['min_lng'] <= lng <= PITTSBURGH_BOUNDS['max_lng']):
                         continue
                     
-                    offense = row.get('NIBRS_Coded_Offense', 'Unknown')
-                    if pd.isna(offense):
-                        offense = 'Unknown'
-                    
+                    offense = row.get('NIBRS_Coded_Offense') or 'Unknown'
                     severity, hazard_type = self._get_severity_and_type(offense)
                     
                     if severity < MIN_SEVERITY_THRESHOLD:
                         filtered_low_threat += 1
                         continue
                     
-                    neighborhood = row.get('Neighborhood', 'Pittsburgh')
-                    if pd.isna(neighborhood):
-                        neighborhood = 'Pittsburgh'
-                    
-                    block_address = row.get('Block_Address', '')
-                    if pd.isna(block_address):
-                        block_address = ''
-                    
+                    neighborhood = row.get('Neighborhood') or 'Pittsburgh'
+                    block_address = row.get('Block_Address') or ''
                     threat_level = "HIGH" if severity >= 0.8 else "MEDIUM" if severity >= 0.6 else "CAUTION"
                     
-                    hazard = {
+                    reported_date_str = row.get('ReportedDate', '')
+                    try:
+                        reported_date = pd.to_datetime(reported_date_str)
+                        pub_date = reported_date.isoformat()
+                    except:
+                        pub_date = reported_date_str
+                    
+                    hazards.append({
                         'type': hazard_type,
                         'description': f"[{threat_level}] {offense}",
                         'full_description': f"{offense} at {block_address} in {neighborhood}" if block_address else f"{offense} in {neighborhood}",
@@ -386,23 +384,18 @@ class NewsHazardFetcher:
                         'title': f"{threat_level}: {offense}",
                         'url': '',
                         'publisher': 'Pittsburgh Bureau of Police',
-                        'published_date': reported_date.isoformat(),
+                        'published_date': pub_date,
                         'is_active': True
-                    }
-                    hazards.append(hazard)
+                    })
                     
                 except Exception as row_error:
-                    logger.debug(f"Error processing row: {row_error}")
+                    logger.debug(f"Error processing record: {row_error}")
                     continue
             
-            logger.info(f"Crime data: {recent_incidents} incidents in last 7 days, filtered {filtered_low_threat} low-threat, created {len(hazards)} hazards")
-            
-            high_count = len([h for h in hazards if h['severity'] >= 0.8])
-            medium_count = len([h for h in hazards if 0.6 <= h['severity'] < 0.8])
-            logger.info(f"Crime severity: High: {high_count}, Medium: {medium_count}")
+            logger.info(f"Crime data: {len(records)} records, filtered {filtered_low_threat} low-threat, created {len(hazards)} hazards")
             
         except Exception as e:
-            logger.error(f"Failed to fetch crime data: {e}")
+            logger.error(f"Failed to fetch crime data: {e}", exc_info=True)
         
         return hazards
 
