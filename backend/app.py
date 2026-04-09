@@ -1499,13 +1499,13 @@ def add_model_endpoints(app):
                         
                         # Check if query_vector is valid
                         if query_vector is not None and np.any(query_vector):
-                            cached_result = vdb.compare(query_vector)
-                            
-                            if cached_result and isinstance(cached_result, dict):
-                                cached_value = cached_result.get('value')
-                                if cached_value:
-                                    logger.info("Using cached route result")
-                                    return jsonify(cached_value)
+                            # FIX 3: DISABLE VECTORDB CACHE READ - only insert, never read
+                            # cached_result = vdb.compare(query_vector)
+                            # if cached_result and isinstance(cached_result, dict):
+                            #     cached_value = cached_result.get('value')
+                            #     if cached_value:
+                            #         logger.info("Using cached route result")
+                            #         return jsonify(cached_value)
                             
                             vdb.insert(query_vector, response_data)
                     except Exception as e:
