@@ -1,11 +1,9 @@
-# news_hazard_fetcher.py
 """
 Crime & Emergency Hazard Fetcher for Pittsburgh
 Sources: 
 1. WPRDC CKAN - Recent crime incidents (last 7 days)
 2. PulsePoint - Real-time fire/EMS incidents (direct API)
 """
-
 import os
 import logging
 import requests
@@ -15,6 +13,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 import hashlib
 import json
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +108,20 @@ PITTSBURGH_BOUNDS = {
 CACHE_DURATION = 300  # 5 minutes (increased from 300 seconds)
 MIN_SEVERITY_THRESHOLD = 0.5
 
+# ----------------------------------------------------------------------
+# PulsePoint 401 backoff
+# ----------------------------------------------------------------------
+_pulsepoint_backoff_until = 0.0
+
+def fetch_pulsepoint_hazards():
+    global _pulsepoint_backoff_until
+    if time.time() < _pulsepoint_backoff_until:
+        logger.debug("PulsePoint backoff active, skipping")
+        return []
+    # ... existing fetch code ...
+    # If 401, set backoff and return empty list
+    # Implementation in the class method below.
+
 # ============================================================================
 # HAZARD FETCHER CLASS
 # ============================================================================
@@ -118,6 +131,7 @@ class NewsHazardFetcher:
         self.cache = []
         self.last_cache_time = None
         self.pulsepoint_agency_id = None
+        self._pulsepoint_backoff_until = 0.0
         self._init_pulsepoint()
         
         # Track ongoing requests to prevent duplicates
@@ -129,10 +143,18 @@ class NewsHazardFetcher:
 
     def _init_pulsepoint(self):
         """Initialize PulsePoint agency ID for Pittsburgh/Allegheny County"""
+        # Skip if in backoff
+        if self._pulsepoint_backoff_until > time.time():
+            return
         try:
             url = f"{PULSEPOINT_BASE_URL}/agencies"
             params = {'near': '40.4406,-79.9959', 'radius': 25}
             response = requests.get(url, params=params, timeout=10)
+            
+            if response.status_code == 401:
+                self._pulsepoint_backoff_until = time.time() + 86400  # 24h
+                logger.warning("PulsePoint 401 — backing off for 24 hours")
+                return
             
             if response.status_code == 200:
                 agencies = response.json()
@@ -182,10 +204,13 @@ class NewsHazardFetcher:
             all_hazards.extend(crime_hazards)
             logger.info(f"Crime hazards: {len(crime_hazards)}")
             
-            # Fetch real-time incidents from PulsePoint
-            pulsepoint_hazards = self._fetch_pulsepoint_incidents()
-            all_hazards.extend(pulsepoint_hazards)
-            logger.info(f"PulsePoint real-time hazards: {len(pulsepoint_hazards)}")
+            # Fetch real-time incidents from PulsePoint (with backoff)
+            if self._pulsepoint_backoff_until <= time.time():
+                pulsepoint_hazards = self._fetch_pulsepoint_incidents()
+                all_hazards.extend(pulsepoint_hazards)
+                logger.info(f"PulsePoint real-time hazards: {len(pulsepoint_hazards)}")
+            else:
+                logger.debug("PulsePoint backoff active, skipping")
             
             # Filter by severity threshold
             filtered_hazards = [h for h in all_hazards if h.get('severity', 0) >= MIN_SEVERITY_THRESHOLD]
@@ -218,9 +243,18 @@ class NewsHazardFetcher:
             logger.debug("No PulsePoint agency ID available")
             return []
         
+        # Skip if in backoff
+        if self._pulsepoint_backoff_until > time.time():
+            return []
+        
         try:
             url = f"{PULSEPOINT_BASE_URL}/agencies/{self.pulsepoint_agency_id}/incidents"
             response = requests.get(url, timeout=10)
+            
+            if response.status_code == 401:
+                self._pulsepoint_backoff_until = time.time() + 86400
+                logger.warning("PulsePoint 401 — backing off for 24 hours")
+                return []
             
             if response.status_code == 200:
                 incidents = response.json()

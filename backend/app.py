@@ -1,6 +1,6 @@
 """
 Main entry point for Tryver Safety Routing System
-Combines old and new features with real API integration.
+Includes ML safety wiring for transit routes and all bug fixes.
 """
 #app.py
 import os
@@ -916,17 +916,27 @@ def add_model_endpoints(app):
                     'suggestion': 'Try walking mode or a different location'
                 }), 404
             
-            # Add safety scores to each route
-            safety_ai_instance = get_safety_ai_instance()
+            # ─── WIRE ML SAFETY INTO TRANSIT RESPONSE ───
+            safety_model = get_safety_ai_instance()
             for route in routes:
-                all_coords = extract_all_coords_from_steps(route['steps'])
-                if safety_ai_instance and safety_ai_instance.is_trained:
-                    safety_res = safety_ai_instance.calculate_route_safety(all_coords)
-                    route['safety'] = {
-                        'overall_safety': safety_res.get('overall_safety', 0.7),
-                        'risk_level': safety_res.get('risk_level', 'medium'),
-                        'recommendations': safety_res.get('recommendations', [])
-                    }
+                # Extract coordinates from route steps
+                transit_coords = []
+                for step in route.get('steps', []):
+                    geom = step.get('path_geometry', [])
+                    for pt in geom:
+                        if isinstance(pt, (list, tuple)) and len(pt) == 2:
+                            transit_coords.append({'lat': float(pt[0]), 'lng': float(pt[1])})
+                
+                if len(transit_coords) >= 2 and safety_model and safety_model.is_trained:
+                    mid = transit_coords[len(transit_coords) // 2]
+                    heuristic_score = heuristic_safety(mid['lat'], mid['lng'])
+                    transit_safety = safety_model.calculate_route_safety(transit_coords)
+                    route['safety'] = transit_safety
+                    logger.info(
+                        f"Transit ML safety: {transit_safety['overall_safety']:.3f} | "
+                        f"Heuristic: {heuristic_score:.3f} | "
+                        f"Δ: {(transit_safety['overall_safety'] - heuristic_score)*100:+.1f}pp"
+                    )
                 else:
                     route['safety'] = {'overall_safety': 0.7, 'risk_level': 'medium', 'recommendations': []}
             
@@ -1250,7 +1260,7 @@ def add_model_endpoints(app):
                         inc_resp = requests.get(inc_url, timeout=5)
                         if inc_resp.status_code == 200:
                             inc_data = inc_resp.json()
-                            construction_cats = {7, 8, 9}
+                            construction_cats = {7, 8, 9, 10}
                             for inc in inc_data.get('incidents', []):
                                 icon_cat = inc.get('properties', {}).get('iconCategory', 0)
                                 if icon_cat in construction_cats:
@@ -1973,8 +1983,8 @@ def add_model_endpoints(app):
                         incidents = incidents_data.get('incidents', [])
                         logger.info(f"TomTom returned {len(incidents)} incidents")
 
-                        construction_categories = {7, 8, 9}
-                        hazard_categories = {1, 2, 3, 4, 5, 10, 11, 14}
+                        construction_categories = {7, 8, 9, 10}
+                        hazard_categories = {1, 2, 3, 4, 5, 11, 14}
 
                         for inc in incidents:
                             props = inc.get('properties', {})

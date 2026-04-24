@@ -1,4 +1,3 @@
-// AlternateDestinationsPanel.jsx
 import React, { useState, useCallback } from "react";
 import {
   MapPin,
@@ -401,7 +400,6 @@ const AlternateDestinationsPanel = ({
   const routeCount = alternateRoutes.length;
   const destCount = alternateDestinations.length;
 
-  /* ── Loading state ── */
   if (loading && destCount === 0 && routeCount === 0) {
     return (
       <div className="altp">
@@ -415,7 +413,6 @@ const AlternateDestinationsPanel = ({
 
   if (destCount === 0 && routeCount === 0) return null;
 
-  /* ── Subtitle ── */
   const subtitle =
     routeCount > 0 && destCount > 0
       ? `${routeCount} safer path${routeCount > 1 ? "s" : ""} + ${destCount} alternate destination`
@@ -428,7 +425,6 @@ const AlternateDestinationsPanel = ({
 
   return (
     <div className="altp" role="region" aria-label="Safer route options">
-      {/* ═══ HEADER ═══ */}
       <div className="altp-hd">
         <div className="altp-hd-icon">
           <Shield size={16} />
@@ -446,9 +442,7 @@ const AlternateDestinationsPanel = ({
         </button>
       </div>
 
-      {/* ═══ SCROLLABLE BODY ═══ */}
       <div className="altp-body">
-        {/* ── Section: Safer routes to same destination ── */}
         {routeCount > 0 && (
           <>
             <div className="altp-sec" style={{ color: "#818cf8" }}>
@@ -505,7 +499,6 @@ const AlternateDestinationsPanel = ({
           </>
         )}
 
-        {/* ── Section: Alternate destination ── */}
         {destCount > 0 && (
           <>
             <div className="altp-sec" style={{ color: "#c084fc" }}>
@@ -602,7 +595,6 @@ const AlternateDestinationsPanel = ({
         )}
       </div>
 
-      {/* ═══ FOOTER ═══ */}
       <div className="altp-ft">
         <button className="altp-ft-btn" onClick={onDismiss}>
           Keep original route

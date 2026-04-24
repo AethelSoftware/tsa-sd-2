@@ -1,5 +1,4 @@
-// Walking3DView.jsx - Optimized Version
-import React, { useRef, useMemo, useCallback, useEffect, useState } from "react";
+import React, { useRef, useMemo, useCallback, useEffect, useState, Suspense } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -29,373 +28,426 @@ const damp = (current, target, speed, dt) =>
   current + (target - current) * (1 - Math.exp(-speed * dt));
 
 // ---------------------------------------------------------------------------
-// Ground (dark/black)
+// Lighting (hemisphere + directional + teal fill)
 // ---------------------------------------------------------------------------
-const Ground = React.memo(() => {
-  const geometry = useMemo(() => new THREE.PlaneGeometry(600, 600), []);
-  const material = useMemo(() => new THREE.MeshStandardMaterial({ color: "#0a0a0a", roughness: 0.9, metalness: 0.05 }), []);
+const Lighting = React.memo(() => (
+  <>
+    <ambientLight intensity={0.3} color="#b0c8e8" />
+    <hemisphereLight skyColor="#2a3a50" groundColor="#0a0604" intensity={0.6} />
+    <directionalLight
+      position={[30, 25, 20]} intensity={0.9} color="#ffd580"
+      castShadow
+      shadow-mapSize-width={2048} shadow-mapSize-height={2048}
+      shadow-camera-far={200} shadow-camera-left={-80}
+      shadow-camera-right={80} shadow-camera-top={80} shadow-camera-bottom={-80}
+    />
+    <directionalLight position={[-20, 10, -15]} intensity={0.18} color="#0d9488" />
+    <pointLight position={[0, 5, 0]} intensity={0.35} color="#e8a870" distance={60} decay={2} />
+  </>
+));
+
+// ---------------------------------------------------------------------------
+// EnhancedGround (4 layers)
+// ---------------------------------------------------------------------------
+const EnhancedGround = React.memo(({ routeW }) => {
+  const farPlaneGeo = useMemo(() => new THREE.PlaneGeometry(600, 600), []);
+  const farPlaneMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#080a0e", roughness: 0.98, metalness: 0.02 }), []);
   
-  return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow geometry={geometry} material={material} />
-  );
-});
-
-// ---------------------------------------------------------------------------
-// Route Path - Optimized
-// ---------------------------------------------------------------------------
-const RoutePath = React.memo(({ points, progressIdx }) => {
-  const { lineGeometry, remainingGeometry } = useMemo(() => {
-    if (points.length < 2) return { lineGeometry: null, remainingGeometry: null };
-    
-    // Completed path geometry
-    const completedPositions = [];
-    for (let i = 0; i <= progressIdx; i++) {
-      completedPositions.push(points[i][0], 0.05, points[i][1]);
+  // Build road strip and sidewalk dynamically based on route orientation
+  const { roadStrip, leftSidewalk, rightSidewalk, dashes } = useMemo(() => {
+    if (!routeW.length) return { roadStrip: null, leftSidewalk: null, rightSidewalk: null, dashes: [] };
+    // Approximate road direction using first and last point
+    const p0 = routeW[0];
+    const p1 = routeW[routeW.length-1];
+    const angle = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]);
+    const perp = angle + Math.PI / 2;
+    const len = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]);
+    const midX = (p0[0] + p1[0]) / 2;
+    const midZ = (p0[1] + p1[1]) / 2;
+    const width = 12;
+    const roadGeo = new THREE.BoxGeometry(len, 0.1, width);
+    const roadMat = new THREE.MeshStandardMaterial({ color: "#131313", roughness: 0.7 });
+    const sidewalkMat = new THREE.MeshStandardMaterial({ color: "#1c1c1c", roughness: 0.8 });
+    const dashMat = new THREE.MeshStandardMaterial({ color: "#2a2a1a" });
+    const dashesArr = [];
+    const dashCount = Math.floor(len / 3);
+    for (let i = 0; i <= dashCount; i++) {
+      const t = i / dashCount;
+      const x = p0[0] + (p1[0] - p0[0]) * t;
+      const z = p0[1] + (p1[1] - p0[1]) * t;
+      const dashGeo = new THREE.BoxGeometry(0.5, 0.05, 1.5);
+      dashesArr.push(<mesh key={`dash-${i}`} position={[x, 0.03, z]} rotation={[0, angle, 0]} geometry={dashGeo} material={dashMat} />);
     }
-    const completedGeom = new THREE.BufferGeometry();
-    completedGeom.setAttribute("position", new THREE.Float32BufferAttribute(completedPositions, 3));
-    
-    // Remaining path geometry
-    const remainingPoints = points.slice(progressIdx);
-    let remainingGeom = null;
-    if (remainingPoints.length > 1) {
-      const remainingPositions = remainingPoints.flatMap(p => [p[0], 0.05, p[1]]);
-      remainingGeom = new THREE.BufferGeometry();
-      remainingGeom.setAttribute("position", new THREE.Float32BufferAttribute(remainingPositions, 3));
-    }
-    
-    return { lineGeometry: completedGeom, remainingGeometry: remainingGeom };
-  }, [points, progressIdx]);
-
-  const completedMaterial = useMemo(() => new THREE.LineBasicMaterial({ color: "#8B7355" }), []);
-  const remainingMaterial = useMemo(() => new THREE.LineBasicMaterial({ color: "#D4A574" }), []);
-
+    return {
+      roadStrip: <mesh position={[midX, 0, midZ]} rotation={[0, angle, 0]} geometry={roadGeo} material={roadMat} receiveShadow castShadow />,
+      leftSidewalk: <mesh position={[midX + Math.cos(perp)*3.5, 0.05, midZ + Math.sin(perp)*3.5]} rotation={[0, angle, 0]} geometry={new THREE.BoxGeometry(len, 0.1, 2)} material={sidewalkMat} receiveShadow castShadow />,
+      rightSidewalk: <mesh position={[midX - Math.cos(perp)*3.5, 0.05, midZ - Math.sin(perp)*3.5]} rotation={[0, angle, 0]} geometry={new THREE.BoxGeometry(len, 0.1, 2)} material={sidewalkMat} receiveShadow castShadow />,
+      dashes: dashesArr
+    };
+  }, [routeW]);
+  
   return (
     <group>
-      {lineGeometry && <line geometry={lineGeometry} material={completedMaterial} />}
-      {remainingGeometry && <line geometry={remainingGeometry} material={remainingMaterial} />}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.2, 0]} receiveShadow geometry={farPlaneGeo} material={farPlaneMat} />
+      {roadStrip}
+      {leftSidewalk}
+      {rightSidewalk}
+      {dashes}
     </group>
   );
 });
 
 // ---------------------------------------------------------------------------
-// Bus Model - Optimized
+// CityBlocks (procedural buildings with emissive windows)
 // ---------------------------------------------------------------------------
-const BusModel = React.memo(({ position, rotationY }) => {
-  const groupRef = useRef();
-  const bodyMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#8B4513", roughness: 0.5 }), []);
-  const topMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#D2691E" }), []);
-  const wheelMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#1a0a04" }), []);
-  
-  useFrame(({ clock }) => {
-    if (groupRef.current) {
-      groupRef.current.position.y = 0.15 + Math.sin(clock.getElapsedTime() * 3) * 0.015;
+const CityBlocks = React.memo(({ routeW, seed = 42 }) => {
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+  const COUNT = isMobile ? 25 : 40;
+
+  const buildings = useMemo(() => {
+    const result = [];
+    let rng = seed;
+    const lcg = () => {
+      rng = (rng * 1664525 + 1013904223) & 0xffffffff;
+      return (rng >>> 0) / 0xffffffff;
+    };
+    const mid = routeW.length ? routeW[Math.floor(routeW.length / 2)] : [0, 0];
+    for (let i = 0; i < COUNT; i++) {
+      const w = 4 + lcg() * 8;
+      const d = 4 + lcg() * 8;
+      const h = 6 + lcg() * 34;
+      const side = lcg() > 0.5 ? 1 : -1;
+      const offset = 14 + lcg() * 36;
+      const along = (lcg() - 0.5) * 100;
+      const gray = Math.floor(10 + lcg() * 12).toString(16).padStart(2, '0');
+      const color = `#${gray}${gray}${Math.floor(parseInt(gray,16)*1.4).toString(16).padStart(2,'0')}`;
+      const windowColor = lcg() > 0.5 ? "#e8a870" : "#14b8a6";
+      result.push({ w, d, h, x: mid[0] + side * offset, z: mid[1] + along, color, windowColor });
     }
-  });
-  
-  const wheels = useMemo(() => {
-    const wheelPositions = [];
-    for (const x of [-0.5, 0.5]) {
-      for (const z of [0.8, -0.8]) {
-        wheelPositions.push(
-          <mesh key={`${x}-${z}`} position={[x, 0.1, z]} castShadow>
-            <cylinderGeometry args={[0.25, 0.25, 0.1, 8]} rotation={[Math.PI / 2, 0, 0]} />
-            <primitive object={wheelMaterial} attach="material" />
-          </mesh>
-        );
-      }
-    }
-    return wheelPositions;
-  }, [wheelMaterial]);
+    return result;
+  }, [routeW, seed, COUNT]);
+
+  const sharedWindowMat = useMemo(() => new THREE.MeshStandardMaterial({ roughness: 0.9, emissiveIntensity: 0.45 }), []);
   
   return (
-    <group ref={groupRef} position={[position[0], 0.15, position[1]]} rotation={[0, rotationY, 0]}>
-      <mesh position={[0, 0.4, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.2, 0.6, 2.2]} />
-        <primitive object={bodyMaterial} attach="material" />
-      </mesh>
-      <mesh position={[0, 0.75, 0]} castShadow>
-        <boxGeometry args={[1.1, 0.15, 2.1]} />
-        <primitive object={topMaterial} attach="material" />
-      </mesh>
-      {wheels}
+    <group>
+      {buildings.map((b, i) => {
+        const rowCount = Math.floor(b.h / 4);
+        const colCount = Math.floor(b.w / 3);
+        return (
+          <group key={i} position={[b.x, 0, b.z]}>
+            <mesh position={[0, b.h / 2, 0]} castShadow receiveShadow>
+              <boxGeometry args={[b.w, b.h, b.d]} />
+              <meshStandardMaterial color={b.color} roughness={0.85} metalness={0.05} />
+            </mesh>
+            <mesh position={[0, b.h + 0.25, 0]}>
+              <boxGeometry args={[b.w + 0.2, 0.5, b.d + 0.2]} />
+              <meshStandardMaterial color="#1a1e26" roughness={0.9} />
+            </mesh>
+            {Array.from({ length: rowCount }, (_, row) =>
+              Array.from({ length: colCount }, (_, col) => {
+                const lit = (i * 7 + row * 3 + col) % 5 !== 0;
+                if (!lit) return null;
+                return (
+                  <mesh
+                    key={`w-${row}-${col}`}
+                    position={[(col - colCount / 2 + 0.5) * 2.5, 2 + row * 4, b.d / 2 + 0.06]}
+                  >
+                    <boxGeometry args={[0.8, 1.2, 0.05]} />
+                    <meshStandardMaterial color={b.windowColor} emissive={b.windowColor} {...sharedWindowMat} />
+                  </mesh>
+                );
+              })
+            )}
+          </group>
+        );
+      })}
     </group>
   );
 });
 
 // ---------------------------------------------------------------------------
-// User Marker - Optimized
+// RouteTube (CatmullRomCurve3 -> TubeGeometry)
 // ---------------------------------------------------------------------------
-const UserMarker = React.memo(({ posRef, isOnBus = false }) => {
+const RouteTube = React.memo(({ points, progressIdx }) => {
+  const completedCurve = useMemo(() => {
+    if (points.length < 2 || progressIdx < 1) return null;
+    const p = points.slice(0, progressIdx+1).map(pt => new THREE.Vector3(pt[0], 0.15, pt[1]));
+    return new THREE.CatmullRomCurve3(p);
+  }, [points, progressIdx]);
+  const remainingCurve = useMemo(() => {
+    if (points.length < 2 || progressIdx >= points.length-1) return null;
+    const p = points.slice(progressIdx).map(pt => new THREE.Vector3(pt[0], 0.15, pt[1]));
+    return new THREE.CatmullRomCurve3(p);
+  }, [points, progressIdx]);
+  const completedMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#8B7355", roughness: 0.6 }), []);
+  const remainingMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#14b8a6", emissive: "#0d9488", emissiveIntensity: 0.15, roughness: 0.4 }), []);
+  return (
+    <group>
+      {completedCurve && (
+        <mesh>
+          <tubeGeometry args={[completedCurve, Math.min(completedCurve.points.length * 4, 200), 0.12, 6, false]} />
+          <primitive object={completedMat} attach="material" />
+        </mesh>
+      )}
+      {remainingCurve && (
+        <mesh>
+          <tubeGeometry args={[remainingCurve, Math.min(remainingCurve.points.length * 4, 200), 0.18, 6, false]} />
+          <primitive object={remainingMat} attach="material" />
+        </mesh>
+      )}
+    </group>
+  );
+});
+
+// ---------------------------------------------------------------------------
+// HazardMarker3D (pulsing ring + pole + octahedron)
+// ---------------------------------------------------------------------------
+const HazardMarker3D = React.memo(({ worldX, worldZ, severity = 0.7, description = "Hazard" }) => {
+  const ringRef = useRef();
+  const color = severity >= 0.8 ? "#ff4444" : severity >= 0.6 ? "#ffb347" : "#ffee44";
+  useFrame(({ clock }) => {
+    if (ringRef.current) {
+      const t = (clock.getElapsedTime() % 2) / 2;
+      const scale = 0.5 + t * 2.5;
+      ringRef.current.scale.setScalar(scale);
+      ringRef.current.material.opacity = Math.max(0, 1 - t);
+    }
+  });
+  const poleMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#ff4444", emissive: "#ff2222", emissiveIntensity: 0.3 }), []);
+  const ringMat = useMemo(() => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.6, side: THREE.DoubleSide }), [color]);
+  const topMat = useMemo(() => new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.4 }), [color]);
+  return (
+    <group position={[worldX, 0, worldZ]}>
+      <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+        <ringGeometry args={[0.5, 0.8, 16]} />
+        <primitive object={ringMat} attach="material" />
+      </mesh>
+      <mesh position={[0, 1.5, 0]} castShadow>
+        <cylinderGeometry args={[0.05, 0.08, 3, 6]} />
+        <primitive object={poleMat} attach="material" />
+      </mesh>
+      <mesh position={[0, 3.2, 0]}>
+        <octahedronGeometry args={[0.35, 0]} />
+        <primitive object={topMat} attach="material" />
+      </mesh>
+    </group>
+  );
+});
+
+// ---------------------------------------------------------------------------
+// WalkerModel (animated humanoid) — NO ellipseGeometry
+// ---------------------------------------------------------------------------
+const WalkerModel = React.memo(({ posRef }) => {
   const groupRef = useRef();
+  const leftArmRef = useRef();
+  const rightArmRef = useRef();
+  const headRef = useRef();
   const walkCycle = useRef(0);
-  const shadowMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#000", transparent: true, opacity: 0.2 }), []);
-  const bodyMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#D4A574" }), []);
-  const headMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#E8C99B" }), []);
-  
+  const shadowMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#000", transparent: true, opacity: 0.2 }), []);
+  const skinMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#D4A574", roughness: 0.7 }), []);
+  const shirtMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#0d9488", roughness: 0.6 }), []);
+  const pantsMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#1a2535", roughness: 0.7 }), []);
   useFrame((_, dt) => {
     const g = groupRef.current;
     if (!g) return;
     g.position.x = damp(g.position.x, posRef.current[0], 12, dt);
     g.position.z = damp(g.position.z, posRef.current[1], 12, dt);
-    if (!isOnBus) {
-      walkCycle.current += dt * 8;
-      g.position.y = 0.1 + Math.sin(walkCycle.current * 2) * 0.03;
-    } else {
-      g.position.y = 0.1;
-    }
+    walkCycle.current += dt * 8;
+    const bob = Math.sin(walkCycle.current * 2) * 0.05;
+    g.position.y = 0.05 + bob;
+    if (leftArmRef.current) leftArmRef.current.rotation.x = Math.sin(walkCycle.current) * 0.4;
+    if (rightArmRef.current) rightArmRef.current.rotation.x = -Math.sin(walkCycle.current) * 0.4;
+    if (headRef.current) headRef.current.rotation.x = Math.sin(walkCycle.current * 2) * 0.04;
   });
-
-  if (isOnBus) return null;
-  
   return (
     <group ref={groupRef}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]}>
-        <circleGeometry args={[0.5, 8]} />
-        <primitive object={shadowMaterial} attach="material" />
+      {/* Shadow — circleGeometry scaled to ellipse, NOT ellipseGeometry */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]} scale={[1, 0.65, 1]}>
+        <circleGeometry args={[0.3, 12]} />
+        <primitive object={shadowMat} attach="material" />
       </mesh>
-      <mesh position={[0, 0.5, 0]} castShadow>
-        <capsuleGeometry args={[0.2, 0.5, 4, 6]} />
-        <primitive object={bodyMaterial} attach="material" />
-      </mesh>
-      <mesh position={[0, 0.85, 0]} castShadow>
-        <sphereGeometry args={[0.2, 8, 8]} />
-        <primitive object={headMaterial} attach="material" />
-      </mesh>
+      <mesh position={[-0.12, 0.35, 0]} castShadow><capsuleGeometry args={[0.09, 0.35, 4, 6]} /><primitive object={pantsMat} attach="material" /></mesh>
+      <mesh position={[0.12, 0.35, 0]} castShadow><capsuleGeometry args={[0.09, 0.35, 4, 6]} /><primitive object={pantsMat} attach="material" /></mesh>
+      <mesh position={[0, 0.78, 0]} castShadow><capsuleGeometry args={[0.18, 0.38, 4, 8]} /><primitive object={shirtMat} attach="material" /></mesh>
+      <mesh ref={leftArmRef} position={[-0.28, 0.82, 0]} castShadow><capsuleGeometry args={[0.07, 0.32, 4, 6]} /><primitive object={shirtMat} attach="material" /></mesh>
+      <mesh ref={rightArmRef} position={[0.28, 0.82, 0]} castShadow><capsuleGeometry args={[0.07, 0.32, 4, 6]} /><primitive object={shirtMat} attach="material" /></mesh>
+      <group ref={headRef} position={[0, 1.15, 0]}>
+        <mesh castShadow><sphereGeometry args={[0.18, 12, 12]} /><primitive object={skinMat} attach="material" /></mesh>
+      </group>
     </group>
   );
 });
 
 // ---------------------------------------------------------------------------
-// Destination marker - Optimized
+// DestinationMarker (spinning octahedron on pole)
 // ---------------------------------------------------------------------------
 const DestinationMarker = React.memo(({ worldX, worldZ }) => {
   const ref = useRef();
-  const ringMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#8B7355", transparent: true, opacity: 0.3 }), []);
-  const poleMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#8B7355" }), []);
-  const topMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#D4A574", emissive: "#D4A574", emissiveIntensity: 0.2 }), []);
-  
-  useFrame(({ clock }) => {
-    if (ref.current) ref.current.rotation.y = clock.getElapsedTime() * 2;
-  });
-  
+  const ringMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#14b8a6", transparent: true, opacity: 0.3 }), []);
+  const poleMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#14b8a6" }), []);
+  const topMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#14b8a6", emissive: "#0d9488", emissiveIntensity: 0.3 }), []);
+  useFrame(({ clock }) => { if (ref.current) ref.current.rotation.y = clock.getElapsedTime() * 1.5; });
   return (
     <group position={[worldX, 0, worldZ]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <ringGeometry args={[0.8, 1.2, 16]} />
-        <primitive object={ringMaterial} attach="material" />
-      </mesh>
-      <mesh position={[0, 1.2, 0]}>
-        <cylinderGeometry args={[0.08, 0.12, 2.4, 6]} />
-        <primitive object={poleMaterial} attach="material" />
-      </mesh>
-      <mesh ref={ref} position={[0, 2.5, 0]}>
-        <octahedronGeometry args={[0.5, 0]} />
-        <primitive object={topMaterial} attach="material" />
-      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}><ringGeometry args={[0.8, 1.2, 16]} /><primitive object={ringMat} attach="material" /></mesh>
+      <mesh position={[0, 1.2, 0]}><cylinderGeometry args={[0.08, 0.12, 2.4, 6]} /><primitive object={poleMat} attach="material" /></mesh>
+      <mesh ref={ref} position={[0, 2.5, 0]}><octahedronGeometry args={[0.5, 0]} /><primitive object={topMat} attach="material" /></mesh>
     </group>
   );
 });
 
 // ---------------------------------------------------------------------------
-// Camera - Optimized
+// FollowCamera (lerp with breathing)
 // ---------------------------------------------------------------------------
-const NavCamera = React.memo(({ posRef }) => {
+const FollowCamera = React.memo(({ posRef }) => {
   const { camera } = useThree();
   const targetPos = useRef({ x: 0, z: 0 });
   const ready = useRef(false);
-  
-  useFrame((_, dt) => {
+  useFrame(({ clock }, dt) => {
     const px = posRef.current[0];
     const pz = posRef.current[1];
-    
     targetPos.current.x = damp(targetPos.current.x || px, px, 4, dt);
     targetPos.current.z = damp(targetPos.current.z || pz, pz, 4, dt);
-    
     const targetX = targetPos.current.x + 12;
     const targetZ = targetPos.current.z + 12;
-    
     if (!ready.current) {
-      camera.position.set(targetX, 14, targetZ);
+      camera.position.set(targetX, 8, targetZ);
       camera.lookAt(px, 0, pz);
       ready.current = true;
       return;
     }
-    
     camera.position.x = damp(camera.position.x, targetX, 4, dt);
     camera.position.z = damp(camera.position.z, targetZ, 4, dt);
-    camera.lookAt(targetPos.current.x, 0, targetPos.current.z);
+    camera.position.y = 8 + Math.sin(clock.getElapsedTime() * 1.2) * 0.06;
+    camera.lookAt(targetPos.current.x, 0.5, targetPos.current.z);
   });
-  
   return null;
 });
 
 // ---------------------------------------------------------------------------
-// Scene
+// HUDOverlay (DOM-based, not canvas)
 // ---------------------------------------------------------------------------
-const Scene = React.memo(({ routeW, destW, posRef, progressIdx, busPosition, busRotation, isOnBus, showBus }) => {
-  const ambientLight = useMemo(() => new THREE.AmbientLight(0xffffff, 0.5), []);
-  const directionalLight = useMemo(() => {
-    const light = new THREE.DirectionalLight(0xffffff, 0.8);
-    light.position.set(20, 30, 10);
-    light.castShadow = true;
-    return light;
-  }, []);
-  
-  return (
-    <>
-      <primitive object={ambientLight} />
-      <primitive object={directionalLight} />
-      <Ground />
-      {routeW.length > 1 && <RoutePath points={routeW} progressIdx={progressIdx} />}
-      {destW && <DestinationMarker worldX={destW[0]} worldZ={destW[1]} />}
-      {showBus && busPosition && <BusModel position={busPosition} rotationY={busRotation} />}
-      <UserMarker posRef={posRef} isOnBus={isOnBus} />
-      <NavCamera posRef={posRef} />
-    </>
-  );
-});
-
-// ---------------------------------------------------------------------------
-// Directions Panel - Optimized with memo
-// ---------------------------------------------------------------------------
-const DirectionsPanel = React.memo(({ steps, currentStepIndex, onNext, onPrev, onClose }) => {
-  const currentStep = steps?.[currentStepIndex];
+const HUDOverlay = React.memo(({
+  steps, currentStepIndex, safetyScore, remainingDistance,
+  estimatedTime, onNext, onPrev, onClose
+}) => {
+  const step = steps?.[currentStepIndex];
+  const total = steps?.length || 1;
+  const progress = (currentStepIndex + 1) / total;
   const isFirst = currentStepIndex === 0;
-  const isLast = currentStepIndex === (steps?.length || 1) - 1;
-  
-  const getStepIcon = useCallback((step) => {
+  const isLast = currentStepIndex >= total - 1;
+  const sc = safetyScore ?? null;
+  const safetyColor = sc == null ? "#8cd69c" : sc >= 0.75 ? "#14b8a6" : sc >= 0.5 ? "#ffb347" : "#ff7b6b";
+  const fmt = (m) => m >= 1000 ? `${(m/1000).toFixed(1)}km` : `${Math.round(m)}m`;
+  const fmtT = (s) => s >= 3600 ? `${Math.floor(s/3600)}h${Math.round((s%3600)/60)}m` : `${Math.round(s/60)}min`;
+  const getIcon = () => {
     if (step?.type === "transit") return "🚌";
-    const instr = step?.instruction?.toLowerCase() || "";
-    if (instr.includes("left")) return "⬅️";
-    if (instr.includes("right")) return "➡️";
-    if (instr.includes("walk")) return "🚶";
-    if (instr.includes("arrive")) return "🏁";
-    return "📍";
-  }, []);
-  
-  const getStepColor = useCallback((step) => {
-    if (step?.type === "transit") return "#A0522D";
-    if (step?.instruction?.toLowerCase().includes("arrive")) return "#8B7355";
-    return "#D4A574";
-  }, []);
-  
-  const handleStepClick = useCallback((idx) => {
-    if (idx > currentStepIndex) onNext(idx - currentStepIndex);
-    else if (idx < currentStepIndex) onPrev(currentStepIndex - idx);
-  }, [currentStepIndex, onNext, onPrev]);
-  
+    const t = (step?.instruction || "").toLowerCase();
+    if (t.includes("left")) return "⬅️";
+    if (t.includes("right")) return "➡️";
+    if (t.includes("arrive")) return "🏁";
+    return "⬆️";
+  };
   return (
     <div style={{
-      position: "absolute",
-      bottom: 16,
-      left: 16,
-      right: 16,
-      background: "rgba(0, 0, 0, 0.95)",
-      backdropFilter: "blur(16px)",
-      borderRadius: 20,
-      padding: "10px 16px",
-      pointerEvents: "auto",
-      border: "1px solid rgba(210, 165, 115, 0.2)",
+      position: "absolute", bottom: 0, left: 0, right: 0,
+      pointerEvents: "none",
+      background: "linear-gradient(to top, rgba(4,8,12,0.96) 55%, transparent)",
+      padding: "12px 16px 16px",
+      fontFamily: "'DM Sans', system-ui, sans-serif",
       zIndex: 30,
     }}>
-      <div style={{ marginBottom: 8 }}>
-        <div style={{ height: 2, background: "rgba(210, 165, 115, 0.2)", borderRadius: 2, overflow: "hidden" }}>
-          <div style={{
-            width: `${((currentStepIndex + 1) / (steps?.length || 1)) * 100}%`,
-            height: "100%",
-            background: getStepColor(currentStep),
-            transition: "width 0.2s ease",
-          }} />
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 9, color: "rgba(210, 165, 115, 0.5)" }}>
-          <span>Step {currentStepIndex + 1} / {steps?.length || 1}</span>
-        </div>
-      </div>
-      
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+      <div style={{ height: 2, background: "rgba(255,255,255,0.08)", borderRadius: 2, marginBottom: 10, overflow: "hidden" }}>
         <div style={{
-          width: 40, height: 40, borderRadius: 20,
-          background: getStepColor(currentStep),
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 20,
-        }}>
-          {getStepIcon(currentStep)}
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#F5E6D3", lineHeight: 1.3 }}>
-            {currentStep?.instruction || "Follow the route"}
+          width: `${progress * 100}%`, height: "100%",
+          background: "linear-gradient(90deg, #0d9488, #14b8a6)", borderRadius: 2,
+          transition: "width 0.4s cubic-bezier(0.22,1,0.36,1)"
+        }} />
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <div style={{
+          fontSize: 9, fontWeight: 700, color: "#0d9488",
+          background: "rgba(13,148,136,0.12)", border: "1px solid rgba(13,148,136,0.25)",
+          borderRadius: 6, padding: "2px 8px", letterSpacing: "0.8px",
+        }}>STEP {currentStepIndex + 1}/{total}</div>
+        <div style={{ flex: 1 }} />
+        {sc != null && <div style={{ fontSize: 10, fontWeight: 700, color: safetyColor }}>◉ {Math.round(sc * 100)}% safe</div>}
+        {remainingDistance > 0 && (
+          <div style={{ fontSize: 10, color: "rgba(241,245,249,0.5)" }}>
+            {fmt(remainingDistance)} · {fmtT(estimatedTime)}
           </div>
-          {currentStep?.distance && (
-            <div style={{ fontSize: 10, color: "rgba(210, 165, 115, 0.7)", marginTop: 1 }}>
-              {currentStep.distance}
+        )}
+        <button onClick={onClose} style={{
+          pointerEvents: "auto", width: 24, height: 24, borderRadius: 12,
+          border: "none", background: "rgba(255,255,255,0.08)",
+          color: "rgba(255,255,255,0.55)", fontSize: 12, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>✕</button>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: 20, flexShrink: 0,
+          background: "rgba(13,148,136,0.15)", border: "1px solid rgba(13,148,136,0.3)",
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
+        }}>{getIcon()}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#f1f5f9", lineHeight: 1.35 }}>
+            {step?.instruction || "Follow the route"}
+          </div>
+          {step?.distance && (
+            <div style={{ fontSize: 11, color: "rgba(232,168,112,0.7)", marginTop: 2 }}>
+              {step.distance}
             </div>
           )}
         </div>
       </div>
-      
-      <div style={{ display: "flex", gap: 8 }}>
+      <div style={{ display: "flex", gap: 8, pointerEvents: "auto" }}>
         <button onClick={onPrev} disabled={isFirst} style={{
-          flex: 1, padding: "6px", borderRadius: 16,
-          background: isFirst ? "rgba(210, 165, 115, 0.1)" : "rgba(210, 165, 115, 0.2)",
-          border: "none", color: isFirst ? "rgba(210, 165, 115, 0.3)" : "#F5E6D3",
-          fontSize: 11, fontWeight: 600, cursor: isFirst ? "not-allowed" : "pointer",
-        }}>←</button>
+          flex: 1, padding: "8px", borderRadius: 14, border: "none",
+          background: isFirst ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.08)",
+          color: isFirst ? "rgba(255,255,255,0.2)" : "#f1f5f9",
+          fontSize: 12, fontWeight: 600, cursor: isFirst ? "not-allowed" : "pointer",
+        }}>← Prev</button>
         <button onClick={onNext} disabled={isLast} style={{
-          flex: 1, padding: "6px", borderRadius: 16,
-          background: isLast ? "rgba(210, 165, 115, 0.1)" : getStepColor(currentStep),
-          border: "none", color: isLast ? "rgba(210, 165, 115, 0.3)" : "#0a0a0a",
-          fontSize: 11, fontWeight: 600, cursor: isLast ? "not-allowed" : "pointer",
-        }}>{isLast ? "🏁" : "→"}</button>
+          flex: 2, padding: "8px", borderRadius: 14, border: "none",
+          background: isLast ? "rgba(255,255,255,0.04)" : "linear-gradient(135deg, #0d9488, #14b8a6)",
+          color: isLast ? "rgba(255,255,255,0.2)" : "#fff",
+          fontSize: 12, fontWeight: 700, cursor: isLast ? "not-allowed" : "pointer",
+        }}>{isLast ? "🏁 Arrived" : "Next →"}</button>
       </div>
-      
-      <details style={{ marginTop: 8 }}>
-        <summary style={{ fontSize: 9, color: "rgba(210, 165, 115, 0.4)", cursor: "pointer", textAlign: "center", padding: "4px" }}>
-          All steps
-        </summary>
-        <div style={{ marginTop: 8, maxHeight: 120, overflowY: "auto" }}>
-          {steps?.map((step, idx) => (
-            <div key={idx} onClick={() => handleStepClick(idx)} style={{
-              display: "flex", alignItems: "center", gap: 8, padding: "5px 8px", marginBottom: 4,
-              borderRadius: 12, background: idx === currentStepIndex ? "rgba(210, 165, 115, 0.15)" : "rgba(255,255,255,0.02)",
-              cursor: "pointer",
-            }}>
-              <div style={{ width: 24, height: 24, borderRadius: 12, background: getStepColor(step), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>
-                {getStepIcon(step)}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, color: "#F5E6D3" }}>{step.instruction?.substring(0, 35)}</div>
-              </div>
-              {idx === currentStepIndex && <div style={{ fontSize: 8, color: "#D4A574" }}>●</div>}
-            </div>
-          ))}
-        </div>
-      </details>
-      
-      <button onClick={onClose} style={{
-        position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: 12,
-        background: "rgba(210, 165, 115, 0.15)", border: "none", color: "#D4A574", fontSize: 12, cursor: "pointer",
-      }}>✕</button>
     </div>
   );
-}, (prevProps, nextProps) => {
-  return prevProps.currentStepIndex === nextProps.currentStepIndex &&
-         prevProps.steps?.length === nextProps.steps?.length;
 });
 
 // ---------------------------------------------------------------------------
-// Error Boundary
+// ErrBoundary
 // ---------------------------------------------------------------------------
 class ErrBoundary extends React.Component {
   state = { err: false };
   static getDerivedStateFromError() { return { err: true }; }
+  componentDidCatch(error, info) {
+    console.error("Walking3DView error:", error, info);
+  }
   render() {
     if (this.state.err) return (
-      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#000", color: "#D4A574" }}>
+      <div style={{
+        width: "100%", height: "100%",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: "#0a0d12", color: "#e8a870",
+        fontFamily: "'DM Sans', system-ui, sans-serif",
+      }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🗺️</div>
-          <div>Loading 3D view...</div>
-          <button onClick={() => this.setState({ err: false })} style={{ marginTop: 16, padding: "8px 24px", background: "#D4A574", border: "none", borderRadius: 20, color: "#000", cursor: "pointer" }}>Retry</button>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🗺️</div>
+          <div style={{ fontSize: 14, marginBottom: 16 }}>3D view encountered an error</div>
+          <button
+            onClick={() => this.setState({ err: false })}
+            style={{
+              padding: "8px 24px", background: "linear-gradient(135deg, #0d9488, #14b8a6)",
+              border: "none", borderRadius: 20, color: "#fff",
+              fontSize: 13, fontWeight: 700, cursor: "pointer",
+            }}
+          >Retry</button>
         </div>
       </div>
     );
@@ -404,7 +456,7 @@ class ErrBoundary extends React.Component {
 }
 
 // ---------------------------------------------------------------------------
-// Main Export - Optimized
+// Main Component
 // ---------------------------------------------------------------------------
 export default function Walking3DView({
   route = [],
@@ -416,18 +468,26 @@ export default function Walking3DView({
   onTestPositionUpdate = null,
   onClose = () => {},
   style = {},
+  hazards = [],
+  constructionZones = [],
+  emergencies = [],
+  safetyScore = null,
+  remainingDistance = 0,
+  estimatedTime = 0,
+  routeType = "walking",
+  transitSegments = [],
+  userHeading = 0,
+  routeSafety = null,
 }) {
-  const [isOnBus, setIsOnBus] = useState(false);
-  const [busPosition, setBusPosition] = useState(null);
-  const [busRotation, setBusRotation] = useState(0);
-  const [showBus, setShowBus] = useState(false);
-  const [localStepIndex, setLocalStepIndex] = useState(currentStepIndex);
-  const animationRef = useRef(null);
   const posRef = useRef([0, 0]);
   const [progressIdx, setProgressIdx] = useState(0);
+  const [internalStepIdx, setInternalStepIdx] = useState(currentStepIndex);
   const positionUpdateTimeout = useRef(null);
   
-  // Initialize origin
+  useEffect(() => {
+    setInternalStepIdx(currentStepIndex);
+  }, [currentStepIndex]);
+  
   useEffect(() => {
     _origin = null;
     _mLng = null;
@@ -435,202 +495,69 @@ export default function Walking3DView({
     else if (userPosition) initOrigin(userPosition[0], userPosition[1]);
   }, [route, userPosition]);
 
-  // Compute world coordinates with proper dependencies
   const routeW = useMemo(() => {
     if (!_origin && route.length) initOrigin(route[0][0], route[0][1]);
     return route.map(([lat, lng]) => geo2w(lat, lng));
   }, [route]);
   
-  const destW = useMemo(() => routeW.length ? routeW[routeW.length - 1] : null, [routeW]);
+  const destW = useMemo(() => routeW.length ? routeW[routeW.length-1] : null, [routeW]);
   
-  // Throttled position updates
   useEffect(() => {
     if (!userPosition) return;
-    
-    if (positionUpdateTimeout.current) {
-      clearTimeout(positionUpdateTimeout.current);
-    }
-    
+    if (positionUpdateTimeout.current) clearTimeout(positionUpdateTimeout.current);
     positionUpdateTimeout.current = setTimeout(() => {
       posRef.current = geo2w(userPosition[0], userPosition[1]);
     }, 16);
-    
-    return () => {
-      if (positionUpdateTimeout.current) {
-        clearTimeout(positionUpdateTimeout.current);
-      }
-    };
+    return () => { if (positionUpdateTimeout.current) clearTimeout(positionUpdateTimeout.current); };
   }, [userPosition]);
 
-  // Optimized progress index calculation
   useEffect(() => {
     if (!userPosition || !route.length) return;
-    
     let best = 0, minD = Infinity;
     for (let i = 0; i < route.length; i++) {
-      const d = Math.abs(route[i][0] - userPosition[0]) + Math.abs(route[i][1] - userPosition[1]);
+      const d = Math.abs(route[i][0]-userPosition[0]) + Math.abs(route[i][1]-userPosition[1]);
       if (d < minD) { minD = d; best = i; }
     }
     setProgressIdx(best);
   }, [userPosition, route]);
 
-  const currentStep = routeSteps[localStepIndex];
-  const isTransitStep = currentStep?.type === "transit";
+  const handleNext = () => {
+    if (internalStepIdx < routeSteps.length - 1) setInternalStepIdx(prev => prev + 1);
+  };
+  const handlePrev = () => {
+    if (internalStepIdx > 0) setInternalStepIdx(prev => prev - 1);
+  };
   
-  // Create spatial index for route points
-  const routeIndex = useMemo(() => {
-    const index = new Map();
-    routeW.forEach((point, idx) => {
-      const key = `${Math.round(point[0] / 5)}_${Math.round(point[1] / 5)}`;
-      index.set(key, { point, idx });
-    });
-    return index;
-  }, [routeW]);
-  
-  // Find nearest route point
-  const findNearestRoutePoint = useCallback((targetW) => {
-    const key = `${Math.round(targetW[0] / 5)}_${Math.round(targetW[1] / 5)}`;
-    if (routeIndex.has(key)) return routeIndex.get(key).point;
-    
-    // Fallback to linear search if not found in index
-    let nearest = null;
-    let minDist = Infinity;
-    for (const point of routeW) {
-      const dist = Math.hypot(point[0] - targetW[0], point[1] - targetW[1]);
-      if (dist < minDist) {
-        minDist = dist;
-        nearest = point;
-      }
-    }
-    return nearest;
-  }, [routeIndex, routeW]);
-  
-  // Bus animation effect
-  useEffect(() => {
-    if (isTransitStep && !isOnBus && currentStep?.start_location && currentStep?.end_location) {
-      setIsOnBus(true);
-      setShowBus(true);
-      
-      const fromStop = currentStep.start_location;
-      const toStop = currentStep.end_location;
-      
-      const fromPointW = geo2w(fromStop.lat, fromStop.lon);
-      const toPointW = geo2w(toStop.lat, toStop.lon);
-      
-      const fromPoint = findNearestRoutePoint(fromPointW) || routeW[Math.min(progressIdx + 5, routeW.length - 1)];
-      const toPoint = findNearestRoutePoint(toPointW) || routeW[Math.min(progressIdx + 30, routeW.length - 1)];
-      
-      if (fromPoint && toPoint) {
-        setBusPosition([fromPoint[0], fromPoint[1]]);
-        setBusRotation(Math.atan2(toPoint[0] - fromPoint[0], toPoint[1] - fromPoint[1]));
-        
-        const startPos = [...fromPoint];
-        const endPos = [...toPoint];
-        const startTime = performance.now();
-        const duration = 2000;
-        let animationFrameId = null;
-        
-        const animate = () => {
-          if (!animationRef.current) return;
-          const now = performance.now();
-          const t = Math.min(1, (now - startTime) / duration);
-          setBusPosition([
-            startPos[0] + (endPos[0] - startPos[0]) * t,
-            startPos[1] + (endPos[1] - startPos[1]) * t
-          ]);
-          
-          if (t < 1) {
-            animationFrameId = requestAnimationFrame(animate);
-            animationRef.current = animationFrameId;
-          } else {
-            setShowBus(false);
-            if (onTestPositionUpdate) onTestPositionUpdate([toStop.lat, toStop.lon]);
-            setTimeout(() => setIsOnBus(false), 300);
-            animationRef.current = null;
-          }
-        };
-        
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
-        }
-        animationFrameId = requestAnimationFrame(animate);
-        animationRef.current = animationFrameId;
-      }
-    }
-    
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-        animationRef.current = null;
-      }
-    };
-  }, [isTransitStep, localStepIndex, findNearestRoutePoint, routeW, progressIdx, onTestPositionUpdate, isOnBus]);
-
-  const handleNextStep = useCallback(() => {
-    if (localStepIndex < (routeSteps?.length || 1) - 1) {
-      setLocalStepIndex(prev => prev + 1);
-    }
-  }, [localStepIndex, routeSteps?.length]);
-
-  const handlePrevStep = useCallback(() => {
-    if (localStepIndex > 0) {
-      setLocalStepIndex(prev => prev - 1);
-    }
-  }, [localStepIndex]);
-
-  const testIdxRef = useRef(0);
-  const advanceTest = useCallback(() => {
-    if (!route.length || isOnBus) return;
-    const next = testIdxRef.current + 1;
-    if (next >= route.length) return;
-    testIdxRef.current = next;
-    const pt = route[next];
-    if (onTestPositionUpdate) onTestPositionUpdate(pt);
-    posRef.current = geo2w(pt[0], pt[1]);
-    setProgressIdx(next);
-  }, [route, onTestPositionUpdate, isOnBus]);
-
-  useEffect(() => {
-    if (!testMode) return;
-    const handler = (e) => {
-      if ((e.key === "ArrowUp" || e.key === "w" || e.key === "W") && !isOnBus) {
-        e.preventDefault();
-        advanceTest();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [testMode, advanceTest, isOnBus]);
-
   return (
-    <div style={{ position: "relative", width: "100%", height: "100%", background: "#000", borderRadius: 16, overflow: "hidden", ...style }}>
+    <div style={{ position:"relative", width:"100%", height:"100%", background:"#000", borderRadius:16, overflow:"hidden", ...style }}>
       <ErrBoundary>
-        <Canvas 
-          shadows 
-          dpr={[1, 1.5]} 
+        <Canvas
+          shadows
+          dpr={[1, Math.min(typeof window !== "undefined" ? window.devicePixelRatio : 1, 1.5)]}
           frameloop="always"
-          performance={{ min: 0.5 }}
-          camera={{ fov: 45, near: 0.5, far: 300 }}
-          style={{ width: "100%", height: "100%" }}
+          performance={{ min:0.5, max:1, debounce:200 }}
+          camera={{ fov:45, near:0.5, far:300 }}
+          style={{ width:"100%", height:"100%" }}
         >
-          <Scene 
-            routeW={routeW} 
-            destW={destW} 
-            posRef={posRef} 
-            progressIdx={progressIdx} 
-            busPosition={busPosition} 
-            busRotation={busRotation} 
-            isOnBus={isOnBus} 
-            showBus={showBus} 
-          />
+          <Lighting />
+          <EnhancedGround routeW={routeW} />
+          <CityBlocks routeW={routeW} />
+          {routeW.length > 1 && <RouteTube points={routeW} progressIdx={progressIdx} />}
+          {destW && <DestinationMarker worldX={destW[0]} worldZ={destW[1]} />}
+          {hazards.map((h, i) => <HazardMarker3D key={`hz-${i}`} worldX={geo2w(h.lat, h.lng)[0]} worldZ={geo2w(h.lat, h.lng)[1]} severity={h.severity} description={h.description} />)}
+          <WalkerModel posRef={posRef} />
+          <FollowCamera posRef={posRef} />
         </Canvas>
       </ErrBoundary>
-      <DirectionsPanel 
-        steps={routeSteps} 
-        currentStepIndex={localStepIndex} 
-        onNext={handleNextStep} 
-        onPrev={handlePrevStep} 
-        onClose={onClose} 
+      <HUDOverlay
+        steps={routeSteps}
+        currentStepIndex={internalStepIdx}
+        safetyScore={safetyScore ?? routeSafety}
+        remainingDistance={remainingDistance}
+        estimatedTime={estimatedTime}
+        onNext={handleNext}
+        onPrev={handlePrev}
+        onClose={onClose}
       />
     </div>
   );

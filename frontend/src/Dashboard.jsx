@@ -19,6 +19,7 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import MarkerClusterGroup from "react-leaflet-cluster";
 import {
   Bookmark,
   Clock,
@@ -375,14 +376,11 @@ function isDestinationInHazardZone(
 function inferCategory(destinationName, destinationAddress = "") {
   const name = (destinationName + " " + destinationAddress).toLowerCase();
   
-  // Sports & large venues FIRST
   if (/stadium|arena|ballpark|acrisure|pnc park|ppg paints|petersen|consol|heinz field|coliseum|amphitheater|pavilion|sportsplex/.test(name)) return 'stadium';
   if (/theater|theatre|cinema|imax|playhouse|concert hall|performance hall|opera house/.test(name)) return 'theater';
   if (/zoo|aquarium|botanical|planetarium|nature center|natural history|children.s museum/.test(name)) return 'attraction';
   if (/hotel|inn|motel|marriott|hilton|hyatt|sheraton|westin|hampton|courtyard|residence inn/.test(name)) return 'hotel';
   if (/gym|fitness|ymca|rec center|recreation center|crossfit|planet fitness/.test(name)) return 'gym';
-
-  // Existing patterns
   if (/museum|gallery|exhibit|art|science center/.test(name)) return "museum";
   if (
     /hospital|medical|upmc|allegheny health|urgent care|clinic|er |emergency room/.test(
@@ -501,6 +499,57 @@ const ChangeView = React.memo(({ center, zoom, routeBounds }) => {
   return null;
 });
 
+// ========== Module-level component (CRASH FIX) ==========
+const MapZoomTracker = React.memo(({ onZoomChange, onBoundsChange }) => {
+  const map = useMap();
+  useEffect(() => {
+    const update = () => {
+      onZoomChange(map.getZoom());
+      onBoundsChange(map.getBounds());
+    };
+    map.on("zoomend", update);
+    map.on("moveend", update);
+    update();
+    return () => {
+      map.off("zoomend", update);
+      map.off("moveend", update);
+    };
+  }, [map, onZoomChange, onBoundsChange]);
+  return null;
+});
+
+// ML Safety Gauge Component
+const SafetyGauge = ({ score }) => {
+  const pct = Math.round(score * 100);
+  const color = score >= 0.75 ? "#14b8a6" : score >= 0.5 ? "#ffb347" : "#ff7b6b";
+  const circumference = 2 * Math.PI * 14;
+  const strokeDash = (pct / 100) * circumference;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+      <div style={{ position: "relative", width: 36, height: 36 }}>
+        <svg width="36" height="36" viewBox="0 0 36 36" style={{ transform: "rotate(-90deg)" }}>
+          <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
+          <circle
+            cx="18" cy="18" r="14" fill="none"
+            stroke={color} strokeWidth="3"
+            strokeDasharray={`${strokeDash} ${circumference}`}
+            strokeLinecap="round"
+            style={{ transition: "stroke-dasharray 0.8s cubic-bezier(0.22,1,0.36,1), stroke 0.4s ease" }}
+          />
+        </svg>
+        <div style={{
+          position: "absolute", inset: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "9px", fontWeight: 700,
+          color, fontVariantNumeric: "tabular-nums",
+          transform: "rotate(0deg)"
+        }}>{pct}</div>
+      </div>
+      <div style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.5px", textTransform: "uppercase", color: "var(--txt3)" }}>Safety</div>
+    </div>
+  );
+};
+
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -518,9 +567,28 @@ const CSS = `
     --sh: 0 6px 28px rgba(0,0,0,0.55),0 2px 8px rgba(0,0,0,0.3);
     --sh-lg: 0 18px 56px rgba(0,0,0,0.72),0 4px 18px rgba(0,0,0,0.4);
     --sh-w: 0 4px 20px rgba(232,168,112,0.25);
+    --teal-primary: #0d9488;
+    --teal-light: #14b8a6;
+    --teal-dark: #065f46;
+    --teal-glow: rgba(13,148,136,0.15);
+    --teal-dim: rgba(13,148,136,0.10);
+    --border-teal: rgba(13,148,136,0.40);
+    --border-teal-active: rgba(13,148,136,0.80);
+    --bg-deep: #04080c;
+    --bg-card: #080d12;
+    --bg-card-hover: #0d1520;
+    --host-primary: #e8a870;
+    --host-dim: rgba(232,168,112,0.18);
+    --host-rgb: 232,168,112;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #475569;
+    --text-disabled: #334155;
+    --success: #059669;
+    --error: #ef4444;
+    --warning: #d97706;
   }
 
-  /* ── Animations ── */
   @keyframes slideDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
   @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
   @keyframes pulse-overlay { 0%,100%{opacity:0.45} 50%{opacity:0.65} }
@@ -534,16 +602,30 @@ const CSS = `
   @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
   @keyframes arrival-pulse { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(3); opacity: 0; } }
   @keyframes step-slide-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes teal-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(13,148,136,0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(13,148,136,0); }
+  }
+  @keyframes teal-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes hazard-ring {
+    0% { transform: scale(0.5); opacity: 1; }
+    100% { transform: scale(3); opacity: 0; }
+  }
 
   .obstruction-overlay { animation: pulse-overlay 2s ease-in-out infinite; }
   .obstruction-border { animation: dash-flow 0.5s linear infinite; stroke-dashoffset:0; }
   .obstructed-road-border-top { animation:dash-flow-road-top 0.8s linear infinite;stroke-dashoffset:0;filter:drop-shadow(0 0 2px rgba(255,255,255,0.5)); }
 
-  /* ── Root ── */
   .root { font-family:var(--ff-b);background:var(--bg);color:var(--txt);width:100vw;height:100vh;overflow:hidden;position:relative; }
   .map-wrap { position:absolute;inset:0;z-index:0; }
 
-  /* ── Leaflet overrides ── */
   .leaflet-container { background:#0e0804 !important; }
   .leaflet-tile-pane { filter:saturate(.7) brightness(.82) sepia(.08); }
   .leaflet-popup-content-wrapper { background:var(--card) !important;border:1px solid var(--border2) !important;border-radius:12px !important;color:var(--txt) !important;box-shadow:var(--sh) !important;font-family:var(--ff-b) !important; }
@@ -551,7 +633,6 @@ const CSS = `
   .leaflet-control-zoom { display:none !important; }
   .leaflet-control-attribution { display:none; }
 
-  /* ── Popup utility classes (extracted from inline styles) ── */
   .popup-dest { font-family: DM Sans, sans-serif; }
   .popup-dest strong { display: block; }
   .popup-dest small { color: #e0c8b0; }
@@ -569,7 +650,6 @@ const CSS = `
   }
   .popup-compare-btn:hover { filter: brightness(1.15); }
 
-  /* ── Emergency popup classes ── */
   .emergency-popup { font-family: DM Sans, sans-serif; min-width: 200px; }
   .emergency-popup-header {
     display: flex; align-items: center; gap: 10px;
@@ -586,14 +666,12 @@ const CSS = `
     padding-top: 6px; border-top: 1px solid rgba(255,68,68,0.2);
   }
 
-  /* ── 3D loading fallback ── */
   .nav-3d-loading {
     width: 100%; height: 100%; background: rgba(0,0,0,0.7);
     display: flex; align-items: center; justify-content: center; color: white;
     font-family: var(--ff-b);
   }
 
-  /* ── Route alert (extracted from inline) ── */
   .route-alert {
     position: absolute; top: 100px; left: calc(var(--rail-w) + 14px); right: 14px;
     max-width: 400px; background: var(--surface); border: 1px solid #ff7b6b;
@@ -616,7 +694,6 @@ const CSS = `
   .icon-wood { color: var(--wood); }
   .icon-green { color: var(--green); }
 
-  /* ── Transit modal (extracted from inline) ── */
   .transit-modal {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
     width: 90%; max-width: 500px; max-height: 80vh;
@@ -644,32 +721,19 @@ const CSS = `
   }
   .transit-modal-close-btn:hover { filter: brightness(1.1); }
 
-  /* ── Directions loading ── */
   .dir-loading { padding: 12px; color: var(--txt2); font-size: 12px; }
-
-  /* ── Route bar value colors ── */
   .rs-v-green { color: var(--green); }
   .rs-v-red { color: #ff7b6b; }
   .rs-v-crit { color: #ff4444; }
-
-  /* ── Side panel list container ── */
   .p-list { display: flex; flex-direction: column; gap: 6px; }
   .p-item-text { flex: 1; min-width: 0; }
   .p-sub-icon { color: var(--green); }
   .p-arr-active { margin-left: auto; color: var(--wood); }
-
-  /* ── Search card head icon ── */
   .sc-head-icon { color: var(--wood); flex-shrink: 0; }
-
-  /* ── Spinner positioning ── */
   .ri-spinner-wrap { position: absolute; right: 34px; top: 50%; transform: translateY(-50%); }
   .ri-spinner-wrap-right { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); }
-
-  /* ── Search content collapse ── */
   .sc-content { max-height: 70vh; overflow-y: auto; transition: max-height 0.25s ease, opacity 0.2s ease; }
   .sc-content-collapsed { max-height: 0 !important; overflow: hidden; opacity: 0; }
-
-  /* ── Alt comp drawer classes (extracted from inline) ── */
   .alt-comp-header-row { display: flex; align-items: center; gap: 8px; }
   .alt-comp-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   .alt-comp-label { font-family: var(--ff-d); font-size: 15px; font-weight: 700; color: var(--txt); }
@@ -688,19 +752,81 @@ const CSS = `
     background: rgba(255,179,71,0.08); border: 1px solid rgba(255,179,71,0.25); color: var(--amber);
   }
 
-  /* ═══ RAIL ═══ */
-  .rail { position:absolute;left:0;top:0;bottom:0;width:var(--rail-w);background:var(--surface);border-right:1px solid var(--border);backdrop-filter:blur(28px);z-index:60;display:flex;flex-direction:column;align-items:center;padding:14px 0 18px;gap:3px; }
-  .r-logo { width:38px;height:38px;background:var(--wood-g);border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;flex-shrink:0;box-shadow:var(--sh-w),0 0 16px var(--wood-glow);color:#fff8f0; }
-  .r-btn { width:44px;height:44px;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:transparent;border:1px solid transparent;cursor:pointer;color:var(--txt3);transition:all .18s;position:relative; }
-  .r-btn:hover { background:var(--wood-dim);border-color:var(--border);color:var(--txt2); }
-  .r-btn.on { background:var(--wood-dim);border-color:var(--border2);color:var(--wood); }
-  .r-lbl { font-size:9px;font-weight:600;letter-spacing:.3px;color:inherit;font-family:var(--ff-b); }
-  .r-sep { width:26px;height:1px;background:var(--border);margin:5px 0;flex-shrink:0; }
-  .r-space { flex:1; }
-  .r-btn[data-tip]::after { content:attr(data-tip);position:absolute;left:calc(100% + 11px);top:50%;transform:translateY(-50%);background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:5px 12px;font-family:var(--ff-b);font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;z-index:999;box-shadow:var(--sh); }
-  .r-btn[data-tip]:hover::after { opacity:1; }
+  .rail {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: var(--rail-w);
+    background: rgba(8,13,18,0.97);
+    border-right: 1px solid rgba(13,148,136,0.12);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 0 18px;
+    gap: 3px;
+  }
+  .r-logo {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, #0d9488, #14b8a6);
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 20px rgba(13,148,136,0.35), 0 0 16px rgba(13,148,136,0.20);
+    color: #fff;
+  }
+  .r-btn {
+    width: 44px; height: 44px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    color: var(--txt3);
+    transition: all 0.18s ease;
+    position: relative;
+  }
+  .r-btn:hover {
+    background: rgba(13,148,136,0.10);
+    border-color: rgba(13,148,136,0.25);
+    color: #14b8a6;
+  }
+  .r-btn.on {
+    background: rgba(13,148,136,0.15);
+    border-color: rgba(13,148,136,0.40);
+    color: #14b8a6;
+  }
+  .r-btn[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: calc(100% + 11px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(8,13,18,0.97);
+    border: 1px solid rgba(13,148,136,0.30);
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-family: var(--ff-b);
+    font-size: 12px;
+    font-weight: 500;
+    color: #f1f5f9;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+    z-index: 999;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.40);
+  }
+  .r-btn[data-tip]:hover::after { opacity: 1; }
+  .r-sep { width: 26px; height: 1px; background: rgba(13,148,136,0.15); margin: 5px 0; flex-shrink: 0; }
+  .r-lbl { display: none; }
 
-  /* ═══ SIDE PANEL ═══ */
   .panel { position:absolute;left:var(--rail-w);top:0;bottom:0;width:var(--panel-w);background:var(--surface);border-right:1px solid var(--border);backdrop-filter:blur(28px);z-index:55;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);box-shadow:var(--sh-lg); }
   .panel.open { transform:translateX(0); }
   .p-head { padding:20px 18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0; }
@@ -734,13 +860,42 @@ const CSS = `
   .ab-c { width:15px;height:15px;border-radius:4px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;color:transparent; }
   .ab.on .ab-c { background:var(--wood);border-color:var(--wood);color:#1a0c04; }
 
-  /* ═══ SEARCH CARD ═══ */
-  .sc { position:absolute;top:14px;left:calc(var(--rail-w) + 14px);z-index:50;width:348px;background:var(--surface);border:1px solid var(--border);border-radius:20px;backdrop-filter:blur(32px);box-shadow:var(--sh-lg),var(--sh-w);transition:border-color .2s; }
-  .sc:focus-within { border-color:var(--border2); }
+  .sc {
+    position: absolute;
+    top: 14px;
+    left: calc(var(--rail-w) + 14px);
+    z-index: 50;
+    width: 348px;
+    background: rgba(8,13,18,0.97);
+    border: 1px solid rgba(232,168,112,0.18);
+    border-radius: 20px;
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    box-shadow: 0 18px 56px rgba(0,0,0,0.72), 0 4px 18px rgba(0,0,0,0.4), 0 0 0 1px rgba(13,148,136,0);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .sc:focus-within {
+    border-color: rgba(13,148,136,0.40);
+    box-shadow: 0 18px 56px rgba(0,0,0,0.72), 0 4px 18px rgba(0,0,0,0.4), 0 0 0 3px rgba(13,148,136,0.12);
+  }
   .sc.collapsed { border-radius: 20px; }
-  .sc-head { padding:14px 16px 6px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border); }
-  .sc-brand { font-family:var(--ff-d);font-size:15px;font-weight:700;color:var(--txt);letter-spacing:.2px;flex:1; }
-  .sc-brand span { color:var(--wood); }
+  .sc-head {
+    padding: 14px 16px 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(232,168,112,0.12);
+    background: linear-gradient(180deg, rgba(13,148,136,0.04) 0%, transparent 100%);
+  }
+  .sc-brand {
+    font-family: var(--ff-d);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--txt);
+    letter-spacing: 0.2px;
+    flex: 1;
+  }
+  .sc-brand span { color: var(--teal-light); }
   .sc-collapse-btn {
     background: var(--inset); border: 1px solid var(--border); border-radius: 7px;
     width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
@@ -752,9 +907,24 @@ const CSS = `
   .rr-dot { position:absolute;left:13px;top:50%;transform:translateY(-50%);width:8px;height:8px;border-radius:50%;pointer-events:none;z-index:1; }
   .rr-dot-g { background:var(--green);box-shadow:0 0 6px var(--green);animation:blk 2.4s ease infinite; }
   .rr-dot-r { background:var(--red);box-shadow:0 0 6px var(--red); }
-  .ri { width:100%;background:var(--inset);border:1px solid var(--border);border-radius:10px;padding:10px 34px 10px 28px;color:var(--txt);font-family:var(--ff-b);font-size:13.5px;outline:none;transition:border-color .18s,box-shadow .18s,background .18s; }
-  .ri::placeholder { color:var(--txt2); }
-  .ri:focus { border-color:var(--wood);background:rgba(232,168,112,.06);box-shadow:0 0 0 3px var(--wood-dim); }
+  .ri {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid #1e3040;
+    border-radius: 10px;
+    padding: 10px 34px 10px 28px;
+    color: #f1f5f9;
+    font-family: var(--ff-b);
+    font-size: 13.5px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+  .ri::placeholder { color: #475569; }
+  .ri:focus {
+    border-color: #0d9488;
+    background: rgba(13,148,136,0.06);
+    box-shadow: 0 0 0 3px rgba(13,148,136,0.12);
+  }
   .ri-btn { position:absolute;right:7px;top:50%;transform:translateY(-50%);background:var(--inset);border:1px solid var(--border);border-radius:7px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);transition:all .15s; }
   .ri-btn:hover { background:var(--wood-dim);border-color:var(--border2);color:var(--wood); }
   .ri-conn { display:flex;align-items:center;gap:8px;padding:0 12px;pointer-events:none; }
@@ -774,36 +944,152 @@ const CSS = `
   .spn { width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--wood);border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0; }
   .spn2 { width:14px;height:14px;border:2px solid rgba(255,255,255,.15);border-top-color:var(--wood);border-radius:50%;animation:spin .65s linear infinite; }
   .sc-modes { display:flex;gap:6px;padding:2px 14px 4px; }
-  .mp { flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:9px 4px;background:var(--inset);border:1px solid var(--border);border-radius:11px;cursor:pointer;transition:all .17s;color:var(--txt2);font-family:var(--ff-b); }
-  .mp:hover { border-color:var(--border2);color:var(--txt);background:var(--wood-dim); }
-  .mp.on { border-color:var(--wood);background:var(--wood-dim);color:var(--wood);box-shadow:0 0 12px var(--wood-glow); }
+  .mp {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 9px 4px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(232,168,112,0.14);
+    border-radius: 11px;
+    cursor: pointer;
+    transition: all 0.17s ease;
+    color: var(--txt3);
+    font-family: var(--ff-b);
+  }
+  .mp:hover {
+    border-color: rgba(13,148,136,0.30);
+    color: var(--txt2);
+    background: rgba(13,148,136,0.06);
+  }
+  .mp.on {
+    border-color: #0d9488;
+    background: rgba(13,148,136,0.12);
+    color: #14b8a6;
+    box-shadow: 0 0 12px rgba(13,148,136,0.15);
+  }
   .mp-i { flex-shrink:0; }
   .mp-l { font-size:10px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;color:inherit; }
-  .sc-find { margin:6px 14px 12px;width:calc(100% - 28px);padding:13px;background:var(--wood-g);border:none;border-radius:13px;color:#fff;font-family:var(--ff-d);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;box-shadow:var(--sh-w);letter-spacing:.2px; }
-  .sc-find:hover:not(:disabled) { transform:translateY(-1px);box-shadow:0 8px 28px rgba(232,168,112,.5);filter:brightness(1.1); }
-  .sc-find:disabled { background:var(--inset);color:var(--txt2);box-shadow:none;cursor:not-allowed;filter:none; }
-
-  /* ═══ ROUTE INFO BAR ═══ */
-  .rbar { position:absolute;bottom:22px;left:calc(var(--rail-w) + 14px);z-index:50;background:var(--surface);border:1px solid var(--border2);border-radius:16px;backdrop-filter:blur(24px);padding:13px 18px;display:flex;align-items:center;gap:14px;box-shadow:var(--sh),var(--sh-w);animation:su .24s ease;flex-wrap:wrap; }
-  .rs { display:flex;flex-direction:column;align-items:center;gap:2px; }
-  .rs-v { font-family:var(--ff-d);font-size:15px;font-weight:700;color:var(--wood);display:flex;align-items:center;gap:4px; }
-  .rs-l { font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--txt2); }
-  .rs-d { width:1px;height:24px;background:var(--border); }
-  .rs-cl { background:var(--red-dim);border:1px solid rgba(255,123,107,.3);border-radius:8px;padding:5px 10px;color:var(--red);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;margin-left:4px; }
-  .rs-cl:hover { background:rgba(255,123,107,.25);color:#ff9b8b; }
-  .rs-bus { background:var(--wood-dim);border:1px solid var(--wood);border-radius:8px;padding:5px 10px;color:var(--wood);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s; }
-  .rs-dir-btn { background:var(--blue-dim);border:1px solid var(--blue);border-radius:8px;padding:5px 10px;color:var(--blue);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px; }
-  .rs-dir-btn:hover { background:rgba(79,195,247,0.25); }
-  .rs-dir-btn.on { background:rgba(79,195,247,0.25); }
-  .rs-3d-btn {
-    background: var(--blue-dim); border: 1px solid var(--blue); border-radius: 8px;
-    padding: 5px 10px; color: var(--blue); font-size: 11px; font-weight: 700;
-    cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 5px;
+  .sc-find {
+    margin: 6px 14px 12px;
+    width: calc(100% - 28px);
+    padding: 13px;
+    background: linear-gradient(135deg, #0d9488, #14b8a6);
+    border: none;
+    border-radius: 13px;
+    color: #ffffff;
+    font-family: var(--ff-d);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 20px rgba(13,148,136,0.25);
+    letter-spacing: 0.2px;
   }
-  .rs-3d-btn:hover { background: rgba(79,195,247,0.25); }
-  .rs-3d-btn.on { background: var(--wood-g); border-color: var(--wood); color: #fff; }
+  .sc-find:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 28px rgba(13,148,136,0.45);
+    filter: brightness(1.08);
+  }
+  .sc-find:disabled {
+    background: #0d1520;
+    color: #334155;
+    box-shadow: none;
+    cursor: not-allowed;
+    filter: none;
+  }
 
-  /* ═══ MAP CONTROLS ═══ */
+  .rbar {
+    position: absolute;
+    bottom: 22px;
+    left: calc(var(--rail-w) + 14px);
+    z-index: 50;
+    background: rgba(8,13,18,0.97);
+    border: 1px solid rgba(13,148,136,0.25);
+    border-radius: 16px;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    padding: 13px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 18px 56px rgba(0,0,0,0.55), 0 0 0 1px rgba(13,148,136,0.08);
+    animation: su 0.24s ease;
+    flex-wrap: wrap;
+  }
+  .rs { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .rs-v {
+    font-family: var(--ff-d);
+    font-size: 15px;
+    font-weight: 700;
+    color: #14b8a6;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .rs-l {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--txt3);
+  }
+  .rs-d { width: 1px; height: 24px; background: rgba(13,148,136,0.2); }
+  .rs-cl {
+    background: var(--red-dim);
+    border: 1px solid rgba(255,123,107,0.3);
+    border-radius: 8px;
+    padding: 5px 10px;
+    color: var(--red);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-left: 4px;
+  }
+  .rs-cl:hover { background: rgba(255,123,107,0.25); color: #ff9b8b; }
+  .rs-dir-btn {
+    background: rgba(13,148,136,0.10);
+    border: 1px solid rgba(13,148,136,0.30);
+    border-radius: 8px;
+    padding: 5px 10px;
+    color: #14b8a6;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .rs-dir-btn:hover, .rs-dir-btn.on { background: rgba(13,148,136,0.20); }
+  .rs-3d-btn {
+    background: rgba(13,148,136,0.10);
+    border: 1px solid rgba(13,148,136,0.30);
+    border-radius: 8px;
+    padding: 5px 10px;
+    color: #14b8a6;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .rs-3d-btn.on {
+    background: linear-gradient(135deg, #0d9488, #14b8a6);
+    border-color: transparent;
+    color: #fff;
+  }
+
   .mt-bar { position:absolute;top:16px;right:14px;z-index:50;display:flex;gap:5px; }
   .mt-btn { background:var(--surface);border:1px solid var(--border);border-radius:9px;backdrop-filter:blur(20px);padding:7px 12px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--txt2);font-family:var(--ff-b);font-size:12px;font-weight:500;transition:all .15s;white-space:nowrap; }
   .mt-btn:hover { color:var(--txt);border-color:var(--border2); }
@@ -812,12 +1098,37 @@ const CSS = `
   .mc { width:40px;height:40px;background:var(--surface);border:1px solid var(--border);border-radius:10px;backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);transition:all .15s; }
   .mc:hover { border-color:var(--border2);color:var(--wood);background:var(--wood-dim); }
 
-  /* ═══ TOAST ═══ */
-  .toast { position:absolute;bottom:24px;left:50%;z-index:200;transform:translateX(-50%) translateY(12px);background:var(--surface);border:1px solid var(--border2);border-radius:50px;backdrop-filter:blur(20px);padding:9px 22px;font-size:12.5px;font-weight:500;color:var(--txt);white-space:nowrap;opacity:0;pointer-events:none;transition:all .24s;max-width:calc(100vw - 100px);text-align:center;overflow:hidden;text-overflow:ellipsis;box-shadow:var(--sh); }
-  .toast.vis { opacity:1;transform:translateX(-50%) translateY(0); }
+  .toast {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    z-index: 200;
+    transform: translateX(-50%) translateY(12px);
+    background: rgba(8,13,18,0.97);
+    border: 1px solid rgba(13,148,136,0.30);
+    border-radius: 50px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 9px 22px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #f1f5f9;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.24s ease;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(13,148,136,0.08);
+    max-width: calc(100vw - 100px);
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .toast.vis {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
   .sr { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0; }
 
-  /* ═══ DIRECTIONS PANEL ═══ */
   .dir-panel {
     overflow: visible !important; max-height: none !important;
     border-radius: 0 0 20px 20px; border: none !important;
@@ -843,7 +1154,7 @@ const CSS = `
   .dir-step {
     display: flex; align-items: flex-start; gap: 10px; padding: 9px 14px;
     transition: background .12s; cursor: default; border-left: 3px solid transparent;
-    min-height: 44px; /* touch target */
+    min-height: 44px;
   }
   .dir-step:hover { background: var(--inset); }
   .dir-step.transit-step { background: rgba(79,195,247,0.05); border-left-color: var(--blue); }
@@ -878,7 +1189,6 @@ const CSS = `
     color: var(--green); text-transform: uppercase; letter-spacing: .4px;
   }
 
-  /* ═══ DIRECTIONS ATTACHED ═══ */
   .directions-attached {
     position: absolute; left: calc(var(--rail-w) + 14px); width: 348px;
     background: var(--surface); border-top: 1px solid var(--border);
@@ -891,7 +1201,6 @@ const CSS = `
   .directions-attached::-webkit-scrollbar-track { background: transparent; border-radius: 10px; }
   .directions-attached::-webkit-scrollbar-thumb { background: var(--wood); border-radius: 10px; opacity: 0.7; }
 
-  /* ═══ 3D VIEW ═══ */
   .view3d-toggle {
     position: absolute; bottom: 80px; right: 60px; z-index: 50;
     background: var(--surface); border: 1px solid var(--border2); border-radius: 10px;
@@ -921,7 +1230,6 @@ const CSS = `
   }
   .hud-instruction-main.new-step { animation: step-slide-in 0.25s ease forwards; }
 
-  /* ═══ ALTERNATE DESTINATIONS ═══ */
   .alt-dest-panel {
     position: absolute; left: calc(var(--rail-w) + 14px); bottom: 90px;
     width: 380px; max-width: calc(100vw - var(--rail-w) - 28px);
@@ -997,7 +1305,6 @@ const CSS = `
   .alt-dest-continue-btn:hover { background: var(--red-dim); border-color: rgba(255,123,107,0.6); }
   .alt-loading-row { display: flex; align-items: center; gap: 10px; padding: 14px 16px; font-size: 12px; color: var(--txt2); }
 
-  /* Comparison Drawer */
   .alt-comparison-drawer {
     position: absolute; z-index: 55; background: var(--surface);
     border: 1px solid var(--border2); backdrop-filter: blur(28px);
@@ -1055,7 +1362,6 @@ const CSS = `
   }
   .comp-accept-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(232,168,112,0.5); filter: brightness(1.1); }
 
-  /* ═══ ALT COMP DRAWER (inline route comparison) ═══ */
   .alt-comp-drawer {
     position: absolute; bottom: 90px; left: calc(var(--rail-w) + 14px);
     width: 380px; max-width: calc(100vw - var(--rail-w) - 28px);
@@ -1089,11 +1395,10 @@ const CSS = `
   }
   .alt-comp-decline:hover { border-color: var(--border2); color: var(--txt); }
 
-  /* ═══ MOBILE RESPONSIVE ═══ */
   @media (max-width: 639px) {
     :root { --rail-w: 52px; }
     .r-btn { width: 38px; height: 38px; }
-    .r-lbl { font-size: 8px; }
+    .r-lbl { display: none; }
     .r-btn[data-tip]::after { display: none; }
     .sc { left: calc(var(--rail-w) + 8px); width: calc(100vw - var(--rail-w) - 16px); max-width: 360px; top: 10px; }
     .directions-attached { left: calc(var(--rail-w) + 8px); width: calc(100vw - var(--rail-w) - 16px); max-width: 360px; max-height: 55vh; }
@@ -1116,7 +1421,6 @@ const CSS = `
     .view3d-toggle { right: 8px; bottom: 70px; }
   }
 
-  /* ── Focus visible for keyboard nav ── */
   .r-btn:focus-visible, .p-item:focus-visible, .ab:focus-visible,
   .mp:focus-visible, .sc-find:focus-visible, .mc:focus-visible,
   .mt-btn:focus-visible, .rs-dir-btn:focus-visible, .rs-cl:focus-visible,
@@ -1126,9 +1430,22 @@ const CSS = `
     outline-offset: 2px;
   }
 
-  /* ── High contrast mode ── */
   .hc { --border: rgba(255,255,255,0.35); --border2: rgba(255,255,255,0.55); --txt2: #fff; --txt3: #ddd; }
   .hc .leaflet-tile-pane { filter: contrast(1.4) brightness(0.9); }
+
+  .safety-gauge-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .safety-gauge-wrap svg { overflow: visible; }
+  .p-item.city-active { border-color: #0d9488 !important; background: rgba(13,148,136,0.10) !important; }
+  .custom-cluster-icon { background: transparent !important; border: none !important; }
+  .gdelt-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 8px; font-weight: 700; letter-spacing: 0.5px;
+    text-transform: uppercase; color: #4fc3f7;
+    background: rgba(79,195,247,0.10); border: 1px solid rgba(79,195,247,0.25);
+    border-radius: 4px; padding: 1px 5px;
+  }
+  .hud-step-transition { animation: fadeInUp 0.25s ease forwards; }
+  .tabular { font-variant-numeric: tabular-nums; }
 `;
 
 const A11Y_FEATS = [
@@ -1245,8 +1562,10 @@ function getCatIcon(cat) {
 }
 
 function getSegmentColor(s) {
-  if (s >= 0.7) return "#8cd69c";
-  if (s >= 0.4) return "#ffb347";
+  if (s >= 0.80) return "#14b8a6";
+  if (s >= 0.65) return "#8cd69c";
+  if (s >= 0.50) return "#ffb347";
+  if (s >= 0.35) return "#f97316";
   return "#ff7b6b";
 }
 
@@ -1601,17 +1920,14 @@ export default function AccessibleMap() {
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [searchPanelCollapsed, setSearchPanelCollapsed] = useState(false);
 
-  // Alternate state – both routes to same destination and destinations
+  // Alternate state
   const [alternateRoutes, setAlternateRoutes] = useState([]);
   const [hoveredAlternateRoute, setHoveredAlternateRoute] = useState(null);
   const [selectedAlternateRoute, setSelectedAlternateRoute] = useState(null);
-  const [showAlternateRouteComparison, setShowAlternateRouteComparison] =
-    useState(false);
+  const [showAlternateRouteComparison, setShowAlternateRouteComparison] = useState(false);
   const [alternateDestinations, setAlternateDestinations] = useState([]);
-  const [showAlternateDestinations, setShowAlternateDestinations] =
-    useState(false);
-  const [alternateDestinationsLoading, setAlternateDestinationsLoading] =
-    useState(false);
+  const [showAlternateDestinations, setShowAlternateDestinations] = useState(false);
+  const [alternateDestinationsLoading, setAlternateDestinationsLoading] = useState(false);
   const [hoveredAlternate, setHoveredAlternate] = useState(null);
   const [hoveredAltDest, setHoveredAltDest] = useState(false);
   const [selectedAlternate, setSelectedAlternate] = useState(null);
@@ -1621,7 +1937,7 @@ export default function AccessibleMap() {
   const [noHazardNotice, setNoHazardNotice] = useState(false);
   const alternateCheckDoneRef = useRef(false);
 
-  // Search card position for directions panel
+  // Search card position
   const searchCardRef = useRef(null);
   const [searchCardBottom, setSearchCardBottom] = useState(250);
 
@@ -1637,6 +1953,9 @@ export default function AccessibleMap() {
   const [fromHiIdx, setFromHiIdx] = useState(-1);
   const [emergencies911, setEmergencies911] = useState([]);
   const [mapBounds, setMapBounds] = useState(null);
+  const [activeCity, setActiveCity] = useState("pittsburgh");
+  const routeInProgress = useRef(false);
+  const abortRef = useRef(null);
 
   // ResizeObserver for search card
   useEffect(() => {
@@ -1656,6 +1975,7 @@ export default function AccessibleMap() {
     };
   }, []);
 
+  // Compute memoized suggestion items
   const memoizedSuggItems = useMemo(
     () =>
       sugg.map((s, i) => {
@@ -2093,6 +2413,7 @@ export default function AccessibleMap() {
             max_lng: -79.5,
             include_emergencies: true,
             include_news: true,
+            city: activeCity,
           }),
         });
         const data = await res.json();
@@ -2145,7 +2466,7 @@ export default function AccessibleMap() {
     fetchAreaObstructions();
     const interval = setInterval(fetchAreaObstructions, 300000);
     return () => clearInterval(interval);
-  }, [loc]);
+  }, [loc, activeCity]);
 
   useEffect(() => {
     const fetchRoads = async () => {
@@ -2219,21 +2540,25 @@ export default function AccessibleMap() {
     fetchRoads();
   }, []);
 
+  // AbortController for search
   const searchPlaces = useCallback(
     (q) => {
-      if (debRef.current) clearTimeout(debRef.current);
+      if (abortRef.current) abortRef.current.abort();
       if (!q || q.length < 2) {
         setSugg([]);
         setSuggOpen(false);
         return;
       }
-      debRef.current = setTimeout(async () => {
+      abortRef.current = new AbortController();
+      const signal = abortRef.current.signal;
+      setTimeout(async () => {
         setSuggLoad(true);
         try {
           const [lat, lng] = loc;
           const d = await (
             await fetch(
               `https://api.tomtom.com/search/2/search/${encodeURIComponent(q)}.json?key=${TOMTOM_API_KEY}&limit=4&lat=${lat}&lon=${lng}&radius=50000&language=en-US`,
+              { signal }
             )
           ).json();
           const m = (d.results || [])
@@ -2248,11 +2573,12 @@ export default function AccessibleMap() {
           setSugg(m);
           setSuggOpen(m.length > 0);
           setHiIdx(-1);
-        } catch {
+        } catch (e) {
+          if (e.name !== "AbortError") console.error(e);
         } finally {
           setSuggLoad(false);
         }
-      }, 300);
+      }, 280);
     },
     [loc],
   );
@@ -2352,6 +2678,7 @@ export default function AccessibleMap() {
         body: JSON.stringify({
           route_coords: routeCoords,
           include_emergencies: true,
+          city: activeCity,
         }),
       });
       const data = await res.json();
@@ -2445,6 +2772,7 @@ export default function AccessibleMap() {
             wheelchair: mode === "wheelchair",
             blind: a11y.visionImpaired,
           },
+          city: activeCity,
         }),
       });
       const data = await res.json();
@@ -2501,6 +2829,7 @@ export default function AccessibleMap() {
           end_lng: endLng,
           start_time: new Date().toISOString(),
           max_walk_distance: 1000,
+          city: activeCity,
         }),
       });
       const data = await res.json();
@@ -2656,7 +2985,7 @@ export default function AccessibleMap() {
     }
   };
 
-  // ================== ALTERNATE ROUTES FETCH ==================
+  // ================== ALTERNATE ROUTES FETCH (FIXED: removed hilliness) ==================
   const fetchAlternateRoutes = useCallback(
     async (startLat, startLng, endLat, endLng, mode, primaryRouteCoords) => {
       const TOMTOM_KEY = import.meta.env.VITE_TOMTOM_API_KEY || "pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM";
@@ -2668,12 +2997,12 @@ export default function AccessibleMap() {
           color: ALTERNATE_COLORS.ROUTE_1.line,
         },
         {
-          params: { routeType: "eco", avoid: "unpavedRoads", hilliness: "low" },
+          params: { routeType: "eco", avoid: "unpavedRoads" },
           label: "Alt Route 2",
           color: ALTERNATE_COLORS.ROUTE_2.line,
         },
         {
-          params: { routeType: "thrilling", windingness: "normal", hilliness: "normal" },
+          params: { routeType: "fastest" },
           label: "Alt Route 3",
           color: "#f97316",
         },
@@ -2703,7 +3032,6 @@ export default function AccessibleMap() {
             for (const pt of points) pts.push([pt.latitude, pt.longitude]);
           }
           if (pts.length < 2) continue;
-          // Improved distinctness check: require at least 10% of points deviate >30m from primary
           let deviatingPoints = 0;
           const checkInterval = Math.max(1, Math.floor(pts.length / 20));
           for (let pi = 0; pi < pts.length; pi += checkInterval) {
@@ -2787,7 +3115,6 @@ export default function AccessibleMap() {
           );
         }
       }
-      // Deduplicate: if two routes share their 10% and 90% waypoints within 50m, keep the safer one
       const deduped = [];
       for (const route of results) {
         const q1idx = Math.floor(route.routeCoords.length * 0.10);
@@ -2807,7 +3134,6 @@ export default function AccessibleMap() {
       results.length = 0;
       results.push(...deduped);
       results.sort((a, b) => a.hazardCount - b.hazardCount);
-      // Tag each result with whether it's the only one found
       results.forEach((r, i) => {
         r.isOnlyRoute = results.length === 1;
       });
@@ -2818,11 +3144,8 @@ export default function AccessibleMap() {
 
   const handleAcceptAlternateRoute = useCallback(
     (altRoute) => {
-      // 1. Update all route state atomically
       setRoutePath(altRoute.routeCoords);
       setDest(altRoute.routeCoords[altRoute.routeCoords.length - 1]);
-      
-      // 2. Build segments from the new route
       const segs = [];
       for (let i = 0; i < altRoute.routeCoords.length - 1; i++) {
         segs.push({
@@ -2833,11 +3156,7 @@ export default function AccessibleMap() {
         });
       }
       setRouteSegments(segs);
-      
-      // 3. Update route info bar
       setRouteInfo({ distance: altRoute.distance, duration: altRoute.duration, type: mode });
-      
-      // 4. Update directions panel with alternate route's steps
       setRouteSteps(altRoute.steps && altRoute.steps.length > 0
         ? altRoute.steps
         : [
@@ -2846,8 +3165,6 @@ export default function AccessibleMap() {
           ]
       );
       setShowDirections(true);
-      
-      // 5. Dismiss all alternate UI (do NOT set alternatesDismissed)
       setAlternateRoutes([]);
       setAlternateDestinations([]);
       setShowAlternateDestinations(false);
@@ -2855,8 +3172,6 @@ export default function AccessibleMap() {
       setSelectedAlternateRoute(null);
       setHoveredAlternateRoute(null);
       alternateCheckDoneRef.current = true;
-      
-      // 6. Start navigation on new route
       say(`Route updated — using ${altRoute.label}`);
       setTimeout(() => startNavigation(altRoute.routeCoords), 300);
     },
@@ -2906,6 +3221,8 @@ export default function AccessibleMap() {
       say("Please enter a destination");
       return;
     }
+    if (routeInProgress.current) return;
+    routeInProgress.current = true;
     setIsLoading(true);
     say("Finding your safe, accessible route…");
     setRouteSteps([]);
@@ -2930,7 +3247,6 @@ export default function AccessibleMap() {
     setAlternateDestinations([]);
     setShowAlternateDestinations(false);
 
-    // --- Alternate suggestion helper (hoisted) ---
     const checkAndSuggestAlternates = async (
       routeCoords,
       destLat,
@@ -2952,6 +3268,7 @@ export default function AccessibleMap() {
             use_custom_bbox: true,
             min_lat: 40.2, max_lat: 40.8, min_lng: -80.8, max_lng: -79.5,
             include_emergencies: false, include_news: true,
+            city: activeCity,
           }),
         });
         const obsData = await obsRes.json();
@@ -2971,7 +3288,6 @@ export default function AccessibleMap() {
         console.warn('Fresh hazard fetch failed, using cached:', e);
       }
 
-      // Only high-severity hazards (≥0.75) within 60m of the route
       const highSeverityHazards = freshHazards.filter(h => (h.severity || 0) >= 0.75);
       const highSeverityZones = freshZones.filter(z => (z.severity || 0.7) >= 0.7);
       const routeHazardCheck = doesRoutePassThroughHazards(
@@ -2981,18 +3297,14 @@ export default function AccessibleMap() {
         60,
       );
 
-      // If route is clear, show notice and exit
       if (!routeHazardCheck.hasHazards) {
         setNoHazardNotice(true);
         setTimeout(() => setNoHazardNotice(false), 5000);
         return;
       }
 
-      // Route has real hazards – fetch alternate routes to same destination AND alternate destinations
       setRouteHazardSummary(routeHazardCheck);
       setAlternateDestinationsLoading(true);
-      
-      // 1. Alternate routes to same destination (safer paths)
       const altRoutes = await fetchAlternateRoutes(
         startCoords.lat, startCoords.lng,
         destLat, destLng,
@@ -3002,10 +3314,10 @@ export default function AccessibleMap() {
       if (altRoutes && altRoutes.length > 0) {
         setAlternateRoutes(altRoutes);
       }
-      
-      // 2. Alternate destinations (different location)
+      let altDests = [];
       try {
-        const altDests = await computeAlternateDestinations(
+        const { computeAlternateDestinations: computeAlts } = useAlternateDestinations();
+        altDests = await computeAlts(
           destLat, destLng, destName,
           startCoords.lat, startCoords.lng,
           freshHazards, freshZones, mode
@@ -3014,15 +3326,16 @@ export default function AccessibleMap() {
           setAlternateDestinations(altDests.slice(0, 1));
           setShowAlternateDestinations(true);
         }
+      } catch (e) {
+        console.warn("Alternate destinations failed:", e);
+        altDests = [];
       } finally {
         setAlternateDestinationsLoading(false);
       }
-      
-      if (altRoutes?.length > 0 || (altDests?.length > 0)) {
-        say(`Hazard on route — ${altRoutes?.length || 0} safer path(s) and ${altDests?.length || 0} alternate destination(s) found`);
+      if (altRoutes?.length > 0 || altDests.length > 0) {
+        say(`Hazard on route — ${altRoutes?.length || 0} safer path(s) and ${altDests.length} alternate destination(s) found`);
       }
     };
-    // --- end hoisted helper ---
 
     try {
       const geoData = await (
@@ -3033,6 +3346,7 @@ export default function AccessibleMap() {
       if (!geoData.results?.length) {
         say("Couldn't find that location");
         setIsLoading(false);
+        routeInProgress.current = false;
         return;
       }
       const destPos = geoData.results[0].position;
@@ -3056,10 +3370,8 @@ export default function AccessibleMap() {
         setStartMarker(null);
       }
 
-      // Capture a frozen copy of startCoords to use in the async closure (Fix 2)
       const frozenStart = { lat: startCoords.lat, lng: startCoords.lng };
 
-      // TRANSIT MODE (no alternates)
       if (mode === "transit") {
         try {
           say("Searching for transit routes...");
@@ -3075,6 +3387,7 @@ export default function AccessibleMap() {
                 end_lng: destCoords.lng,
                 start_time: new Date().toISOString(),
                 max_walk_distance: 1000,
+                city: activeCity,
               }),
             },
           );
@@ -3112,6 +3425,7 @@ export default function AccessibleMap() {
                 .length,
               walking_steps: bestRoute.steps.filter((s) => s.type === "walk")
                 .length,
+              safetyScore: bestRoute.safety?.overall_safety ?? null,
             });
             const nr = [
               {
@@ -3133,6 +3447,7 @@ export default function AccessibleMap() {
             setTimeout(() => checkRouteForObstructions(allCoords), 500);
             setTimeout(() => startNavigation(allCoords), 300);
             setIsLoading(false);
+            routeInProgress.current = false;
             return;
           } else
             say(
@@ -3145,7 +3460,6 @@ export default function AccessibleMap() {
         }
       }
 
-      // WALKING / WHEELCHAIR MODE
       const routeRes = await fetch(
         "http://127.0.0.1:5000/api/calculate-route",
         {
@@ -3163,6 +3477,7 @@ export default function AccessibleMap() {
               wellLitAreas: a11y.visionImpaired,
               avoidStairs: true,
             },
+            city: activeCity,
           }),
         },
       );
@@ -3234,6 +3549,7 @@ export default function AccessibleMap() {
           distance: data.route.distance,
           duration: data.route.duration,
           type: "pedestrian",
+          safetyScore: data.route.safety?.overall_safety ?? null,
         });
         const nr = [
           {
@@ -3249,7 +3565,6 @@ export default function AccessibleMap() {
         setShow3D(true);
         setTimeout(() => checkRouteForObstructions(coords), 500);
         setTimeout(() => startNavigation(coords), 300);
-        // Call alternate suggestion with the frozen start coordinates (Fix 2)
         const capturedDestLat = destCoords.lat;
         const capturedDestLng = destCoords.lng;
         const capturedDestName = toVal;
@@ -3271,6 +3586,7 @@ export default function AccessibleMap() {
       say("Connection error — is the server running?");
     } finally {
       setIsLoading(false);
+      routeInProgress.current = false;
     }
   };
 
@@ -3287,29 +3603,10 @@ export default function AccessibleMap() {
       () => say("Couldn't get location. Using default."),
     );
   };
-  const MapZoomTracker = () => {
-    const map = useMap();
-    useEffect(() => {
-      const update = () => {
-        setCurrentZoom(map.getZoom());
-        const b = map.getBounds();
-        setMapBounds(b);
-      };
-      map.on("zoomend", update);
-      map.on("moveend", update);
-      update();
-      return () => {
-        map.off("zoomend", update);
-        map.off("moveend", update);
-      };
-    }, [map]);
-    return null;
-  };
   const togglePanel = (name) => setPanel((p) => (p === name ? null : name));
   const hc = a11y.highContrast;
   const lt = a11y.largeText;
 
-  // Alternate Destinations Hook
   const {
     computeAlternateDestinations,
     cancelComputation,
@@ -3334,6 +3631,7 @@ export default function AccessibleMap() {
         distance: alt.routeDistance,
         duration: alt.routeDuration,
         type: mode,
+        safetyScore: alt.safetyScore,
       });
       setRouteSteps(alt.routeSteps || []);
       setShowDirections(true);
@@ -3378,7 +3676,7 @@ export default function AccessibleMap() {
               filter: hc ? "contrast(1.35)" : "none",
             }}
           >
-            <MapZoomTracker />
+            <MapZoomTracker onZoomChange={setCurrentZoom} onBoundsChange={setMapBounds} />
             <ChangeView
               center={loc}
               zoom={zoom}
@@ -3412,53 +3710,136 @@ export default function AccessibleMap() {
               </Marker>
             )}
 
-            {/* Construction zones */}
-            {visibleConstructionZones.map((zone, idx) => (
-              <ObstructionMarker
-                key={`cz-${idx}`}
-                lat={zone.lat}
-                lng={zone.lng}
-                type="construction"
-                iconCategory={zone.icon_category}
-                description={zone.description}
-                radius={zone.radius}
-                zoomLevel={currentZoom}
-                extra={
-                  zone.distance_meters ? (
-                    <div className="popup-distance">
-                      📍 {zone.distance_meters.toFixed(0)}m from route
-                    </div>
-                  ) : null
-                }
-              />
-            ))}
-
-            {/* Active hazards */}
-            {visibleActiveHazards.map((hazard, idx) => (
-              <ObstructionMarker
-                key={`hz-${idx}`}
-                lat={hazard.lat}
-                lng={hazard.lng}
-                type={hazard.type || "hazard"}
-                iconCategory={hazard.icon_category}
-                description={hazard.description}
-                radius={hazard.radius}
-                zoomLevel={currentZoom}
-                extra={
-                  hazard.severity ? (
-                    <div className="popup-severity">
-                      <span
-                        style={{
-                          color: hazard.severity > 0.7 ? "#ff7b6b" : "#ffb347",
-                        }}
-                      >
-                        ⚡ Severity: {Math.round(hazard.severity * 100)}%
-                      </span>
-                    </div>
-                  ) : null
-                }
-              />
-            ))}
+            {/* Clustered hazards and construction */}
+            <MarkerClusterGroup
+              chunkedLoading
+              showCoverageOnHover={false}
+              maxClusterRadius={60}
+              iconCreateFunction={(cluster) => {
+                const count = cluster.getChildCount();
+                const color = count > 10 ? "#ff7b6b" : count > 5 ? "#ffb347" : "#e8a870";
+                return L.divIcon({
+                  html: `<div style="
+                    width: 36px; height: 36px; border-radius: 50%;
+                    background: rgba(0,0,0,0.85); border: 2px solid ${color};
+                    display: flex; align-items: center; justify-content: center;
+                    font-family: DM Sans, sans-serif; font-size: 12px;
+                    font-weight: 700; color: ${color};
+                    box-shadow: 0 0 12px ${color}40;
+                  ">${count}</div>`,
+                  className: "custom-cluster-icon",
+                  iconSize: [36, 36],
+                  iconAnchor: [18, 18],
+                });
+              }}
+            >
+              {visibleConstructionZones.map((zone, idx) => (
+                <ObstructionMarker
+                  key={`cz-${idx}`}
+                  lat={zone.lat}
+                  lng={zone.lng}
+                  type="construction"
+                  iconCategory={zone.icon_category}
+                  description={zone.description}
+                  radius={zone.radius}
+                  zoomLevel={currentZoom}
+                  extra={
+                    zone.distance_meters ? (
+                      <div className="popup-distance">
+                        📍 {zone.distance_meters.toFixed(0)}m from route
+                      </div>
+                    ) : null
+                  }
+                />
+              ))}
+              {visibleActiveHazards.map((hazard, idx) => (
+                <ObstructionMarker
+                  key={`hz-${idx}`}
+                  lat={hazard.lat}
+                  lng={hazard.lng}
+                  type={hazard.type || "hazard"}
+                  iconCategory={hazard.icon_category}
+                  description={hazard.description}
+                  radius={hazard.radius}
+                  zoomLevel={currentZoom}
+                  extra={
+                    hazard.severity ? (
+                      <div className="popup-severity">
+                        <span
+                          style={{
+                            color: hazard.severity > 0.7 ? "#ff7b6b" : "#ffb347",
+                          }}
+                        >
+                          ⚡ Severity: {Math.round(hazard.severity * 100)}%
+                        </span>
+                      </div>
+                    ) : null
+                  }
+                />
+              ))}
+              {visibleEmergencies.map((emergency, idx) => {
+                const EmIcon = EMERGENCY_ICONS[emergency.type] || ShieldAlert;
+                const isHigh = emergency.severity > 0.7;
+                const iconColor = isHigh ? "#ff4444" : "#ff8844";
+                const markerSize = Math.min(
+                  42,
+                  Math.max(28, 28 + ((currentZoom - 12) / 6) * 14),
+                );
+                return (
+                  <Marker
+                    key={`emergency-${idx}`}
+                    position={[emergency.lat, emergency.lng]}
+                    icon={makeLucideIcon(
+                      EmIcon,
+                      iconColor,
+                      "#ff0000",
+                      markerSize,
+                    )}
+                  >
+                    <Popup>
+                      <div className="emergency-popup">
+                        <div className="emergency-popup-header">
+                          <EmIcon size={18} color="#ff4444" />
+                          <strong className="emergency-popup-title">
+                            🚨 911 EMERGENCY
+                          </strong>
+                        </div>
+                        <div className="emergency-popup-desc">
+                          {emergency.description ||
+                            `${emergency.type?.toUpperCase()} incident`}
+                        </div>
+                        <div className="emergency-popup-meta">
+                          {emergency.subtype && (
+                            <span className="emergency-popup-tag">
+                              📋 {emergency.subtype}
+                            </span>
+                          )}
+                          {emergency.severity && (
+                            <span>
+                              ⚡ Severity: {Math.round(emergency.severity * 100)}%
+                            </span>
+                          )}
+                        </div>
+                        {emergency.timestamp && (
+                          <div className="emergency-popup-time">
+                            🕒 Reported:{" "}
+                            {new Date(emergency.timestamp).toLocaleString()}
+                          </div>
+                        )}
+                        {emergency.distance_meters && (
+                          <div className="emergency-popup-time">
+                            📍 {emergency.distance_meters.toFixed(0)}m from center
+                          </div>
+                        )}
+                        <div className="emergency-popup-footer">
+                          ⚠️ Active emergency response in area
+                        </div>
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+            </MarkerClusterGroup>
 
             {/* Obstructed roads */}
             {obstructedRoads.map((seg, idx) => (
@@ -3469,72 +3850,7 @@ export default function AccessibleMap() {
               />
             ))}
 
-            {/* 911 Emergencies */}
-            {visibleEmergencies.map((emergency, idx) => {
-              const EmIcon = EMERGENCY_ICONS[emergency.type] || ShieldAlert;
-              const isHigh = emergency.severity > 0.7;
-              const iconColor = isHigh ? "#ff4444" : "#ff8844";
-              const markerSize = Math.min(
-                42,
-                Math.max(28, 28 + ((currentZoom - 12) / 6) * 14),
-              );
-
-              return (
-                <Marker
-                  key={`emergency-${idx}`}
-                  position={[emergency.lat, emergency.lng]}
-                  icon={makeLucideIcon(
-                    EmIcon,
-                    iconColor,
-                    "#ff0000",
-                    markerSize,
-                  )}
-                >
-                  <Popup>
-                    <div className="emergency-popup">
-                      <div className="emergency-popup-header">
-                        <EmIcon size={18} color="#ff4444" />
-                        <strong className="emergency-popup-title">
-                          🚨 911 EMERGENCY
-                        </strong>
-                      </div>
-                      <div className="emergency-popup-desc">
-                        {emergency.description ||
-                          `${emergency.type?.toUpperCase()} incident`}
-                      </div>
-                      <div className="emergency-popup-meta">
-                        {emergency.subtype && (
-                          <span className="emergency-popup-tag">
-                            📋 {emergency.subtype}
-                          </span>
-                        )}
-                        {emergency.severity && (
-                          <span>
-                            ⚡ Severity: {Math.round(emergency.severity * 100)}%
-                          </span>
-                        )}
-                      </div>
-                      {emergency.timestamp && (
-                        <div className="emergency-popup-time">
-                          🕒 Reported:{" "}
-                          {new Date(emergency.timestamp).toLocaleString()}
-                        </div>
-                      )}
-                      {emergency.distance_meters && (
-                        <div className="emergency-popup-time">
-                          📍 {emergency.distance_meters.toFixed(0)}m from center
-                        </div>
-                      )}
-                      <div className="emergency-popup-footer">
-                        ⚠️ Active emergency response in area
-                      </div>
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
-
-            {/* TRANSIT / WALKING ROUTES (unchanged) */}
+            {/* TRANSIT / WALKING ROUTES */}
             {transitSegments.length > 0
               ? transitSegments.map((seg, idx) => {
                   const isTransit = seg.type === "transit";
@@ -4001,7 +4317,7 @@ export default function AccessibleMap() {
           </button>
         )}
 
-        {/* ═══ RAIL NAVIGATION ═══ */}
+        {/* ═══ RAIL NAVIGATION (NO r-lbl spans) ═══ */}
         <nav className="rail" role="navigation" aria-label="Main navigation">
           <div className="r-logo" aria-hidden="true">
             <Accessibility size={20} />
@@ -4014,7 +4330,6 @@ export default function AccessibleMap() {
             aria-pressed={panel === "saved"}
           >
             <Bookmark size={18} />
-            <span className="r-lbl">Saved</span>
           </button>
           <button
             className={`r-btn${panel === "recents" ? " on" : ""}`}
@@ -4024,7 +4339,6 @@ export default function AccessibleMap() {
             aria-pressed={panel === "recents"}
           >
             <Clock size={18} />
-            <span className="r-lbl">Recent</span>
           </button>
           <button
             className={`r-btn${showTransitInfo ? " on" : ""}`}
@@ -4033,7 +4347,6 @@ export default function AccessibleMap() {
             aria-label="Transit info"
           >
             <Bus size={18} />
-            <span className="r-lbl">Transit</span>
           </button>
           <div className="r-sep" aria-hidden="true" />
           <button
@@ -4044,7 +4357,6 @@ export default function AccessibleMap() {
             aria-pressed={panel === "a11y"}
           >
             <Settings size={18} />
-            <span className="r-lbl">Access</span>
           </button>
           <button
             className={`r-btn${showVoiceModal ? " on" : ""}`}
@@ -4054,7 +4366,6 @@ export default function AccessibleMap() {
             aria-pressed={showVoiceModal}
           >
             <Mic size={18} />
-            <span className="r-lbl">Voice</span>
           </button>
           <div className="r-space" aria-hidden="true" />
           <button
@@ -4123,7 +4434,7 @@ export default function AccessibleMap() {
                   </div>
                 </div>
                 <div>
-                  <div className="p-sec">Nearby in Pittsburgh</div>
+                  <div className="p-sec">Nearby in {activeCity === "pittsburgh" ? "Pittsburgh" : "Area"}</div>
                   <div className="p-list">
                     {NEARBY_PITTSBURGH.map((d) => (
                       <button
@@ -4255,6 +4566,40 @@ export default function AccessibleMap() {
                         </span>
                         <span className="ab-l">{f.l}</span>
                         <span className="ab-c">{prefs[f.k] ? "✓" : ""}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="p-sec">City</div>
+                  <div className="p-list">
+                    {[
+                      { key: "pittsburgh", name: "Pittsburgh, PA", lat: 40.4406, lng: -79.9959 },
+                      { key: "philadelphia", name: "Philadelphia, PA", lat: 39.9526, lng: -75.1652 },
+                      { key: "cleveland", name: "Cleveland, OH", lat: 41.4993, lng: -81.6944 },
+                      { key: "columbus", name: "Columbus, OH", lat: 39.9612, lng: -82.9988 },
+                      { key: "cincinnati", name: "Cincinnati, OH", lat: 39.1031, lng: -84.5120 },
+                    ].map((city) => (
+                      <button
+                        key={city.key}
+                        className={`p-item${activeCity === city.key ? " sel" : ""}`}
+                        onClick={() => {
+                          setActiveCity(city.key);
+                          setLoc([city.lat, city.lng]);
+                          setFromVal("Current Location");
+                          clearRoute();
+                          setPanel(null);
+                          say(`Switched to ${city.name}`);
+                        }}
+                      >
+                        <div className="p-ico"><MapPin size={15} /></div>
+                        <div className="p-item-text">
+                          <div className="p-name">{city.name}</div>
+                          <div className="p-sub">{activeCity === city.key ? "Active" : "Tap to switch"}</div>
+                        </div>
+                        {activeCity === city.key && (
+                          <span className="p-arr-active"><ChevronRight size={14} /></span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -4452,7 +4797,7 @@ export default function AccessibleMap() {
           </div>
         </div>
 
-        {/* ═══ NO HAZARD NOTICE (shows only when route is clean) ═══ */}
+        {/* ═══ NO HAZARD NOTICE ═══ */}
         {routeInfo && noHazardNotice && mode !== 'transit' && (
           <div style={{
             position: 'absolute',
@@ -4518,7 +4863,7 @@ export default function AccessibleMap() {
           </div>
         )}
 
-        {/* ═══ ALTERNATE DESTINATIONS PANEL (both routes and destinations) ═══ */}
+        {/* ═══ ALTERNATE DESTINATIONS PANEL ═══ */}
         {mode !== 'transit' &&
           (alternateRoutes.length > 0 || (showAlternateDestinations && alternateDestinations.length > 0)) &&
           !alternatesDismissed && (
@@ -4690,7 +5035,7 @@ export default function AccessibleMap() {
           </button>
         </div>
 
-        {/* ═══ ROUTE INFO BAR ═══ */}
+        {/* ═══ ROUTE INFO BAR (WITH SAFETY GAUGE) ═══ */}
         {routeInfo && (
           <div className="rbar" role="region" aria-label="Route information">
             <div className="rs">
@@ -4703,6 +5048,12 @@ export default function AccessibleMap() {
               <div className="rs-l">Est. Time</div>
             </div>
             <div className="rs-d" />
+            {routeInfo.safetyScore != null && (
+              <>
+                <SafetyGauge score={routeInfo.safetyScore} />
+                <div className="rs-d" />
+              </>
+            )}
             <div className="rs">
               <div className="rs-v rs-v-green">
                 <Accessibility size={16} />
@@ -4932,6 +5283,7 @@ export default function AccessibleMap() {
                 distance: routeData.route.distance,
                 duration: routeData.route.duration,
                 type: routeData.route.travel_mode,
+                safetyScore: routeData.route.safety?.overall_safety ?? null,
               });
               setShow3D(true);
               startNavigation(coords);
