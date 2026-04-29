@@ -21,7 +21,7 @@ from flask_cors import CORS
 import requests
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables    
 load_dotenv()
 
 # Configure logging

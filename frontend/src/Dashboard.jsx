@@ -117,7 +117,8 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-const TOMTOM_API_KEY = import.meta.env.VITE_TOMTOM_API_KEY || "pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM";
+const TOMTOM_API_KEY =
+  import.meta.env.VITE_TOMTOM_API_KEY;
 
 const destinationIcon = new L.Icon({
   iconUrl:
@@ -375,12 +376,37 @@ function isDestinationInHazardZone(
 
 function inferCategory(destinationName, destinationAddress = "") {
   const name = (destinationName + " " + destinationAddress).toLowerCase();
-  
-  if (/stadium|arena|ballpark|acrisure|pnc park|ppg paints|petersen|consol|heinz field|coliseum|amphitheater|pavilion|sportsplex/.test(name)) return 'stadium';
-  if (/theater|theatre|cinema|imax|playhouse|concert hall|performance hall|opera house/.test(name)) return 'theater';
-  if (/zoo|aquarium|botanical|planetarium|nature center|natural history|children.s museum/.test(name)) return 'attraction';
-  if (/hotel|inn|motel|marriott|hilton|hyatt|sheraton|westin|hampton|courtyard|residence inn/.test(name)) return 'hotel';
-  if (/gym|fitness|ymca|rec center|recreation center|crossfit|planet fitness/.test(name)) return 'gym';
+
+  if (
+    /stadium|arena|ballpark|acrisure|pnc park|ppg paints|petersen|consol|heinz field|coliseum|amphitheater|pavilion|sportsplex/.test(
+      name,
+    )
+  )
+    return "stadium";
+  if (
+    /theater|theatre|cinema|imax|playhouse|concert hall|performance hall|opera house/.test(
+      name,
+    )
+  )
+    return "theater";
+  if (
+    /zoo|aquarium|botanical|planetarium|nature center|natural history|children.s museum/.test(
+      name,
+    )
+  )
+    return "attraction";
+  if (
+    /hotel|inn|motel|marriott|hilton|hyatt|sheraton|westin|hampton|courtyard|residence inn/.test(
+      name,
+    )
+  )
+    return "hotel";
+  if (
+    /gym|fitness|ymca|rec center|recreation center|crossfit|planet fitness/.test(
+      name,
+    )
+  )
+    return "gym";
   if (/museum|gallery|exhibit|art|science center/.test(name)) return "museum";
   if (
     /hospital|medical|upmc|allegheny health|urgent care|clinic|er |emergency room/.test(
@@ -521,31 +547,77 @@ const MapZoomTracker = React.memo(({ onZoomChange, onBoundsChange }) => {
 // ML Safety Gauge Component
 const SafetyGauge = ({ score }) => {
   const pct = Math.round(score * 100);
-  const color = score >= 0.75 ? "#14b8a6" : score >= 0.5 ? "#ffb347" : "#ff7b6b";
+  const color =
+    score >= 0.75 ? "#14b8a6" : score >= 0.5 ? "#ffb347" : "#ff7b6b";
   const circumference = 2 * Math.PI * 14;
   const strokeDash = (pct / 100) * circumference;
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 2,
+      }}
+    >
       <div style={{ position: "relative", width: 36, height: 36 }}>
-        <svg width="36" height="36" viewBox="0 0 36 36" style={{ transform: "rotate(-90deg)" }}>
-          <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
+        <svg
+          width="36"
+          height="36"
+          viewBox="0 0 36 36"
+          style={{ transform: "rotate(-90deg)" }}
+        >
           <circle
-            cx="18" cy="18" r="14" fill="none"
-            stroke={color} strokeWidth="3"
+            cx="18"
+            cy="18"
+            r="14"
+            fill="none"
+            stroke="rgba(255,255,255,0.06)"
+            strokeWidth="3"
+          />
+          <circle
+            cx="18"
+            cy="18"
+            r="14"
+            fill="none"
+            stroke={color}
+            strokeWidth="3"
             strokeDasharray={`${strokeDash} ${circumference}`}
             strokeLinecap="round"
-            style={{ transition: "stroke-dasharray 0.8s cubic-bezier(0.22,1,0.36,1), stroke 0.4s ease" }}
+            style={{
+              transition:
+                "stroke-dasharray 0.8s cubic-bezier(0.22,1,0.36,1), stroke 0.4s ease",
+            }}
           />
         </svg>
-        <div style={{
-          position: "absolute", inset: 0,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "9px", fontWeight: 700,
-          color, fontVariantNumeric: "tabular-nums",
-          transform: "rotate(0deg)"
-        }}>{pct}</div>
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "9px",
+            fontWeight: 700,
+            color,
+            fontVariantNumeric: "tabular-nums",
+            transform: "rotate(0deg)",
+          }}
+        >
+          {pct}
+        </div>
       </div>
-      <div style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.5px", textTransform: "uppercase", color: "var(--txt3)" }}>Safety</div>
+      <div
+        style={{
+          fontSize: "9px",
+          fontWeight: 600,
+          letterSpacing: "0.5px",
+          textTransform: "uppercase",
+          color: "var(--txt3)",
+        }}
+      >
+        Safety
+      </div>
     </div>
   );
 };
@@ -1562,9 +1634,9 @@ function getCatIcon(cat) {
 }
 
 function getSegmentColor(s) {
-  if (s >= 0.80) return "#14b8a6";
+  if (s >= 0.8) return "#14b8a6";
   if (s >= 0.65) return "#8cd69c";
-  if (s >= 0.50) return "#ffb347";
+  if (s >= 0.5) return "#ffb347";
   if (s >= 0.35) return "#f97316";
   return "#ff7b6b";
 }
@@ -1890,12 +1962,14 @@ export default function AccessibleMap() {
       return [];
     }
   });
+  
   const [obstructedRoads, setObstructedRoads] = useState([]);
   const [currentZoom, setCurrentZoom] = useState(13);
   const [show3D, setShow3D] = useState(false);
   const [walkerPosition, setWalkerPosition] = useState(null);
-  const [walkerIdx, setWalkerIdx] = useState(0);
-  const walkerIntervalRef = useRef(null);
+  // Demo mode and real buildings toggles
+  const [demoMode, setDemoMode] = useState(false);
+  const [useRealBuildings, setUseRealBuildings] = useState(false);
 
   // GPS/Navigation state
   const gpsWatchIdRef = useRef(null);
@@ -1924,10 +1998,13 @@ export default function AccessibleMap() {
   const [alternateRoutes, setAlternateRoutes] = useState([]);
   const [hoveredAlternateRoute, setHoveredAlternateRoute] = useState(null);
   const [selectedAlternateRoute, setSelectedAlternateRoute] = useState(null);
-  const [showAlternateRouteComparison, setShowAlternateRouteComparison] = useState(false);
+  const [showAlternateRouteComparison, setShowAlternateRouteComparison] =
+    useState(false);
   const [alternateDestinations, setAlternateDestinations] = useState([]);
-  const [showAlternateDestinations, setShowAlternateDestinations] = useState(false);
-  const [alternateDestinationsLoading, setAlternateDestinationsLoading] = useState(false);
+  const [showAlternateDestinations, setShowAlternateDestinations] =
+    useState(false);
+  const [alternateDestinationsLoading, setAlternateDestinationsLoading] =
+    useState(false);
   const [hoveredAlternate, setHoveredAlternate] = useState(null);
   const [hoveredAltDest, setHoveredAltDest] = useState(false);
   const [selectedAlternate, setSelectedAlternate] = useState(null);
@@ -2108,23 +2185,6 @@ export default function AccessibleMap() {
     [activeHazards],
   );
 
-  const navState3D = useMemo(() => {
-    if (!routePath.length) return "idle";
-    if (walkerIdx >= routePath.length - 1) return "arrived";
-    return "walking";
-  }, [routePath, walkerIdx]);
-  const remainingDist3D = useMemo(() => {
-    if (!routePath.length || walkerIdx >= routePath.length - 1) return 0;
-    let d = 0;
-    for (let i = walkerIdx; i < routePath.length - 1; i++)
-      d += haversineDistance(
-        routePath[i][0],
-        routePath[i][1],
-        routePath[i + 1][0],
-        routePath[i + 1][1],
-      );
-    return d;
-  }, [routePath, walkerIdx]);
   const avgSafety = useMemo(() => {
     if (!routeSegments.length) return 0.75;
     return (
@@ -2168,23 +2228,7 @@ export default function AccessibleMap() {
     [emergencies911, isInBounds],
   );
 
-  useEffect(() => {
-    if (walkerIntervalRef.current) clearInterval(walkerIntervalRef.current);
-    if (routePath.length < 2) {
-      setWalkerPosition(loc);
-      setWalkerIdx(0);
-      return;
-    }
-    setWalkerIdx(0);
-    setWalkerPosition(routePath[0]);
-    let idx = 0;
-    walkerIntervalRef.current = setInterval(() => {
-      idx = (idx + 1) % routePath.length;
-      setWalkerIdx(idx);
-      setWalkerPosition(routePath[idx]);
-    }, 1200);
-    return () => clearInterval(walkerIntervalRef.current);
-  }, [routePath]);
+  // Removed fake interval useEffect that used walkerIntervalRef
 
   const advanceStepIfNeeded = useCallback(
     (currentLat, currentLng) => {
@@ -2350,6 +2394,7 @@ export default function AccessibleMap() {
       setNavigationActive(true);
       setNavigationState("walking");
       setCurrentStepIndex(0);
+      setDemoMode(false); // Ensure real navigation disables demo mode
       if (navigator.geolocation) {
         if (gpsWatchIdRef.current)
           navigator.geolocation.clearWatch(gpsWatchIdRef.current);
@@ -2558,7 +2603,7 @@ export default function AccessibleMap() {
           const d = await (
             await fetch(
               `https://api.tomtom.com/search/2/search/${encodeURIComponent(q)}.json?key=${TOMTOM_API_KEY}&limit=4&lat=${lat}&lon=${lng}&radius=50000&language=en-US`,
-              { signal }
+              { signal },
             )
           ).json();
           const m = (d.results || [])
@@ -2988,7 +3033,9 @@ export default function AccessibleMap() {
   // ================== ALTERNATE ROUTES FETCH (FIXED: removed hilliness) ==================
   const fetchAlternateRoutes = useCallback(
     async (startLat, startLng, endLat, endLng, mode, primaryRouteCoords) => {
-      const TOMTOM_KEY = import.meta.env.VITE_TOMTOM_API_KEY || "pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM";
+      const TOMTOM_KEY =
+        import.meta.env.VITE_TOMTOM_API_KEY ||
+        "pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM";
       const travelMode = mode === "transit" ? "pedestrian" : "pedestrian";
       const routeVariants = [
         {
@@ -3117,13 +3164,15 @@ export default function AccessibleMap() {
       }
       const deduped = [];
       for (const route of results) {
-        const q1idx = Math.floor(route.routeCoords.length * 0.10);
-        const q3idx = Math.floor(route.routeCoords.length * 0.90);
+        const q1idx = Math.floor(route.routeCoords.length * 0.1);
+        const q3idx = Math.floor(route.routeCoords.length * 0.9);
         const q1 = route.routeCoords[q1idx];
         const q3 = route.routeCoords[q3idx];
-        const isDuplicate = deduped.some(existing => {
-          const eq1 = existing.routeCoords[Math.floor(existing.routeCoords.length * 0.10)];
-          const eq3 = existing.routeCoords[Math.floor(existing.routeCoords.length * 0.90)];
+        const isDuplicate = deduped.some((existing) => {
+          const eq1 =
+            existing.routeCoords[Math.floor(existing.routeCoords.length * 0.1)];
+          const eq3 =
+            existing.routeCoords[Math.floor(existing.routeCoords.length * 0.9)];
           return (
             haversineDistance(q1[0], q1[1], eq1[0], eq1[1]) < 50 &&
             haversineDistance(q3[0], q3[1], eq3[0], eq3[1]) < 50
@@ -3156,13 +3205,28 @@ export default function AccessibleMap() {
         });
       }
       setRouteSegments(segs);
-      setRouteInfo({ distance: altRoute.distance, duration: altRoute.duration, type: mode });
-      setRouteSteps(altRoute.steps && altRoute.steps.length > 0
-        ? altRoute.steps
-        : [
-            { instruction: `Follow ${altRoute.label} to destination`, travel_mode: 'WALKING', distance_meters: altRoute.distanceMeters, duration_seconds: altRoute.durationSeconds },
-            { instruction: `Arrive at destination`, travel_mode: 'ARRIVE', distance_meters: 0, duration_seconds: 0 },
-          ]
+      setRouteInfo({
+        distance: altRoute.distance,
+        duration: altRoute.duration,
+        type: mode,
+      });
+      setRouteSteps(
+        altRoute.steps && altRoute.steps.length > 0
+          ? altRoute.steps
+          : [
+              {
+                instruction: `Follow ${altRoute.label} to destination`,
+                travel_mode: "WALKING",
+                distance_meters: altRoute.distanceMeters,
+                duration_seconds: altRoute.durationSeconds,
+              },
+              {
+                instruction: `Arrive at destination`,
+                travel_mode: "ARRIVE",
+                distance_meters: 0,
+                duration_seconds: 0,
+              },
+            ],
       );
       setShowDirections(true);
       setAlternateRoutes([]);
@@ -3213,6 +3277,8 @@ export default function AccessibleMap() {
     setShowAlternateRouteComparison(false);
     setHoveredAltDest(false);
     setStartMarker(null);
+    setDemoMode(false);
+    setUseRealBuildings(false);
     alternateCheckDoneRef.current = false;
   };
 
@@ -3256,40 +3322,60 @@ export default function AccessibleMap() {
     ) => {
       if (alternateCheckDoneRef.current) return;
       alternateCheckDoneRef.current = true;
-      if (mode === 'transit') return;
+      if (mode === "transit") return;
 
       let freshHazards = activeHazards;
       let freshZones = constructionZones;
       try {
-        const obsRes = await fetch('http://127.0.0.1:5000/api/area-obstructions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            use_custom_bbox: true,
-            min_lat: 40.2, max_lat: 40.8, min_lng: -80.8, max_lng: -79.5,
-            include_emergencies: false, include_news: true,
-            city: activeCity,
-          }),
-        });
+        const obsRes = await fetch(
+          "http://127.0.0.1:5000/api/area-obstructions",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              use_custom_bbox: true,
+              min_lat: 40.2,
+              max_lat: 40.8,
+              min_lng: -80.8,
+              max_lng: -79.5,
+              include_emergencies: false,
+              include_news: true,
+              city: activeCity,
+            }),
+          },
+        );
         const obsData = await obsRes.json();
         if (obsData.success) {
           const sanitize = (arr) =>
-            (arr || []).map(item => {
-              const lat = Number(item.lat ?? item.latitude ?? null);
-              const lng = Number(item.lng ?? item.longitude ?? item.lon ?? null);
-              if (!isNaN(lat) && !isNaN(lng) && isFinite(lat) && isFinite(lng))
-                return { ...item, lat, lng };
-              return null;
-            }).filter(Boolean);
+            (arr || [])
+              .map((item) => {
+                const lat = Number(item.lat ?? item.latitude ?? null);
+                const lng = Number(
+                  item.lng ?? item.longitude ?? item.lon ?? null,
+                );
+                if (
+                  !isNaN(lat) &&
+                  !isNaN(lng) &&
+                  isFinite(lat) &&
+                  isFinite(lng)
+                )
+                  return { ...item, lat, lng };
+                return null;
+              })
+              .filter(Boolean);
           freshHazards = sanitize(obsData.hazards || []);
           freshZones = sanitize(obsData.construction_zones || []);
         }
       } catch (e) {
-        console.warn('Fresh hazard fetch failed, using cached:', e);
+        console.warn("Fresh hazard fetch failed, using cached:", e);
       }
 
-      const highSeverityHazards = freshHazards.filter(h => (h.severity || 0) >= 0.75);
-      const highSeverityZones = freshZones.filter(z => (z.severity || 0.7) >= 0.7);
+      const highSeverityHazards = freshHazards.filter(
+        (h) => (h.severity || 0) >= 0.75,
+      );
+      const highSeverityZones = freshZones.filter(
+        (z) => (z.severity || 0.7) >= 0.7,
+      );
       const routeHazardCheck = doesRoutePassThroughHazards(
         routeCoords,
         highSeverityHazards,
@@ -3306,21 +3392,29 @@ export default function AccessibleMap() {
       setRouteHazardSummary(routeHazardCheck);
       setAlternateDestinationsLoading(true);
       const altRoutes = await fetchAlternateRoutes(
-        startCoords.lat, startCoords.lng,
-        destLat, destLng,
+        startCoords.lat,
+        startCoords.lng,
+        destLat,
+        destLng,
         mode,
-        routeCoords
+        routeCoords,
       );
       if (altRoutes && altRoutes.length > 0) {
         setAlternateRoutes(altRoutes);
       }
       let altDests = [];
       try {
-        const { computeAlternateDestinations: computeAlts } = useAlternateDestinations();
+        const { computeAlternateDestinations: computeAlts } =
+          useAlternateDestinations();
         altDests = await computeAlts(
-          destLat, destLng, destName,
-          startCoords.lat, startCoords.lng,
-          freshHazards, freshZones, mode
+          destLat,
+          destLng,
+          destName,
+          startCoords.lat,
+          startCoords.lng,
+          freshHazards,
+          freshZones,
+          mode,
         );
         if (altDests?.length > 0) {
           setAlternateDestinations(altDests.slice(0, 1));
@@ -3333,7 +3427,9 @@ export default function AccessibleMap() {
         setAlternateDestinationsLoading(false);
       }
       if (altRoutes?.length > 0 || altDests.length > 0) {
-        say(`Hazard on route — ${altRoutes?.length || 0} safer path(s) and ${altDests.length} alternate destination(s) found`);
+        say(
+          `Hazard on route — ${altRoutes?.length || 0} safer path(s) and ${altDests.length} alternate destination(s) found`,
+        );
       }
     };
 
@@ -3676,7 +3772,10 @@ export default function AccessibleMap() {
               filter: hc ? "contrast(1.35)" : "none",
             }}
           >
-            <MapZoomTracker onZoomChange={setCurrentZoom} onBoundsChange={setMapBounds} />
+            <MapZoomTracker
+              onZoomChange={setCurrentZoom}
+              onBoundsChange={setMapBounds}
+            />
             <ChangeView
               center={loc}
               zoom={zoom}
@@ -3689,13 +3788,37 @@ export default function AccessibleMap() {
 
             {/* User location or custom start pin */}
             {startMarker && fromVal !== "Current Location" ? (
-              <CircleMarker center={startMarker} radius={11} pathOptions={{ color: "#8cd69c", fillColor: "#8cd69c", fillOpacity: 0.9, weight: 2 }}>
-                <Popup><strong>Start: {fromVal}</strong></Popup>
+              <CircleMarker
+                center={startMarker}
+                radius={11}
+                pathOptions={{
+                  color: "#8cd69c",
+                  fillColor: "#8cd69c",
+                  fillOpacity: 0.9,
+                  weight: 2,
+                }}
+              >
+                <Popup>
+                  <strong>Start: {fromVal}</strong>
+                </Popup>
               </CircleMarker>
-            ) : isValidLatLngArray(loc) && (
-              <CircleMarker center={loc} radius={11} pathOptions={{ color: "#e8a870", fillColor: "#e8a870", fillOpacity: 0.28, weight: 2 }}>
-                <Popup><strong>You are here</strong></Popup>
-              </CircleMarker>
+            ) : (
+              isValidLatLngArray(loc) && (
+                <CircleMarker
+                  center={loc}
+                  radius={11}
+                  pathOptions={{
+                    color: "#e8a870",
+                    fillColor: "#e8a870",
+                    fillOpacity: 0.28,
+                    weight: 2,
+                  }}
+                >
+                  <Popup>
+                    <strong>You are here</strong>
+                  </Popup>
+                </CircleMarker>
+              )
             )}
 
             {/* Destination */}
@@ -3717,7 +3840,8 @@ export default function AccessibleMap() {
               maxClusterRadius={60}
               iconCreateFunction={(cluster) => {
                 const count = cluster.getChildCount();
-                const color = count > 10 ? "#ff7b6b" : count > 5 ? "#ffb347" : "#e8a870";
+                const color =
+                  count > 10 ? "#ff7b6b" : count > 5 ? "#ffb347" : "#e8a870";
                 return L.divIcon({
                   html: `<div style="
                     width: 36px; height: 36px; border-radius: 50%;
@@ -3767,7 +3891,8 @@ export default function AccessibleMap() {
                       <div className="popup-severity">
                         <span
                           style={{
-                            color: hazard.severity > 0.7 ? "#ff7b6b" : "#ffb347",
+                            color:
+                              hazard.severity > 0.7 ? "#ff7b6b" : "#ffb347",
                           }}
                         >
                           ⚡ Severity: {Math.round(hazard.severity * 100)}%
@@ -3816,7 +3941,8 @@ export default function AccessibleMap() {
                           )}
                           {emergency.severity && (
                             <span>
-                              ⚡ Severity: {Math.round(emergency.severity * 100)}%
+                              ⚡ Severity:{" "}
+                              {Math.round(emergency.severity * 100)}%
                             </span>
                           )}
                         </div>
@@ -3828,7 +3954,8 @@ export default function AccessibleMap() {
                         )}
                         {emergency.distance_meters && (
                           <div className="emergency-popup-time">
-                            📍 {emergency.distance_meters.toFixed(0)}m from center
+                            📍 {emergency.distance_meters.toFixed(0)}m from
+                            center
                           </div>
                         )}
                         <div className="emergency-popup-footer">
@@ -4034,7 +4161,7 @@ export default function AccessibleMap() {
                   )}
 
             {/* ── ALTERNATE ROUTES TO SAME DESTINATION ── */}
-            {mode !== 'transit' &&
+            {mode !== "transit" &&
               alternateRoutes.map((altRoute, idx) => {
                 const isHovered = hoveredAlternateRoute === idx;
                 if (!altRoute.routeCoords || altRoute.routeCoords.length < 2)
@@ -4141,7 +4268,7 @@ export default function AccessibleMap() {
               })}
 
             {/* ── ALTERNATE DESTINATION ROUTES ── */}
-            {mode !== 'transit' &&
+            {mode !== "transit" &&
               showAlternateDestinations &&
               !alternatesDismissed &&
               alternateDestinations.map((alt, idx) => {
@@ -4274,7 +4401,7 @@ export default function AccessibleMap() {
         </div>
 
         {/* ═══ 3D NAVIGATION PANEL ═══ */}
-        {navigationActive && routePath.length > 0 && (
+        {(navigationActive || show3D) && routePath.length > 0 && (
           <div className="nav-3d-panel">
             <Suspense
               fallback={
@@ -4289,7 +4416,7 @@ export default function AccessibleMap() {
                 hazards={transformedHazards}
                 constructionZones={constructionZones}
                 emergencies={emergencies911}
-                userPosition={walkerPosition}
+                userPosition={navigationActive ? walkerPosition : null}
                 userHeading={walkerHeading}
                 navigationState={navigationState}
                 routeSafety={avgSafety}
@@ -4297,6 +4424,8 @@ export default function AccessibleMap() {
                 estimatedTime={estimatedTimeRemaining}
                 routeType={routeType}
                 transitSegments={transitSegments}
+                demoMode={demoMode}
+                useRealBuildings={useRealBuildings}
                 testMode={process.env.NODE_ENV === "development"}
                 onTestPositionUpdate={(newPos) => setWalkerPosition(newPos)}
                 onClose={() => setShow3D(false)}
@@ -4434,7 +4563,10 @@ export default function AccessibleMap() {
                   </div>
                 </div>
                 <div>
-                  <div className="p-sec">Nearby in {activeCity === "pittsburgh" ? "Pittsburgh" : "Area"}</div>
+                  <div className="p-sec">
+                    Nearby in{" "}
+                    {activeCity === "pittsburgh" ? "Pittsburgh" : "Area"}
+                  </div>
                   <div className="p-list">
                     {NEARBY_PITTSBURGH.map((d) => (
                       <button
@@ -4574,11 +4706,36 @@ export default function AccessibleMap() {
                   <div className="p-sec">City</div>
                   <div className="p-list">
                     {[
-                      { key: "pittsburgh", name: "Pittsburgh, PA", lat: 40.4406, lng: -79.9959 },
-                      { key: "philadelphia", name: "Philadelphia, PA", lat: 39.9526, lng: -75.1652 },
-                      { key: "cleveland", name: "Cleveland, OH", lat: 41.4993, lng: -81.6944 },
-                      { key: "columbus", name: "Columbus, OH", lat: 39.9612, lng: -82.9988 },
-                      { key: "cincinnati", name: "Cincinnati, OH", lat: 39.1031, lng: -84.5120 },
+                      {
+                        key: "pittsburgh",
+                        name: "Pittsburgh, PA",
+                        lat: 40.4406,
+                        lng: -79.9959,
+                      },
+                      {
+                        key: "philadelphia",
+                        name: "Philadelphia, PA",
+                        lat: 39.9526,
+                        lng: -75.1652,
+                      },
+                      {
+                        key: "cleveland",
+                        name: "Cleveland, OH",
+                        lat: 41.4993,
+                        lng: -81.6944,
+                      },
+                      {
+                        key: "columbus",
+                        name: "Columbus, OH",
+                        lat: 39.9612,
+                        lng: -82.9988,
+                      },
+                      {
+                        key: "cincinnati",
+                        name: "Cincinnati, OH",
+                        lat: 39.1031,
+                        lng: -84.512,
+                      },
                     ].map((city) => (
                       <button
                         key={city.key}
@@ -4592,13 +4749,21 @@ export default function AccessibleMap() {
                           say(`Switched to ${city.name}`);
                         }}
                       >
-                        <div className="p-ico"><MapPin size={15} /></div>
+                        <div className="p-ico">
+                          <MapPin size={15} />
+                        </div>
                         <div className="p-item-text">
                           <div className="p-name">{city.name}</div>
-                          <div className="p-sub">{activeCity === city.key ? "Active" : "Tap to switch"}</div>
+                          <div className="p-sub">
+                            {activeCity === city.key
+                              ? "Active"
+                              : "Tap to switch"}
+                          </div>
                         </div>
                         {activeCity === city.key && (
-                          <span className="p-arr-active"><ChevronRight size={14} /></span>
+                          <span className="p-arr-active">
+                            <ChevronRight size={14} />
+                          </span>
                         )}
                       </button>
                     ))}
@@ -4798,44 +4963,72 @@ export default function AccessibleMap() {
         </div>
 
         {/* ═══ NO HAZARD NOTICE ═══ */}
-        {routeInfo && noHazardNotice && mode !== 'transit' && (
-          <div style={{
-            position: 'absolute',
-            left: 'calc(var(--rail-w) + 14px)',
-            top: searchCardBottom,
-            width: 348,
-            maxWidth: 'calc(100vw - var(--rail-w) - 28px)',
-            background: 'var(--surface)',
-            border: '1px solid rgba(140,214,156,0.35)',
-            borderRadius: 14,
-            padding: '10px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            zIndex: 51,
-            backdropFilter: 'blur(20px)',
-            boxShadow: 'var(--sh)',
-            animation: 'su 0.2s ease',
-            fontFamily: 'var(--ff-b)',
-          }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: 8,
-              background: 'var(--green-dim)',
-              border: '1px solid rgba(140,214,156,0.3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0, color: 'var(--green)'
-            }}>
+        {routeInfo && noHazardNotice && mode !== "transit" && (
+          <div
+            style={{
+              position: "absolute",
+              left: "calc(var(--rail-w) + 14px)",
+              top: searchCardBottom,
+              width: 348,
+              maxWidth: "calc(100vw - var(--rail-w) - 28px)",
+              background: "var(--surface)",
+              border: "1px solid rgba(140,214,156,0.35)",
+              borderRadius: 14,
+              padding: "10px 14px",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              zIndex: 51,
+              backdropFilter: "blur(20px)",
+              boxShadow: "var(--sh)",
+              animation: "su 0.2s ease",
+              fontFamily: "var(--ff-b)",
+            }}
+          >
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 8,
+                background: "var(--green-dim)",
+                border: "1px solid rgba(140,214,156,0.3)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                color: "var(--green)",
+              }}
+            >
               <ShieldAlert size={14} />
             </div>
-            <div style={{ flex: 1, fontSize: 12, color: 'var(--txt2)', lineHeight: 1.4 }}>
-              <strong style={{ color: 'var(--green)', display: 'block', fontSize: 12 }}>
+            <div
+              style={{
+                flex: 1,
+                fontSize: 12,
+                color: "var(--txt2)",
+                lineHeight: 1.4,
+              }}
+            >
+              <strong
+                style={{
+                  color: "var(--green)",
+                  display: "block",
+                  fontSize: 12,
+                }}
+              >
                 Route looks clear
               </strong>
               No hazards detected — no alternate routes needed.
             </div>
             <button
               onClick={() => setNoHazardNotice(false)}
-              style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--txt3)', padding: 4 }}
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--txt3)",
+                padding: 4,
+              }}
               aria-label="Dismiss notice"
             >
               <X size={12} />
@@ -4864,8 +5057,9 @@ export default function AccessibleMap() {
         )}
 
         {/* ═══ ALTERNATE DESTINATIONS PANEL ═══ */}
-        {mode !== 'transit' &&
-          (alternateRoutes.length > 0 || (showAlternateDestinations && alternateDestinations.length > 0)) &&
+        {mode !== "transit" &&
+          (alternateRoutes.length > 0 ||
+            (showAlternateDestinations && alternateDestinations.length > 0)) &&
           !alternatesDismissed && (
             <Suspense fallback={null}>
               <AlternateDestinationsPanel
@@ -4909,93 +5103,95 @@ export default function AccessibleMap() {
           )}
 
         {/* ═══ ALTERNATE ROUTE COMPARISON DRAWER ═══ */}
-        {mode !== 'transit' && showAlternateRouteComparison && selectedAlternateRoute && (
-          <div
-            className="alt-comp-drawer"
-            style={{ borderTopColor: selectedAlternateRoute.color }}
-          >
-            <div className="alt-comp-header">
-              <div className="alt-comp-header-row">
-                <div
-                  className="alt-comp-dot"
-                  style={{ background: selectedAlternateRoute.color }}
-                />
-                <div className="alt-comp-label">
-                  {selectedAlternateRoute.label}
+        {mode !== "transit" &&
+          showAlternateRouteComparison &&
+          selectedAlternateRoute && (
+            <div
+              className="alt-comp-drawer"
+              style={{ borderTopColor: selectedAlternateRoute.color }}
+            >
+              <div className="alt-comp-header">
+                <div className="alt-comp-header-row">
+                  <div
+                    className="alt-comp-dot"
+                    style={{ background: selectedAlternateRoute.color }}
+                  />
+                  <div className="alt-comp-label">
+                    {selectedAlternateRoute.label}
+                  </div>
+                  <div className="alt-comp-sublabel">
+                    Same destination — different path
+                  </div>
+                  <button
+                    className="alt-comp-close"
+                    onClick={() => {
+                      setShowAlternateRouteComparison(false);
+                      setSelectedAlternateRoute(null);
+                    }}
+                    aria-label="Close comparison"
+                  >
+                    <X size={12} />
+                  </button>
                 </div>
-                <div className="alt-comp-sublabel">
-                  Same destination — different path
+              </div>
+              <div className="alt-comp-stats-grid">
+                <div className="alt-comp-stat-col">
+                  <div
+                    className="alt-comp-col-label"
+                    style={{ color: "var(--txt3)" }}
+                  >
+                    ORIGINAL
+                  </div>
+                  <div className="alt-comp-stat-value">
+                    {routeInfo?.distance || "—"}
+                  </div>
+                  <div className="alt-comp-stat-sub">
+                    {routeInfo?.duration || "—"}
+                  </div>
                 </div>
+                <div className="alt-comp-stat-col">
+                  <div
+                    className="alt-comp-col-label"
+                    style={{ color: selectedAlternateRoute.color }}
+                  >
+                    THIS ROUTE
+                  </div>
+                  <div className="alt-comp-stat-value">
+                    {selectedAlternateRoute.distance}
+                  </div>
+                  <div className="alt-comp-stat-sub">
+                    {selectedAlternateRoute.duration}
+                  </div>
+                </div>
+              </div>
+              <div
+                className={`alt-comp-hazard-banner ${selectedAlternateRoute.hazardCount === 0 ? "safe" : "warn"}`}
+              >
+                {selectedAlternateRoute.hazardCount === 0
+                  ? "✓ No hazards detected on this path"
+                  : `⚠ ${selectedAlternateRoute.hazardCount} hazard(s) still present on this path`}
+              </div>
+              <div className="alt-comp-action-area">
                 <button
-                  className="alt-comp-close"
+                  className="alt-comp-accept"
+                  onClick={() =>
+                    handleAcceptAlternateRoute(selectedAlternateRoute)
+                  }
+                >
+                  Use This Route
+                </button>
+                <button
+                  className="alt-comp-decline"
                   onClick={() => {
                     setShowAlternateRouteComparison(false);
                     setSelectedAlternateRoute(null);
                   }}
-                  aria-label="Close comparison"
                 >
-                  <X size={12} />
+                  Keep Original Route
                 </button>
               </div>
             </div>
-            <div className="alt-comp-stats-grid">
-              <div className="alt-comp-stat-col">
-                <div
-                  className="alt-comp-col-label"
-                  style={{ color: "var(--txt3)" }}
-                >
-                  ORIGINAL
-                </div>
-                <div className="alt-comp-stat-value">
-                  {routeInfo?.distance || "—"}
-                </div>
-                <div className="alt-comp-stat-sub">
-                  {routeInfo?.duration || "—"}
-                </div>
-              </div>
-              <div className="alt-comp-stat-col">
-                <div
-                  className="alt-comp-col-label"
-                  style={{ color: selectedAlternateRoute.color }}
-                >
-                  THIS ROUTE
-                </div>
-                <div className="alt-comp-stat-value">
-                  {selectedAlternateRoute.distance}
-                </div>
-                <div className="alt-comp-stat-sub">
-                  {selectedAlternateRoute.duration}
-                </div>
-              </div>
-            </div>
-            <div
-              className={`alt-comp-hazard-banner ${selectedAlternateRoute.hazardCount === 0 ? "safe" : "warn"}`}
-            >
-              {selectedAlternateRoute.hazardCount === 0
-                ? "✓ No hazards detected on this path"
-                : `⚠ ${selectedAlternateRoute.hazardCount} hazard(s) still present on this path`}
-            </div>
-            <div className="alt-comp-action-area">
-              <button
-                className="alt-comp-accept"
-                onClick={() =>
-                  handleAcceptAlternateRoute(selectedAlternateRoute)
-                }
-              >
-                Use This Route
-              </button>
-              <button
-                className="alt-comp-decline"
-                onClick={() => {
-                  setShowAlternateRouteComparison(false);
-                  setSelectedAlternateRoute(null);
-                }}
-              >
-                Keep Original Route
-              </button>
-            </div>
-          </div>
-        )}
+          )}
 
         {/* ═══ MAP TYPE BAR ═══ */}
         <div className="mt-bar" role="radiogroup">
@@ -5117,6 +5313,39 @@ export default function AccessibleMap() {
                 >
                   <Navigation size={13} />
                   {navigationActive ? "Stop Nav" : "See 3d walking view"}
+                </button>
+              </>
+            )}
+            {/* Simulate Walk button */}
+            {routePath.length > 0 &&
+              !navigationActive &&
+              mode !== "transit" && (
+                <>
+                  <div className="rs-d" />
+                  <button
+                    className="rs-dir-btn"
+                    onClick={() => {
+                      setDemoMode(true);
+                      setShow3D(true);
+                    }}
+                  >
+                    <Play size={13} /> Simulate Walk
+                  </button>
+                </>
+              )}
+            {/* Real Buildings toggle (only when 3D is visible) */}
+            {show3D && (
+              <>
+                <div className="rs-d" />
+                <button
+                  className="rs-dir-btn"
+                  onClick={() => setUseRealBuildings((prev) => !prev)}
+                  style={{ background: useRealBuildings ? "#0d9488" : "" }}
+                >
+                  <Building2 size={13} />{" "}
+                  {useRealBuildings
+                    ? "Real Buildings On"
+                    : "Real Buildings Off"}
                 </button>
               </>
             )}
