@@ -23069,3 +23069,252 @@ AssertionError: write() before start_response
 2026-04-28 20:37:40,438 - news_hazard_fetcher - INFO - Filtered out 39 low-threat incidents
 2026-04-28 20:37:40,438 - __main__ - INFO - Found 44 news-based hazards in area
 2026-04-28 20:37:40,441 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:37:40] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:40:38,270 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:40:38] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:40:38,281 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:40:38,574 - __main__ - INFO - TomTom returned 222 incidents
+2026-04-28 20:40:38,575 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:40:38,576 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 178s)
+2026-04-28 20:40:38,576 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:40:38,581 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:40:38] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:41:51,248 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:41:51] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:41:51,251 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:41:51,440 - __main__ - INFO - TomTom returned 223 incidents
+2026-04-28 20:41:51,442 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:41:51,442 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 251s)
+2026-04-28 20:41:51,442 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:41:51,449 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:41:51] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:42:38,234 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:42:38] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:42:38,235 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:42:38] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:42:38,243 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:42:38,243 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:42:38,434 - __main__ - INFO - TomTom returned 224 incidents
+2026-04-28 20:42:38,434 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:42:38,435 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 297s)
+2026-04-28 20:42:38,435 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:42:38,439 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:42:38] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:42:38,447 - __main__ - INFO - TomTom returned 224 incidents
+2026-04-28 20:42:38,448 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:42:38,448 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 298s)
+2026-04-28 20:42:38,448 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:42:38,452 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:42:38] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:42:38,552 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:42:38,696 - __main__ - INFO - TomTom returned 224 incidents
+2026-04-28 20:42:38,697 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:42:38,697 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 298s)
+2026-04-28 20:42:38,697 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:42:38,700 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:42:38] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:45:38,226 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:45:38] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:45:38,235 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:45:40,637 - __main__ - INFO - TomTom returned 218 incidents
+2026-04-28 20:45:40,639 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:45:40,639 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-28 20:45:40,639 - news_hazard_fetcher - INFO - Fetching crime data from WPRDC SQL API (cutoff: 2026-03-17)...
+2026-04-28 20:45:41,415 - news_hazard_fetcher - INFO - WPRDC API response: status=200, size=585702 bytes
+2026-04-28 20:45:41,424 - news_hazard_fetcher - INFO - WPRDC returned 500 crime records
+2026-04-28 20:45:41,424 - news_hazard_fetcher - INFO - Sample record keys: ['_id', '_full_text', 'Report_Number', 'ReportedDate', 'ReportedTime', 'Hour', 'DayofWeek', 'ReportedMonth', 'NIBRS_Coded_Offense', 'NIBRS_Offense_Code', 'NIBRS_Offense_Category', 'NIBRS_Offense_Type', 'NIBRS_Crime_Against', 'NIBRS_Offense_Grouping', 'Violation', 'XCOORD', 'YCOORD', 'Zone', 'Tract', 'Neighborhood', 'Block_Address']
+2026-04-28 20:45:41,424 - news_hazard_fetcher - INFO - Sample XCOORD=-79.923, YCOORD=40.4418
+2026-04-28 20:45:41,425 - news_hazard_fetcher - INFO - First coordinate pair: lat=40.4418, lng=-79.923
+2026-04-28 20:45:41,479 - news_hazard_fetcher - INFO - Crime data: 500 records, filtered 304 low-threat, created 191 hazards
+2026-04-28 20:45:41,480 - news_hazard_fetcher - INFO - Crime hazards: 191
+2026-04-28 20:45:41,481 - news_hazard_fetcher - INFO - Total hazards after filtering: 152
+2026-04-28 20:45:41,481 - news_hazard_fetcher - INFO - Filtered out 39 low-threat incidents
+2026-04-28 20:45:41,481 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:45:41,484 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:45:41] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:46:51,219 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:46:51] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:46:51,223 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:46:51,433 - __main__ - INFO - TomTom returned 223 incidents
+2026-04-28 20:46:51,435 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:46:51,435 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 69s)
+2026-04-28 20:46:51,435 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:46:51,442 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:46:51] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:47:38,223 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:47:38] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:47:38,225 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:47:38] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:47:38,227 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:47:38,228 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:47:38,416 - __main__ - INFO - TomTom returned 222 incidents
+2026-04-28 20:47:38,427 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:47:38,427 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:47:38,427 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 116s)
+2026-04-28 20:47:38,429 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:47:38,445 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:47:38] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:47:38,453 - __main__ - INFO - TomTom returned 222 incidents
+2026-04-28 20:47:38,453 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:47:38,454 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 116s)
+2026-04-28 20:47:38,454 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:47:38,457 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:47:38] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:47:38,599 - __main__ - INFO - TomTom returned 222 incidents
+2026-04-28 20:47:38,600 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:47:38,600 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 117s)
+2026-04-28 20:47:38,600 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:47:38,603 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:47:38] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:50:38,217 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:50:38] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:50:38,224 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:50:38,480 - __main__ - INFO - TomTom returned 219 incidents
+2026-04-28 20:50:38,483 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:50:38,483 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 297s)
+2026-04-28 20:50:38,484 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:50:38,490 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:50:38] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:51:51,243 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:51:51] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:51:51,247 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:51:51,417 - __main__ - INFO - TomTom returned 220 incidents
+2026-04-28 20:51:51,419 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:51:51,419 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-28 20:51:51,419 - news_hazard_fetcher - INFO - Fetching crime data from WPRDC SQL API (cutoff: 2026-03-17)...
+2026-04-28 20:51:51,729 - news_hazard_fetcher - INFO - WPRDC API response: status=200, size=585702 bytes
+2026-04-28 20:51:51,736 - news_hazard_fetcher - INFO - WPRDC returned 500 crime records
+2026-04-28 20:51:51,736 - news_hazard_fetcher - INFO - Sample record keys: ['_id', '_full_text', 'Report_Number', 'ReportedDate', 'ReportedTime', 'Hour', 'DayofWeek', 'ReportedMonth', 'NIBRS_Coded_Offense', 'NIBRS_Offense_Code', 'NIBRS_Offense_Category', 'NIBRS_Offense_Type', 'NIBRS_Crime_Against', 'NIBRS_Offense_Grouping', 'Violation', 'XCOORD', 'YCOORD', 'Zone', 'Tract', 'Neighborhood', 'Block_Address']
+2026-04-28 20:51:51,737 - news_hazard_fetcher - INFO - Sample XCOORD=-79.923, YCOORD=40.4418
+2026-04-28 20:51:51,737 - news_hazard_fetcher - INFO - First coordinate pair: lat=40.4418, lng=-79.923
+2026-04-28 20:51:51,793 - news_hazard_fetcher - INFO - Crime data: 500 records, filtered 304 low-threat, created 191 hazards
+2026-04-28 20:51:51,794 - news_hazard_fetcher - INFO - Crime hazards: 191
+2026-04-28 20:51:51,794 - news_hazard_fetcher - INFO - Total hazards after filtering: 152
+2026-04-28 20:51:51,794 - news_hazard_fetcher - INFO - Filtered out 39 low-threat incidents
+2026-04-28 20:51:51,795 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:51:51,797 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:51:51] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:52:38,257 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:52:38] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:52:38,257 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:52:38] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:52:38,265 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:52:38,269 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:52:38,433 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:52:38,517 - __main__ - INFO - TomTom returned 223 incidents
+2026-04-28 20:52:38,518 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:52:38,518 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 46s)
+2026-04-28 20:52:38,519 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:52:38,522 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:52:38] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:52:38,534 - __main__ - INFO - TomTom returned 223 incidents
+2026-04-28 20:52:38,534 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:52:38,534 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 46s)
+2026-04-28 20:52:38,535 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:52:38,538 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:52:38] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:52:38,556 - __main__ - INFO - TomTom returned 223 incidents
+2026-04-28 20:52:38,557 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:52:38,557 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 46s)
+2026-04-28 20:52:38,558 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:52:38,562 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:52:38] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:55:38,249 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:55:38] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:55:38,264 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:55:38,523 - __main__ - INFO - TomTom returned 219 incidents
+2026-04-28 20:55:38,524 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:55:38,524 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 226s)
+2026-04-28 20:55:38,525 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:55:38,527 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:55:38] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:56:51,217 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:56:51] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:56:51,222 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:56:51,403 - __main__ - INFO - TomTom returned 219 incidents
+2026-04-28 20:56:51,404 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:56:51,404 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 299s)
+2026-04-28 20:56:51,405 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:56:51,409 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:56:51] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:57:38,223 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:57:38] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:57:38,226 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:57:38] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:57:38,232 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:57:38,234 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:57:38,420 - __main__ - INFO - TomTom returned 219 incidents
+2026-04-28 20:57:38,420 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:57:38,421 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-28 20:57:38,421 - news_hazard_fetcher - INFO - Fetching crime data from WPRDC SQL API (cutoff: 2026-03-17)...
+2026-04-28 20:57:38,436 - __main__ - INFO - TomTom returned 219 incidents
+2026-04-28 20:57:38,437 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:57:38,437 - news_hazard_fetcher - INFO - Fetch already in progress, waiting for result...
+2026-04-28 20:57:38,437 - __main__ - INFO - Found 0 news-based hazards in area
+2026-04-28 20:57:38,442 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:57:38] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:57:38,484 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 20:57:38,643 - __main__ - INFO - TomTom returned 219 incidents
+2026-04-28 20:57:38,645 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 20:57:38,645 - news_hazard_fetcher - INFO - Fetch already in progress, waiting for result...
+2026-04-28 20:57:38,645 - __main__ - INFO - Found 0 news-based hazards in area
+2026-04-28 20:57:38,650 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:57:38] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 20:57:38,831 - news_hazard_fetcher - INFO - WPRDC API response: status=200, size=585702 bytes
+2026-04-28 20:57:38,838 - news_hazard_fetcher - INFO - WPRDC returned 500 crime records
+2026-04-28 20:57:38,839 - news_hazard_fetcher - INFO - Sample record keys: ['_id', '_full_text', 'Report_Number', 'ReportedDate', 'ReportedTime', 'Hour', 'DayofWeek', 'ReportedMonth', 'NIBRS_Coded_Offense', 'NIBRS_Offense_Code', 'NIBRS_Offense_Category', 'NIBRS_Offense_Type', 'NIBRS_Crime_Against', 'NIBRS_Offense_Grouping', 'Violation', 'XCOORD', 'YCOORD', 'Zone', 'Tract', 'Neighborhood', 'Block_Address']
+2026-04-28 20:57:38,839 - news_hazard_fetcher - INFO - Sample XCOORD=-79.923, YCOORD=40.4418
+2026-04-28 20:57:38,839 - news_hazard_fetcher - INFO - First coordinate pair: lat=40.4418, lng=-79.923
+2026-04-28 20:57:38,899 - news_hazard_fetcher - INFO - Crime data: 500 records, filtered 304 low-threat, created 191 hazards
+2026-04-28 20:57:38,900 - news_hazard_fetcher - INFO - Crime hazards: 191
+2026-04-28 20:57:38,900 - news_hazard_fetcher - INFO - Total hazards after filtering: 152
+2026-04-28 20:57:38,900 - news_hazard_fetcher - INFO - Filtered out 39 low-threat incidents
+2026-04-28 20:57:38,901 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 20:57:38,903 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 20:57:38] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 21:04:15,371 - tomtom_router - INFO - Route cache cleared
+2026-04-28 21:04:15,372 - __main__ - INFO - TomTom router cache cleared on startup
+2026-04-28 21:04:15,397 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-04-28 21:04:16,161 - gtfs_loader - INFO - Loaded GTFS from cache (age: 23.3 hours)
+2026-04-28 21:04:16,161 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-04-28 21:04:24,672 - transit_router - INFO - Loaded 305 shapes
+2026-04-28 21:04:24,950 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-04-28 21:04:24,964 - transit_router - INFO - Loaded 101 routes
+2026-04-28 21:04:25,056 - transit_router - INFO - Cached 15826 trips
+2026-04-28 21:04:25,098 - transit_router - INFO - Route-stops index: 100 routes
+2026-04-28 21:04:25,123 - transit_router - INFO - Shape index: 305 shapes
+2026-04-28 21:04:25,123 - __main__ - INFO - GTFS transit router initialized successfully
+2026-04-28 21:04:25,993 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-04-28 21:04:25,993 - __main__ - INFO - Safety AI loaded successfully
+2026-04-28 21:04:25,995 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-04-28 21:04:28,801 - voice_handler - INFO - ✓ faster-whisper imported (optimized for M1)
+2026-04-28 21:04:28,802 - voice_handler - INFO - Voice handler initialized with address resolution + number hyphen fix + enhanced walking detection
+2026-04-28 21:04:28,802 - __main__ - INFO - Voice handler registered successfully
+2026-04-28 21:04:28,805 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-04-28 21:04:28,805 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-04-28 21:04:28,805 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-04-28 21:04:28,805 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-04-28 21:04:28,814 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-04-28 21:04:28,814 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-04-28 21:04:31,089 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 21:04:31] "OPTIONS /api/calculate-route HTTP/1.1" 200 -
+2026-04-28 21:04:31,090 - __main__ - INFO - === ROUTE REQUEST ===
+2026-04-28 21:04:31,090 - __main__ - INFO - From: 40.553820935039816,-79.90786830143733
+2026-04-28 21:04:31,090 - __main__ - INFO - To: 40.5541672,-79.9075276
+2026-04-28 21:04:31,090 - __main__ - INFO - Mode: pedestrian
+2026-04-28 21:04:31,090 - __main__ - INFO - Force refresh: False
+2026-04-28 21:04:31,090 - tomtom_router - INFO - Route cache cleared
+2026-04-28 21:04:31,090 - __main__ - INFO - TomTom cache cleared before route calculation
+2026-04-28 21:04:31,284 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 21:04:31] "GET /api/hello HTTP/1.1" 200 -
+2026-04-28 21:04:31,417 - news_hazard_fetcher - WARNING - PulsePoint 401 — backing off for 24 hours
+2026-04-28 21:04:31,418 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-04-28 21:04:31,418 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-04-28 21:04:31,418 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-04-28 21:04:31,418 - __main__ - INFO - Fetching hazards within 2000m of route midpoint
+2026-04-28 21:04:31,418 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-04-28 21:04:31,418 - news_hazard_fetcher - INFO - Fetching crime data from WPRDC SQL API (cutoff: 2026-03-17)...
+2026-04-28 21:04:31,656 - news_hazard_fetcher - INFO - WPRDC API response: status=200, size=585702 bytes
+2026-04-28 21:04:31,658 - news_hazard_fetcher - INFO - WPRDC returned 500 crime records
+2026-04-28 21:04:31,658 - news_hazard_fetcher - INFO - Sample record keys: ['_id', '_full_text', 'Report_Number', 'ReportedDate', 'ReportedTime', 'Hour', 'DayofWeek', 'ReportedMonth', 'NIBRS_Coded_Offense', 'NIBRS_Offense_Code', 'NIBRS_Offense_Category', 'NIBRS_Offense_Type', 'NIBRS_Crime_Against', 'NIBRS_Offense_Grouping', 'Violation', 'XCOORD', 'YCOORD', 'Zone', 'Tract', 'Neighborhood', 'Block_Address']
+2026-04-28 21:04:31,658 - news_hazard_fetcher - INFO - Sample XCOORD=-79.923, YCOORD=40.4418
+2026-04-28 21:04:31,658 - news_hazard_fetcher - INFO - First coordinate pair: lat=40.4418, lng=-79.923
+2026-04-28 21:04:31,737 - news_hazard_fetcher - INFO - Crime data: 500 records, filtered 304 low-threat, created 191 hazards
+2026-04-28 21:04:31,738 - news_hazard_fetcher - INFO - Crime hazards: 191
+2026-04-28 21:04:31,739 - news_hazard_fetcher - INFO - Total hazards after filtering: 152
+2026-04-28 21:04:31,739 - news_hazard_fetcher - INFO - Filtered out 39 low-threat incidents
+2026-04-28 21:04:31,739 - __main__ - INFO - Found 0 crime/hazard zones to avoid
+2026-04-28 21:04:31,904 - __main__ - INFO - Added 0 construction zones to avoidance list
+2026-04-28 21:04:31,905 - __main__ - INFO - Route request cache buster: 1777424671.905112
+2026-04-28 21:04:31,905 - __main__ - INFO - === CALLING TOMTOM ROUTER ===
+2026-04-28 21:04:31,905 - __main__ - INFO - Start: 40.553821, -79.907868
+2026-04-28 21:04:31,905 - __main__ - INFO - Dest: 40.554167, -79.907528
+2026-04-28 21:04:31,905 - __main__ - INFO - force_refresh: True
+2026-04-28 21:04:31,905 - tomtom_router - INFO - === calculate_route called ===
+2026-04-28 21:04:31,905 - tomtom_router - INFO - Start: 40.553820935039816, -79.90786830143733
+2026-04-28 21:04:31,905 - tomtom_router - INFO - Dest: 40.5541672, -79.9075276
+2026-04-28 21:04:31,905 - tomtom_router - INFO - Hazards to avoid: 0
+2026-04-28 21:04:31,906 - tomtom_router - INFO - Calling TomTom API...
+2026-04-28 21:04:32,145 - tomtom_router - INFO - Generated 2 turn-by-turn instructions
+2026-04-28 21:04:32,145 - tomtom_router - INFO - TomTom found safest route with hazard score inf
+2026-04-28 21:04:32,145 - __main__ - INFO - TomTom returned route ending at: 40.5541672, -79.9075276
+2026-04-28 21:04:32,146 - __main__ - INFO - TomTom route with hazard avoidance successful
+2026-04-28 21:04:32,480 - __main__ - WARNING - All embedding endpoints failed, using simple fallback
+2026-04-28 21:04:32,486 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 21:04:32] "POST /api/calculate-route HTTP/1.1" 200 -
+2026-04-28 21:04:33,027 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 21:04:33] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 21:04:33,029 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 21:04:33,036 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 21:04:33] "OPTIONS /api/check-obstructions HTTP/1.1" 200 -
+2026-04-28 21:04:33,038 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 21:04:33] "POST /api/check-obstructions HTTP/1.1" 200 -
+2026-04-28 21:04:33,169 - __main__ - INFO - TomTom returned 223 incidents
+2026-04-28 21:04:33,171 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 1s)
+2026-04-28 21:04:33,171 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 21:04:33,177 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 21:04:33] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 21:05:38,277 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 21:05:38] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-04-28 21:05:38,282 - __main__ - INFO - Using custom bounding box: 40.2,-80.8 to 40.8,-79.5
+2026-04-28 21:05:38,460 - __main__ - INFO - TomTom returned 224 incidents
+2026-04-28 21:05:38,463 - __main__ - INFO - Found 0 active 911 emergencies in area
+2026-04-28 21:05:38,463 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 66s)
+2026-04-28 21:05:38,463 - __main__ - INFO - Found 44 news-based hazards in area
+2026-04-28 21:05:38,471 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 21:05:38] "POST /api/area-obstructions HTTP/1.1" 200 -
