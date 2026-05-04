@@ -1,8 +1,8 @@
+# FILE: backend/app.py
 """
 Main entry point for Tryver Safety Routing System
 Includes ML safety wiring for transit routes and all bug fixes.
 """
-#app.py
 import os
 import sys
 import time
@@ -153,7 +153,7 @@ else:
 safety_ai = None
 
 
-# Add this class at the top of app.py (around line 50):
+# Add this class at the top of app.py
 class RequestDebouncer:
     def __init__(self):
         self.pending = {}
@@ -189,6 +189,111 @@ class RequestDebouncer:
 # Create instance
 request_debouncer = RequestDebouncer()
 
+# ----------------------------------------------------------------------
+# ML ROUTING CONSTANTS
+# ----------------------------------------------------------------------
+ENABLE_ROUTE_VDB_CACHE = False
+
+ML_ROUTING_WEIGHTS = {
+    'safety':   0.55,
+    'duration': 0.30,
+    'distance': 0.15,
+}
+ML_SAFETY_REJECT_BELOW = 0.45
+ML_SAFETY_WARN_BELOW   = 0.65
+
+def score_route_candidate(candidate: dict, safety_score: float) -> float:
+    """
+    Compute a weighted composite score for one TomTom route candidate.
+    Higher is better. Range: [0.0, 1.0].
+
+    Args:
+        candidate:    dict with keys 'duration_seconds', 'distance_meters'
+        safety_score: float in [0.0, 1.0] from the ML safety model
+
+    Returns:
+        float composite score
+    """
+    MAX_WALK_DURATION_S = 7200    # 2 hours — normalisation ceiling
+    MAX_WALK_DISTANCE_M = 15_000  # 15 km
+
+    norm_duration = 1.0 - min(candidate.get('duration_seconds', 3600) / MAX_WALK_DURATION_S, 1.0)
+    norm_distance = 1.0 - min(candidate.get('distance_meters', 5000)  / MAX_WALK_DISTANCE_M, 1.0)
+
+    return (
+        ML_ROUTING_WEIGHTS['safety']   * safety_score +
+        ML_ROUTING_WEIGHTS['duration'] * norm_duration +
+        ML_ROUTING_WEIGHTS['distance'] * norm_distance
+    )
+
+def select_safest_route(
+    candidates: list,
+    safety_model,
+    hazard_data: dict = None,
+) -> dict:
+    """
+    Score every candidate route with the ML safety model and return the best.
+
+    Return shape:
+    {
+        'selected':              dict | None,      # winning candidate, or None if all rejected
+        'safety_score':          float,
+        'final_score':           float,
+        'warning_level':         None | 'caution', # None = safe, 'caution' = borderline
+        'warning':               None | 'all_rejected',
+        'all_candidates_scored': list[dict],       # [{candidate, safety_score, final_score}, ...]
+    }
+    """
+    scored = []
+    for cand in candidates:
+        coords = [{'lat': p[0], 'lng': p[1]} for p in cand.get('points', [])]
+        if len(coords) < 2:
+            continue
+
+        if safety_model and getattr(safety_model, 'is_trained', False):
+            try:
+                result = safety_model.calculate_route_safety(coords, hazard_data)
+                s_score = result.get('overall_safety', 0.5)
+            except Exception as exc:
+                logger.warning(f"ML scoring failed for candidate: {exc}")
+                s_score = heuristic_safety(coords[len(coords)//2]['lat'],
+                                           coords[len(coords)//2]['lng'])
+        else:
+            mid = coords[len(coords)//2]
+            s_score = heuristic_safety(mid['lat'], mid['lng'])
+
+        if s_score < ML_SAFETY_REJECT_BELOW:
+            logger.info(f"Candidate rejected: safety={s_score:.3f} < floor {ML_SAFETY_REJECT_BELOW}")
+            scored.append({'candidate': cand, 'safety_score': s_score,
+                           'final_score': 0.0, 'rejected': True})
+            continue
+
+        f_score = score_route_candidate(cand, s_score)
+        scored.append({'candidate': cand, 'safety_score': s_score,
+                       'final_score': f_score, 'rejected': False})
+        logger.info(f"Candidate scored: safety={s_score:.3f} final={f_score:.3f}")
+
+    accepted = [s for s in scored if not s.get('rejected')]
+
+    if not accepted:
+        return {
+            'selected': None, 'safety_score': 0.0, 'final_score': 0.0,
+            'warning_level': None, 'warning': 'all_rejected',
+            'all_candidates_scored': scored,
+        }
+
+    best = max(accepted, key=lambda s: s['final_score'])
+    warning_level = 'caution' if best['safety_score'] < ML_SAFETY_WARN_BELOW else None
+
+    return {
+        'selected':              best['candidate'],
+        'safety_score':          best['safety_score'],
+        'final_score':           best['final_score'],
+        'warning_level':         warning_level,
+        'warning':               None,
+        'all_candidates_scored': scored,
+    }
+
 # ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
@@ -206,6 +311,14 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     c = 2 * atan2(sqrt(a), sqrt(1-a))
     
     return R * c
+
+def heuristic_safety(lat: float, lng: float) -> float:
+    """Fallback heuristic (used when model not available)"""
+    hour = datetime.now().hour
+    base = 0.75 if 6 <= hour <= 18 else 0.45
+    dist = math.hypot(lat - 40.4406, lng - (-79.9959))
+    penalty = min(0.3, dist * 8.0)
+    return max(0.2, min(0.95, base - penalty))
 
 def calculate_route_osrm(lat1, lng1, lat2, lng2):
     """Stub for OSRM - replace with actual implementation if needed."""
@@ -693,12 +806,25 @@ def add_model_endpoints(app):
             if safety_ai_instance and safety_ai_instance.is_trained:
                 result = safety_ai_instance.predict_safety_score(lat, lng)
             else:
-                # Fallback to mock data
+                # Fallback to heuristic
+                score = heuristic_safety(lat, lng)
+                if score >= 0.8:
+                    risk = 'low'
+                    rec = ['Safe area']
+                elif score >= 0.6:
+                    risk = 'medium'
+                    rec = ['Stay alert']
+                elif score >= 0.4:
+                    risk = 'high'
+                    rec = ['Exercise caution']
+                else:
+                    risk = 'critical'
+                    rec = ['Avoid area']
                 result = {
-                    'safety_score': 0.7,
+                    'safety_score': score,
                     'confidence': 0.5,
-                    'risk_level': 'medium',
-                    'recommendations': ['Use caution', 'Stay in well-lit areas'],
+                    'risk_level': risk,
+                    'recommendations': rec,
                     'coordinates': {'lat': lat, 'lng': lng},
                     'timestamp': datetime.now().isoformat()
                 }
@@ -730,10 +856,19 @@ def add_model_endpoints(app):
             if safety_ai_instance:
                 prediction = safety_ai_instance.predict_safety_score(lat, lng)
             else:
+                score = heuristic_safety(lat, lng)
+                if score >= 0.8:
+                    risk = 'low'
+                elif score >= 0.6:
+                    risk = 'medium'
+                elif score >= 0.4:
+                    risk = 'high'
+                else:
+                    risk = 'critical'
                 prediction = {
-                    'safety_score': 0.7,
+                    'safety_score': score,
                     'confidence': 0.5,
-                    'risk_level': 'medium',
+                    'risk_level': risk,
                     'recommendations': ['Model not trained, use caution'],
                     'coordinates': {'lat': lat, 'lng': lng},
                     'timestamp': datetime.now().isoformat()
@@ -774,17 +909,16 @@ def add_model_endpoints(app):
                 result_dict = {
                     'overall_safety': result['overall_safety'],
                     'risk_level': result['risk_level'],
-                    'safe_route_coords': result.get('safe_route_coords', route),
-                    'original_route_coords': result.get('original_route_coords', route),
-                    'risky_segments': result.get('risky_segments', []),
-                    'distance_meters': result.get('distance_meters', 0),
-                    'duration_seconds': result.get('duration_seconds', 0),
+                    'safe_route_coords': route,
+                    'original_route_coords': route,
+                    'risky_segments': [],
+                    'distance_meters': 0,
+                    'duration_seconds': 0,
                     'recommendations': result.get('recommendations', []),
-                    'confidence': result.get('confidence', 0.7),
-                    'segment_details': result.get('segment_details', [])
+                    'confidence': 0.7,
+                    'segment_details': []
                 }
             else:
-                # Fallback mock analysis
                 import random
                 result_dict = {
                     'overall_safety': random.uniform(0.6, 0.9),
@@ -863,10 +997,6 @@ def add_model_endpoints(app):
                 'error': str(e)
             }), 500
     
-    # ============================================================================
-    # GTFS TRANSIT ROUTING ENDPOINTS
-    # ============================================================================
-    
     @app.route("/api/transit-route", methods=['POST'])
     def get_transit_route():
         try:
@@ -916,7 +1046,7 @@ def add_model_endpoints(app):
                     'suggestion': 'Try walking mode or a different location'
                 }), 404
             
-            # ─── WIRE ML SAFETY INTO TRANSIT RESPONSE ───
+            # Wire ML safety into transit response
             safety_model = get_safety_ai_instance()
             for route in routes:
                 # Extract coordinates from route steps
@@ -959,10 +1089,7 @@ def add_model_endpoints(app):
     
     @app.route("/api/nearby-stops", methods=['GET'])
     def get_nearby_stops():
-        """
-        Get stops near a location
-        Query params: lat, lng, radius (meters)
-        """
+        """Get stops near a location"""
         try:
             if not transit_router:
                 return jsonify({
@@ -1019,13 +1146,9 @@ def add_model_endpoints(app):
                 'expected_path': GTFS_PATH
             }), 503
     
-    # ============================================================================
-    # EXISTING CALCULATE ROUTE ENDPOINT (UPDATED WITH GTFS AND IMPROVED STEPS)
-    # ============================================================================
-    
     @app.route("/api/calculate-route", methods=['POST'])
     def calculate_route():
-        """Calculate accessible route between two points (Enhanced endpoint with GTFS transit and turn-by-turn steps)"""
+        """Calculate accessible route between two points with ML-ranked routing"""
         try:
             data = request.json
             if not data:
@@ -1049,10 +1172,8 @@ def add_model_endpoints(app):
             end_lat = data.get('end_lat') or (data.get('end_location', {}).get('lat') if isinstance(data.get('end_location'), dict) else None)
             end_lng = data.get('end_lng') or (data.get('end_location', {}).get('lng') if isinstance(data.get('end_location'), dict) else None)
             
-            # Check for force refresh flag from frontend
             force_refresh = data.get('force_refresh', False)
             
-            # Log the request for debugging
             logger.info(f"=== ROUTE REQUEST ===")
             logger.info(f"From: {start_lat},{start_lng}")
             logger.info(f"To: {end_lat},{end_lng}")
@@ -1073,7 +1194,6 @@ def add_model_endpoints(app):
             start_time = None
             if start_time_str:
                 try:
-                    # Robust date parsing using dateutil if available
                     if HAS_DATEUTIL:
                         start_time = date_parser.parse(start_time_str)
                     else:
@@ -1203,24 +1323,24 @@ def add_model_endpoints(app):
                     logger.warning(f"Google Maps transit API failed: {e}")
                     error_messages.append(f"Google Transit: {str(e)}")
             
-            # ========== TRY 3: TomTom API (Pedestrian with Hazard Avoidance) ==========
+            # ========== TRY 3: TomTom API (ML-ranked with hazard avoidance) ==========
             if not route_result and tomtom_router and tomtom_router.api_key and travel_mode != 'transit':
                 try:
-                    # FORCE REFRESH - Clear TomTom cache for this specific destination
+                    # ── FORCE CLEAR ALL CACHES ──────────────────────────────────
+                    if hasattr(tomtom_router, 'route_cache'):
+                        with getattr(tomtom_router, 'cache_lock', threading.Lock()):
+                            tomtom_router.route_cache.clear()
+                    if hasattr(tomtom_router, 'geocode_cache'):
+                        tomtom_router.geocode_cache.clear()
                     if hasattr(tomtom_router, 'clear_cache'):
                         tomtom_router.clear_cache()
-                        logger.info("TomTom cache cleared before route calculation")
-                    
-                    # Force refresh hazards to avoid stale data
-                    from news_hazard_fetcher import get_news_fetcher
+
+                    # Re-fetch hazards to avoid serving stale hazard zones
                     news_fetcher = get_news_fetcher()
-                    
-                    # Force refresh the hazard cache
                     if hasattr(news_fetcher, 'force_refresh_cache'):
                         news_fetcher.force_refresh_cache()
-                        logger.info("Hazard cache force refreshed")
-                    
-                    # Get hazards near the route area (midpoint with buffer)
+
+                    # Fetch obstruction zones for the route area
                     mid_lat = (float(start_lat) + float(end_lat)) / 2
                     mid_lng = (float(start_lng) + float(end_lng)) / 2
                     route_length = haversine_distance(float(start_lat), float(start_lng), float(end_lat), float(end_lng))
@@ -1229,7 +1349,6 @@ def add_model_endpoints(app):
                     logger.info(f"Fetching hazards within {search_radius}m of route midpoint")
                     hazards = news_fetcher.get_hazards_in_area(mid_lat, mid_lng, radius_meters=search_radius)
                     
-                    # Convert to obstruction zones format
                     obstruction_zones = []
                     for hazard in hazards:
                         obstruction_zones.append({
@@ -1284,73 +1403,93 @@ def add_model_endpoints(app):
                             logger.info(f"Added {len(obstruction_zones) - len(hazards)} construction zones to avoidance list")
                     except Exception as obs_err:
                         logger.warning(f"Failed to fetch construction zones: {obs_err}")
-                    
-                    # Call TomTom router with obstruction zones and force_refresh
+
                     if obstruction_zones:
                         logger.info(f"Routing with {len(obstruction_zones)} total hazards to avoid")
-                    
-                    # Add cache-busting timestamp to prevent stale routes
-                    import time
-                    cache_buster = time.time()
-                    logger.info(f"Route request cache buster: {cache_buster}")
-                    
-                    # Log the exact coordinates being sent
+
                     logger.info(f"=== CALLING TOMTOM ROUTER ===")
                     logger.info(f"Start: {float(start_lat):.6f}, {float(start_lng):.6f}")
                     logger.info(f"Dest: {float(end_lat):.6f}, {float(end_lng):.6f}")
-                    logger.info(f"force_refresh: True")
-                    
-                    route_result = tomtom_router.calculate_route(
-                        float(start_lat), float(start_lng),
-                        float(end_lat), float(end_lng),
-                        travel_mode='pedestrian',
-                        accessibility_needs=accessibility_needs if accessibility_needs else None,
-                        obstruction_zones=obstruction_zones if obstruction_zones else None,
-                        force_refresh=True  # FORCE FRESH - prevents stale routes
-                    )
-                    
-                    # Log the result
-                    if route_result:
-                        end_point = route_result.get('end_point', {})
-                        logger.info(f"TomTom returned route ending at: {end_point.get('lat')}, {end_point.get('lng')}")
+
+                    # ── Gather up to 3 TomTom route candidates ────────────────
+                    candidates = []
+                    ROUTE_VARIANTS = [
+                        {'routeType': 'fastest'},
+                        {'routeType': 'shortest'},
+                        {'routeType': 'eco', 'avoid': 'unpavedRoads'},
+                    ]
+                    for variant in ROUTE_VARIANTS:
+                        try:
+                            cand = tomtom_router.calculate_route(
+                                float(start_lat), float(start_lng),
+                                float(end_lat),   float(end_lng),
+                                travel_mode='pedestrian',
+                                accessibility_needs=accessibility_needs or None,
+                                obstruction_zones=obstruction_zones or None,
+                                force_refresh=True,
+                                **variant,
+                            )
+                            if cand and cand.get('points') and len(cand['points']) >= 2:
+                                cand['_variant'] = variant
+                                candidates.append(cand)
+                        except Exception as e:
+                            logger.warning(f"TomTom variant {variant} failed: {e}")
+
+                    if not candidates:
+                        route_result = None
                     else:
-                        logger.warning("TomTom returned no route result")
-                    
-                    if route_result:
-                        provider_used = "TomTom (Hazard Avoidance)"
-                        logger.info(f"TomTom route with hazard avoidance successful")
-                        
-                        # Verify destination matches (safety check)
+                        # ── ML selection ──────────────────────────────────────
+                        ml_result = select_safest_route(
+                            candidates,
+                            get_safety_ai_instance(),
+                            hazard_data={'hazards': obstruction_zones or []},
+                        )
+
+                        if ml_result['warning'] == 'all_rejected':
+                            return jsonify({
+                                'success': False,
+                                'error': 'No safe route found — all candidates failed the safety threshold.',
+                                'ml_rejection': {
+                                    'threshold': ML_SAFETY_REJECT_BELOW,
+                                    'candidates_evaluated': len(ml_result['all_candidates_scored']),
+                                    'scores': [
+                                        {'safety': s['safety_score'], 'final': s['final_score']}
+                                        for s in ml_result['all_candidates_scored']
+                                    ],
+                                },
+                            }), 422
+
+                        route_result = ml_result['selected']
+                        route_result['_ml_selection'] = {
+                            'safety_score':          ml_result['safety_score'],
+                            'final_score':           ml_result['final_score'],
+                            'warning_level':         ml_result['warning_level'],
+                            'all_candidates_scored': [
+                                {'safety': s['safety_score'], 'final': s['final_score'],
+                                 'rejected': s.get('rejected', False)}
+                                for s in ml_result['all_candidates_scored']
+                            ],
+                        }
+                        provider_used = f"TomTom (ML-ranked, safety={ml_result['safety_score']:.2f})"
+
+                        # Verify destination still matches after ML selection
                         if 'end_point' in route_result:
-                            route_end_lat = route_result['end_point'].get('lat')
-                            route_end_lng = route_result['end_point'].get('lng')
-                            if route_end_lat and route_end_lng:
-                                dest_matches = (abs(route_end_lat - float(end_lat)) < 0.0001 and
-                                            abs(route_end_lng - float(end_lng)) < 0.0001)
-                                if not dest_matches:
-                                    logger.warning(f"Route destination mismatch! Route ends at {route_end_lat},{route_end_lng} but requested {end_lat},{end_lng}")
-                                    # Force another attempt without cache
-                                    route_result = None
-                                    logger.info("Retrying route calculation without cache...")
-                                    # Clear TomTom router cache for this destination
-                                    if hasattr(tomtom_router, 'route_cache'):
-                                        with tomtom_router.cache_lock:
-                                            # Clear all cache entries (aggressive but effective)
-                                            tomtom_router.route_cache.clear()
-                                            logger.info("TomTom router cache cleared")
-                                    # Retry
-                                    route_result = tomtom_router.calculate_route(
-                                        float(start_lat), float(start_lng),
-                                        float(end_lat), float(end_lng),
-                                        travel_mode='pedestrian',
-                                        accessibility_needs=accessibility_needs if accessibility_needs else None,
-                                        obstruction_zones=obstruction_zones if obstruction_zones else None,
-                                        force_refresh=True
+                            re_lat = route_result['end_point'].get('lat')
+                            re_lng = route_result['end_point'].get('lng')
+                            if re_lat and re_lng:
+                                if abs(re_lat - float(end_lat)) > 0.0001 or abs(re_lng - float(end_lng)) > 0.0001:
+                                    logger.error(
+                                        f"ML-selected route destination mismatch: "
+                                        f"got ({re_lat},{re_lng}), wanted ({end_lat},{end_lng})"
                                     )
-                                    if route_result:
-                                        provider_used = "TomTom (Hazard Avoidance - Retry)"
-                                        logger.info("TomTom route retry successful")
-                            
+                                    return jsonify({
+                                        'success': False,
+                                        'error': 'Route destination mismatch after ML selection.',
+                                        'requested': {'lat': float(end_lat), 'lng': float(end_lng)},
+                                        'received':  {'lat': re_lat,          'lng': re_lng},
+                                    }), 502
+
+                    logger.info(f"Route result provider: {provider_used}")
                 except Exception as e:
                     logger.warning(f"TomTom API failed: {e}")
                     error_messages.append(f"TomTom: {str(e)}")
@@ -1455,6 +1594,8 @@ def add_model_endpoints(app):
                         'elevator_access': 'wheelchair' in accessibility_needs,
                         'ramp_access': 'wheelchair' in accessibility_needs,
                         'safety': safety_dict,
+                        'ml_selection': route_result.get('_ml_selection'),
+                        'warning_level': (route_result.get('_ml_selection') or {}).get('warning_level'),
                         'arrival_time': (datetime.now().timestamp() + duration_val),
                         'bounds': {
                             'north': max(float(start_lat), float(end_lat)),
@@ -1494,8 +1635,8 @@ def add_model_endpoints(app):
                         prefs=accessibility_preferences
                     )
                 
-                # Only cache if not force_refresh
-                if not force_refresh:
+                # Only cache if VDB caching is enabled (default: disabled)
+                if ENABLE_ROUTE_VDB_CACHE:
                     try:
                         query_text = (
                             f"route from {start_address} to {end_address} "
@@ -1507,16 +1648,7 @@ def add_model_endpoints(app):
                         )
                         query_vector = embed(query_text)
                         
-                        # Check if query_vector is valid
                         if query_vector is not None and np.any(query_vector):
-                            # FIX 3: DISABLE VECTORDB CACHE READ - only insert, never read
-                            # cached_result = vdb.compare(query_vector)
-                            # if cached_result and isinstance(cached_result, dict):
-                            #     cached_value = cached_result.get('value')
-                            #     if cached_value:
-                            #         logger.info("Using cached route result")
-                            #         return jsonify(cached_value)
-                            
                             vdb.insert(query_vector, response_data)
                     except Exception as e:
                         logger.warning(f"Caching failed (non-critical): {e}")
@@ -1600,6 +1732,8 @@ def add_model_endpoints(app):
                     'elevator_access': 'wheelchair' in accessibility_needs,
                     'ramp_access': 'wheelchair' in accessibility_needs,
                     'safety': {'overall_safety': 0.7, 'risk_level': 'medium', 'recommendations': ['Estimated route - use caution']},
+                    'ml_selection': None,
+                    'warning_level': None,
                     'arrival_time': (datetime.now().timestamp() + approx_duration),
                     'bounds': {
                         'north': max(float(start_lat), float(end_lat)),
@@ -1639,23 +1773,20 @@ def add_model_endpoints(app):
             
             logger.info(f"Voice route request: from '{start}' to '{destination}' mode '{mode}'")
             
-            # Import geocoding functions
             from voice_handler import geocode_address, correct_transcript, detect_current_location_intent
             
-            # ========== GEOCODE START LOCATION ==========
-            is_current = detect_current_location_intent(start) if hasattr(detect_current_location_intent, '__call__') else False
+            # Geocode start
+            is_current = detect_current_location_intent(start) if callable(detect_current_location_intent) else False
             is_current = is_current or start.lower() == 'current location'
             
             if is_current:
                 start_lat, start_lng = user_lat, user_lng
                 start_address = "Your Current Location"
-                logger.info(f"Start is current location: ({start_lat}, {start_lng})")
             else:
                 geocoded = geocode_address(start, bias_lat=user_lat, bias_lng=user_lng)
                 if not geocoded:
                     corrected, _ = correct_transcript(start, context="address")
                     if corrected != start:
-                        logger.info(f"Corrected start from '{start}' to '{corrected}'")
                         geocoded = geocode_address(corrected, bias_lat=user_lat, bias_lng=user_lng)
                 
                 if not geocoded:
@@ -1666,14 +1797,12 @@ def add_model_endpoints(app):
                     }), 422
                 
                 start_lat, start_lng, start_address = geocoded
-                logger.info(f"Start geocoded: '{start_address}' → ({start_lat:.6f}, {start_lng:.6f})")
             
-            # ========== GEOCODE DESTINATION ==========
+            # Geocode destination
             geocoded = geocode_address(destination, bias_lat=user_lat, bias_lng=user_lng)
             if not geocoded:
                 corrected, _ = correct_transcript(destination, context="address")
                 if corrected != destination:
-                    logger.info(f"Corrected destination from '{destination}' to '{corrected}'")
                     geocoded = geocode_address(corrected, bias_lat=user_lat, bias_lng=user_lng)
             
             if not geocoded:
@@ -1684,26 +1813,20 @@ def add_model_endpoints(app):
                 }), 422
             
             dest_lat, dest_lng, dest_address = geocoded
-            logger.info(f"Destination geocoded: '{dest_address}' → ({dest_lat:.6f}, {dest_lng:.6f})")
             
-            # ========== CALCULATE ROUTE BASED ON MODE ==========
+            # Calculate route based on mode
             route_coords = []
             steps = []
             distance_str = ""
             duration_str = ""
             safety_dict = {'overall_safety': 0.8, 'risk_level': 'low', 'recommendations': []}
             provider_used = "geocoding_only"
+            dist_m = 0
             
-            # ========== TRANSIT MODE - USE GTFS TRANSIT ROUTER ==========
+            # Transit mode
             if mode == 'transit' and transit_router:
                 try:
-                    logger.info(f"Using GTFS transit router for route from ({start_lat},{start_lng}) to ({dest_lat},{dest_lng})")
-                    
-                    # Get current time
-                    from datetime import datetime
                     current_time = datetime.now()
-                    
-                    # Find transit route
                     routes = transit_router.find_route(
                         start_lat, start_lng,
                         dest_lat, dest_lng,
@@ -1717,7 +1840,6 @@ def add_model_endpoints(app):
                     if routes and len(routes) > 0:
                         best_route = routes[0]
                         
-                        # Extract route coordinates from steps
                         all_coords = []
                         for step in best_route.get('steps', []):
                             geom = step.get('path_geometry', [])
@@ -1729,7 +1851,6 @@ def add_model_endpoints(app):
                         
                         route_coords = all_coords if all_coords else [[start_lat, start_lng], [dest_lat, dest_lng]]
                         
-                        # Format distance and duration
                         dist_m = best_route.get('total_distance_meters', 0)
                         dur_s = best_route.get('total_time_seconds', 0)
                         
@@ -1748,7 +1869,6 @@ def add_model_endpoints(app):
                             mins = int((dur_s % 3600) / 60)
                             duration_str = f"{hours} hour{'s' if hours != 1 else ''} and {mins} minute{'s' if mins != 1 else ''}"
                         
-                        # Build steps for frontend
                         steps = []
                         for step in best_route.get('steps', []):
                             if step.get('type') == 'walk':
@@ -1772,7 +1892,6 @@ def add_model_endpoints(app):
                                     'arrival_stop': to_stop
                                 })
                         
-                        # Add start and end steps if missing
                         if not steps:
                             steps = [
                                 {'instruction': f"Head from {start_address} to {dest_address}", 'distance': distance_str, 'duration': duration_str},
@@ -1780,30 +1899,13 @@ def add_model_endpoints(app):
                             ]
                         
                         provider_used = "gtfs_transit"
-                        logger.info(f"GTFS transit route found: {distance_str}, {duration_str}")
-                        
-                        # Get safety score
-                        safety_ai_instance = get_safety_ai_instance()
-                        if safety_ai_instance and safety_ai_instance.is_trained and route_coords:
-                            try:
-                                route_coords_for_safety = [{'lat': p[0], 'lng': p[1]} for p in route_coords]
-                                safety_result = safety_ai_instance.calculate_route_safety(route_coords_for_safety)
-                                safety_dict = {
-                                    'overall_safety': safety_result.get('overall_safety', 0.8),
-                                    'risk_level': safety_result.get('risk_level', 'low'),
-                                    'recommendations': safety_result.get('recommendations', [])
-                                }
-                            except:
-                                pass
                     else:
-                        logger.warning("GTFS transit router found no routes, falling back to walking")
-                        mode = 'walk'  # Fall back to walking
-                        
+                        mode = 'walk'
                 except Exception as e:
                     logger.error(f"GTFS transit routing failed: {e}", exc_info=True)
-                    mode = 'walk'  # Fall back to walking
+                    mode = 'walk'
             
-            # ========== WALK/WHEELCHAIR MODE - USE TOMTOM ==========
+            # Walking mode
             if mode != 'transit' and tomtom_router:
                 try:
                     travel_mode = 'pedestrian'
@@ -1844,7 +1946,6 @@ def add_model_endpoints(app):
                             ]
                         
                         provider_used = "tomtom"
-                        logger.info(f"TomTom route found with {len(route_coords)} points")
                         
                         safety_ai_instance = get_safety_ai_instance()
                         if safety_ai_instance and safety_ai_instance.is_trained and route_coords:
@@ -1858,11 +1959,10 @@ def add_model_endpoints(app):
                                 }
                             except:
                                 pass
-                                
                 except Exception as e:
                     logger.warning(f"TomTom routing failed: {e}")
             
-            # ========== FALLBACK TO DIRECT LINE ==========
+            # Fallback to direct line
             if not route_coords:
                 dist_m = haversine_distance(start_lat, start_lng, dest_lat, dest_lng)
                 if dist_m >= 1000:
@@ -1890,7 +1990,6 @@ def add_model_endpoints(app):
                 ]
                 provider_used = "direct_line"
             
-            # ========== GENERATE RESPONSE ==========
             response = {
                 'success': True,
                 'route_id': f"VR-{int(time.time())}-{random.randint(100, 999)}",
@@ -1901,7 +2000,7 @@ def add_model_endpoints(app):
                 'end_lat': dest_lat,
                 'end_lng': dest_lng,
                 'distance': distance_str,
-                'distance_meters': dist_m if 'dist_m' in dir() else 0,
+                'distance_meters': dist_m,
                 'duration': duration_str,
                 'steps': steps,
                 'route_coords': route_coords,
@@ -1910,16 +2009,11 @@ def add_model_endpoints(app):
                 'provider': provider_used
             }
             
-            logger.info(f"Voice route successful: {start_address} → {dest_address} using {provider_used}")
             return jsonify(response)
             
         except Exception as e:
             logger.error(f"Voice route error: {e}", exc_info=True)
             return jsonify({'success': False, 'error': str(e)}), 500
-        
-    # ============================================================================
-    # NEW TRANSIT AND OBSTRUCTION ENDPOINTS
-    # ============================================================================
 
     @app.route("/api/area-obstructions", methods=['POST'])
     def get_area_obstructions():
@@ -1930,14 +2024,12 @@ def add_model_endpoints(app):
             lng = float(data.get('lng', -79.9959))
             radius = float(data.get('radius', 2000))
             
-            # Allow custom bounding box to override radius calculation
             use_custom_bbox = data.get('use_custom_bbox', False)
             custom_min_lat = data.get('min_lat')
             custom_max_lat = data.get('max_lat')
             custom_min_lng = data.get('min_lng')
             custom_max_lng = data.get('max_lng')
             
-            # Options to include different data sources
             include_emergencies = data.get('include_emergencies', True)
             include_news = data.get('include_news', True)
             
@@ -1946,7 +2038,7 @@ def add_model_endpoints(app):
             emergencies_911 = []
             news_hazards = []
 
-            # PART 1: FETCH TOMTOM TRAFFIC INCIDENTS
+            # PART 1: TOMTOM TRAFFIC INCIDENTS
             tomtom_key = os.getenv('TOMTOM_API_KEY') or (tomtom_router.api_key if tomtom_router else None)
             if tomtom_key:
                 try:
@@ -1955,7 +2047,6 @@ def add_model_endpoints(app):
                         max_lat = custom_max_lat
                         min_lng = custom_min_lng
                         max_lng = custom_max_lng
-                        logger.info(f"Using custom bounding box: {min_lat},{min_lng} to {max_lat},{max_lng}")
                     else:
                         km = radius / 1000.0
                         delta_lat = km * 0.009
@@ -1966,7 +2057,6 @@ def add_model_endpoints(app):
                         max_lng = lng + delta_lng
 
                     fields_param = "{incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code},startTime,endTime,from,to}}}"
-
                     incidents_url = (
                         f"https://api.tomtom.com/traffic/services/5/incidentDetails"
                         f"?key={tomtom_key}"
@@ -1981,7 +2071,6 @@ def add_model_endpoints(app):
                     if resp.status_code == 200:
                         incidents_data = resp.json()
                         incidents = incidents_data.get('incidents', [])
-                        logger.info(f"TomTom returned {len(incidents)} incidents")
 
                         construction_categories = {7, 8, 9, 10}
                         hazard_categories = {1, 2, 3, 4, 5, 11, 14}
@@ -2058,13 +2147,11 @@ def add_model_endpoints(app):
                 except Exception as e:
                     logger.error(f"TomTom incidents API error: {e}")
 
-            # PART 2: FETCH 911 EMERGENCIES
+            # PART 2: 911 EMERGENCIES
             if include_emergencies:
                 try:
-                    from emergency_data_fetcher import get_emergency_fetcher
                     fetcher = get_emergency_fetcher()
                     area_emergencies = fetcher.get_emergencies_in_area(lat, lng, radius)
-                    logger.info(f"Found {len(area_emergencies)} active 911 emergencies in area")
                     
                     for emergency in area_emergencies:
                         subtype = emergency.get('subtype', 'emergency')
@@ -2083,22 +2170,18 @@ def add_model_endpoints(app):
                             'is_active': emergency.get('is_active', True),
                             'category': 'emergency'
                         }
-                        
                         emergencies_911.append(emergency_hazard)
                         hazards.append(emergency_hazard)
-                        
-                except ImportError as e:
-                    logger.warning(f"Emergency data fetcher not available: {e}")
+                except ImportError:
+                    logger.warning("Emergency data fetcher not available")
                 except Exception as e:
                     logger.error(f"Failed to fetch 911 emergencies: {e}")
 
-            # PART 3: FETCH NEWS-BASED HAZARDS
+            # PART 3: NEWS-BASED HAZARDS
             if include_news:
                 try:
-                    from news_hazard_fetcher import get_news_fetcher
                     news_fetcher = get_news_fetcher()
                     news_hazards_list = news_fetcher.get_hazards_in_area(lat, lng, radius)
-                    logger.info(f"Found {len(news_hazards_list)} news-based hazards in area")
                     
                     for news_hazard in news_hazards_list:
                         news_formatted = {
@@ -2119,13 +2202,11 @@ def add_model_endpoints(app):
                         }
                         news_hazards.append(news_formatted)
                         hazards.append(news_formatted)
-                        
-                except ImportError as e:
-                    logger.warning(f"News hazard fetcher not available: {e}")
+                except ImportError:
+                    logger.warning("News hazard fetcher not available")
                 except Exception as e:
                     logger.error(f"Failed to fetch news hazards: {e}")
 
-            # PART 4: PREPARE RESPONSE
             if use_custom_bbox and all([custom_min_lat, custom_max_lat, custom_min_lng, custom_max_lng]):
                 response_bbox = {
                     'min_lat': custom_min_lat,
@@ -2168,7 +2249,6 @@ def add_model_endpoints(app):
             lng = data.get('lng')
             radius = data.get('radius', 1000)
             
-            from news_hazard_fetcher import get_news_fetcher
             fetcher = get_news_fetcher()
             
             if lat and lng:
@@ -2212,7 +2292,6 @@ def add_model_endpoints(app):
                 try:
                     from real_time_tracker import RealTimeTracker, Position
                     tracker_instance = RealTimeTracker(None, None)
-                    logger.warning("Created temporary tracker for route alternatives")
                 except ImportError:
                     return jsonify({
                         'success': True,
@@ -2226,7 +2305,7 @@ def add_model_endpoints(app):
                 start, dest, set(accessibility_needs)
             )
             
-            formatted_alternatives = []
+            formatted = []
             for alt in alternatives:
                 formatted_alt = {
                     'index': alt.get('index', 0),
@@ -2246,11 +2325,11 @@ def add_model_endpoints(app):
                 if alt.get('construction_warnings'):
                     formatted_alt['warnings'] = alt['construction_warnings']
                 
-                formatted_alternatives.append(formatted_alt)
+                formatted.append(formatted_alt)
             
             return jsonify({
                 'success': True,
-                'alternatives': formatted_alternatives
+                'alternatives': formatted
             })
             
         except Exception as e:
@@ -2386,8 +2465,6 @@ def add_model_endpoints(app):
                     
                     if route_emergencies:
                         obstructions['has_obstruction'] = True
-                        logger.info(f"Found {len(route_emergencies)} emergencies near route")
-                        
                 except Exception as e:
                     logger.warning(f"Failed to get route emergencies: {e}")
             
@@ -2424,16 +2501,9 @@ def add_model_endpoints(app):
                 'error': str(e)
             }), 500
 
-    # ── INSERT AFTER /api/check-obstructions endpoint ─────────────────
-    # (new endpoint 1 of 2)
-
     @app.route("/api/alternate-destinations/check", methods=['POST'])
     def check_alternate_destinations_needed():
-        """
-        Lightweight endpoint: checks if a route passes through hazards and
-        whether alternate destinations should be suggested.
-        Used by frontend to decide whether to trigger full alternate computation.
-        """
+        """Lightweight endpoint: checks if a route passes through hazards"""
         try:
             data = request.json
             route_coords = data.get('route_coords', [])
@@ -2451,14 +2521,12 @@ def add_model_endpoints(app):
                 elif isinstance(coord, dict):
                     waypoints.append((float(coord.get('lat', 0)), float(coord.get('lng', 0))))
             
-            # Fetch current hazards for the route area
             if not waypoints:
                 return jsonify({'success': False, 'error': 'No valid coordinates'}), 400
             
             mid_lat = sum(w[0] for w in waypoints) / len(waypoints)
             mid_lng = sum(w[1] for w in waypoints) / len(waypoints)
             
-            # Get TomTom incidents + news hazards in route area
             all_hazards = []
             tomtom_key = os.getenv('TOMTOM_API_KEY') or (tomtom_router.api_key if tomtom_router else None)
             
@@ -2488,7 +2556,6 @@ def add_model_endpoints(app):
                     logger.warning(f"TomTom fetch for alt-dest check failed: {e}")
             
             try:
-                from news_hazard_fetcher import get_news_fetcher
                 news = get_news_fetcher()
                 for h in news.get_hazards_in_area(mid_lat, mid_lng, 1500):
                     all_hazards.append({'lat': h['lat'], 'lng': h['lng'],
@@ -2497,7 +2564,6 @@ def add_model_endpoints(app):
             except Exception as e:
                 logger.debug(f"News hazard fetch for alt-dest check: {e}")
             
-            # Check each route segment against each hazard
             route_hazards = []
             for hazard in all_hazards:
                 if hazard.get('severity', 0) < 0.5: continue
@@ -2507,7 +2573,6 @@ def add_model_endpoints(app):
                     seg_e = [waypoints[i+1][1], waypoints[i+1][0]]
                     hz_pt = [hazard['lng'], hazard['lat']]
                     
-                    # Simplified point-to-segment distance
                     dx, dy = seg_e[0]-seg_s[0], seg_e[1]-seg_s[1]
                     if dx == 0 and dy == 0:
                         dist = haversine_distance(hazard['lat'], hazard['lng'], waypoints[i][0], waypoints[i][1])
@@ -2522,7 +2587,6 @@ def add_model_endpoints(app):
                             route_hazards.append({**hazard, 'distance_from_route': round(dist, 1)})
                         break
             
-            # Check if destination itself is in hazard
             dest_in_hazard = None
             for h in all_hazards:
                 d = haversine_distance(dest_lat, dest_lng, h['lat'], h['lng'])
@@ -2549,17 +2613,9 @@ def add_model_endpoints(app):
             logger.error(f"Alternate destinations check error: {e}", exc_info=True)
             return jsonify({'success': False, 'error': str(e)}), 500
 
-
-    # ── INSERT AFTER /api/alternate-destinations/check endpoint ─────────
-    # (new endpoint 2 of 2)
-
     @app.route("/api/alternate-destinations/search", methods=['POST'])
     def search_alternate_destinations():
-        """
-        Searches for semantically similar POIs near the original destination
-        that are NOT in hazard zones. Returns candidates with basic metadata.
-        The frontend will fetch routes for each candidate separately.
-        """
+        """Searches for semantically similar POIs near the original destination"""
         try:
             data = request.json
             dest_lat = float(data.get('dest_lat'))
@@ -2594,10 +2650,8 @@ def add_model_endpoints(app):
             poi_data = resp.json()
             candidates = []
             
-            # Fetch current hazards in area
             all_hazards = []
             try:
-                from news_hazard_fetcher import get_news_fetcher
                 news = get_news_fetcher()
                 for h in news.get_hazards_in_area(dest_lat, dest_lng, search_radius_m + 500):
                     all_hazards.append(h)
@@ -2614,7 +2668,6 @@ def add_model_endpoints(app):
                 dist_from_original = haversine_distance(c_lat, c_lng, dest_lat, dest_lng)
                 if dist_from_original < 80 or dist_from_original > 2500: continue
                 
-                # Check if this candidate is in a hazard zone
                 in_hazard = False
                 for h in all_hazards:
                     if haversine_distance(c_lat, c_lng, h['lat'], h['lng']) < (h.get('radius', 100) + 30):
@@ -2644,10 +2697,6 @@ def add_model_endpoints(app):
             logger.error(f"Alternate destinations search error: {e}", exc_info=True)
             return jsonify({'success': False, 'error': str(e)}), 500
 
-    # ============================================================================
-    # EXISTING ENDPOINTS
-    # ============================================================================
-    
     @app.route("/api/locations", methods=['GET'])
     def get_locations():
         """Get saved locations"""
@@ -2741,7 +2790,6 @@ def add_model_endpoints(app):
                 'Oakland, Pittsburgh, PA'
             ]
             
-            import random
             return jsonify({
                 'success': True,
                 'address': random.choice(addresses),
@@ -2840,7 +2888,6 @@ def add_model_endpoints(app):
                     'real_api_used': True
                 })
             
-            import random
             conditions = ['Clear', 'Cloudy', 'Rain', 'Snow']
             return jsonify({
                 'success': True,
@@ -2875,7 +2922,6 @@ def add_model_endpoints(app):
                     'real_api_used': True
                 })
             
-            import random
             return jsonify({
                 'success': True,
                 'crime': {
@@ -2940,7 +2986,6 @@ def add_model_endpoints(app):
                     'real_api_used': True
                 })
             
-            import random
             return jsonify({
                 'success': True,
                 'traffic': {
@@ -3086,7 +3131,6 @@ def setup_socketio_handlers(socketio_instance, app):
             travel_mode = data.get('travel_mode', 'pedestrian')
             start_time_str = data.get('start_time')
             
-            # Parse start time for transit
             start_time = None
             if start_time_str:
                 try:
@@ -3101,7 +3145,6 @@ def setup_socketio_handlers(socketio_instance, app):
             else:
                 start_time = datetime.now()
             
-            # Try GTFS transit first if transit mode
             if travel_mode == 'transit' and transit_router:
                 try:
                     routes = transit_router.find_route(
@@ -3144,7 +3187,6 @@ def setup_socketio_handlers(socketio_instance, app):
                 except Exception as e:
                     logger.warning(f"GTFS transit routing in WebSocket failed: {e}")
             
-            # Try Google Maps transit if transit mode
             if travel_mode == 'transit' and google_router:
                 routes = google_router.get_transit_route(start_lat, start_lng, dest_lat, dest_lng)
                 if routes:
@@ -3179,7 +3221,6 @@ def setup_socketio_handlers(socketio_instance, app):
                         })
                         return
             
-            # Try TomTom for pedestrian
             if tomtom_router and tomtom_router.api_key:
                 route_result = tomtom_router.calculate_route(
                     start_lat, start_lng, dest_lat, dest_lng,
@@ -3215,7 +3256,6 @@ def setup_socketio_handlers(socketio_instance, app):
                     })
                     return
             
-            # Fallback
             safety_ai_instance = get_safety_ai_instance()
             if safety_ai_instance:
                 route_coords = [
@@ -3334,10 +3374,8 @@ def main():
         logger.info("Voice handler registered successfully")
     except Exception as e:
         logger.warning(f"Voice handler failed to initialize (non-critical): {e}")
-        logger.warning("Voice features will be unavailable. See voice_handler.py for setup.")
     
-    
-    # Initialize the RealTimeTracker with valid parameters
+    # Initialize the RealTimeTracker
     try:
         from real_time_tracker import RealTimeTracker
         tracker_instance = RealTimeTracker(socketio, app)
@@ -3351,11 +3389,9 @@ def main():
     
     # Initialize EMERGENCY DATA FETCHER
     try:
-        from emergency_data_fetcher import get_emergency_fetcher
         emergency_fetcher = get_emergency_fetcher()
         logger.info("✅ Emergency data fetcher initialized successfully")
         
-        # Get initial stats
         stats = emergency_fetcher.get_summary_stats()
         if stats['total'] > 0:
             print(f"\n📢 911 Emergency Monitor Active")
@@ -3364,11 +3400,8 @@ def main():
             print(f"   Types: {', '.join([f'{k}: {v}' for k, v in stats['by_type'].items()])}")
     except ImportError as e:
         logger.warning(f"⚠️ Emergency data fetcher not available: {e}")
-        print("\n⚠️ 911 Emergency data fetcher not available - install pandas and apscheduler")
-        print("   Run: pip install pandas apscheduler")
     except Exception as e:
         logger.error(f"❌ Failed to initialize emergency data fetcher: {e}")
-        print(f"\n❌ Failed to initialize 911 emergency data: {e}")
     
     # Add model endpoints
     app = add_model_endpoints(app)
@@ -3376,7 +3409,7 @@ def main():
     # Setup SocketIO handlers
     setup_socketio_handlers(socketio, app)
 
-    # SOCKETIO HANDLERS
+    # Additional socket handlers
     @socketio.on("connect")
     def handle_connect():
         logger.info(f"Websocket connected: {request.sid}")
@@ -3407,9 +3440,7 @@ def main():
         if np.linalg.norm(updated_coords - old_coords) > 5:
             session_state.update_location(new_lat, new_lng)
             
-            # Check for nearby emergencies when user moves significantly
             try:
-                from emergency_data_fetcher import get_emergency_fetcher
                 fetcher = get_emergency_fetcher()
                 nearby_emergencies = fetcher.get_emergencies_in_area(new_lat, new_lng, radius_meters=500)
                 
@@ -3419,7 +3450,6 @@ def main():
                         'emergencies': nearby_emergencies,
                         'user_location': {'lat': new_lat, 'lng': new_lng}
                     }, room=request.sid)
-                    logger.info(f"User {session_id} has {len(nearby_emergencies)} nearby emergencies")
             except Exception as e:
                 logger.debug(f"Could not check nearby emergencies: {e}")
     
@@ -3460,9 +3490,7 @@ def main():
     if transit_router:
         print(f"GTFS Status: ✅ Loaded with {len(transit_router.gtfs.stops)} stops, {len(transit_router.gtfs.trips)} trips")
     
-    # Print emergency monitor status
     try:
-        from emergency_data_fetcher import get_emergency_fetcher
         fetcher = get_emergency_fetcher()
         stats = fetcher.get_summary_stats()
         if stats['total'] > 0:
@@ -3486,9 +3514,7 @@ def main():
     except KeyboardInterrupt:
         print("\n\n🛑 Server stopped by user")
         
-        # Clean shutdown for emergency fetcher
         try:
-            from emergency_data_fetcher import get_emergency_fetcher
             fetcher = get_emergency_fetcher()
             if hasattr(fetcher, 'scheduler') and fetcher.scheduler:
                 fetcher.scheduler.shutdown()

@@ -1,4 +1,4 @@
-# tomtom_router.py
+# FILE: backend/tomtom_router.py
 import os
 import requests
 import logging
@@ -6,6 +6,16 @@ from typing import List, Dict, Optional, Tuple
 from datetime import datetime, timedelta
 import math
 from threading import Lock
+from dotenv import load_dotenv
+import os
+
+# Load frontend .env file
+frontend_env = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', '.env')
+if os.path.exists(frontend_env):
+    load_dotenv(frontend_env)
+    print(f"Loaded frontend .env from: {frontend_env}")
+else:
+    print(f"Frontend .env not found at: {frontend_env}")
 
 logger = logging.getLogger(__name__)
 
@@ -36,11 +46,12 @@ class TomTomRouter:
     """Handle routing with TomTom API and OSRM fallback for pedestrian routes"""
     
     def __init__(self, api_key: str = None):
-        self.api_key = api_key or os.getenv('TOMTOM_API_KEY', 'pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM')
+        self.api_key = api_key or os.getenv('VITE_TOMTOM_API_KEY')
         self.base_url = "https://api.tomtom.com/routing/1"
         self.search_url = "https://api.tomtom.com/search/2"
         
         self.route_cache = {}
+        self.geocode_cache = {}          # <-- ADDED: external cache attribute
         self.cache_lock = Lock()
         self.cache_max_size = 100
         self.cache_ttl = 300
@@ -49,15 +60,25 @@ class TomTomRouter:
         self.session.headers.update({'User-Agent': 'TryverSafetyApp/1.0'})
         
     def _get_cache_key(self, start_lat, start_lng, dest_lat, dest_lng, 
-                       travel_mode, avoid_hazards, accessibility_needs):
-        key = (
+                       travel_mode, avoid_hazards, accessibility_needs,
+                       extra_params=None):
+        """Generate deterministic cache key that includes ALL request parameters"""
+        key_parts = [
             round(start_lat, 6), round(start_lng, 6),
             round(dest_lat, 6), round(dest_lng, 6),
             travel_mode,
             avoid_hazards,
             frozenset(accessibility_needs) if accessibility_needs else frozenset()
-        )
-        return key
+        ]
+        if extra_params:
+            for k in sorted(extra_params.keys()):
+                key_parts.append(k)
+                val = extra_params[k]
+                if isinstance(val, (list, set)):
+                    key_parts.append(tuple(sorted(val)))
+                else:
+                    key_parts.append(val)
+        return key_parts
     
     def _get_cached_route(self, key, dest_lat=None, dest_lng=None):
         with self.cache_lock:
@@ -73,6 +94,7 @@ class TomTomRouter:
                             return route_data
                         else:
                             del self.route_cache[key]
+                            logger.warning(f"Stale cache — expected ({dest_lat},{dest_lng}), got ({cached_lat},{cached_lng})")
                             return None
                     return route_data
                 else:
@@ -471,12 +493,15 @@ class TomTomRouter:
                         avoid_hazards: bool = True,
                         accessibility_needs: List[str] = None,
                         obstruction_zones: List[Dict] = None,
-                        force_refresh: bool = False) -> Optional[Dict]:
+                        force_refresh: bool = True,
+                        **extra_params) -> Optional[Dict]:
         
         logger.info(f"=== calculate_route called ===")
         logger.info(f"Start: {start_lat}, {start_lng}")
         logger.info(f"Dest: {dest_lat}, {dest_lng}")
         logger.info(f"Hazards to avoid: {len(obstruction_zones) if obstruction_zones else 0}")
+        logger.info(f"Extra params: {extra_params}")
+        logger.info(f"force_refresh: {force_refresh}")
         
         if not (-90 <= start_lat <= 90) or not (-180 <= start_lng <= 180):
             return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
@@ -484,7 +509,8 @@ class TomTomRouter:
             return self._generate_fallback_route(start_lat, start_lng, dest_lat, dest_lng)
         
         cache_key = self._get_cache_key(start_lat, start_lng, dest_lat, dest_lng,
-                                        travel_mode, avoid_hazards, accessibility_needs)
+                                        travel_mode, avoid_hazards, accessibility_needs,
+                                        extra_params)
         
         if not force_refresh:
             cached_route = self._get_cached_route(cache_key, dest_lat, dest_lng)
@@ -509,12 +535,16 @@ class TomTomRouter:
                 params = {
                     'key': self.api_key,
                     'travelMode': 'pedestrian',
-                    'routeType': 'fastest',
+                    'routeType': extra_params.get('routeType', 'fastest'),
                     'traffic': 'false',
                     'instructionsType': 'text',
                     'language': 'en-US',
                     'routeRepresentation': 'polyline',
                 }
+                
+                # Apply extra params (avoid, hilliness, etc.)
+                if 'avoid' in extra_params:
+                    params['avoid'] = extra_params['avoid']
                 
                 # Add hazard avoidance if zones provided
                 if obstruction_zones and len(obstruction_zones) > 0:
@@ -524,9 +554,13 @@ class TomTomRouter:
                 
                 if accessibility_needs and 'wheelchair' in accessibility_needs:
                     params['hilliness'] = 'normal'
-                    params['avoid'] = 'unpavedRoads,stairs'
+                    current_avoid = params.get('avoid', '')
+                    if current_avoid:
+                        params['avoid'] = current_avoid + ',unpavedRoads,stairs'
+                    else:
+                        params['avoid'] = 'unpavedRoads,stairs'
                 
-                logger.info(f"Calling TomTom API...")
+                logger.info(f"Calling TomTom API with routeType={params.get('routeType')}...")
                 response = self.session.get(url, params=params, timeout=15)
                 
                 if response.status_code == 200:
@@ -776,6 +810,7 @@ class TomTomRouter:
     def clear_cache(self):
         with self.cache_lock:
             self.route_cache.clear()
+            self.geocode_cache.clear()       # <-- ADDED: also clear geocode cache
             logger.info("Route cache cleared")
     
     def __del__(self):

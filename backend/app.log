@@ -23318,3 +23318,140 @@ AssertionError: write() before start_response
 2026-04-28 21:05:38,463 - news_hazard_fetcher - INFO - Returning 152 cached hazards (age: 66s)
 2026-04-28 21:05:38,463 - __main__ - INFO - Found 44 news-based hazards in area
 2026-04-28 21:05:38,471 - werkzeug - INFO - 127.0.0.1 - - [28/Apr/2026 21:05:38] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-05-03 23:11:12,305 - tomtom_router - INFO - Route cache cleared
+2026-05-03 23:11:12,306 - app - INFO - TomTom router cache cleared on startup
+2026-05-03 23:11:12,332 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-05-03 23:11:13,455 - gtfs_loader - INFO - Loaded GTFS from cache (age: 6.1 days)
+2026-05-03 23:11:13,455 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-05-03 23:11:28,242 - transit_router - INFO - Loaded 305 shapes
+2026-05-03 23:11:28,706 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-05-03 23:11:28,722 - transit_router - INFO - Loaded 101 routes
+2026-05-03 23:11:29,093 - transit_router - INFO - Cached 15826 trips
+2026-05-03 23:11:29,160 - transit_router - INFO - Route-stops index: 100 routes
+2026-05-03 23:11:29,199 - transit_router - INFO - Shape index: 305 shapes
+2026-05-03 23:11:29,199 - app - INFO - GTFS transit router initialized successfully
+2026-05-03 23:11:42,580 - tomtom_router - INFO - Route cache cleared
+2026-05-03 23:11:42,581 - __main__ - INFO - TomTom router cache cleared on startup
+2026-05-03 23:11:42,607 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-05-03 23:11:43,751 - gtfs_loader - INFO - Loaded GTFS from cache (age: 6.1 days)
+2026-05-03 23:11:43,751 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-05-03 23:11:58,601 - transit_router - INFO - Loaded 305 shapes
+2026-05-03 23:11:59,063 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-05-03 23:11:59,079 - transit_router - INFO - Loaded 101 routes
+2026-05-03 23:11:59,457 - transit_router - INFO - Cached 15826 trips
+2026-05-03 23:11:59,524 - transit_router - INFO - Route-stops index: 100 routes
+2026-05-03 23:11:59,563 - transit_router - INFO - Shape index: 305 shapes
+2026-05-03 23:11:59,563 - __main__ - INFO - GTFS transit router initialized successfully
+2026-05-03 23:12:00,401 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-03 23:12:00,402 - __main__ - INFO - Safety AI loaded successfully
+2026-05-03 23:12:00,405 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-03 23:14:22,898 - voice_handler - INFO - ✓ faster-whisper imported (optimized for M1)
+2026-05-03 23:14:22,902 - voice_handler - INFO - Voice handler initialized with address resolution + number hyphen fix + enhanced walking detection
+2026-05-03 23:14:22,902 - __main__ - INFO - Voice handler registered successfully
+2026-05-03 23:14:22,909 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-05-03 23:14:22,909 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-05-03 23:14:22,909 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-05-03 23:14:22,909 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-05-03 23:14:22,922 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-05-03 23:14:22,922 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-03 23:14:25,790 - werkzeug - INFO - 127.0.0.1 - - [03/May/2026 23:14:25] "GET /api/hello HTTP/1.1" 200 -
+2026-05-03 23:14:25,865 - werkzeug - INFO - 127.0.0.1 - - [03/May/2026 23:14:25] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-03 23:35:57,743 - voice_handler - INFO - Loading faster-whisper model 'base.en'...
+2026-05-03 23:35:57,764 - werkzeug - INFO - 127.0.0.1 - - [03/May/2026 23:35:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-05-03 23:35:57,784 - werkzeug - INFO - 127.0.0.1 - - [03/May/2026 23:35:57] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-05-03 23:35:58,026 - werkzeug - INFO - 127.0.0.1 - - [03/May/2026 23:35:58] "[35m[1mGET /socket.io/?EIO=4&transport=websocket HTTP/1.1[0m" 500 -
+2026-05-03 23:35:58,041 - werkzeug - ERROR - Error on request:
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/werkzeug/serving.py", line 370, in run_wsgi
+    execute(self.server.app)
+  File "/opt/homebrew/lib/python3.10/site-packages/werkzeug/serving.py", line 336, in execute
+    write(b"")
+  File "/opt/homebrew/lib/python3.10/site-packages/werkzeug/serving.py", line 261, in write
+    assert status_set is not None, "write() before start_response"
+AssertionError: write() before start_response
+2026-05-03 23:35:58,120 - __main__ - INFO - Websocket connected: Kw6CS4rSr4U8uB1wAAAC
+2026-05-03 23:35:58,491 - news_hazard_fetcher - WARNING - PulsePoint 401 — backing off for 24 hours
+2026-05-03 23:35:58,492 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-05-03 23:35:58,492 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-05-03 23:35:58,492 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-05-03 23:35:58,493 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-05-03 23:35:58,493 - news_hazard_fetcher - INFO - Fetching crime data from WPRDC SQL API (cutoff: 2026-03-22)...
+2026-05-03 23:35:58,494 - news_hazard_fetcher - WARNING - PulsePoint 401 — backing off for 24 hours
+2026-05-03 23:35:58,496 - news_hazard_fetcher - INFO - Hazard Fetcher initialized with WPRDC Crime Data + PulsePoint
+2026-05-03 23:35:58,496 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-05-03 23:35:58,496 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-05-03 23:35:58,496 - news_hazard_fetcher - INFO - Cache expired. Fetching fresh hazards...
+2026-05-03 23:35:58,496 - news_hazard_fetcher - INFO - Fetching crime data from WPRDC SQL API (cutoff: 2026-03-22)...
+2026-05-03 23:35:58,638 - news_hazard_fetcher - ERROR - Failed to fetch crime data: HTTPSConnectionPool(host='data.wprdc.org', port=443): Max retries exceeded with url: /api/3/action/datastore_search_sql?sql=SELECT+%2A+FROM+%22bd41992a-987a-4cca-8798-fbe1cd946b07%22+WHERE+%22ReportedDate%22+%3E%3D+%272026-03-22%27+LIMIT+500 (Caused by NameResolutionError("HTTPSConnection(host='data.wprdc.org', port=443): Failed to resolve 'data.wprdc.org' ([Errno 8] nodename nor servname provided, or not known)"))
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/urllib3/connection.py", line 204, in _new_conn
+    sock = connection.create_connection(
+  File "/opt/homebrew/lib/python3.10/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+  File "/opt/homebrew/Cellar/python@3.10/3.10.17/Frameworks/Python.framework/Versions/3.10/lib/python3.10/socket.py", line 967, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno 8] nodename nor servname provided, or not known
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+  File "/opt/homebrew/lib/python3.10/site-packages/urllib3/connectionpool.py", line 488, in _make_request
+    raise new_e
+  File "/opt/homebrew/lib/python3.10/site-packages/urllib3/connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+  File "/opt/homebrew/lib/python3.10/site-packages/urllib3/connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+  File "/opt/homebrew/lib/python3.10/site-packages/urllib3/connection.py", line 759, in connect
+    self.sock = sock = self._new_conn()
+  File "/opt/homebrew/lib/python3.10/site-packages/urllib3/connection.py", line 211, in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+urllib3.exceptions.NameResolutionError: HTTPSConnection(host='data.wprdc.org', port=443): Failed to resolve 'data.wprdc.org' ([Errno 8] nodename nor servname provided, or not known)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/requests/adapters.py", line 645, in send
+    resp = conn.urlopen(
+  File "/opt/homebrew/lib/python3.10/site-packages/urllib3/connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+  File "/opt/homebrew/lib/python3.10/site-packages/urllib3/util/retry.py", line 535, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='data.wprdc.org', port=443): Max retries exceeded with url: /api/3/action/datastore_search_sql?sql=SELECT+%2A+FROM+%22bd41992a-987a-4cca-8798-fbe1cd946b07%22+WHERE+%22ReportedDate%22+%3E%3D+%272026-03-22%27+LIMIT+500 (Caused by NameResolutionError("HTTPSConnection(host='data.wprdc.org', port=443): Failed to resolve 'data.wprdc.org' ([Errno 8] nodename nor servname provided, or not known)"))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/news_hazard_fetcher.py", line 349, in _fetch_crime_data
+    response = requests.get(url, params={"sql": sql}, timeout=15)
+  File "/opt/homebrew/lib/python3.10/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+  File "/opt/homebrew/lib/python3.10/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/opt/homebrew/lib/python3.10/site-packages/requests/sessions.py", line 592, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/opt/homebrew/lib/python3.10/site-packages/requests/sessions.py", line 706, in send
+    r = adapter.send(request, **kwargs)
+  File "/opt/homebrew/lib/python3.10/site-packages/requests/adapters.py", line 678, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPSConnectionPool(host='data.wprdc.org', port=443): Max retries exceeded with url: /api/3/action/datastore_search_sql?sql=SELECT+%2A+FROM+%22bd41992a-987a-4cca-8798-fbe1cd946b07%22+WHERE+%22ReportedDate%22+%3E%3D+%272026-03-22%27+LIMIT+500 (Caused by NameResolutionError("HTTPSConnection(host='data.wprdc.org', port=443): Failed to resolve 'data.wprdc.org' ([Errno 8] nodename nor servname provided, or not known)"))
+2026-05-03 23:35:58,657 - voice_handler - INFO - Model loaded in 0.88s
+2026-05-03 23:35:58,662 - news_hazard_fetcher - INFO - Crime hazards: 0
+2026-05-03 23:35:58,662 - werkzeug - INFO - 127.0.0.1 - - [03/May/2026 23:35:58] "GET /api/voice/status HTTP/1.1" 200 -
+2026-05-03 23:35:58,663 - voice_handler - INFO - Voice session created: vs-1777865758-5224
+2026-05-03 23:35:58,663 - news_hazard_fetcher - INFO - Total hazards after filtering: 0
+2026-05-03 23:35:58,664 - news_hazard_fetcher - INFO - Filtered out 0 low-threat incidents
+2026-05-03 23:35:58,667 - werkzeug - INFO - 127.0.0.1 - - [03/May/2026 23:35:58] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-05-03 23:35:58,667 - werkzeug - INFO - 127.0.0.1 - - [03/May/2026 23:35:58] "GET /api/voice/status HTTP/1.1" 200 -
+2026-05-03 23:35:58,819 - news_hazard_fetcher - INFO - WPRDC API response: status=200, size=592196 bytes
+2026-05-03 23:35:58,823 - news_hazard_fetcher - INFO - WPRDC returned 500 crime records
+2026-05-03 23:35:58,823 - news_hazard_fetcher - INFO - Sample record keys: ['_id', '_full_text', 'Report_Number', 'ReportedDate', 'ReportedTime', 'Hour', 'DayofWeek', 'ReportedMonth', 'NIBRS_Coded_Offense', 'NIBRS_Offense_Code', 'NIBRS_Offense_Category', 'NIBRS_Offense_Type', 'NIBRS_Crime_Against', 'NIBRS_Offense_Grouping', 'Violation', 'XCOORD', 'YCOORD', 'Zone', 'Tract', 'Neighborhood', 'Block_Address']
+2026-05-03 23:35:58,823 - news_hazard_fetcher - INFO - Sample XCOORD=-79.9843, YCOORD=40.4457
+2026-05-03 23:35:58,823 - news_hazard_fetcher - INFO - First coordinate pair: lat=40.4457, lng=-79.9843
+2026-05-03 23:35:58,909 - news_hazard_fetcher - INFO - Crime data: 500 records, filtered 328 low-threat, created 169 hazards
+2026-05-03 23:35:58,911 - news_hazard_fetcher - INFO - Crime hazards: 169
+2026-05-03 23:35:58,911 - news_hazard_fetcher - INFO - Total hazards after filtering: 138
+2026-05-03 23:35:58,911 - news_hazard_fetcher - INFO - Filtered out 31 low-threat incidents
+2026-05-03 23:35:58,915 - werkzeug - INFO - 127.0.0.1 - - [03/May/2026 23:35:58] "POST /api/area-obstructions HTTP/1.1" 200 -
