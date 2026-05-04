@@ -118,8 +118,7 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-const TOMTOM_API_KEY =
-  import.meta.env.VITE_TOMTOM_API_KEY;
+const TOMTOM_API_KEY = import.meta.env.VITE_TOMTOM_API_KEY;
 
 const destinationIcon = new L.Icon({
   iconUrl:
@@ -1963,7 +1962,7 @@ export default function AccessibleMap() {
       return [];
     }
   });
-  
+
   const [obstructedRoads, setObstructedRoads] = useState([]);
   const [currentZoom, setCurrentZoom] = useState(13);
   const [show3D, setShow3D] = useState(false);
@@ -2019,6 +2018,9 @@ export default function AccessibleMap() {
   const searchCardRef = useRef(null);
   const [searchCardBottom, setSearchCardBottom] = useState(250);
 
+  // City state
+  const [activeCity, setActiveCity] = useState("pittsburgh");
+
   const debRef = useRef(null);
   const destRef = useRef(null);
   const suggRef = useRef(null);
@@ -2031,9 +2033,47 @@ export default function AccessibleMap() {
   const [fromHiIdx, setFromHiIdx] = useState(-1);
   const [emergencies911, setEmergencies911] = useState([]);
   const [mapBounds, setMapBounds] = useState(null);
-  const [activeCity, setActiveCity] = useState("pittsburgh");
   const routeInProgress = useRef(false);
   const abortRef = useRef(null);
+
+  // Fetch cities list from backend
+  const [citiesList, setCitiesList] = useState([
+    {
+      key: "pittsburgh",
+      name: "Pittsburgh, PA",
+      lat: 40.4406,
+      lng: -79.9959,
+      bbox: { min_lat: 40.2, max_lat: 40.8, min_lng: -80.8, max_lng: -79.5 },
+    },
+    {
+      key: "philadelphia",
+      name: "Philadelphia, PA",
+      lat: 39.9526,
+      lng: -75.1652,
+      bbox: { min_lat: 39.85, max_lat: 40.14, min_lng: -75.29, max_lng: -74.95 },
+    },
+    {
+      key: "cleveland",
+      name: "Cleveland, OH",
+      lat: 41.4993,
+      lng: -81.6944,
+      bbox: { min_lat: 41.35, max_lat: 41.60, min_lng: -81.88, max_lng: -81.53 },
+    },
+    {
+      key: "columbus",
+      name: "Columbus, OH",
+      lat: 39.9612,
+      lng: -82.9988,
+      bbox: { min_lat: 39.85, max_lat: 40.16, min_lng: -83.20, max_lng: -82.77 },
+    },
+    {
+      key: "cincinnati",
+      name: "Cincinnati, OH",
+      lat: 39.1031,
+      lng: -84.512,
+      bbox: { min_lat: 38.98, max_lat: 39.32, min_lng: -84.76, max_lng: -84.26 },
+    },
+  ]);
 
   // ResizeObserver for search card
   useEffect(() => {
@@ -2051,6 +2091,34 @@ export default function AccessibleMap() {
       obs.disconnect();
       window.removeEventListener("resize", update);
     };
+  }, []);
+
+  // Fetch cities from backend on mount
+  useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:5000/api/cities");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.cities && data.cities.length > 0) {
+            const fetchedCities = data.cities.map((c) => ({
+              key: c.key,
+              name: c.display_name,
+              lat: c.center_lat,
+              lng: c.center_lng,
+              bbox: c.bbox,
+            }));
+            setCitiesList(fetchedCities);
+          }
+        }
+      } catch (err) {
+        console.warn(
+          "Failed to fetch cities from backend, using defaults:",
+          err,
+        );
+      }
+    };
+    fetchCities();
   }, []);
 
   // Compute memoized suggestion items
@@ -2444,19 +2512,26 @@ export default function AccessibleMap() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch area obstructions
+  // Fetch area obstructions with city
   useEffect(() => {
     const fetchAreaObstructions = async () => {
       try {
+        const cityMeta = citiesList.find((c) => c.key === activeCity);
+        const b = cityMeta?.bbox ?? {
+          min_lat: 40.2,
+          max_lat: 40.8,
+          min_lng: -80.8,
+          max_lng: -79.5,
+        };
         const res = await fetch("http://127.0.0.1:5000/api/area-obstructions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             use_custom_bbox: true,
-            min_lat: 40.2,
-            max_lat: 40.8,
-            min_lng: -80.8,
-            max_lng: -79.5,
+            min_lat: b.min_lat,
+            max_lat: b.max_lat,
+            min_lng: b.min_lng,
+            max_lng: b.max_lng,
             include_emergencies: true,
             include_news: true,
             city: activeCity,
@@ -2512,15 +2587,22 @@ export default function AccessibleMap() {
     fetchAreaObstructions();
     const interval = setInterval(fetchAreaObstructions, 300000);
     return () => clearInterval(interval);
-  }, [loc, activeCity]);
+  }, [loc, activeCity, citiesList]);
 
   useEffect(() => {
     const fetchRoads = async () => {
       try {
-        const minLat = 40.2,
-          maxLat = 40.8,
-          minLng = -80.8,
-          maxLng = -79.5;
+        const cityMeta = citiesList.find((c) => c.key === activeCity);
+        const b = cityMeta?.bbox ?? {
+          min_lat: 40.2,
+          max_lat: 40.8,
+          min_lng: -80.8,
+          max_lng: -79.5,
+        };
+        const minLat = b.min_lat;
+        const maxLat = b.max_lat;
+        const minLng = b.min_lng;
+        const maxLng = b.max_lng;
         const bbox = `${minLng},${minLat},${maxLng},${maxLat}`;
         const url = `https://api.tomtom.com/traffic/services/5/incidentDetails?key=${TOMTOM_API_KEY}&bbox=${bbox}&fields={incidents{geometry{type,coordinates},properties{iconCategory,events{description},from,to,startTime,endTime}}}`;
         const response = await fetch(url);
@@ -2584,7 +2666,7 @@ export default function AccessibleMap() {
       }
     };
     fetchRoads();
-  }, []);
+  }, [activeCity, citiesList]);
 
   // AbortController for search
   const searchPlaces = useCallback(
@@ -3946,6 +4028,42 @@ export default function AccessibleMap() {
                               {Math.round(emergency.severity * 100)}%
                             </span>
                           )}
+                          {emergency.source === "gdelt" && (
+                            <span
+                              className="gdelt-badge"
+                              style={{ marginLeft: 8, display: "inline-block" }}
+                            >
+                              GDELT News
+                            </span>
+                          )}
+                          {emergency.source === "socrata_crime" && (
+                            <span
+                              className="gdelt-badge"
+                              style={{
+                                marginLeft: 8,
+                                display: "inline-block",
+                                color: "#ffb347",
+                                borderColor: "rgba(255,179,71,0.35)",
+                                background: "rgba(255,179,71,0.10)",
+                              }}
+                            >
+                              City Open Data
+                            </span>
+                          )}
+                          {emergency.source === "arcgis_crime" && (
+                            <span
+                              className="gdelt-badge"
+                              style={{
+                                marginLeft: 8,
+                                display: "inline-block",
+                                color: "#c084fc",
+                                borderColor: "rgba(192,132,252,0.35)",
+                                background: "rgba(192,132,252,0.10)",
+                              }}
+                            >
+                              ArcGIS Crime
+                            </span>
+                          )}
                         </div>
                         {emergency.timestamp && (
                           <div className="emergency-popup-time">
@@ -4706,48 +4824,98 @@ export default function AccessibleMap() {
                 <div>
                   <div className="p-sec">City</div>
                   <div className="p-list">
-                    {[
-                      {
-                        key: "pittsburgh",
-                        name: "Pittsburgh, PA",
-                        lat: 40.4406,
-                        lng: -79.9959,
-                      },
-                      {
-                        key: "philadelphia",
-                        name: "Philadelphia, PA",
-                        lat: 39.9526,
-                        lng: -75.1652,
-                      },
-                      {
-                        key: "cleveland",
-                        name: "Cleveland, OH",
-                        lat: 41.4993,
-                        lng: -81.6944,
-                      },
-                      {
-                        key: "columbus",
-                        name: "Columbus, OH",
-                        lat: 39.9612,
-                        lng: -82.9988,
-                      },
-                      {
-                        key: "cincinnati",
-                        name: "Cincinnati, OH",
-                        lat: 39.1031,
-                        lng: -84.512,
-                      },
-                    ].map((city) => (
+                    {citiesList.map((city) => (
                       <button
                         key={city.key}
                         className={`p-item${activeCity === city.key ? " sel" : ""}`}
-                        onClick={() => {
+                        onClick={async () => {
                           setActiveCity(city.key);
                           setLoc([city.lat, city.lng]);
                           setFromVal("Current Location");
                           clearRoute();
                           setPanel(null);
-                          say(`Switched to ${city.name}`);
+                          say(
+                            `Switched to ${city.name} — loading safety data…`,
+                          );
+
+                          // Pre-warm the hazard cache for the new city
+                          try {
+                            const preWarmRes = await fetch(
+                              "http://127.0.0.1:5000/api/city-hazards",
+                              {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  city: city.key,
+                                  force_refresh: false,
+                                }),
+                              },
+                            );
+                            const preWarmData = await preWarmRes.json();
+                            if (preWarmData.success) {
+                              say(
+                                `${city.name} ready — ${preWarmData.count} safety events loaded`,
+                              );
+                              // Immediately refresh the map markers with new city's hazards
+                              const sanitize = (arr) =>
+                                (arr || [])
+                                  .map((item) => {
+                                    const latNum = Number(
+                                      item.lat ?? item.latitude ?? null,
+                                    );
+                                    const lngNum = Number(
+                                      item.lng ??
+                                        item.longitude ??
+                                        item.lon ??
+                                        null,
+                                    );
+                                    if (
+                                      !isNaN(latNum) &&
+                                      !isNaN(lngNum) &&
+                                      isFinite(latNum) &&
+                                      isFinite(lngNum)
+                                    )
+                                      return {
+                                        ...item,
+                                        lat: latNum,
+                                        lng: lngNum,
+                                      };
+                                    return null;
+                                  })
+                                  .filter(Boolean);
+                              const allHazards = sanitize(
+                                preWarmData.hazards || [],
+                              );
+                              const newsHazards = allHazards.filter(
+                                (h) =>
+                                  h.source === "news_api" ||
+                                  h.source === "socrata_crime" ||
+                                  h.source === "arcgis_crime" ||
+                                  h.source === "wprdc_crime_data",
+                              );
+                              const tomtomHazards = allHazards.filter(
+                                (h) => h.source === "tomtom",
+                              );
+                              const ppHazards = allHazards.filter(
+                                (h) => h.source === "pulsepoint",
+                              );
+                              const gdeltHazards = allHazards.filter(
+                                (h) => h.source === "gdelt",
+                              );
+                              setEmergencies911([
+                                ...newsHazards,
+                                ...ppHazards,
+                                ...gdeltHazards,
+                              ]);
+                              setActiveHazards(tomtomHazards);
+                            }
+                          } catch (err) {
+                            console.warn(
+                              "City pre-warm failed (non-critical):",
+                              err,
+                            );
+                            say(`Switched to ${city.name}`);
+                          }
                         }}
                       >
                         <div className="p-ico">

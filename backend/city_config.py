@@ -1,62 +1,198 @@
 """
-city_config.py — Multi-city configuration registry for Tryver
-"""
-from typing import Dict, Any
+city_config.py — Canonical city registry for Tryver multi-city expansion.
 
-CITY_CONFIGS: Dict[str, Dict[str, Any]] = {
+Each city dict contains everything needed to:
+  1. Fetch crime data from the city's open-data portal
+  2. Initialise a PulsePoint agency search
+  3. Query GDELT for news-based hazards
+  4. Validate coordinates against the city bounding box
+
+ADDING A NEW CITY: add one entry to CITIES and restart the server. No other changes needed.
+"""
+
+from datetime import datetime, timedelta
+
+CITIES = {
+
     "pittsburgh": {
-        "name": "Pittsburgh, PA", "state": "PA",
-        "center_lat": 40.4406, "center_lng": -79.9959,
-        "bbox": {"min_lat": 40.2, "max_lat": 40.8, "min_lng": -80.8, "max_lng": -79.5},
-        "zoom": 13, "gtfs_path": "GTFS.zip",
-        "tomtom_search_radius": 50000,
-        "wprdc_crime_resource": "bd41992a-987a-4cca-8798-fbe1cd946b07",
-        "gdelt_fips": "US-PA", "gdelt_geoname": "Pittsburgh",
-        "timezone": "America/New_York",
-        "supports_wprdc": True, "supports_pulsepoint": True,
+        "display_name":   "Pittsburgh, PA",
+        "center_lat":     40.4406,
+        "center_lng":    -79.9959,
+        "gdelt_geoname":  "Pittsburgh Pennsylvania",
+        "bbox": {
+            "min_lat": 40.20, "max_lat": 40.80,
+            "min_lng": -80.80, "max_lng": -79.50,
+        },
+        "pulsepoint_search_coords": "40.4406,-79.9959",
+
+        # ── Crime data source ──────────────────────────────────────────────
+        "crime_source": "wprdc_ckan",
+        "crime_endpoint": "https://data.wprdc.org/api/3/action/datastore_search_sql",
+        "crime_resource_id": "bd41992a-987a-4cca-8798-fbe1cd946b07",
+        "crime_date_col":    "ReportedDate",
+        "crime_offense_col": "NIBRS_Coded_Offense",
+        "crime_lat_col":     "YCOORD",
+        "crime_lng_col":     "XCOORD",
+        "crime_address_col": "Block_Address",
+        "crime_neighborhood_col": "Neighborhood",
+        "crime_limit":       500,
+        "crime_lookback_days": 42,
     },
-    "philadelphia": {
-        "name": "Philadelphia, PA", "state": "PA",
-        "center_lat": 39.9526, "center_lng": -75.1652,
-        "bbox": {"min_lat": 39.85, "max_lat": 40.05, "min_lng": -75.35, "max_lng": -74.95},
-        "zoom": 13, "gtfs_path": "SEPTA_GTFS.zip",
-        "tomtom_search_radius": 50000, "wprdc_crime_resource": None,
-        "gdelt_fips": "US-PA", "gdelt_geoname": "Philadelphia",
-        "timezone": "America/New_York", "supports_wprdc": False, "supports_pulsepoint": False,
+
+        "philadelphia": {
+        "display_name":   "Philadelphia, PA",
+        "center_lat":     39.9526,
+        "center_lng":    -75.1652,
+        "gdelt_geoname":  "Philadelphia Pennsylvania",
+        "bbox": {
+            "min_lat": 39.85, "max_lat": 40.14,
+            "min_lng": -75.29, "max_lng": -74.95,
+        },
+        "pulsepoint_search_coords": "39.9526,-75.1652",
+
+        "crime_source":             "socrata_json",
+        "crime_endpoint":          "https://data.phila.gov/resource/sspu-uyfa.json",
+        "crime_fallback_endpoint":  None,
+        "crime_date_col":           "dispatch_date_time",
+        "crime_offense_col":        "text_general_code",
+        "crime_lat_col":            "point_y",     # NOT "lat"
+        "crime_lng_col":            "point_x",     # NOT "lng"
+        "crime_address_col":        "location_block",
+        "crime_neighborhood_col":   "dc_dist",
+        "crime_limit":              500,
+        "crime_lookback_days":      30,
+        "crime_where_template":     "dispatch_date_time >= '{cutoff}'",
+        "crime_date_format":        "%Y-%m-%dT%H:%M:%S",
+        "crime_supports_order":     True,
     },
+
     "cleveland": {
-        "name": "Cleveland, OH", "state": "OH",
-        "center_lat": 41.4993, "center_lng": -81.6944,
-        "bbox": {"min_lat": 41.3, "max_lat": 41.7, "min_lng": -81.9, "max_lng": -81.4},
-        "zoom": 13, "gtfs_path": "RTA_GTFS.zip",
-        "tomtom_search_radius": 50000, "wprdc_crime_resource": None,
-        "gdelt_fips": "US-OH", "gdelt_geoname": "Cleveland",
-        "timezone": "America/New_York", "supports_wprdc": False, "supports_pulsepoint": False,
+        "display_name":   "Cleveland, OH",
+        "center_lat":     41.4993,
+        "center_lng":    -81.6944,
+        "gdelt_geoname":  "Cleveland Ohio",
+        "bbox": {
+            "min_lat": 41.35, "max_lat": 41.60,
+            "min_lng": -81.88, "max_lng": -81.53,
+        },
+        "pulsepoint_search_coords": "41.4993,-81.6944",
+
+        # No working Socrata endpoint found as of 2026-05-04.
+        # Fall back to GDELT only for this city.
+        "crime_source":             "gdelt_only",
+        "crime_endpoint":           "",      # unused
+        "crime_fallback_endpoint":  "",
+        "crime_limit":              0,
+        "crime_lookback_days":      30,
+        "crime_supports_order":     False,
     },
+
     "columbus": {
-        "name": "Columbus, OH", "state": "OH",
-        "center_lat": 39.9612, "center_lng": -82.9988,
-        "bbox": {"min_lat": 39.8, "max_lat": 40.1, "min_lng": -83.2, "max_lng": -82.8},
-        "zoom": 13, "gtfs_path": "COTA_GTFS.zip",
-        "tomtom_search_radius": 50000, "wprdc_crime_resource": None,
-        "gdelt_fips": "US-OH", "gdelt_geoname": "Columbus Ohio",
-        "timezone": "America/New_York", "supports_wprdc": False, "supports_pulsepoint": False,
+        "display_name":   "Columbus, OH",
+        "center_lat":     39.9612,
+        "center_lng":    -82.9988,
+        "gdelt_geoname":  "Columbus Ohio",
+        "bbox": {
+            "min_lat": 39.85, "max_lat": 40.16,
+            "min_lng": -83.20, "max_lng": -82.77,
+        },
+        "pulsepoint_search_coords": "39.9612,-82.9988",
+
+        # ArcGIS REST — service name corrected
+        "crime_source":   "arcgis_rest",
+        "crime_endpoint": (
+            "https://services1.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services"
+            "/Columbus_Crime_Stats/FeatureServer/0/query"
+        ),
+        "crime_fallback_endpoint":  "https://data.columbus.gov/resource/rntm-jp9t.json",
+        "crime_date_col":           "REPORTED_DATE",
+        "crime_offense_col":        "OFFENSE",
+        "crime_lat_col":            "Y",
+        "crime_lng_col":            "X",
+        "crime_address_col":        "ADDRESS",
+        "crime_neighborhood_col":   "BEAT",
+        "crime_limit":              500,
+        "crime_lookback_days":      30,
+        "crime_where_template":     "REPORTED_DATE > DATE '{cutoff}'",
+        "fallback_date_col":        "report_date",
+        "fallback_offense_col":     "offense_type",
+        "fallback_lat_col":         "latitude",
+        "fallback_lng_col":         "longitude",
+        "fallback_address_col":     "block_address",
+        "crime_supports_order":     True,
     },
+
     "cincinnati": {
-        "name": "Cincinnati, OH", "state": "OH",
-        "center_lat": 39.1031, "center_lng": -84.5120,
-        "bbox": {"min_lat": 38.9, "max_lat": 39.3, "min_lng": -84.8, "max_lng": -84.2},
-        "zoom": 13, "gtfs_path": "SORTA_GTFS.zip",
-        "tomtom_search_radius": 50000, "wprdc_crime_resource": None,
-        "gdelt_fips": "US-OH", "gdelt_geoname": "Cincinnati",
-        "timezone": "America/New_York", "supports_wprdc": False, "supports_pulsepoint": False,
+        "display_name":   "Cincinnati, OH",
+        "center_lat":     39.1031,
+        "center_lng":    -84.5120,
+        "gdelt_geoname":  "Cincinnati Ohio",
+        "bbox": {
+            "min_lat": 38.98, "max_lat": 39.32,
+            "min_lng": -84.76, "max_lng": -84.26,
+        },
+        "pulsepoint_search_coords": "39.1031,-84.5120",
+
+        # CONFIRMED via curl 2026-05-04: resource 7aqy-xrv9 is active
+        "crime_source":             "socrata_json",
+        "crime_endpoint":           "https://data.cincinnati-oh.gov/resource/7aqy-xrv9.json",
+        "crime_fallback_endpoint":  "https://data.cincinnati-oh.gov/resource/k59e-2pvf.json",
+        "crime_date_col":           "datereported",
+        "crime_offense_col":        "stars_category",
+        "crime_lat_col":            "latitude_x",
+        "crime_lng_col":            "longitude_x",
+        "crime_address_col":        "address_x",
+        "crime_neighborhood_col":   "cpd_neighborhood",
+        "crime_limit":              500,
+        "crime_lookback_days":      30,
+        "crime_where_template":     "datereported >= '{cutoff}'",
+        "crime_date_format":        "%Y-%m-%dT%H:%M:%S",
+        "crime_supports_order":     False,   # $order causes HTTP 400
     },
 }
 
-DEFAULT_CITY = "pittsburgh"
 
-def get_city(city_key: str) -> Dict[str, Any]:
-    return CITY_CONFIGS.get(city_key, CITY_CONFIGS[DEFAULT_CITY])
+def get_city(city_key: str) -> dict:
+    """Return city config dict. Raises KeyError if city_key is unknown."""
+    key = city_key.lower().strip()
+    if key not in CITIES:
+        raise KeyError(f"Unknown city: {key!r}. Known: {list(CITIES)}")
+    return CITIES[key]
 
-def get_all_cities():
-    return [{"key": k, "name": v["name"]} for k, v in CITY_CONFIGS.items()]
+
+def get_cutoff_date(city_key: str) -> str:
+    """
+    Return ISO date string for the crime lookback window.
+    Accepts EITHER a city key ("pittsburgh") OR a display_name
+    ("Pittsburgh, PA"). Falls back to Pittsburgh if input is unparseable.
+    """
+    if not city_key:
+        key = "pittsburgh"
+    else:
+        raw = city_key.strip().lower()
+        # Strip state suffix: "pittsburgh, pa" → "pittsburgh"
+        if "," in raw:
+            raw = raw.split(",", 1)[0].strip()
+        # Strip trailing state words like "pennsylvania"
+        for state_word in ("pennsylvania", "ohio", "pa", "oh"):
+            if raw.endswith(" " + state_word):
+                raw = raw[: -(len(state_word) + 1)].strip()
+        key = raw
+
+    try:
+        cfg = get_city(key)
+    except KeyError:
+        # Last-resort fallback so we never block the pipeline
+        cfg = get_city("pittsburgh")
+
+    days = cfg.get("crime_lookback_days", 14)
+    return (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+
+
+def is_in_bounds(city_key: str, lat: float, lng: float) -> bool:
+    """Return True if (lat, lng) is inside the city bounding box."""
+    bbox = get_city(city_key)["bbox"]
+    return (
+        bbox["min_lat"] <= lat <= bbox["max_lat"] and
+        bbox["min_lng"] <= lng <= bbox["max_lng"]
+    )
