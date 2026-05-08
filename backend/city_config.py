@@ -40,31 +40,30 @@ CITIES = {
     },
 
         "philadelphia": {
-        "display_name":   "Philadelphia, PA",
-        "center_lat":     39.9526,
-        "center_lng":    -75.1652,
-        "gdelt_geoname":  "Philadelphia Pennsylvania",
-        "bbox": {
-            "min_lat": 39.85, "max_lat": 40.14,
-            "min_lng": -75.29, "max_lng": -74.95,
+            "display_name":   "Philadelphia, PA",
+            "center_lat":     39.9526,
+            "center_lng":    -75.1652,
+            "gdelt_geoname":  "Philadelphia Pennsylvania",
+            "bbox": {
+                "min_lat": 39.85, "max_lat": 40.14,
+                "min_lng": -75.29, "max_lng": -74.95,
+            },
+            "pulsepoint_search_coords": "39.9526,-75.1652",
+            "crime_source":             "socrata_json",
+            "crime_endpoint":          "https://data.phila.gov/resource/sspu-uyfa.json",
+            "crime_fallback_endpoint":  None,
+            "crime_date_col":           "dispatch_date_time",
+            "crime_offense_col":        "text_general_code",
+            "crime_lat_col":            "point_y",
+            "crime_lng_col":            "point_x",
+            "crime_address_col":        "location_block",
+            "crime_neighborhood_col":   "dc_dist",
+            "crime_limit":              500,
+            "crime_lookback_days":      330,  # ← CHANGED from 30 to 330 (covers Aug 2025)
+            "crime_where_template":     "dispatch_date_time >= '{cutoff}'",
+            "crime_date_format":        "%Y-%m-%dT%H:%M:%S",
+            "crime_supports_order":     True,
         },
-        "pulsepoint_search_coords": "39.9526,-75.1652",
-
-        "crime_source":             "socrata_json",
-        "crime_endpoint":          "https://data.phila.gov/resource/sspu-uyfa.json",
-        "crime_fallback_endpoint":  None,
-        "crime_date_col":           "dispatch_date_time",
-        "crime_offense_col":        "text_general_code",
-        "crime_lat_col":            "point_y",     # NOT "lat"
-        "crime_lng_col":            "point_x",     # NOT "lng"
-        "crime_address_col":        "location_block",
-        "crime_neighborhood_col":   "dc_dist",
-        "crime_limit":              500,
-        "crime_lookback_days":      30,
-        "crime_where_template":     "dispatch_date_time >= '{cutoff}'",
-        "crime_date_format":        "%Y-%m-%dT%H:%M:%S",
-        "crime_supports_order":     True,
-    },
 
     "cleveland": {
         "display_name":   "Cleveland, OH",
