@@ -39,31 +39,33 @@ CITIES = {
         "crime_lookback_days": 42,
     },
 
-        "philadelphia": {
-            "display_name":   "Philadelphia, PA",
-            "center_lat":     39.9526,
-            "center_lng":    -75.1652,
-            "gdelt_geoname":  "Philadelphia Pennsylvania",
-            "bbox": {
-                "min_lat": 39.85, "max_lat": 40.14,
-                "min_lng": -75.29, "max_lng": -74.95,
-            },
-            "pulsepoint_search_coords": "39.9526,-75.1652",
-            "crime_source":             "socrata_json",
-            "crime_endpoint":          "https://data.phila.gov/resource/sspu-uyfa.json",
-            "crime_fallback_endpoint":  None,
-            "crime_date_col":           "dispatch_date_time",
-            "crime_offense_col":        "text_general_code",
-            "crime_lat_col":            "point_y",
-            "crime_lng_col":            "point_x",
-            "crime_address_col":        "location_block",
-            "crime_neighborhood_col":   "dc_dist",
-            "crime_limit":              500,
-            "crime_lookback_days":      330,  # ← CHANGED from 30 to 330 (covers Aug 2025)
-            "crime_where_template":     "dispatch_date_time >= '{cutoff}'",
-            "crime_date_format":        "%Y-%m-%dT%H:%M:%S",
-            "crime_supports_order":     True,
+    "philadelphia": {
+        "display_name":   "Philadelphia, PA",
+        "center_lat":     39.9526,
+        "center_lng":    -75.1652,
+        "gdelt_geoname":  "Philadelphia Pennsylvania",
+        "bbox": {
+            "min_lat": 39.85, "max_lat": 40.14,
+            "min_lng": -75.29, "max_lng": -74.95,
         },
+        "pulsepoint_search_coords": "39.9526,-75.1652",
+
+        # FIXED 2026-05-08: Increased lookback_days from 30 to 330 because dataset hasn't been updated since Aug 2025
+        "crime_source":             "socrata_json",
+        "crime_endpoint":          "https://data.phila.gov/resource/sspu-uyfa.json",
+        "crime_fallback_endpoint":  "https://data.phila.gov/resource/u6bt-9fu4.json",
+        "crime_date_col":           "dispatch_date_time",
+        "crime_offense_col":        "text_general_code",
+        "crime_lat_col":            "point_y",
+        "crime_lng_col":            "point_x",
+        "crime_address_col":        "location_block",
+        "crime_neighborhood_col":   "dc_dist",
+        "crime_limit":              500,
+        "crime_lookback_days":      330,  # Covers data back to August 2025
+        "crime_where_template":     "dispatch_date_time >= '{cutoff}'",
+        "crime_date_format":        "%Y-%m-%dT%H:%M:%S",
+        "crime_supports_order":     True,
+    },
 
     "cleveland": {
         "display_name":   "Cleveland, OH",
@@ -76,14 +78,22 @@ CITIES = {
         },
         "pulsepoint_search_coords": "41.4993,-81.6944",
 
-        # No working Socrata endpoint found as of 2026-05-04.
-        # Fall back to GDELT only for this city.
-        "crime_source":             "gdelt_only",
-        "crime_endpoint":           "",      # unused
-        "crime_fallback_endpoint":  "",
-        "crime_limit":              0,
-        "crime_lookback_days":      30,
-        "crime_supports_order":     False,
+        # CONFIRMED 2026-05-10: Crime_Incidents_P1RMS — LIVE data from new RMS (post 11/11/2025)
+        # Item ID: e15e8989c83e4cbd841fb171a6c62f68 (modified Apr 2026)
+        # Field 'IncidentDesc' contains NIBRS offense codes (e.g., "Simple Assault", "All Other Larceny")
+        "crime_source":   "arcgis_rest",
+        "crime_endpoint": "https://services3.arcgis.com/dty2kHktVXHrqO8i/arcgis/rest/services/Crime_Incidents_P1RMS/FeatureServer/0/query",
+        "crime_fallback_endpoint": None,
+        "crime_date_col":         "ReportedDate",
+        "crime_offense_col":      "IncidentDesc",
+        "crime_lat_col":          "LAT",
+        "crime_lng_col":          "LON",
+        "crime_address_col":      "Address_Public",
+        "crime_neighborhood_col": "NEIGHBORHOOD",
+        "crime_limit":            500,
+        "crime_lookback_days":    30,
+        "crime_where_template":   "ReportedDate >= TIMESTAMP '{cutoff} 00:00:00'",
+        "crime_supports_order":   True,
     },
 
     "columbus": {
@@ -97,27 +107,21 @@ CITIES = {
         },
         "pulsepoint_search_coords": "39.9612,-82.9988",
 
-        # ArcGIS REST — service name corrected
-        "crime_source":   "arcgis_rest",
-        "crime_endpoint": (
-            "https://services1.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services"
-            "/Columbus_Crime_Stats/FeatureServer/0/query"
-        ),
-        "crime_fallback_endpoint":  "https://data.columbus.gov/resource/rntm-jp9t.json",
-        "crime_date_col":           "REPORTED_DATE",
-        "crime_offense_col":        "OFFENSE",
-        "crime_lat_col":            "Y",
-        "crime_lng_col":            "X",
-        "crime_address_col":        "ADDRESS",
-        "crime_neighborhood_col":   "BEAT",
+        # CONFIRMED 2026-05-09: Socrata endpoint active with current data (May 2026)
+        # ArcGIS endpoints (services1/services3.arcgis.com) blocked by egress proxy (403 host_not_allowed)
+        "crime_source":             "socrata_json",
+        "crime_endpoint":           "https://data.columbus.gov/resource/rntm-jp9t.json",
+        "crime_fallback_endpoint":  None,
+        "crime_date_col":           "report_date",
+        "crime_offense_col":        "offense_type",  # Also has ucr_text for more detail
+        "crime_lat_col":            "latitude",
+        "crime_lng_col":            "longitude",
+        "crime_address_col":        "block_address",
+        "crime_neighborhood_col":   "beat",
         "crime_limit":              500,
-        "crime_lookback_days":      30,
-        "crime_where_template":     "REPORTED_DATE > DATE '{cutoff}'",
-        "fallback_date_col":        "report_date",
-        "fallback_offense_col":     "offense_type",
-        "fallback_lat_col":         "latitude",
-        "fallback_lng_col":         "longitude",
-        "fallback_address_col":     "block_address",
+        "crime_lookback_days":      30,  # Data is current as of May 2026
+        "crime_where_template":     "report_date >= '{cutoff}'",
+        "crime_date_format":        "%Y-%m-%dT%H:%M:%S",
         "crime_supports_order":     True,
     },
 

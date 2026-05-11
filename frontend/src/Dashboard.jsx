@@ -1,4 +1,4 @@
-// Dashboard.jsx
+// Dashboard.jsx - Complete with fixes for 911 emergency markers
 import React, {
   useState,
   useRef,
@@ -525,7 +525,7 @@ const ChangeView = React.memo(({ center, zoom, routeBounds }) => {
   return null;
 });
 
-// ========== Module-level component (CRASH FIX) ==========
+// ========== Module-level component ==========
 const MapZoomTracker = React.memo(({ onZoomChange, onBoundsChange }) => {
   const map = useMap();
   useEffect(() => {
@@ -722,19 +722,19 @@ const CSS = `
   }
   .popup-compare-btn:hover { filter: brightness(1.15); }
 
-  .emergency-popup { font-family: DM Sans, sans-serif; min-width: 200px; }
+  .emergency-popup { font-family: DM Sans, sans-serif; min-width: 220px; }
   .emergency-popup-header {
     display: flex; align-items: center; gap: 10px;
     margin-bottom: 12px; padding-bottom: 8px;
     border-bottom: 1px solid rgba(255,68,68,0.3);
   }
-  .emergency-popup-title { color: #ff6666; font-size: 14px; }
+  .emergency-popup-title { font-size: 14px; font-weight: 700; }
   .emergency-popup-desc { font-size: 13px; font-weight: bold; color: #fff; margin-bottom: 6px; }
   .emergency-popup-meta { font-size: 11px; color: #e0c8b0; margin-bottom: 4px; }
   .emergency-popup-tag { display: inline-block; margin-right: 12px; }
   .emergency-popup-time { font-size: 10px; color: #b09878; margin-top: 4px; }
   .emergency-popup-footer {
-    font-size: 10px; color: #ff8888; margin-top: 8px;
+    font-size: 10px; margin-top: 8px;
     padding-top: 6px; border-top: 1px solid rgba(255,68,68,0.2);
   }
 
@@ -1625,8 +1625,7 @@ function getCatIcon(cat) {
   if (c.includes("restaurant") || c.includes("food") || c.includes("cafe"))
     return Coffee;
   if (c.includes("park") || c.includes("garden")) return TreePine;
-  if (c.includes("transit") || c.includes("bus") || c.includes("station"))
-    return Bus;
+  if (c.includes("transit") || c.includes("station")) return Bus;
   if (c.includes("museum") || c.includes("gallery")) return Building2;
   if (c.includes("shop") || c.includes("store") || c.includes("mall"))
     return ShoppingBag;
@@ -1916,6 +1915,49 @@ function calculateBearing(lat1, lng1, lat2, lng2) {
   return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
 }
 
+// Helper function to get source-aware popup labels
+const getEmergencySourceLabel = (source) => {
+  switch(source) {
+    case 'socrata_crime':
+    case 'arcgis_crime':
+    case 'wprdc_crime_data':
+      return { 
+        label: "🚨 911 CRIME REPORT", 
+        color: "#ff4444", 
+        subtitle: "Police incident report",
+        isActiveEmergency: true
+      };
+    case 'pulsepoint':
+      return { 
+        label: "🔴 LIVE DISPATCH", 
+        color: "#ff0000", 
+        subtitle: "Active fire/EMS response",
+        isActiveEmergency: true
+      };
+    case 'gdelt':
+      return { 
+        label: "📰 LOCAL NEWS", 
+        color: "#4fc3f7", 
+        subtitle: "News article — context only",
+        isActiveEmergency: false
+      };
+    case 'news_api':
+      return { 
+        label: "📰 NEWS ARTICLE", 
+        color: "#4fc3f7", 
+        subtitle: "News article — context only",
+        isActiveEmergency: false
+      };
+    default:
+      return { 
+        label: "⚠ ALERT", 
+        color: "#ff8844", 
+        subtitle: "Safety alert",
+        isActiveEmergency: true
+      };
+  }
+};
+
 // ================== MAIN COMPONENT ==================
 export default function AccessibleMap() {
   const [mapType, setMapType] = useState("openstreetmap");
@@ -1967,7 +2009,6 @@ export default function AccessibleMap() {
   const [currentZoom, setCurrentZoom] = useState(13);
   const [show3D, setShow3D] = useState(false);
   const [walkerPosition, setWalkerPosition] = useState(null);
-  // Demo mode and real buildings toggles
   const [demoMode, setDemoMode] = useState(false);
   const [useRealBuildings, setUseRealBuildings] = useState(false);
 
@@ -2297,8 +2338,6 @@ export default function AccessibleMap() {
     [emergencies911, isInBounds],
   );
 
-  // Removed fake interval useEffect that used walkerIntervalRef
-
   const advanceStepIfNeeded = useCallback(
     (currentLat, currentLng) => {
       if (!routeSteps || routeSteps.length === 0) return;
@@ -2463,7 +2502,7 @@ export default function AccessibleMap() {
       setNavigationActive(true);
       setNavigationState("walking");
       setCurrentStepIndex(0);
-      setDemoMode(false); // Ensure real navigation disables demo mode
+      setDemoMode(false);
       if (navigator.geolocation) {
         if (gpsWatchIdRef.current)
           navigator.geolocation.clearWatch(gpsWatchIdRef.current);
@@ -2512,7 +2551,7 @@ export default function AccessibleMap() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch area obstructions with city
+  // ========== FIXED: fetchAreaObstructions with correct emergency classification ==========
   useEffect(() => {
     const fetchAreaObstructions = async () => {
       try {
@@ -2542,14 +2581,8 @@ export default function AccessibleMap() {
           const sanitize = (arr) =>
             (arr || [])
               .map((item) => {
-                let lat =
-                  item.lat ?? item.latitude ?? item.position?.lat ?? null;
-                let lng =
-                  item.lng ??
-                  item.longitude ??
-                  item.lon ??
-                  item.position?.lng ??
-                  null;
+                let lat = item.lat ?? item.latitude ?? item.position?.lat ?? null;
+                let lng = item.lng ?? item.longitude ?? item.lon ?? item.position?.lng ?? null;
                 if (lat !== null) lat = Number(lat);
                 if (lng !== null) lng = Number(lng);
                 if (
@@ -2564,21 +2597,28 @@ export default function AccessibleMap() {
                 return null;
               })
               .filter(Boolean);
+          
           setConstructionZones(sanitize(data.construction_zones));
           const allHazards = sanitize(data.hazards || []);
-          const newsHazards = allHazards.filter((h) => h.source === "news_api");
-          const arrestHazards = allHazards.filter(
-            (h) => h.source === "arrest_data",
+          
+          // FIX: Include crime sources in emergencies911 (red shields)
+          // This matches the city-switch handler logic
+          const emergencySources = [
+            "news_api",
+            "socrata_crime",      // Philadelphia, Cincinnati crime data
+            "arcgis_crime",       // Columbus crime data
+            "wprdc_crime_data",   // Pittsburgh crime data
+            "pulsepoint",         // Real-time dispatch
+            "gdelt",              // News hazards
+          ];
+          
+          const newsHazards = allHazards.filter(
+            (h) => emergencySources.includes(h.source)
           );
           const tomtomHazards = allHazards.filter((h) => h.source === "tomtom");
-          const otherHazards = allHazards.filter(
-            (h) =>
-              h.source !== "news_api" &&
-              h.source !== "arrest_data" &&
-              h.source !== "tomtom",
-          );
-          setEmergencies911([...newsHazards, ...arrestHazards]);
-          setActiveHazards([...tomtomHazards, ...otherHazards]);
+          
+          setEmergencies911([...newsHazards]);
+          setActiveHazards(tomtomHazards);
         }
       } catch (error) {
         console.error("Error fetching obstructions:", error);
@@ -3113,7 +3153,7 @@ export default function AccessibleMap() {
     }
   };
 
-  // ================== ALTERNATE ROUTES FETCH (FIXED: removed hilliness) ==================
+  // ================== ALTERNATE ROUTES FETCH ==================
   const fetchAlternateRoutes = useCallback(
     async (startLat, startLng, endLat, endLng, mode, primaryRouteCoords) => {
       const TOMTOM_KEY =
@@ -3987,8 +4027,9 @@ export default function AccessibleMap() {
               ))}
               {visibleEmergencies.map((emergency, idx) => {
                 const EmIcon = EMERGENCY_ICONS[emergency.type] || ShieldAlert;
+                const sourceLabel = getEmergencySourceLabel(emergency.source);
                 const isHigh = emergency.severity > 0.7;
-                const iconColor = isHigh ? "#ff4444" : "#ff8844";
+                const iconColor = sourceLabel.isActiveEmergency ? (isHigh ? "#ff4444" : "#ff8844") : sourceLabel.color;
                 const markerSize = Math.min(
                   42,
                   Math.max(28, 28 + ((currentZoom - 12) / 6) * 14),
@@ -4000,16 +4041,16 @@ export default function AccessibleMap() {
                     icon={makeLucideIcon(
                       EmIcon,
                       iconColor,
-                      "#ff0000",
+                      sourceLabel.isActiveEmergency ? "#ff0000" : "#4fc3f7",
                       markerSize,
                     )}
                   >
                     <Popup>
                       <div className="emergency-popup">
                         <div className="emergency-popup-header">
-                          <EmIcon size={18} color="#ff4444" />
-                          <strong className="emergency-popup-title">
-                            🚨 911 EMERGENCY
+                          <EmIcon size={18} color={sourceLabel.color} />
+                          <strong className="emergency-popup-title" style={{ color: sourceLabel.color }}>
+                            {sourceLabel.label}
                           </strong>
                         </div>
                         <div className="emergency-popup-desc">
@@ -4028,58 +4069,35 @@ export default function AccessibleMap() {
                               {Math.round(emergency.severity * 100)}%
                             </span>
                           )}
-                          {emergency.source === "gdelt" && (
-                            <span
-                              className="gdelt-badge"
-                              style={{ marginLeft: 8, display: "inline-block" }}
-                            >
-                              GDELT News
-                            </span>
+                          <div className="emergency-popup-time" style={{ marginTop: 4 }}>
+                            📍 Source: {sourceLabel.subtitle}
+                          </div>
+                          {emergency.source === "gdelt" && emergency.publisher && (
+                            <div className="emergency-popup-time">
+                              📰 From: {emergency.publisher}
+                            </div>
                           )}
-                          {emergency.source === "socrata_crime" && (
-                            <span
-                              className="gdelt-badge"
-                              style={{
-                                marginLeft: 8,
-                                display: "inline-block",
-                                color: "#ffb347",
-                                borderColor: "rgba(255,179,71,0.35)",
-                                background: "rgba(255,179,71,0.10)",
-                              }}
-                            >
-                              City Open Data
-                            </span>
+                          {emergency.published_date && emergency.source !== "gdelt" && (
+                            <div className="emergency-popup-time">
+                              🕒 Reported:{" "}
+                              {new Date(emergency.published_date).toLocaleString()}
+                            </div>
                           )}
-                          {emergency.source === "arcgis_crime" && (
-                            <span
-                              className="gdelt-badge"
-                              style={{
-                                marginLeft: 8,
-                                display: "inline-block",
-                                color: "#c084fc",
-                                borderColor: "rgba(192,132,252,0.35)",
-                                background: "rgba(192,132,252,0.10)",
-                              }}
-                            >
-                              ArcGIS Crime
-                            </span>
+                          {emergency.distance_meters && (
+                            <div className="emergency-popup-time">
+                              📍 {emergency.distance_meters.toFixed(0)}m from center
+                            </div>
                           )}
                         </div>
-                        {emergency.timestamp && (
-                          <div className="emergency-popup-time">
-                            🕒 Reported:{" "}
-                            {new Date(emergency.timestamp).toLocaleString()}
+                        {sourceLabel.isActiveEmergency ? (
+                          <div className="emergency-popup-footer">
+                            ⚠️ Active emergency response in area — use caution
+                          </div>
+                        ) : (
+                          <div className="emergency-popup-footer" style={{ color: sourceLabel.color, borderTopColor: `${sourceLabel.color}33` }}>
+                            📰 This is from recent news — not an active 911 dispatch
                           </div>
                         )}
-                        {emergency.distance_meters && (
-                          <div className="emergency-popup-time">
-                            📍 {emergency.distance_meters.toFixed(0)}m from
-                            center
-                          </div>
-                        )}
-                        <div className="emergency-popup-footer">
-                          ⚠️ Active emergency response in area
-                        </div>
                       </div>
                     </Popup>
                   </Marker>
@@ -4565,7 +4583,7 @@ export default function AccessibleMap() {
           </button>
         )}
 
-        {/* ═══ RAIL NAVIGATION (NO r-lbl spans) ═══ */}
+        {/* ═══ RAIL NAVIGATION ═══ */}
         <nav className="rail" role="navigation" aria-label="Main navigation">
           <div className="r-logo" aria-hidden="true">
             <Accessibility size={20} />
@@ -5502,7 +5520,7 @@ export default function AccessibleMap() {
                   </button>
                 </>
               )}
-            {/* Real Buildings toggle (only when 3D is visible) */}
+            {/* Real Buildings toggle */}
             {show3D && (
               <>
                 <div className="rs-d" />

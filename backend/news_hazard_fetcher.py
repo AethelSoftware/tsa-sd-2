@@ -2,8 +2,8 @@
 Crime & Emergency Hazard Fetcher for Tryver
 Sources:
 1. WPRDC CKAN - Pittsburgh
-2. Socrata JSON - Philadelphia, Cincinnati
-3. ArcGIS REST - Columbus
+2. Socrata JSON - Philadelphia, Cincinnati, Columbus
+3. ArcGIS REST - Cleveland
 4. PulsePoint - Real-time fire/EMS incidents
 5. GDELT - News hazards (handled separately)
 """
@@ -59,6 +59,29 @@ HIGH_THREAT = {
     'MURDER/NON-NEGLIGENT HOMICIDE': 0.95,
     'RAPE/SEXUAL BATTERY': 0.92,
     'KIDNAPPING/ABDUCTION': 0.90,
+    'WEAPON': 0.7,
+    'WEAPONS VIOLATION': 0.7,
+    # Philadelphia-specific additions
+    'WEAPON VIOLATIONS': 0.7,
+    'ROBBERY - FIREARM': 0.90,
+    'ROBBERY - STRONG ARM': 0.80,
+    'ASSAULT - OTHER': 0.80,
+    'OTHER ASSAULTS': 0.75,
+    'ASSAULT - AGGRAVATED': 0.90,
+    'ASSAULT - SIMPLE': 0.70,
+    # Cleveland NIBRS-specific (P1RMS dataset)
+    'INTIMIDATION': 0.65,
+    'JUSTIFIABLE HOMICIDE': 0.85,
+    'NEGLIGENT MANSLAUGHTER': 0.85,
+    'HUMAN TRAFFICKING': 0.92,
+    'STATUTORY RAPE': 0.85,
+    'SODOMY': 0.88,
+    'SEXUAL ASSAULT WITH AN OBJECT': 0.88,
+    'FONDLING': 0.75,
+    'INCEST': 0.85,
+    'EXTORTION': 0.78,
+    'WEAPON LAW VIOLATIONS': 0.72,
+    'SIMPLE ASSAULT': 0.65,  # Moved to HIGH so longest-match works
 }
 
 # MEDIUM SEVERITY (0.5-0.7) - Situational awareness needed
@@ -85,6 +108,45 @@ MEDIUM_THREAT = {
     'WEAPONS OFFENSES': 0.72,
     'NARCOTICS': 0.52,
     'DRUG ABUSE VIOLATIONS': 0.50,
+    # Philadelphia-specific additions
+    'THEFT - ALL OTHER': 0.50,
+    'BURGLARY - RESIDENTIAL': 0.65,
+    'BURGLARY - COMMERCIAL': 0.60,
+    'CRIMINAL MISCHIEF - VANDALISM': 0.40,
+    'VANDALISM/CRIMINAL MISCHIEF': 0.40,
+    'DRUG - POSSESSION': 0.50,
+    'DRUG - TRAFFICKING': 0.65,
+    'WEAPON - POSSESSION': 0.70,
+    'DISORDERLY CONDUCT - OTHER': 0.55,
+    # Columbus-specific additions
+    'BREAKING AND ENTERING': 0.65,   # Columbus UCR term for burglary
+    'CARRYING CONCEALED WEAPON': 0.65,
+    'CRIMINAL TRESPASS': 0.50,
+    'MENACING': 0.60,
+    'OBSTRUCTING OFFICIAL': 0.45,
+    'WEAPONS UNDER DISABILITY': 0.72,
+    'TAMPERING WITH VEHICLE': 0.48,
+    'UNAUTHORIZED USE VEHICLE': 0.52,
+    'DRUG ABUSE POSSESS': 0.50,
+    'DRUG ABUSE TRAFFICKING': 0.68,
+    # Cleveland NIBRS-specific (P1RMS dataset)
+    'LARCENY': 0.50,
+    'ALL OTHER LARCENY': 0.48,
+    'POCKET-PICKING': 0.55,
+    'PURSE-SNATCHING': 0.62,
+    'SHOPLIFTING': 0.45,
+    'THEFT FROM BUILDING': 0.52,
+    'THEFT FROM COIN': 0.40,
+    'THEFT FROM MOTOR VEHICLE': 0.55,
+    'THEFT OF MOTOR VEHICLE PARTS': 0.50,
+    'STOLEN PROPERTY OFFENSES': 0.55,
+    'BURGLARY/BREAKING & ENTERING': 0.65,
+    'DESTRUCTION/DAMAGE/VANDALISM OF PROPERTY': 0.42,
+    'DRUG/NARCOTIC VIOLATIONS': 0.55,
+    'DRUG EQUIPMENT VIOLATIONS': 0.45,
+    'PORNOGRAPHY/OBSCENE MATERIAL': 0.55,
+    'PROSTITUTION OFFENSES': 0.50,
+    'KIDNAPPING/ABDUCTION ATTEMPTED': 0.85,
 }
 
 # LOW SEVERITY (0.1-0.3) - Filtered out
@@ -96,6 +158,24 @@ LOW_THREAT = {
     'EMBEZZLEMENT': 0.15,
     'BAD CHECK': 0.1,
     'PUBLIC DRUNKENNESS': 0.25,
+    # Philadelphia additions
+    'ALL OTHER OFFENSES': 0.25,
+    'OTHER OFFENSES': 0.20,
+    # Cleveland NIBRS-standard low-priority offenses (will be filtered out)
+    'CURFEW/LOITERING': 0.20,
+    'DRIVING UNDER THE INFLUENCE': 0.35,
+    'FAMILY OFFENSES': 0.25,
+    'LIQUOR LAW VIOLATIONS': 0.20,
+    'TRESPASS OF REAL PROPERTY': 0.30,
+    'GAMBLING OFFENSES': 0.15,
+    'WIRE FRAUD': 0.20,
+    'IDENTITY THEFT': 0.30,
+    'HACKING/COMPUTER INVASION': 0.25,
+    'CREDIT CARD/AUTOMATED TELLER MACHINE FRAUD': 0.20,
+    'IMPERSONATION': 0.20,
+    'FALSE PRETENSES': 0.20,
+    'WELFARE FRAUD': 0.15,
+    'BRIBERY': 0.20,
 }
 
 # Type mapping
@@ -483,7 +563,7 @@ class NewsHazardFetcher:
     def _fetch_socrata_crime(self, cfg: dict) -> List[Dict[str, Any]]:
         """
         Fetch crime data from any Socrata JSON endpoint using the city config.
-        Used by: Philadelphia, Cincinnati (and Cleveland fallback if ever found).
+        Used by: Philadelphia, Cincinnati, Columbus.
         """
         hazards: List[Dict] = []
         endpoint  = cfg["crime_endpoint"]
@@ -550,7 +630,7 @@ class NewsHazardFetcher:
                         f"Socrata [{cfg['display_name']}] → {len(records)} records"
                     )
 
-                    # Diagnostic sample logging (FIX 7)
+                    # Diagnostic sample logging
                     if records and isinstance(records, list):
                         sample = records[0]
                         sample_offense = sample.get(off_col, "<<MISSING FIELD>>")
@@ -562,7 +642,7 @@ class NewsHazardFetcher:
                             f"keys={sorted(sample.keys())[:8]}..."
                         )
 
-                    # Diagnostic counters (FIX 6)
+                    # Diagnostic counters
                     filtered_low      = 0
                     dropped_no_coords = 0
                     dropped_bad_coords= 0
@@ -641,46 +721,46 @@ class NewsHazardFetcher:
     def _fetch_arcgis_crime(self, cfg: dict) -> List[Dict[str, Any]]:
         """
         Fetch crime data from an ArcGIS REST FeatureServer endpoint.
-        Used by: Columbus, OH.
-        Falls back to the Socrata endpoint defined in crime_fallback_endpoint.
+        Used by: Cleveland, OH (and any future ArcGIS-based city).
         """
         hazards: List[Dict] = []
         endpoint  = cfg["crime_endpoint"]
         limit     = cfg.get("crime_limit", 500)
         days      = cfg.get("crime_lookback_days", 14)
         cutoff    = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
-        where_tpl = cfg.get("crime_where_template", "REPORTED_DATE > DATE '{cutoff}'")
+        where_tpl = cfg.get("crime_where_template", "ReportedDate >= TIMESTAMP '{cutoff} 00:00:00'")
         where     = where_tpl.format(cutoff=cutoff)
 
         lat_col  = cfg["crime_lat_col"]
         lng_col  = cfg["crime_lng_col"]
         off_col  = cfg["crime_offense_col"]
-        addr_col = cfg.get("crime_address_col", "ADDRESS")
-        nbhd_col = cfg.get("crime_neighborhood_col", "BEAT")
+        addr_col = cfg.get("crime_address_col", "Address_Public")
+        nbhd_col = cfg.get("crime_neighborhood_col", "NEIGHBORHOOD")
         date_col = cfg["crime_date_col"]
         bbox     = cfg["bbox"]
+        city_name = cfg["display_name"]
 
         try:
+            # Clean params - removed spatialRel/geometryType/inSR which caused 400s on some servers
             params = {
                 "where":             where,
                 "outFields":         "*",
                 "f":                 "json",
                 "resultRecordCount": limit,
-                "orderByFields":     f"{date_col} DESC",
-                "returnGeometry":    "true",
-                "spatialRel":        "esriSpatialRelIntersects",
-                "geometryType":      "esriGeometryEnvelope",
-                "inSR":              "4326",
                 "outSR":             "4326",
+                "returnGeometry":    "true",
             }
+            if cfg.get("crime_supports_order", True):
+                params["orderByFields"] = f"{date_col} DESC"
+
             response = requests.get(endpoint, params=params, timeout=25)
 
             if response.status_code != 200:
-                logger.warning(f"ArcGIS [Columbus] HTTP {response.status_code}")
+                logger.warning(f"ArcGIS [{city_name}] HTTP {response.status_code}")
                 raise ValueError(f"ArcGIS HTTP {response.status_code}")
 
             if not response.text or not response.text.strip():
-                logger.warning("ArcGIS [Columbus] empty response body")
+                logger.warning(f"ArcGIS [{city_name}] empty response body")
                 raise ValueError("Empty ArcGIS response")
 
             _resp_json = response.json()
@@ -688,38 +768,44 @@ class NewsHazardFetcher:
                 _code = _resp_json["error"].get("code", "?")
                 _msg  = _resp_json["error"].get("message", "unknown")
                 logger.warning(
-                    f"ArcGIS [Columbus] error envelope: code={_code} msg={_msg}"
+                    f"ArcGIS [{city_name}] error envelope: code={_code} msg={_msg}"
                 )
                 raise ValueError(f"ArcGIS error {_code}: {_msg}")
             data = _resp_json
 
             features = data.get("features", [])
-            logger.info(f"ArcGIS [Columbus] → {len(features)} features")
+            logger.info(f"ArcGIS [{city_name}] → {len(features)} features")
             filtered_low = 0
             for feat in features:
                 attrs = feat.get("attributes") or feat.get("properties") or {}
                 geom  = feat.get("geometry", {})
                 try:
-                    if geom and "x" in geom and "y" in geom:
-                        lng = float(geom["x"])
-                        lat = float(geom["y"])
-                    else:
-                        raw_lat = attrs.get(lat_col)
-                        raw_lng = attrs.get(lng_col)
-                        if raw_lat is None or raw_lng is None:
+                    # Prefer direct LAT/LON fields over geometry
+                    lat = attrs.get(lat_col)
+                    lng = attrs.get(lng_col)
+                    if lat is None or lng is None:
+                        # Fall back to geometry coordinates if available
+                        if geom and "y" in geom and "x" in geom:
+                            lat = float(geom["y"])
+                            lng = float(geom["x"])
+                        else:
                             continue
-                        lat = float(raw_lat)
-                        lng = float(raw_lng)
+                    
+                    lat = float(lat)
+                    lng = float(lng)
+                    
                     if not (bbox["min_lat"] <= lat <= bbox["max_lat"] and
                             bbox["min_lng"] <= lng <= bbox["max_lng"]):
                         continue
-                    offense  = str(attrs.get(off_col) or "Unknown").strip()
+                    
+                    offense = str(attrs.get(off_col) or "Unknown").strip()
                     severity, hazard_type = self._get_severity_and_type(offense)
                     if severity < MIN_SEVERITY_THRESHOLD:
                         filtered_low += 1
                         continue
-                    address  = str(attrs.get(addr_col) or "").strip()
-                    nbhd     = str(attrs.get(nbhd_col) or "Columbus").strip()
+                    
+                    address = str(attrs.get(addr_col) or "").strip()
+                    nbhd = str(attrs.get(nbhd_col) or city_name.split(",")[0]).strip()
                     raw_date = attrs.get(date_col)
                     if isinstance(raw_date, (int, float)):
                         from datetime import timezone
@@ -728,59 +814,50 @@ class NewsHazardFetcher:
                         ).isoformat()
                     else:
                         pub_date = str(raw_date or "")
+                    
                     threat = ("HIGH" if severity >= 0.8 else
                               "MEDIUM" if severity >= 0.6 else "CAUTION")
                     hazards.append({
                         "type":             hazard_type,
                         "description":      f"[{threat}] {offense}",
                         "full_description": (
-                            f"{offense} at {address} in Columbus"
-                            if address else f"{offense} in Columbus"
+                            f"{offense} at {address} in {nbhd}"
+                            if address else f"{offense} in {nbhd}"
                         ),
                         "lat":              lat,
                         "lng":              lng,
-                        "location_name":    f"Columbus Beat {nbhd}" if nbhd else "Columbus",
+                        "location_name":    nbhd or city_name,
                         "severity":         severity,
                         "source":           "arcgis_crime",
                         "title":            f"{threat}: {offense}",
                         "url":              "",
-                        "publisher":        "Columbus Division of Police",
+                        "publisher":        f"{city_name} Division of Police",
                         "published_date":   pub_date,
                         "is_active":        True,
-                        "city":             "Columbus, OH",
+                        "city":             city_name,
                     })
                 except (ValueError, TypeError) as feat_err:
                     logger.debug(f"ArcGIS feature parse error: {feat_err}")
                     continue
+            
             logger.info(
-                f"ArcGIS [Columbus]: {len(features)} features → {len(hazards)} hazards "
+                f"ArcGIS [{city_name}]: {len(features)} features → {len(hazards)} hazards "
                 f"({filtered_low} filtered)"
             )
             return hazards
+            
         except requests.exceptions.Timeout:
-            logger.warning("ArcGIS [Columbus] timeout — trying Socrata fallback")
+            logger.warning(f"ArcGIS [{city_name}] timeout")
         except Exception as exc:
-            logger.error(f"ArcGIS [Columbus] error: {exc} — trying Socrata fallback")
+            logger.error(f"ArcGIS [{city_name}] error: {exc}")
 
-        # ── Socrata fallback ──────────────────────────────────────────────
+        # ── Fallback (if configured) ──────────────────────────────────────────
         fallback_url = cfg.get("crime_fallback_endpoint")
         if fallback_url:
-            fallback_cfg = {
-                **cfg,
-                "crime_source":            "socrata_json",
-                "crime_endpoint":          fallback_url,
-                "crime_fallback_endpoint": None,
-                "crime_date_col":    cfg.get("fallback_date_col",    cfg["crime_date_col"]),
-                "crime_offense_col": cfg.get("fallback_offense_col", cfg["crime_offense_col"]),
-                "crime_lat_col":     cfg.get("fallback_lat_col",     cfg["crime_lat_col"]),
-                "crime_lng_col":     cfg.get("fallback_lng_col",     cfg["crime_lng_col"]),
-                "crime_address_col": cfg.get("fallback_address_col", cfg.get("crime_address_col", "address")),
-                "crime_where_template": (
-                    f"{cfg.get('fallback_date_col', cfg['crime_date_col'])} >= '{{cutoff}}'"
-                ),
-            }
-            logger.info("ArcGIS [Columbus] → falling back to Socrata")
-            return self._fetch_socrata_crime(fallback_cfg)
+            logger.info(f"ArcGIS [{city_name}] → falling back to fallback endpoint")
+            # Recursively call appropriate fetcher based on fallback source
+            return self._fetch_socrata_crime({**cfg, "crime_endpoint": fallback_url})
+        
         return hazards
 
     # ----------------------------------------------------------------------
@@ -864,20 +941,24 @@ class NewsHazardFetcher:
     # Helper methods
     # ----------------------------------------------------------------------
     def _get_severity_and_type(self, offense: str) -> tuple:
-        """Determine severity and type based on offense description."""
+        """Determine severity and type based on offense description.
+        Uses longest-match-first to ensure specific offenses are correctly
+        classified (e.g., 'AGGRAVATED ASSAULT' vs 'ASSAULT').
+        """
         offense_upper = str(offense).upper()
 
-        for key, value in HIGH_THREAT.items():
+        # Sort keys by length descending so more-specific matches win
+        for key in sorted(HIGH_THREAT, key=len, reverse=True):
             if key in offense_upper:
-                return value, TYPE_MAP.get(key, TYPE_MAP['DEFAULT'])
+                return HIGH_THREAT[key], TYPE_MAP.get(key, TYPE_MAP['DEFAULT'])
 
-        for key, value in MEDIUM_THREAT.items():
+        for key in sorted(MEDIUM_THREAT, key=len, reverse=True):
             if key in offense_upper:
-                return value, TYPE_MAP.get(key, TYPE_MAP['DEFAULT'])
+                return MEDIUM_THREAT[key], TYPE_MAP.get(key, TYPE_MAP['DEFAULT'])
 
-        for key, value in LOW_THREAT.items():
+        for key in sorted(LOW_THREAT, key=len, reverse=True):
             if key in offense_upper:
-                return value, TYPE_MAP.get('DEFAULT', 'crime')
+                return LOW_THREAT[key], TYPE_MAP.get('DEFAULT', 'crime')
 
         return 0.4, 'crime'
 
