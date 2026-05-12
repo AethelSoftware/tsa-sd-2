@@ -33613,3 +33613,312 @@ Traceback (most recent call last):
 authlib.integrations.base_client.errors.MismatchingStateError: mismatching_state: CSRF Warning! State not equal in request and response.
 2026-05-12 16:27:20,644 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:27:20] "[35m[1mGET /api/auth/callback?state=l8B70pQRCMQGwA05h96eitSqPnaA8J&iss=https://accounts.google.com&code=4/0AeoWuM_A0vGWHZUdaHxp2PHZDNV9kyE_KeGjm5owL_g0-evt0w0BrbLnYnbwQDFY7wCMmQ&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=0&prompt=none HTTP/1.1[0m" 500 -
 2026-05-12 16:27:25,148 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:27:25] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2026-05-12 16:35:26,060 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:35:26] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-05-12 16:35:28,471 - app - ERROR - Exception on /api/auth/callback [GET]
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/lib/python3.10/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 3104, in callback
+    return redirect("http://localhost:3000/dashboard")
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/flask_client/apps.py", line 100, in authorize_access_token
+    params = self._format_state_params(state_data, params)
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/base_client/sync_app.py", line 234, in _format_state_params
+    raise MismatchingStateError()
+authlib.integrations.base_client.errors.MismatchingStateError: mismatching_state: CSRF Warning! State not equal in request and response.
+2026-05-12 16:35:28,504 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:35:28] "[35m[1mGET /api/auth/callback?state=0VI0MXp3ktbGKbuAZnpzooHjEo1MKo&iss=https://accounts.google.com&code=4/0AeoWuM_WVuarDFeBlnJFDLmIYJupq-YbdJk9boAeA6F_Fx75sznCdbEJcsbcBE6HHCEojQ&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+openid&authuser=0&prompt=none HTTP/1.1[0m" 500 -
+2026-05-12 16:35:28,637 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:35:28] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2026-05-12 16:37:19,115 - tomtom_router - INFO - Route cache cleared
+2026-05-12 16:37:19,115 - __main__ - INFO - TomTom router cache cleared on startup
+2026-05-12 16:37:19,146 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-05-12 16:37:20,288 - gtfs_loader - INFO - Loaded GTFS from cache (age: 14.8 days)
+2026-05-12 16:37:20,288 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-05-12 16:37:34,682 - transit_router - INFO - Loaded 305 shapes
+2026-05-12 16:37:35,147 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-05-12 16:37:35,164 - transit_router - INFO - Loaded 101 routes
+2026-05-12 16:37:35,547 - transit_router - INFO - Cached 15826 trips
+2026-05-12 16:37:35,613 - transit_router - INFO - Route-stops index: 100 routes
+2026-05-12 16:37:35,652 - transit_router - INFO - Shape index: 305 shapes
+2026-05-12 16:37:35,652 - __main__ - INFO - GTFS transit router initialized successfully
+2026-05-12 16:37:36,540 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 16:37:36,540 - __main__ - INFO - Safety AI loaded successfully
+2026-05-12 16:37:36,544 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 16:37:40,347 - voice_handler - INFO - ✓ faster-whisper imported (optimized for M1)
+2026-05-12 16:37:40,350 - voice_handler - INFO - Voice handler initialized with address resolution + number hyphen fix + enhanced walking detection
+2026-05-12 16:37:40,350 - __main__ - INFO - Voice handler registered successfully
+2026-05-12 16:37:40,355 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-05-12 16:37:40,355 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-05-12 16:37:40,355 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-05-12 16:37:40,355 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-05-12 16:37:40,376 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-05-12 16:37:40,376 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-12 16:37:43,285 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:37:43] "GET /api/hello HTTP/1.1" 200 -
+2026-05-12 16:37:53,069 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:37:53] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-05-12 16:37:57,073 - app - ERROR - Exception on /api/auth/callback [GET]
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/lib/python3.10/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 3102, in callback
+    token = google.authorize_access_token()
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/flask_client/apps.py", line 100, in authorize_access_token
+    params = self._format_state_params(state_data, params)
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/base_client/sync_app.py", line 234, in _format_state_params
+    raise MismatchingStateError()
+authlib.integrations.base_client.errors.MismatchingStateError: mismatching_state: CSRF Warning! State not equal in request and response.
+2026-05-12 16:37:57,085 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:37:57] "[35m[1mGET /api/auth/callback?state=dew86q4tuhMcECsBXYLNgj1LSkplns&iss=https://accounts.google.com&code=4/0AeoWuM8gqxCmwzQKa3X7F-F_b-8sW2S37ibi2Qbj_ajrzTadm-iTfa30s1YAtdV2lUZLZw&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=0&prompt=consent HTTP/1.1[0m" 500 -
+2026-05-12 16:37:57,184 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:37:57] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-12 16:38:03,935 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:38:03] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-05-12 16:38:05,858 - app - ERROR - Exception on /api/auth/callback [GET]
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/lib/python3.10/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 3102, in callback
+    token = google.authorize_access_token()
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/flask_client/apps.py", line 100, in authorize_access_token
+    params = self._format_state_params(state_data, params)
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/base_client/sync_app.py", line 234, in _format_state_params
+    raise MismatchingStateError()
+authlib.integrations.base_client.errors.MismatchingStateError: mismatching_state: CSRF Warning! State not equal in request and response.
+2026-05-12 16:38:05,861 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:38:05] "[35m[1mGET /api/auth/callback?state=G8t3uLcBTTJK1hlC2kDKcSsb3WcKy9&iss=https://accounts.google.com&code=4/0AeoWuM8HJ_cBZQZoKTCeLEsTgnZYnwL4Nh1Tsj4Kc7AiYe7gkZYi-8kgxuRZCrZ0-htO8Q&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+openid&authuser=0&prompt=none HTTP/1.1[0m" 500 -
+2026-05-12 16:38:29,235 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:38:29] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2026-05-12 16:40:18,427 - tomtom_router - INFO - Route cache cleared
+2026-05-12 16:40:18,427 - __main__ - INFO - TomTom router cache cleared on startup
+2026-05-12 16:40:18,460 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-05-12 16:40:19,638 - gtfs_loader - INFO - Loaded GTFS from cache (age: 14.8 days)
+2026-05-12 16:40:19,638 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-05-12 16:40:34,411 - transit_router - INFO - Loaded 305 shapes
+2026-05-12 16:40:34,896 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-05-12 16:40:34,915 - transit_router - INFO - Loaded 101 routes
+2026-05-12 16:40:35,285 - transit_router - INFO - Cached 15826 trips
+2026-05-12 16:40:35,352 - transit_router - INFO - Route-stops index: 100 routes
+2026-05-12 16:40:35,392 - transit_router - INFO - Shape index: 305 shapes
+2026-05-12 16:40:35,392 - __main__ - INFO - GTFS transit router initialized successfully
+2026-05-12 16:40:36,259 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 16:40:36,259 - __main__ - INFO - Safety AI loaded successfully
+2026-05-12 16:40:36,263 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 16:40:39,278 - voice_handler - INFO - ✓ faster-whisper imported (optimized for M1)
+2026-05-12 16:40:39,280 - voice_handler - INFO - Voice handler initialized with address resolution + number hyphen fix + enhanced walking detection
+2026-05-12 16:40:39,280 - __main__ - INFO - Voice handler registered successfully
+2026-05-12 16:40:39,285 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-05-12 16:40:39,285 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-05-12 16:40:39,285 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-05-12 16:40:39,285 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-05-12 16:40:39,297 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-05-12 16:40:39,297 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-12 16:40:42,137 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:40:42] "GET /api/hello HTTP/1.1" 200 -
+2026-05-12 16:40:57,172 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:40:57] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-05-12 16:41:33,922 - app - ERROR - Exception on /api/auth/callback [GET]
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/lib/python3.10/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 3102, in callback
+    token = google.authorize_access_token()
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/flask_client/apps.py", line 100, in authorize_access_token
+    params = self._format_state_params(state_data, params)
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/base_client/sync_app.py", line 234, in _format_state_params
+    raise MismatchingStateError()
+authlib.integrations.base_client.errors.MismatchingStateError: mismatching_state: CSRF Warning! State not equal in request and response.
+2026-05-12 16:41:33,932 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:41:33] "[35m[1mGET /api/auth/callback?state=vrBfYi0v8W3xFV5NagsRw8KSnKEKLL&iss=https://accounts.google.com&code=4/0AeoWuM-wgGqchJuW1wsCTzlYN-cqs8gqlnJUJyZo_gXERF8IXmGyDikTjvCtXY_g9xcovw&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=1&prompt=consent HTTP/1.1[0m" 500 -
+2026-05-12 16:42:27,429 - tomtom_router - INFO - Route cache cleared
+2026-05-12 16:42:27,429 - __main__ - INFO - TomTom router cache cleared on startup
+2026-05-12 16:42:27,456 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-05-12 16:42:28,678 - gtfs_loader - INFO - Loaded GTFS from cache (age: 14.8 days)
+2026-05-12 16:42:28,678 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-05-12 16:42:43,968 - transit_router - INFO - Loaded 305 shapes
+2026-05-12 16:42:44,659 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-05-12 16:42:44,687 - transit_router - INFO - Loaded 101 routes
+2026-05-12 16:42:45,152 - transit_router - INFO - Cached 15826 trips
+2026-05-12 16:42:45,255 - transit_router - INFO - Route-stops index: 100 routes
+2026-05-12 16:42:45,321 - transit_router - INFO - Shape index: 305 shapes
+2026-05-12 16:42:45,321 - __main__ - INFO - GTFS transit router initialized successfully
+2026-05-12 16:42:46,388 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 16:42:46,388 - __main__ - INFO - Safety AI loaded successfully
+2026-05-12 16:42:46,392 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 16:45:41,315 - voice_handler - INFO - ✓ faster-whisper imported (optimized for M1)
+2026-05-12 16:45:41,319 - voice_handler - INFO - Voice handler initialized with address resolution + number hyphen fix + enhanced walking detection
+2026-05-12 16:45:41,319 - __main__ - INFO - Voice handler registered successfully
+2026-05-12 16:45:41,327 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-05-12 16:45:41,327 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-05-12 16:45:41,327 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-05-12 16:45:41,327 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-05-12 16:45:41,343 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-05-12 16:45:41,343 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-12 16:45:44,327 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:45:44] "GET /api/hello HTTP/1.1" 200 -
+2026-05-12 16:49:56,353 - __main__ - INFO - === LOGIN ===
+2026-05-12 16:49:56,354 - __main__ - INFO - Session keys after authorize_redirect: ['_state_google_0VI0MXp3ktbGKbuAZnpzooHjEo1MKo', '_state_google_AtGvG6ZX5gVVRC0uUJDFIShAGWBxVx', '_state_google_G8t3uLcBTTJK1hlC2kDKcSsb3WcKy9', '_state_google_l8B70pQRCMQGwA05h96eitSqPnaA8J', '_state_google_nil4134vFDARrs4tIom5UusodqxvZP', '_state_google_thvVbDFCHybwSCREoTbebQZEqmLNSz', '_state_google_w2Vg5ODsUoN2iuqx6hXrPD92RtWMno']
+2026-05-12 16:49:56,355 - __main__ - INFO - Set-Cookie header: NONE
+2026-05-12 16:49:56,358 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:49:56] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-05-12 16:49:58,371 - __main__ - INFO - === CALLBACK ===
+2026-05-12 16:49:58,372 - __main__ - INFO - Session keys on arrival: []
+2026-05-12 16:49:58,372 - __main__ - INFO - Cookies on request: []
+2026-05-12 16:49:58,378 - app - ERROR - Exception on /api/auth/callback [GET]
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/lib/python3.10/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 3109, in callback
+    token = google.authorize_access_token()
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/flask_client/apps.py", line 100, in authorize_access_token
+    params = self._format_state_params(state_data, params)
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/base_client/sync_app.py", line 234, in _format_state_params
+    raise MismatchingStateError()
+authlib.integrations.base_client.errors.MismatchingStateError: mismatching_state: CSRF Warning! State not equal in request and response.
+2026-05-12 16:49:58,392 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:49:58] "[35m[1mGET /api/auth/callback?state=w2Vg5ODsUoN2iuqx6hXrPD92RtWMno&iss=https://accounts.google.com&code=4/0AeoWuM-KD1-RLvgfUwUk1B3cLv9NplgJIgUldx124575MplNQMyyiOGe5vGIwMA7C9o9lg&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+openid+https://www.googleapis.com/auth/userinfo.profile&authuser=0&prompt=none HTTP/1.1[0m" 500 -
+2026-05-12 16:50:02,694 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:50:02] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2026-05-12 16:51:44,709 - tomtom_router - INFO - Route cache cleared
+2026-05-12 16:51:44,710 - __main__ - INFO - TomTom router cache cleared on startup
+2026-05-12 16:51:44,760 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-05-12 16:51:45,915 - gtfs_loader - INFO - Loaded GTFS from cache (age: 14.8 days)
+2026-05-12 16:51:45,915 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-05-12 16:52:00,224 - transit_router - INFO - Loaded 305 shapes
+2026-05-12 16:52:00,680 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-05-12 16:52:00,696 - transit_router - INFO - Loaded 101 routes
+2026-05-12 16:52:01,070 - transit_router - INFO - Cached 15826 trips
+2026-05-12 16:52:01,136 - transit_router - INFO - Route-stops index: 100 routes
+2026-05-12 16:52:01,175 - transit_router - INFO - Shape index: 305 shapes
+2026-05-12 16:52:01,175 - __main__ - INFO - GTFS transit router initialized successfully
+2026-05-12 16:52:02,041 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 16:52:02,041 - __main__ - INFO - Safety AI loaded successfully
+2026-05-12 16:52:02,045 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 16:52:06,091 - voice_handler - INFO - ✓ faster-whisper imported (optimized for M1)
+2026-05-12 16:52:06,094 - voice_handler - INFO - Voice handler initialized with address resolution + number hyphen fix + enhanced walking detection
+2026-05-12 16:52:06,094 - __main__ - INFO - Voice handler registered successfully
+2026-05-12 16:52:06,098 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-05-12 16:52:06,098 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-05-12 16:52:06,099 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-05-12 16:52:06,099 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-05-12 16:52:06,111 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-05-12 16:52:06,111 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-12 16:52:09,188 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:52:09] "GET /api/hello HTTP/1.1" 200 -
+2026-05-12 16:52:16,179 - __main__ - INFO - === LOGIN ===
+2026-05-12 16:52:16,180 - __main__ - INFO - Session keys after authorize_redirect: ['_state_google_0VI0MXp3ktbGKbuAZnpzooHjEo1MKo', '_state_google_AtGvG6ZX5gVVRC0uUJDFIShAGWBxVx', '_state_google_G8t3uLcBTTJK1hlC2kDKcSsb3WcKy9', '_state_google_l8B70pQRCMQGwA05h96eitSqPnaA8J', '_state_google_nil4134vFDARrs4tIom5UusodqxvZP', '_state_google_thvVbDFCHybwSCREoTbebQZEqmLNSz', '_state_google_w2Vg5ODsUoN2iuqx6hXrPD92RtWMno', '_state_google_yBLDEJRi7zlMKlU75lWr8f0L3aGXKK']
+2026-05-12 16:52:16,180 - __main__ - INFO - Set-Cookie header: NONE
+2026-05-12 16:52:16,181 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:52:16] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-05-12 16:52:18,384 - __main__ - INFO - OAuth success: rubisco412@gmail.com (Rubisco Anderson)
+2026-05-12 16:52:18,384 - __main__ - ERROR - OAuth callback error: name 'email' is not defined
+Traceback (most recent call last):
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 3154, in callback
+    return redirect(f"http://localhost:3000/dashboard?email={email}")
+NameError: name 'email' is not defined
+2026-05-12 16:52:18,392 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:52:18] "[35m[1mGET /api/auth/callback?state=yBLDEJRi7zlMKlU75lWr8f0L3aGXKK&iss=https://accounts.google.com&code=4/0AeoWuM-gSMlsz72hXdj49K3ShbKCqyiawbsyyweApuoC1HSOPGRhehjkaNCVelTszpwEvg&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=0&prompt=none HTTP/1.1[0m" 500 -
+2026-05-12 16:53:03,320 - tomtom_router - INFO - Route cache cleared
+2026-05-12 16:53:03,324 - __main__ - INFO - TomTom router cache cleared on startup
+2026-05-12 16:53:03,355 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-05-12 16:53:04,490 - gtfs_loader - INFO - Loaded GTFS from cache (age: 14.8 days)
+2026-05-12 16:53:04,490 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-05-12 16:53:19,188 - transit_router - INFO - Loaded 305 shapes
+2026-05-12 16:53:19,996 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-05-12 16:53:20,036 - transit_router - INFO - Loaded 101 routes
+2026-05-12 16:53:20,643 - transit_router - INFO - Cached 15826 trips
+2026-05-12 16:53:20,732 - transit_router - INFO - Route-stops index: 100 routes
+2026-05-12 16:53:20,792 - transit_router - INFO - Shape index: 305 shapes
+2026-05-12 16:53:20,792 - __main__ - INFO - GTFS transit router initialized successfully
+2026-05-12 16:53:22,269 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 16:53:22,269 - __main__ - INFO - Safety AI loaded successfully
+2026-05-12 16:53:22,273 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 16:54:15,148 - voice_handler - INFO - ✓ faster-whisper imported (optimized for M1)
+2026-05-12 16:54:15,151 - voice_handler - INFO - Voice handler initialized with address resolution + number hyphen fix + enhanced walking detection
+2026-05-12 16:54:15,151 - __main__ - INFO - Voice handler registered successfully
+2026-05-12 16:54:15,156 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-05-12 16:54:15,156 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-05-12 16:54:15,156 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-05-12 16:54:15,156 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-05-12 16:54:15,175 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-05-12 16:54:15,175 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-12 16:54:17,768 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:17] "GET /api/hello HTTP/1.1" 200 -
+2026-05-12 16:54:26,101 - __main__ - INFO - === LOGIN ===
+2026-05-12 16:54:26,101 - __main__ - INFO - Session keys after authorize_redirect: ['_state_google_0VI0MXp3ktbGKbuAZnpzooHjEo1MKo', '_state_google_AtGvG6ZX5gVVRC0uUJDFIShAGWBxVx', '_state_google_G8t3uLcBTTJK1hlC2kDKcSsb3WcKy9', '_state_google_l8B70pQRCMQGwA05h96eitSqPnaA8J', '_state_google_nil4134vFDARrs4tIom5UusodqxvZP', '_state_google_thvVbDFCHybwSCREoTbebQZEqmLNSz', '_state_google_w2Vg5ODsUoN2iuqx6hXrPD92RtWMno', '_state_google_yBLDEJRi7zlMKlU75lWr8f0L3aGXKK', '_state_google_5qpT8d1ka30gdGP7PZTovkbkZ9S921']
+2026-05-12 16:54:26,101 - __main__ - INFO - Set-Cookie header: NONE
+2026-05-12 16:54:26,102 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:26] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-05-12 16:54:28,695 - __main__ - INFO - OAuth success: rubisco412@gmail.com (Rubisco Anderson)
+2026-05-12 16:54:28,706 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:28] "[32mGET /api/auth/callback?state=5qpT8d1ka30gdGP7PZTovkbkZ9S921&iss=https://accounts.google.com&code=4/0AeoWuM8IHBYu4EYQrcStmC584zMICarbyXTQxSxCtBdqZ-91W2DZ5dv3v1B8_JLvj0S-2w&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+openid&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-05-12 16:54:29,120 - voice_handler - INFO - Loading faster-whisper model 'base.en'...
+2026-05-12 16:54:29,167 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:29] "GET /api/cities HTTP/1.1" 200 -
+2026-05-12 16:54:29,172 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:29] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-05-12 16:54:29,180 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:29] "GET /api/cities HTTP/1.1" 200 -
+2026-05-12 16:54:29,211 - __main__ - INFO - Websocket connected: IMKRNY8MRvyzybdvAAAC
+2026-05-12 16:54:31,124 - voice_handler - INFO - Model loaded in 2.00s
+2026-05-12 16:54:31,124 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:31] "GET /api/voice/status HTTP/1.1" 200 -
+2026-05-12 16:54:31,124 - voice_handler - INFO - Voice session created: vs-1778619271-8055
+2026-05-12 16:54:31,137 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:31] "GET /api/voice/status HTTP/1.1" 200 -
+2026-05-12 16:54:31,354 - news_hazard_fetcher - WARNING - PulsePoint 401 — backing off for 24 hours
+2026-05-12 16:54:31,358 - news_hazard_fetcher - INFO - Hazard Fetcher initialized for multi-city
+2026-05-12 16:54:31,358 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-05-12 16:54:31,358 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-05-12 16:54:31,359 - news_hazard_fetcher - INFO - Fetching crime data from WPRDC SQL API (cutoff: 2026-03-31)...
+2026-05-12 16:54:31,359 - news_hazard_fetcher - INFO - Fetching crime data from WPRDC SQL API (cutoff: 2026-03-31)...
+2026-05-12 16:54:31,359 - news_hazard_fetcher - INFO - Fetching crime data from WPRDC SQL API (cutoff: 2026-03-31)...
+2026-05-12 16:54:31,359 - news_hazard_fetcher - INFO - Fetching crime data from WPRDC SQL API (cutoff: 2026-03-31)...
+2026-05-12 16:54:31,947 - news_hazard_fetcher - INFO - WPRDC returned 500 crime records
+2026-05-12 16:54:32,017 - news_hazard_fetcher - INFO - Crime data: 500 records, filtered 247 low-threat, created 249 hazards
+2026-05-12 16:54:32,024 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:32] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-05-12 16:54:32,028 - news_hazard_fetcher - INFO - WPRDC returned 500 crime records
+2026-05-12 16:54:32,081 - news_hazard_fetcher - INFO - Crime data: 500 records, filtered 247 low-threat, created 249 hazards
+2026-05-12 16:54:32,088 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:32] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-05-12 16:54:32,093 - news_hazard_fetcher - INFO - WPRDC returned 500 crime records
+2026-05-12 16:54:32,102 - news_hazard_fetcher - INFO - WPRDC returned 500 crime records
+2026-05-12 16:54:32,188 - news_hazard_fetcher - INFO - Crime data: 500 records, filtered 247 low-threat, created 249 hazards
+2026-05-12 16:54:32,205 - news_hazard_fetcher - INFO - Crime data: 500 records, filtered 247 low-threat, created 249 hazards
+2026-05-12 16:54:32,212 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:32] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-05-12 16:54:32,219 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:32] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-05-12 16:54:37,265 - __main__ - INFO - Client disconnected: IMKRNY8MRvyzybdvAAAC
+2026-05-12 16:54:52,003 - __main__ - INFO - === LOGIN ===
+2026-05-12 16:54:52,009 - __main__ - INFO - Session keys after authorize_redirect: ['_state_google_0VI0MXp3ktbGKbuAZnpzooHjEo1MKo', '_state_google_5qpT8d1ka30gdGP7PZTovkbkZ9S921', '_state_google_AtGvG6ZX5gVVRC0uUJDFIShAGWBxVx', '_state_google_G8t3uLcBTTJK1hlC2kDKcSsb3WcKy9', '_state_google_l8B70pQRCMQGwA05h96eitSqPnaA8J', '_state_google_nil4134vFDARrs4tIom5UusodqxvZP', '_state_google_thvVbDFCHybwSCREoTbebQZEqmLNSz', '_state_google_w2Vg5ODsUoN2iuqx6hXrPD92RtWMno', '_state_google_yBLDEJRi7zlMKlU75lWr8f0L3aGXKK', '_state_google_4dJhKO16znJIKVgzevdtXWoVUIJREY']
+2026-05-12 16:54:52,009 - __main__ - INFO - Set-Cookie header: NONE
+2026-05-12 16:54:52,013 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:52] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-05-12 16:54:54,574 - __main__ - INFO - OAuth success: rubisco412@gmail.com (Rubisco Anderson)
+2026-05-12 16:54:54,582 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:54] "[32mGET /api/auth/callback?state=4dJhKO16znJIKVgzevdtXWoVUIJREY&iss=https://accounts.google.com&code=4/0AeoWuM-qik797vDTx9srtiLOl55SBSBoft5RqX9Gfaab_uSTqF-MRCIkye3hJXFTJGxgHg&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+openid+https://www.googleapis.com/auth/userinfo.profile&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2026-05-12 16:54:55,056 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:55] "GET /api/voice/status HTTP/1.1" 200 -
+2026-05-12 16:54:55,060 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:55] "GET /api/cities HTTP/1.1" 200 -
+2026-05-12 16:54:55,063 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:55] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-05-12 16:54:55,065 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:55] "GET /api/voice/status HTTP/1.1" 200 -
+2026-05-12 16:54:55,066 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:55] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
+2026-05-12 16:54:55,067 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:55] "GET /api/cities HTTP/1.1" 200 -
+2026-05-12 16:54:55,106 - __main__ - INFO - Websocket connected: ROwCouzPQQeQ1ZCVAAAF
+2026-05-12 16:54:55,141 - voice_handler - INFO - Voice session created: vs-1778619295-3118
+2026-05-12 16:54:55,323 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:55] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-05-12 16:54:55,361 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:55] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-05-12 16:54:55,387 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:54:55] "POST /api/area-obstructions HTTP/1.1" 200 -

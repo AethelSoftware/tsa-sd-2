@@ -3077,10 +3077,7 @@ def add_model_endpoints(app):
                 })
             return jsonify({'success': False, 'error': 'Missing required fields'}), 400
         except Exception as e:
-            return jsonify({'success': False, 'error': str(e)}), 500
-
-    app.secret_key = os.environ.get("SECRET_KEY")
-    
+            return jsonify({'success': False, 'error': str(e)}), 500    
     oauth = OAuth(app)
 
     google = oauth.register(
@@ -3098,13 +3095,67 @@ def add_model_endpoints(app):
         redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI")
         if not redirect_uri:
             return jsonify({'error': 'GOOGLE_REDIRECT_URI not configured'}), 500
-        return google.authorize_redirect(redirect_uri=redirect_uri)
+        result = google.authorize_redirect(redirect_uri=redirect_uri)
+        logger.info(f"=== LOGIN ===")
+        logger.info(f"Session keys after authorize_redirect: {list(session.keys())}")
+        logger.info(f"Set-Cookie header: {result.headers.get('Set-Cookie', 'NONE')}")
+        return result
 
     @app.route('/api/auth/callback')
     def callback():
-        token = google.authorize_access_token()
-        user_info = token.get("userinfo")
-        return redirect("http://localhost:3000/dashboard")
+        """OAuth callback — manual code exchange to bypass session/cookie issues"""
+        code = request.args.get('code')
+        if not code:
+            logger.error("No code in callback")
+            return jsonify({'error': 'No authorization code received'}), 400
+        
+        # Manually exchange the code for a token (no state check, no session needed)
+        try:
+            token_response = requests.post(
+                'https://oauth2.googleapis.com/token',
+                data={
+                    'code': code,
+                    'client_id': os.environ.get("GOOGLE_CLIENT_ID"),
+                    'client_secret': os.environ.get("GOOGLE_CLIENT_SECRET"),
+                    'redirect_uri': os.environ.get("GOOGLE_REDIRECT_URI"),
+                    'grant_type': 'authorization_code',
+                },
+                timeout=10,
+            )
+            
+            if token_response.status_code != 200:
+                logger.error(f"Token exchange failed: {token_response.status_code} {token_response.text}")
+                return jsonify({'error': 'Token exchange failed'}), 500
+            
+            token_data = token_response.json()
+            access_token = token_data.get('access_token')
+            
+            if not access_token:
+                logger.error(f"No access_token in response: {token_data}")
+                return jsonify({'error': 'No access token received'}), 500
+            
+            # Fetch user info with the token
+            userinfo_response = requests.get(
+                'https://www.googleapis.com/oauth2/v3/userinfo',
+                headers={'Authorization': f'Bearer {access_token}'},
+                timeout=10,
+            )
+            
+            if userinfo_response.status_code == 200:
+                user_info = userinfo_response.json()
+                logger.info(f"OAuth success: {user_info.get('email', 'unknown')} ({user_info.get('name', 'no name')})")
+            else:
+                logger.warning(f"Failed to fetch user info: {userinfo_response.status_code}")
+                user_info = {}
+            
+            # Redirect to dashboard
+            # (Optional: pass email as query param so frontend knows who logged in)
+            email = user_info.get('email', '')
+            return redirect(f"http://localhost:3000/dashboard?email={email}")
+            
+        except Exception as e:
+            logger.error(f"OAuth callback error: {e}", exc_info=True)
+            return jsonify({'error': f'OAuth callback failed: {str(e)}'}), 500
 
     @app.route("/api/city-hazards", methods=['POST'])
     def get_city_hazards():
@@ -3473,6 +3524,23 @@ def main():
 
     # Create Flask app with SocketIO
     app = Flask(__name__, static_folder='../frontend/dist', static_url_path='/')
+    
+    # Secret key for session cookie signing (REQUIRED for OAuth)
+    app.secret_key = os.environ.get("SECRET_KEY")
+    if not app.secret_key:
+        raise RuntimeError(
+            "SECRET_KEY not set in environment. "
+            "Add SECRET_KEY=<random-hex> to .env. "
+            "Generate with: python3 -c \"import secrets; print(secrets.token_hex(32))\""
+        )
+    
+    # Session cookie config — Lax allows OAuth round-trip through accounts.google.com
+    app.config.update(
+        SESSION_COOKIE_SAMESITE='Lax',
+        SESSION_COOKIE_SECURE=False,   # http (not https) in dev
+        SESSION_COOKIE_HTTPONLY=True,
+    )
+    
     CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
     # Initialize SocketIO
