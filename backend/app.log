@@ -33206,3 +33206,208 @@ AssertionError: write() before start_response
 2026-05-10 18:30:51,025 - werkzeug - INFO - 127.0.0.1 - - [10/May/2026 18:30:51] "POST /api/area-obstructions HTTP/1.1" 200 -
 2026-05-10 18:33:50,329 - werkzeug - INFO - 127.0.0.1 - - [10/May/2026 18:33:50] "OPTIONS /api/area-obstructions HTTP/1.1" 200 -
 2026-05-10 18:33:50,587 - werkzeug - INFO - 127.0.0.1 - - [10/May/2026 18:33:50] "POST /api/area-obstructions HTTP/1.1" 200 -
+2026-05-11 18:02:20,315 - tomtom_router - INFO - Route cache cleared
+2026-05-11 18:02:20,315 - __main__ - INFO - TomTom router cache cleared on startup
+2026-05-11 18:02:20,331 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-05-11 18:02:21,095 - gtfs_loader - INFO - Loaded GTFS from cache (age: 13.8 days)
+2026-05-11 18:02:21,095 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-05-11 18:02:29,439 - transit_router - INFO - Loaded 305 shapes
+2026-05-11 18:02:29,692 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-05-11 18:02:29,706 - transit_router - INFO - Loaded 101 routes
+2026-05-11 18:02:29,898 - transit_router - INFO - Cached 15826 trips
+2026-05-11 18:02:29,939 - transit_router - INFO - Route-stops index: 100 routes
+2026-05-11 18:02:29,962 - transit_router - INFO - Shape index: 305 shapes
+2026-05-11 18:02:29,962 - __main__ - INFO - GTFS transit router initialized successfully
+2026-05-11 18:02:34,844 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-11 18:02:34,844 - __main__ - INFO - Safety AI loaded successfully
+2026-05-11 18:02:34,850 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-11 18:02:43,002 - voice_handler - INFO - ✓ faster-whisper imported (optimized for M1)
+2026-05-11 18:02:43,006 - voice_handler - INFO - Voice handler initialized with address resolution + number hyphen fix + enhanced walking detection
+2026-05-11 18:02:43,006 - __main__ - INFO - Voice handler registered successfully
+2026-05-11 18:02:43,010 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-05-11 18:02:43,011 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-05-11 18:02:43,011 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-05-11 18:02:43,011 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-05-11 18:02:43,025 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-05-11 18:02:43,025 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-11 18:02:45,765 - werkzeug - INFO - 127.0.0.1 - - [11/May/2026 18:02:45] "GET /api/hello HTTP/1.1" 200 -
+2026-05-11 18:02:46,047 - werkzeug - INFO - 127.0.0.1 - - [11/May/2026 18:02:46] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-11 18:03:16,350 - news_hazard_fetcher - WARNING - PulsePoint 401 — backing off for 24 hours
+2026-05-11 18:03:16,353 - news_hazard_fetcher - INFO - Hazard Fetcher initialized for multi-city
+2026-05-11 18:03:16,353 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-05-11 18:03:16,353 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-05-11 18:03:16,353 - news_hazard_fetcher - INFO - [pittsburgh] fetching fresh hazards from wprdc_ckan
+2026-05-11 18:03:16,353 - news_hazard_fetcher - INFO - Fetching crime data from WPRDC SQL API (cutoff: 2026-03-30)...
+2026-05-11 18:03:16,826 - news_hazard_fetcher - INFO - WPRDC returned 500 crime records
+2026-05-11 18:03:16,896 - news_hazard_fetcher - INFO - Crime data: 500 records, filtered 247 low-threat, created 249 hazards
+2026-05-11 18:03:16,897 - news_hazard_fetcher - INFO - [pittsburgh] primary crime: 249 hazards
+2026-05-11 18:03:16,903 - gdelt_fetcher - INFO - GDELT Fetcher initialized with rate limiting, cache duration 30min
+2026-05-11 18:03:35,842 - gdelt_fetcher - INFO - GDELT returned 5 articles for pittsburgh
+2026-05-11 18:03:35,845 - gdelt_fetcher - INFO - GDELT: 5 hazards extracted for pittsburgh
+2026-05-11 18:03:35,848 - news_hazard_fetcher - INFO - [pittsburgh] GDELT: 5 hazards
+2026-05-11 18:03:35,849 - news_hazard_fetcher - INFO - [pittsburgh] total after filter+dedup: 184 (dropped 70 low-threat/dups)
+2026-05-11 18:03:35,855 - werkzeug - INFO - 127.0.0.1 - - [11/May/2026 18:03:35] "POST /api/city-hazards HTTP/1.1" 200 -
+2026-05-11 18:03:35,866 - news_hazard_fetcher - INFO - [philadelphia] fetching fresh hazards from socrata_json
+2026-05-11 18:03:36,686 - news_hazard_fetcher - INFO - Socrata [Philadelphia, PA] → 200 from https://data.phila.gov/resource/sspu-uyfa.json
+2026-05-11 18:03:36,692 - news_hazard_fetcher - INFO - Socrata [Philadelphia, PA] → 500 records
+2026-05-11 18:03:36,693 - news_hazard_fetcher - INFO - Socrata [Philadelphia, PA] sample row: offense='Vandalism/Criminal Mischief' lat='39.91374129' lng='-75.17476995' keys=['cartodb_id', 'dc_dist', 'dc_key', 'dispatch_date', 'dispatch_date_time', 'dispatch_time', 'hour', 'location_block']...
+2026-05-11 18:03:36,702 - news_hazard_fetcher - INFO - Socrata [Philadelphia, PA]: 500 records → 235 hazards (low_threat=247, no_coords=18, bad_coords=0, out_of_bbox=0)
+2026-05-11 18:03:36,704 - news_hazard_fetcher - INFO - [philadelphia] primary crime: 235 hazards
+2026-05-11 18:03:45,904 - gdelt_fetcher - WARNING - GDELT [philadelphia] HTTP 429 — backing off for 5 minutes
+2026-05-11 18:03:45,907 - news_hazard_fetcher - INFO - [philadelphia] GDELT: 0 hazards
+2026-05-11 18:03:45,908 - news_hazard_fetcher - INFO - [philadelphia] total after filter+dedup: 231 (dropped 4 low-threat/dups)
+2026-05-11 18:03:45,911 - werkzeug - INFO - 127.0.0.1 - - [11/May/2026 18:03:45] "POST /api/city-hazards HTTP/1.1" 200 -
+2026-05-11 18:03:45,916 - news_hazard_fetcher - INFO - [cleveland] fetching fresh hazards from arcgis_rest
+2026-05-11 18:03:46,351 - news_hazard_fetcher - INFO - ArcGIS [Cleveland, OH] → 500 features
+2026-05-11 18:03:46,359 - news_hazard_fetcher - INFO - ArcGIS [Cleveland, OH]: 500 features → 218 hazards (279 filtered)
+2026-05-11 18:03:46,361 - news_hazard_fetcher - INFO - [cleveland] primary crime: 218 hazards
+2026-05-11 18:03:46,362 - news_hazard_fetcher - INFO - [cleveland] GDELT: 0 hazards
+2026-05-11 18:03:46,362 - news_hazard_fetcher - INFO - [cleveland] total after filter+dedup: 191 (dropped 27 low-threat/dups)
+2026-05-11 18:03:46,364 - werkzeug - INFO - 127.0.0.1 - - [11/May/2026 18:03:46] "POST /api/city-hazards HTTP/1.1" 200 -
+2026-05-11 18:03:46,368 - news_hazard_fetcher - INFO - [columbus] fetching fresh hazards from socrata_json
+2026-05-11 18:03:46,404 - news_hazard_fetcher - ERROR - Socrata [Columbus, OH] error: HTTPSConnectionPool(host='data.columbus.gov', port=443): Max retries exceeded with url: /resource/rntm-jp9t.json?%24limit=500&%24where=report_date+%3E%3D+%272026-04-11T18%3A03%3A46%27&%24order=report_date+DESC (Caused by NameResolutionError("HTTPSConnection(host='data.columbus.gov', port=443): Failed to resolve 'data.columbus.gov' ([Errno 8] nodename nor servname provided, or not known)"))
+2026-05-11 18:03:46,404 - news_hazard_fetcher - ERROR - All Socrata endpoints failed for Columbus, OH
+2026-05-11 18:03:46,404 - news_hazard_fetcher - INFO - [columbus] primary crime: 0 hazards
+2026-05-11 18:03:46,404 - news_hazard_fetcher - INFO - [columbus] GDELT: 0 hazards
+2026-05-11 18:03:46,404 - news_hazard_fetcher - INFO - [columbus] total after filter+dedup: 0 (dropped 0 low-threat/dups)
+2026-05-11 18:03:46,404 - werkzeug - INFO - 127.0.0.1 - - [11/May/2026 18:03:46] "POST /api/city-hazards HTTP/1.1" 200 -
+2026-05-11 18:03:46,406 - news_hazard_fetcher - INFO - [cincinnati] fetching fresh hazards from socrata_json
+2026-05-11 18:03:47,133 - news_hazard_fetcher - INFO - Socrata [Cincinnati, OH] → 200 from https://data.cincinnati-oh.gov/resource/7aqy-xrv9.json
+2026-05-11 18:03:47,141 - news_hazard_fetcher - INFO - Socrata [Cincinnati, OH] → 500 records
+2026-05-11 18:03:47,141 - news_hazard_fetcher - INFO - Socrata [Cincinnati, OH] sample row: offense='Personal/Other Theft' lat='39.1183' lng='-84.5218' keys=['address_x', 'beat', 'cc_neighborhood', 'clsd', 'cpd_neighborhood', 'datefrom', 'datereported', 'dateto']...
+2026-05-11 18:03:47,151 - news_hazard_fetcher - INFO - Socrata [Cincinnati, OH]: 500 records → 250 hazards (low_threat=249, no_coords=1, bad_coords=0, out_of_bbox=0)
+2026-05-11 18:03:47,153 - news_hazard_fetcher - INFO - [cincinnati] primary crime: 250 hazards
+2026-05-11 18:03:47,154 - news_hazard_fetcher - INFO - [cincinnati] GDELT: 0 hazards
+2026-05-11 18:03:47,154 - news_hazard_fetcher - INFO - [cincinnati] total after filter+dedup: 250 (dropped 0 low-threat/dups)
+2026-05-11 18:03:47,156 - werkzeug - INFO - 127.0.0.1 - - [11/May/2026 18:03:47] "POST /api/city-hazards HTTP/1.1" 200 -
+2026-05-11 21:43:27,336 - tomtom_router - INFO - Route cache cleared
+2026-05-11 21:43:27,336 - __main__ - INFO - TomTom router cache cleared on startup
+2026-05-11 21:43:27,367 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-05-11 21:43:28,745 - gtfs_loader - INFO - Loaded GTFS from cache (age: 14.0 days)
+2026-05-11 21:43:28,745 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-05-11 21:43:43,767 - transit_router - INFO - Loaded 305 shapes
+2026-05-11 21:43:44,208 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-05-11 21:43:44,225 - transit_router - INFO - Loaded 101 routes
+2026-05-11 21:43:44,595 - transit_router - INFO - Cached 15826 trips
+2026-05-11 21:43:44,662 - transit_router - INFO - Route-stops index: 100 routes
+2026-05-11 21:43:44,701 - transit_router - INFO - Shape index: 305 shapes
+2026-05-11 21:43:44,701 - __main__ - INFO - GTFS transit router initialized successfully
+2026-05-11 21:43:45,625 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-11 21:43:45,625 - __main__ - INFO - Safety AI loaded successfully
+2026-05-11 21:43:45,628 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-11 21:47:58,335 - voice_handler - INFO - ✓ faster-whisper imported (optimized for M1)
+2026-05-11 21:47:58,338 - voice_handler - INFO - Voice handler initialized with address resolution + number hyphen fix + enhanced walking detection
+2026-05-11 21:47:58,338 - __main__ - INFO - Voice handler registered successfully
+2026-05-11 21:47:58,342 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-05-11 21:47:58,343 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-05-11 21:47:58,343 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-05-11 21:47:58,343 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-05-11 21:47:58,355 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-05-11 21:47:58,355 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-11 21:48:01,006 - werkzeug - INFO - 127.0.0.1 - - [11/May/2026 21:48:01] "GET /api/hello HTTP/1.1" 200 -
+2026-05-11 21:48:13,885 - news_hazard_fetcher - WARNING - PulsePoint 401 — backing off for 24 hours
+2026-05-11 21:48:13,888 - news_hazard_fetcher - INFO - Hazard Fetcher initialized for multi-city
+2026-05-11 21:48:13,888 - news_hazard_fetcher - INFO - Minimum severity threshold: 0.5
+2026-05-11 21:48:13,888 - news_hazard_fetcher - INFO - Cache duration: 300s
+2026-05-11 21:48:13,888 - news_hazard_fetcher - INFO - [pittsburgh] fetching fresh hazards from wprdc_ckan
+2026-05-11 21:48:13,889 - news_hazard_fetcher - INFO - Fetching crime data from WPRDC SQL API (cutoff: 2026-03-30)...
+2026-05-11 21:48:14,276 - news_hazard_fetcher - INFO - WPRDC returned 500 crime records
+2026-05-11 21:48:14,352 - news_hazard_fetcher - INFO - Crime data: 500 records, filtered 247 low-threat, created 249 hazards
+2026-05-11 21:48:14,354 - news_hazard_fetcher - INFO - [pittsburgh] primary crime: 249 hazards
+2026-05-11 21:48:14,355 - gdelt_fetcher - INFO - GDELT Fetcher initialized with rate limiting, cache duration 30min
+2026-05-11 21:48:22,151 - gdelt_fetcher - INFO - GDELT returned 19 articles for pittsburgh
+2026-05-11 21:48:22,152 - gdelt_fetcher - INFO - GDELT: 8 hazards extracted for pittsburgh
+2026-05-11 21:48:22,155 - news_hazard_fetcher - INFO - [pittsburgh] GDELT: 8 hazards
+2026-05-11 21:48:22,156 - news_hazard_fetcher - INFO - [pittsburgh] total after filter+dedup: 187 (dropped 70 low-threat/dups)
+2026-05-11 21:48:22,159 - werkzeug - INFO - 127.0.0.1 - - [11/May/2026 21:48:22] "POST /api/city-hazards HTTP/1.1" 200 -
+2026-05-11 21:48:22,170 - news_hazard_fetcher - INFO - [philadelphia] fetching fresh hazards from socrata_json
+2026-05-11 21:48:23,015 - news_hazard_fetcher - INFO - Socrata [Philadelphia, PA] → 200 from https://data.phila.gov/resource/sspu-uyfa.json
+2026-05-11 21:48:23,020 - news_hazard_fetcher - INFO - Socrata [Philadelphia, PA] → 500 records
+2026-05-11 21:48:23,021 - news_hazard_fetcher - INFO - Socrata [Philadelphia, PA] sample row: offense='Vandalism/Criminal Mischief' lat='39.91374129' lng='-75.17476995' keys=['cartodb_id', 'dc_dist', 'dc_key', 'dispatch_date', 'dispatch_date_time', 'dispatch_time', 'hour', 'location_block']...
+2026-05-11 21:48:23,030 - news_hazard_fetcher - INFO - Socrata [Philadelphia, PA]: 500 records → 235 hazards (low_threat=247, no_coords=18, bad_coords=0, out_of_bbox=0)
+2026-05-11 21:48:23,032 - news_hazard_fetcher - INFO - [philadelphia] primary crime: 235 hazards
+2026-05-11 21:48:28,375 - gdelt_fetcher - INFO - GDELT returned 20 articles for philadelphia
+2026-05-11 21:48:28,378 - gdelt_fetcher - INFO - GDELT: 17 hazards extracted for philadelphia
+2026-05-11 21:48:28,380 - news_hazard_fetcher - INFO - [philadelphia] GDELT: 17 hazards
+2026-05-11 21:48:28,381 - news_hazard_fetcher - INFO - [philadelphia] total after filter+dedup: 248 (dropped 4 low-threat/dups)
+2026-05-11 21:48:28,386 - werkzeug - INFO - 127.0.0.1 - - [11/May/2026 21:48:28] "POST /api/city-hazards HTTP/1.1" 200 -
+2026-05-11 21:48:28,392 - news_hazard_fetcher - INFO - [cleveland] fetching fresh hazards from arcgis_rest
+2026-05-11 21:48:28,780 - news_hazard_fetcher - INFO - ArcGIS [Cleveland, OH] → 500 features
+2026-05-11 21:48:28,788 - news_hazard_fetcher - INFO - ArcGIS [Cleveland, OH]: 500 features → 218 hazards (279 filtered)
+2026-05-11 21:48:28,790 - news_hazard_fetcher - INFO - [cleveland] primary crime: 218 hazards
+2026-05-11 21:48:31,161 - gdelt_fetcher - WARNING - GDELT [cleveland] HTTP 429 — backing off for 5 minutes
+2026-05-11 21:48:31,164 - news_hazard_fetcher - INFO - [cleveland] GDELT: 0 hazards
+2026-05-11 21:48:31,165 - news_hazard_fetcher - INFO - [cleveland] total after filter+dedup: 191 (dropped 27 low-threat/dups)
+2026-05-11 21:48:31,169 - werkzeug - INFO - 127.0.0.1 - - [11/May/2026 21:48:31] "POST /api/city-hazards HTTP/1.1" 200 -
+2026-05-11 21:48:31,175 - news_hazard_fetcher - INFO - [columbus] fetching fresh hazards from gdelt_only
+2026-05-11 21:48:31,175 - news_hazard_fetcher - INFO - [columbus] crime_source=gdelt_only — skipping primary crime fetch
+2026-05-11 21:48:31,175 - news_hazard_fetcher - INFO - [columbus] primary crime: 0 hazards
+2026-05-11 21:48:31,176 - news_hazard_fetcher - INFO - [columbus] GDELT: 0 hazards
+2026-05-11 21:48:31,176 - news_hazard_fetcher - INFO - [columbus] total after filter+dedup: 0 (dropped 0 low-threat/dups)
+2026-05-11 21:48:31,176 - werkzeug - INFO - 127.0.0.1 - - [11/May/2026 21:48:31] "POST /api/city-hazards HTTP/1.1" 200 -
+2026-05-11 21:48:31,179 - news_hazard_fetcher - INFO - [cincinnati] fetching fresh hazards from socrata_json
+2026-05-11 21:48:31,731 - news_hazard_fetcher - INFO - Socrata [Cincinnati, OH] → 200 from https://data.cincinnati-oh.gov/resource/7aqy-xrv9.json
+2026-05-11 21:48:31,734 - news_hazard_fetcher - INFO - Socrata [Cincinnati, OH] → 500 records
+2026-05-11 21:48:31,734 - news_hazard_fetcher - INFO - Socrata [Cincinnati, OH] sample row: offense='Part 2' lat='39.1447' lng='-84.5593' keys=['address_x', 'beat', 'cc_neighborhood', 'clsd', 'cpd_neighborhood', 'datefrom', 'datereported', 'dateto']...
+2026-05-11 21:48:31,746 - news_hazard_fetcher - INFO - Socrata [Cincinnati, OH]: 500 records → 253 hazards (low_threat=246, no_coords=1, bad_coords=0, out_of_bbox=0)
+2026-05-11 21:48:31,749 - news_hazard_fetcher - INFO - [cincinnati] primary crime: 253 hazards
+2026-05-11 21:48:31,749 - news_hazard_fetcher - INFO - [cincinnati] GDELT: 0 hazards
+2026-05-11 21:48:31,749 - news_hazard_fetcher - INFO - [cincinnati] total after filter+dedup: 253 (dropped 0 low-threat/dups)
+2026-05-11 21:48:31,752 - werkzeug - INFO - 127.0.0.1 - - [11/May/2026 21:48:31] "POST /api/city-hazards HTTP/1.1" 200 -
+2026-05-12 05:14:13,131 - news_hazard_fetcher - INFO - [pittsburgh] fetching fresh hazards from wprdc_ckan
+2026-05-12 05:14:13,149 - news_hazard_fetcher - INFO - Fetching crime data from WPRDC SQL API (cutoff: 2026-03-31)...
+2026-05-12 05:14:13,632 - news_hazard_fetcher - INFO - WPRDC returned 500 crime records
+2026-05-12 05:14:13,720 - news_hazard_fetcher - INFO - Crime data: 500 records, filtered 247 low-threat, created 249 hazards
+2026-05-12 05:14:13,722 - news_hazard_fetcher - INFO - [pittsburgh] primary crime: 249 hazards
+2026-05-12 05:14:16,799 - gdelt_fetcher - WARNING - GDELT [pittsburgh] HTTP 429 — backing off for 5 minutes
+2026-05-12 05:14:16,801 - news_hazard_fetcher - INFO - [pittsburgh] GDELT: 8 hazards
+2026-05-12 05:14:16,801 - news_hazard_fetcher - INFO - [pittsburgh] total after filter+dedup: 187 (dropped 70 low-threat/dups)
+2026-05-12 05:14:16,806 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 05:14:16] "POST /api/city-hazards HTTP/1.1" 200 -
+2026-05-12 05:14:16,815 - news_hazard_fetcher - INFO - [philadelphia] fetching fresh hazards from socrata_json
+2026-05-12 05:14:17,495 - news_hazard_fetcher - INFO - Socrata [Philadelphia, PA] → 200 from https://data.phila.gov/resource/sspu-uyfa.json
+2026-05-12 05:14:17,503 - news_hazard_fetcher - INFO - Socrata [Philadelphia, PA] → 500 records
+2026-05-12 05:14:17,504 - news_hazard_fetcher - INFO - Socrata [Philadelphia, PA] sample row: offense='Vandalism/Criminal Mischief' lat='39.91374129' lng='-75.17476995' keys=['cartodb_id', 'dc_dist', 'dc_key', 'dispatch_date', 'dispatch_date_time', 'dispatch_time', 'hour', 'location_block']...
+2026-05-12 05:14:17,512 - news_hazard_fetcher - INFO - Socrata [Philadelphia, PA]: 500 records → 235 hazards (low_threat=247, no_coords=18, bad_coords=0, out_of_bbox=0)
+2026-05-12 05:14:17,515 - news_hazard_fetcher - INFO - [philadelphia] primary crime: 235 hazards
+2026-05-12 05:14:17,515 - news_hazard_fetcher - INFO - [philadelphia] GDELT: 17 hazards
+2026-05-12 05:14:17,515 - news_hazard_fetcher - INFO - [philadelphia] total after filter+dedup: 248 (dropped 4 low-threat/dups)
+2026-05-12 05:14:17,520 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 05:14:17] "POST /api/city-hazards HTTP/1.1" 200 -
+2026-05-12 05:14:17,531 - news_hazard_fetcher - INFO - [cleveland] fetching fresh hazards from arcgis_rest
+2026-05-12 05:14:18,003 - news_hazard_fetcher - INFO - ArcGIS [Cleveland, OH] → 500 features
+2026-05-12 05:14:18,015 - news_hazard_fetcher - INFO - ArcGIS [Cleveland, OH]: 500 features → 218 hazards (279 filtered)
+2026-05-12 05:14:18,018 - news_hazard_fetcher - INFO - [cleveland] primary crime: 218 hazards
+2026-05-12 05:14:18,018 - news_hazard_fetcher - INFO - [cleveland] GDELT: 0 hazards
+2026-05-12 05:14:18,019 - news_hazard_fetcher - INFO - [cleveland] total after filter+dedup: 191 (dropped 27 low-threat/dups)
+2026-05-12 05:14:18,023 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 05:14:18] "POST /api/city-hazards HTTP/1.1" 200 -
+2026-05-12 05:14:18,027 - news_hazard_fetcher - INFO - [columbus] fetching fresh hazards from gdelt_only
+2026-05-12 05:14:18,027 - news_hazard_fetcher - INFO - [columbus] crime_source=gdelt_only — skipping primary crime fetch
+2026-05-12 05:14:18,027 - news_hazard_fetcher - INFO - [columbus] primary crime: 0 hazards
+2026-05-12 05:14:18,027 - news_hazard_fetcher - INFO - [columbus] GDELT: 0 hazards
+2026-05-12 05:14:18,027 - news_hazard_fetcher - INFO - [columbus] total after filter+dedup: 0 (dropped 0 low-threat/dups)
+2026-05-12 05:14:18,028 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 05:14:18] "POST /api/city-hazards HTTP/1.1" 200 -
+2026-05-12 05:14:18,030 - news_hazard_fetcher - INFO - [cincinnati] fetching fresh hazards from socrata_json
+2026-05-12 05:14:18,914 - news_hazard_fetcher - INFO - Socrata [Cincinnati, OH] → 200 from https://data.cincinnati-oh.gov/resource/7aqy-xrv9.json
+2026-05-12 05:14:18,917 - news_hazard_fetcher - INFO - Socrata [Cincinnati, OH] → 500 records
+2026-05-12 05:14:18,918 - news_hazard_fetcher - INFO - Socrata [Cincinnati, OH] sample row: offense='Auto Theft' lat='39.1352' lng='-84.5919' keys=['address_x', 'beat', 'cc_neighborhood', 'clsd', 'cpd_neighborhood', 'datefrom', 'datereported', 'dateto']...
+2026-05-12 05:14:18,926 - news_hazard_fetcher - INFO - Socrata [Cincinnati, OH]: 500 records → 255 hazards (low_threat=244, no_coords=1, bad_coords=0, out_of_bbox=0)
+2026-05-12 05:14:18,928 - news_hazard_fetcher - INFO - [cincinnati] primary crime: 255 hazards
+2026-05-12 05:14:18,928 - news_hazard_fetcher - INFO - [cincinnati] GDELT: 0 hazards
+2026-05-12 05:14:18,928 - news_hazard_fetcher - INFO - [cincinnati] total after filter+dedup: 255 (dropped 0 low-threat/dups)
+2026-05-12 05:14:18,930 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 05:14:18] "POST /api/city-hazards HTTP/1.1" 200 -
+2026-05-12 08:24:44,105 - tomtom_router - INFO - Route cache cleared
+2026-05-12 08:24:44,106 - __main__ - INFO - TomTom router cache cleared on startup
+2026-05-12 08:24:44,128 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-05-12 08:24:45,428 - gtfs_loader - INFO - Loaded GTFS from cache (age: 14.4 days)
+2026-05-12 08:24:45,428 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-05-12 08:25:07,103 - transit_router - INFO - Loaded 305 shapes
+2026-05-12 08:25:07,554 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-05-12 08:25:07,570 - transit_router - INFO - Loaded 101 routes
+2026-05-12 08:25:07,967 - transit_router - INFO - Cached 15826 trips
+2026-05-12 08:25:08,036 - transit_router - INFO - Route-stops index: 100 routes
+2026-05-12 08:25:08,082 - transit_router - INFO - Shape index: 305 shapes
+2026-05-12 08:25:08,082 - __main__ - INFO - GTFS transit router initialized successfully
+2026-05-12 08:25:15,734 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 08:25:15,736 - __main__ - INFO - Safety AI loaded successfully
+2026-05-12 08:25:15,746 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib

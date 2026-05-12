@@ -8,12 +8,33 @@ Each city dict contains everything needed to:
   4. Validate coordinates against the city bounding box
 
 ADDING A NEW CITY: add one entry to CITIES and restart the server. No other changes needed.
+
+Crime source types currently supported by news_hazard_fetcher.py:
+  - "wprdc_ckan"   → Pittsburgh's WPRDC SQL API
+  - "socrata_json" → Standard Socrata Open Data API (Philadelphia, Cincinnati)
+  - "arcgis_rest"  → ESRI ArcGIS REST FeatureServer (Cleveland)
+  - "gdelt_only"   → No primary crime source; news-derived hazards only
+
+CITIES INTENTIONALLY NOT SUPPORTED:
+  - Columbus, OH — Columbus Division of Police does not publish a point-level
+    incident feed via any public API. Confirmed 2026-05-12 after exhaustive
+    search of: data.columbus.gov (DNS dead), opendata.columbus.gov (only
+    boundary polygons + aggregated dashboards), arc.columbus.gov (no crime
+    services), services1.arcgis.com/9yy6msODkIBzkUXU (only crashes, OD data,
+    homicide aggregates), SpotCrime ($199/mo paywall), LexisNexis CCM (no API),
+    and FBI UCR (annual aggregates only). Records are records-request-only.
+    To re-add Columbus when data becomes available, add a new entry following
+    the pattern of the four cities below — no other code changes needed.
 """
 
 from datetime import datetime, timedelta
 
 CITIES = {
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # PITTSBURGH, PA — WPRDC CKAN SQL API
+    # Resource ID stable since 2024. Baseline city for the platform.
+    # ─────────────────────────────────────────────────────────────────────────
     "pittsburgh": {
         "display_name":   "Pittsburgh, PA",
         "center_lat":     40.4406,
@@ -25,20 +46,24 @@ CITIES = {
         },
         "pulsepoint_search_coords": "40.4406,-79.9959",
 
-        # ── Crime data source ──────────────────────────────────────────────
-        "crime_source": "wprdc_ckan",
-        "crime_endpoint": "https://data.wprdc.org/api/3/action/datastore_search_sql",
-        "crime_resource_id": "bd41992a-987a-4cca-8798-fbe1cd946b07",
-        "crime_date_col":    "ReportedDate",
-        "crime_offense_col": "NIBRS_Coded_Offense",
-        "crime_lat_col":     "YCOORD",
-        "crime_lng_col":     "XCOORD",
-        "crime_address_col": "Block_Address",
+        "crime_source":          "wprdc_ckan",
+        "crime_endpoint":        "https://data.wprdc.org/api/3/action/datastore_search_sql",
+        "crime_resource_id":     "bd41992a-987a-4cca-8798-fbe1cd946b07",
+        "crime_date_col":        "ReportedDate",
+        "crime_offense_col":     "NIBRS_Coded_Offense",
+        "crime_lat_col":         "YCOORD",
+        "crime_lng_col":         "XCOORD",
+        "crime_address_col":     "Block_Address",
         "crime_neighborhood_col": "Neighborhood",
-        "crime_limit":       500,
-        "crime_lookback_days": 42,
+        "crime_limit":           500,
+        "crime_lookback_days":   42,
     },
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # PHILADELPHIA, PA — Socrata JSON API
+    # FIXED 2026-05-08: lookback_days raised 30→330 because the sspu-uyfa dataset
+    # has not been updated since Aug 2025. Yields ~327 hazards/fetch.
+    # ─────────────────────────────────────────────────────────────────────────
     "philadelphia": {
         "display_name":   "Philadelphia, PA",
         "center_lat":     39.9526,
@@ -50,9 +75,8 @@ CITIES = {
         },
         "pulsepoint_search_coords": "39.9526,-75.1652",
 
-        # FIXED 2026-05-08: Increased lookback_days from 30 to 330 because dataset hasn't been updated since Aug 2025
         "crime_source":             "socrata_json",
-        "crime_endpoint":          "https://data.phila.gov/resource/sspu-uyfa.json",
+        "crime_endpoint":           "https://data.phila.gov/resource/sspu-uyfa.json",
         "crime_fallback_endpoint":  "https://data.phila.gov/resource/u6bt-9fu4.json",
         "crime_date_col":           "dispatch_date_time",
         "crime_offense_col":        "text_general_code",
@@ -61,12 +85,21 @@ CITIES = {
         "crime_address_col":        "location_block",
         "crime_neighborhood_col":   "dc_dist",
         "crime_limit":              500,
-        "crime_lookback_days":      330,  # Covers data back to August 2025
+        "crime_lookback_days":      330,   # Covers data back to August 2025
         "crime_where_template":     "dispatch_date_time >= '{cutoff}'",
         "crime_date_format":        "%Y-%m-%dT%H:%M:%S",
         "crime_supports_order":     True,
     },
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # CLEVELAND, OH — ArcGIS REST FeatureServer (post-RMS migration)
+    # CONFIRMED 2026-05-10: Crime_Incidents_P1RMS exposes LIVE data from the
+    # new Records Management System (deployed 2025-11-11).
+    # Item ID: e15e8989c83e4cbd841fb171a6c62f68
+    # Schema differs from the older Crime_Incidents service:
+    #   - Offense field renamed UCRdesc → IncidentDesc (NIBRS code description)
+    #   - ReportedDate is more reliable than OffenseDate (no nulls)
+    # ─────────────────────────────────────────────────────────────────────────
     "cleveland": {
         "display_name":   "Cleveland, OH",
         "center_lat":     41.4993,
@@ -78,11 +111,8 @@ CITIES = {
         },
         "pulsepoint_search_coords": "41.4993,-81.6944",
 
-        # CONFIRMED 2026-05-10: Crime_Incidents_P1RMS — LIVE data from new RMS (post 11/11/2025)
-        # Item ID: e15e8989c83e4cbd841fb171a6c62f68 (modified Apr 2026)
-        # Field 'IncidentDesc' contains NIBRS offense codes (e.g., "Simple Assault", "All Other Larceny")
-        "crime_source":   "arcgis_rest",
-        "crime_endpoint": "https://services3.arcgis.com/dty2kHktVXHrqO8i/arcgis/rest/services/Crime_Incidents_P1RMS/FeatureServer/0/query",
+        "crime_source":           "arcgis_rest",
+        "crime_endpoint":         "https://services3.arcgis.com/dty2kHktVXHrqO8i/arcgis/rest/services/Crime_Incidents_P1RMS/FeatureServer/0/query",
         "crime_fallback_endpoint": None,
         "crime_date_col":         "ReportedDate",
         "crime_offense_col":      "IncidentDesc",
@@ -96,35 +126,12 @@ CITIES = {
         "crime_supports_order":   True,
     },
 
-    "columbus": {
-        "display_name":   "Columbus, OH",
-        "center_lat":     39.9612,
-        "center_lng":    -82.9988,
-        "gdelt_geoname":  "Columbus Ohio",
-        "bbox": {
-            "min_lat": 39.85, "max_lat": 40.16,
-            "min_lng": -83.20, "max_lng": -82.77,
-        },
-        "pulsepoint_search_coords": "39.9612,-82.9988",
-
-        # CONFIRMED 2026-05-09: Socrata endpoint active with current data (May 2026)
-        # ArcGIS endpoints (services1/services3.arcgis.com) blocked by egress proxy (403 host_not_allowed)
-        "crime_source":             "socrata_json",
-        "crime_endpoint":           "https://data.columbus.gov/resource/rntm-jp9t.json",
-        "crime_fallback_endpoint":  None,
-        "crime_date_col":           "report_date",
-        "crime_offense_col":        "offense_type",  # Also has ucr_text for more detail
-        "crime_lat_col":            "latitude",
-        "crime_lng_col":            "longitude",
-        "crime_address_col":        "block_address",
-        "crime_neighborhood_col":   "beat",
-        "crime_limit":              500,
-        "crime_lookback_days":      30,  # Data is current as of May 2026
-        "crime_where_template":     "report_date >= '{cutoff}'",
-        "crime_date_format":        "%Y-%m-%dT%H:%M:%S",
-        "crime_supports_order":     True,
-    },
-
+    # ─────────────────────────────────────────────────────────────────────────
+    # CINCINNATI, OH — Socrata JSON API
+    # CONFIRMED via curl 2026-05-04: resource 7aqy-xrv9 is active.
+    # NOTE: $order parameter causes HTTP 400 on this dataset — disabled below.
+    # Uses stars_category (Part 1 / Part 2 UCR groupings); ~238 hazards/fetch.
+    # ─────────────────────────────────────────────────────────────────────────
     "cincinnati": {
         "display_name":   "Cincinnati, OH",
         "center_lat":     39.1031,
@@ -136,7 +143,6 @@ CITIES = {
         },
         "pulsepoint_search_coords": "39.1031,-84.5120",
 
-        # CONFIRMED via curl 2026-05-04: resource 7aqy-xrv9 is active
         "crime_source":             "socrata_json",
         "crime_endpoint":           "https://data.cincinnati-oh.gov/resource/7aqy-xrv9.json",
         "crime_fallback_endpoint":  "https://data.cincinnati-oh.gov/resource/k59e-2pvf.json",
@@ -150,7 +156,7 @@ CITIES = {
         "crime_lookback_days":      30,
         "crime_where_template":     "datereported >= '{cutoff}'",
         "crime_date_format":        "%Y-%m-%dT%H:%M:%S",
-        "crime_supports_order":     False,   # $order causes HTTP 400
+        "crime_supports_order":     False,   # $order causes HTTP 400 on this dataset
     },
 }
 
