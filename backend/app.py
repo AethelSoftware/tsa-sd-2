@@ -3080,6 +3080,7 @@ def add_model_endpoints(app):
             return jsonify({'success': False, 'error': str(e)}), 500
 
     app.secret_key = os.environ.get("SECRET_KEY")
+    
     oauth = OAuth(app)
 
     google = oauth.register(
@@ -3094,11 +3095,12 @@ def add_model_endpoints(app):
 
     @app.route('/api/auth/login', methods=['GET'])
     def login():
-        return google.authorize_redirect(
-            redirect_uri=url_for('callback', _external=True)
-        )
+        redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI")
+        if not redirect_uri:
+            return jsonify({'error': 'GOOGLE_REDIRECT_URI not configured'}), 500
+        return google.authorize_redirect(redirect_uri=redirect_uri)
 
-    @app.route('/api/callback')
+    @app.route('/api/auth/callback')
     def callback():
         token = google.authorize_access_token()
         user_info = token.get("userinfo")

@@ -33411,3 +33411,205 @@ AssertionError: write() before start_response
 2026-05-12 08:25:15,734 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
 2026-05-12 08:25:15,736 - __main__ - INFO - Safety AI loaded successfully
 2026-05-12 08:25:15,746 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 15:53:52,192 - tomtom_router - INFO - Route cache cleared
+2026-05-12 15:53:52,192 - __main__ - INFO - TomTom router cache cleared on startup
+2026-05-12 15:53:52,212 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-05-12 15:53:53,415 - gtfs_loader - INFO - Loaded GTFS from cache (age: 14.8 days)
+2026-05-12 15:53:53,416 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-05-12 15:54:08,557 - transit_router - INFO - Loaded 305 shapes
+2026-05-12 15:54:09,010 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-05-12 15:54:09,026 - transit_router - INFO - Loaded 101 routes
+2026-05-12 15:54:09,394 - transit_router - INFO - Cached 15826 trips
+2026-05-12 15:54:09,460 - transit_router - INFO - Route-stops index: 100 routes
+2026-05-12 15:54:09,500 - transit_router - INFO - Shape index: 305 shapes
+2026-05-12 15:54:09,500 - __main__ - INFO - GTFS transit router initialized successfully
+2026-05-12 15:54:17,538 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 15:54:17,538 - __main__ - INFO - Safety AI loaded successfully
+2026-05-12 15:54:17,542 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 15:56:46,997 - voice_handler - INFO - ✓ faster-whisper imported (optimized for M1)
+2026-05-12 15:56:47,002 - voice_handler - INFO - Voice handler initialized with address resolution + number hyphen fix + enhanced walking detection
+2026-05-12 15:56:47,002 - __main__ - INFO - Voice handler registered successfully
+2026-05-12 15:56:47,009 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-05-12 15:56:47,009 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-05-12 15:56:47,009 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-05-12 15:56:47,009 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-05-12 15:56:47,035 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-05-12 15:56:47,035 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-12 15:56:50,879 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 15:56:50] "GET /api/hello HTTP/1.1" 200 -
+2026-05-12 15:56:51,801 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 15:56:51] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-12 15:56:54,386 - app - ERROR - Exception on /api/auth/login [GET]
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/lib/python3.10/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 3097, in login
+    return google.authorize_redirect(
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/flask_client/apps.py", line 44, in authorize_redirect
+    self.save_authorize_data(redirect_uri=redirect_uri, **rv)
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/flask_client/apps.py", line 32, in save_authorize_data
+    self.framework.set_state_data(session, state, kwargs)
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/base_client/framework_integration.py", line 49, in set_state_data
+    session[key] = {'data': data, 'exp': now + self.expires_in}
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/sessions.py", line 97, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+2026-05-12 15:56:54,390 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 15:56:54] "[35m[1mGET /api/auth/login HTTP/1.1[0m" 500 -
+2026-05-12 15:56:58,537 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 15:56:58] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2026-05-12 16:04:36,853 - tomtom_router - INFO - Route cache cleared
+2026-05-12 16:04:36,853 - __main__ - INFO - TomTom router cache cleared on startup
+2026-05-12 16:04:36,877 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-05-12 16:04:38,036 - gtfs_loader - INFO - Loaded GTFS from cache (age: 14.8 days)
+2026-05-12 16:04:38,036 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-05-12 16:04:53,301 - transit_router - INFO - Loaded 305 shapes
+2026-05-12 16:04:53,763 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-05-12 16:04:53,779 - transit_router - INFO - Loaded 101 routes
+2026-05-12 16:04:54,166 - transit_router - INFO - Cached 15826 trips
+2026-05-12 16:04:54,253 - transit_router - INFO - Route-stops index: 100 routes
+2026-05-12 16:04:54,293 - transit_router - INFO - Shape index: 305 shapes
+2026-05-12 16:04:54,293 - __main__ - INFO - GTFS transit router initialized successfully
+2026-05-12 16:04:55,556 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 16:04:55,557 - __main__ - INFO - Safety AI loaded successfully
+2026-05-12 16:04:55,561 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 16:05:06,586 - voice_handler - INFO - ✓ faster-whisper imported (optimized for M1)
+2026-05-12 16:05:06,589 - voice_handler - INFO - Voice handler initialized with address resolution + number hyphen fix + enhanced walking detection
+2026-05-12 16:05:06,589 - __main__ - INFO - Voice handler registered successfully
+2026-05-12 16:05:06,594 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-05-12 16:05:06,594 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-05-12 16:05:06,594 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-05-12 16:05:06,594 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-05-12 16:05:06,605 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-05-12 16:05:06,605 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-12 16:05:09,693 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:05:09] "GET /api/hello HTTP/1.1" 200 -
+2026-05-12 16:05:20,224 - app - ERROR - Exception on /api/auth/login [GET]
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/lib/python3.10/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 3097, in login
+    return google.authorize_redirect(
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/flask_client/apps.py", line 44, in authorize_redirect
+    self.save_authorize_data(redirect_uri=redirect_uri, **rv)
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/flask_client/apps.py", line 32, in save_authorize_data
+    self.framework.set_state_data(session, state, kwargs)
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/base_client/framework_integration.py", line 49, in set_state_data
+    session[key] = {'data': data, 'exp': now + self.expires_in}
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/sessions.py", line 97, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+2026-05-12 16:05:20,229 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:05:20] "[35m[1mGET /api/auth/login HTTP/1.1[0m" 500 -
+2026-05-12 16:05:23,751 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:05:23] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2026-05-12 16:16:54,795 - tomtom_router - INFO - Route cache cleared
+2026-05-12 16:16:54,795 - __main__ - INFO - TomTom router cache cleared on startup
+2026-05-12 16:16:54,822 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-05-12 16:16:56,137 - gtfs_loader - INFO - Loaded GTFS from cache (age: 14.8 days)
+2026-05-12 16:16:56,137 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-05-12 16:17:12,074 - transit_router - INFO - Loaded 305 shapes
+2026-05-12 16:17:12,554 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-05-12 16:17:12,575 - transit_router - INFO - Loaded 101 routes
+2026-05-12 16:17:13,172 - transit_router - INFO - Cached 15826 trips
+2026-05-12 16:17:13,242 - transit_router - INFO - Route-stops index: 100 routes
+2026-05-12 16:17:13,301 - transit_router - INFO - Shape index: 305 shapes
+2026-05-12 16:17:13,301 - __main__ - INFO - GTFS transit router initialized successfully
+2026-05-12 16:17:14,243 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 16:17:14,243 - __main__ - INFO - Safety AI loaded successfully
+2026-05-12 16:17:14,247 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 16:17:58,274 - voice_handler - INFO - ✓ faster-whisper imported (optimized for M1)
+2026-05-12 16:17:58,277 - voice_handler - INFO - Voice handler initialized with address resolution + number hyphen fix + enhanced walking detection
+2026-05-12 16:17:58,277 - __main__ - INFO - Voice handler registered successfully
+2026-05-12 16:17:58,282 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-05-12 16:17:58,282 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-05-12 16:17:58,282 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-05-12 16:17:58,282 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-05-12 16:17:58,295 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-05-12 16:17:58,295 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-12 16:18:00,973 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:18:00] "GET /api/hello HTTP/1.1" 200 -
+2026-05-12 16:18:01,060 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:18:01] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-12 16:18:09,183 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:18:09] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-05-12 16:21:00,976 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:21:00] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-05-12 16:21:16,898 - tomtom_router - INFO - Route cache cleared
+2026-05-12 16:21:16,898 - __main__ - INFO - TomTom router cache cleared on startup
+2026-05-12 16:21:16,928 - real_api_client - INFO - Coordinate transformer initialized for PA State Plane to lat/lon.
+2026-05-12 16:21:18,041 - gtfs_loader - INFO - Loaded GTFS from cache (age: 14.8 days)
+2026-05-12 16:21:18,041 - gtfs_loader - INFO - GTFS loaded from cache: 6424 stops, 15826 trips
+2026-05-12 16:21:33,223 - transit_router - INFO - Loaded 305 shapes
+2026-05-12 16:21:33,677 - transit_router - INFO - Mapped 14879 trips to shapes
+2026-05-12 16:21:33,693 - transit_router - INFO - Loaded 101 routes
+2026-05-12 16:21:34,090 - transit_router - INFO - Cached 15826 trips
+2026-05-12 16:21:34,158 - transit_router - INFO - Route-stops index: 100 routes
+2026-05-12 16:21:34,196 - transit_router - INFO - Shape index: 305 shapes
+2026-05-12 16:21:34,197 - __main__ - INFO - GTFS transit router initialized successfully
+2026-05-12 16:21:35,144 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 16:21:35,145 - __main__ - INFO - Safety AI loaded successfully
+2026-05-12 16:21:35,148 - ai_safety_model - INFO - Loaded real-data safety model from models/safety_model_real.joblib
+2026-05-12 16:25:02,401 - voice_handler - INFO - ✓ faster-whisper imported (optimized for M1)
+2026-05-12 16:25:02,405 - voice_handler - INFO - Voice handler initialized with address resolution + number hyphen fix + enhanced walking detection
+2026-05-12 16:25:02,405 - __main__ - INFO - Voice handler registered successfully
+2026-05-12 16:25:02,410 - real_time_tracker - INFO - RealTimeTracker initialized with real API keys
+2026-05-12 16:25:02,410 - __main__ - INFO - RealTimeTracker initialized successfully
+2026-05-12 16:25:02,410 - emergency_data_fetcher - INFO - Lightweight Emergency Data Fetcher initialized (News API only)
+2026-05-12 16:25:02,410 - __main__ - INFO - ✅ Emergency data fetcher initialized successfully
+2026-05-12 16:25:02,423 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-05-12 16:25:02,423 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-12 16:25:05,085 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:25:05] "GET /api/hello HTTP/1.1" 200 -
+2026-05-12 16:25:09,957 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:25:09] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-05-12 16:25:12,062 - app - ERROR - Exception on /api/auth/callback [GET]
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/lib/python3.10/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 3104, in callback
+    token = google.authorize_access_token()
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/flask_client/apps.py", line 100, in authorize_access_token
+    params = self._format_state_params(state_data, params)
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/base_client/sync_app.py", line 234, in _format_state_params
+    raise MismatchingStateError()
+authlib.integrations.base_client.errors.MismatchingStateError: mismatching_state: CSRF Warning! State not equal in request and response.
+2026-05-12 16:25:12,067 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:25:12] "[35m[1mGET /api/auth/callback?state=nil4134vFDARrs4tIom5UusodqxvZP&iss=https://accounts.google.com&code=4/0AeoWuM99-s2vh5xdG11fJRZUdQycPB6qSWw2hyXryNZV19v933zXVgW4-AaheBUQQKSICg&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+openid&authuser=0&prompt=none HTTP/1.1[0m" 500 -
+2026-05-12 16:25:12,174 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:25:12] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-12 16:27:09,280 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:27:09] "[32mGET /api/auth/login HTTP/1.1[0m" 302 -
+2026-05-12 16:27:20,638 - app - ERROR - Exception on /api/auth/callback [GET]
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/lib/python3.10/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/lib/python3.10/site-packages/flask/app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+  File "/Users/kaniskprakash/Documents/GitHub/tsa-sd-2/backend/app.py", line 3104, in callback
+    token = google.authorize_access_token()
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/flask_client/apps.py", line 100, in authorize_access_token
+    params = self._format_state_params(state_data, params)
+  File "/opt/homebrew/lib/python3.10/site-packages/authlib/integrations/base_client/sync_app.py", line 234, in _format_state_params
+    raise MismatchingStateError()
+authlib.integrations.base_client.errors.MismatchingStateError: mismatching_state: CSRF Warning! State not equal in request and response.
+2026-05-12 16:27:20,644 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:27:20] "[35m[1mGET /api/auth/callback?state=l8B70pQRCMQGwA05h96eitSqPnaA8J&iss=https://accounts.google.com&code=4/0AeoWuM_A0vGWHZUdaHxp2PHZDNV9kyE_KeGjm5owL_g0-evt0w0BrbLnYnbwQDFY7wCMmQ&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=0&prompt=none HTTP/1.1[0m" 500 -
+2026-05-12 16:27:25,148 - werkzeug - INFO - 127.0.0.1 - - [12/May/2026 16:27:25] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -

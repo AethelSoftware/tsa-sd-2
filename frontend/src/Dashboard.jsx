@@ -2100,6 +2100,7 @@ export default function AccessibleMap() {
       lng: -81.6944,
       bbox: { min_lat: 41.35, max_lat: 41.60, min_lng: -81.88, max_lng: -81.53 },
     },
+    /*
     {
       key: "columbus",
       name: "Columbus, OH",
@@ -2107,6 +2108,7 @@ export default function AccessibleMap() {
       lng: -82.9988,
       bbox: { min_lat: 39.85, max_lat: 40.16, min_lng: -83.20, max_lng: -82.77 },
     },
+    */
     {
       key: "cincinnati",
       name: "Cincinnati, OH",
@@ -4771,6 +4773,7 @@ export default function AccessibleMap() {
             {panel === "a11y" && (
               <>
                 <div>
+                  
                   <div className="p-sec">Accessibility Modes</div>
                   <div className="ag">
                     {A11Y_FEATS.map((f) => (
@@ -4820,6 +4823,7 @@ export default function AccessibleMap() {
                   </div>
                 </div>
                 <div>
+                  {/*
                   <div className="p-sec">Route Preferences</div>
                   <div className="ag">
                     {PREF_FEATS.map((f) => (
@@ -4838,6 +4842,7 @@ export default function AccessibleMap() {
                       </button>
                     ))}
                   </div>
+                  */}
                 </div>
                 <div>
                   <div className="p-sec">City</div>
