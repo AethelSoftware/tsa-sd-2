@@ -41,8 +41,5 @@ Should installation fail, please run this command (or edit the config)
 - npm install
 - npm run dev
 
-## Technologies Used
-
-- Please consult our documentation portfolio for more information. 
 
 
