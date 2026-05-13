@@ -22,19 +22,12 @@ from city_config import CITIES, get_city, get_cutoff_date, is_in_bounds
 
 logger = logging.getLogger(__name__)
 
-# ============================================================================
-# CONFIGURATION
-# ============================================================================
 
 # WPRDC Crime Data URL (legacy, kept for reference)
 CRIME_DATA_URL = "https://data.wprdc.org/dataset/65e69ee3-93b2-4f7a-b9cb-8ce977f15d9a/resource/bd41992a-987a-4cca-8798-fbe1cd946b07/download/monthly_crime_data_2024_2026.xlsx"
 
 # PulsePoint API endpoints (public)
 PULSEPOINT_BASE_URL = "https://api.pulsepoint.org/v1"
-
-# ============================================================================
-# SEVERITY MAPPING
-# ============================================================================
 
 # HIGH SEVERITY (0.8-0.95) - Active threats to personal safety
 HIGH_THREAT = {
@@ -217,10 +210,6 @@ PITTSBURGH_BOUNDS = {
 CACHE_DURATION = 300  # 5 minutes
 MIN_SEVERITY_THRESHOLD = 0.5
 
-# ============================================================================
-# HAZARD FETCHER CLASS
-# ============================================================================
-
 # Singleton detection counter
 _init_counter = 0 
 
@@ -287,9 +276,7 @@ class NewsHazardFetcher:
         except Exception as e:
             logger.warning(f"PulsePoint initialization failed (will continue without real-time data): {e}")
 
-    # ----------------------------------------------------------------------
-    # Public methods
-    # ----------------------------------------------------------------------
+    
     def fetch_hazards(self, force_refresh: bool = False, city_key: str = "pittsburgh") -> List[Dict[str, Any]]:
         """
         Public entry point. For Pittsburgh uses the legacy single-cache path for
@@ -298,7 +285,7 @@ class NewsHazardFetcher:
         if city_key and city_key != "pittsburgh":
             return self.fetch_hazards_for_city(city_key, force_refresh=force_refresh)
 
-        # ── Pittsburgh legacy path (unchanged) ────────────────────────────
+        # ── Pittsburgh legacy path 
         if not force_refresh and self.last_cache_time:
             age = (datetime.now() - self.last_cache_time).seconds
             if age < CACHE_DURATION:
@@ -334,7 +321,7 @@ class NewsHazardFetcher:
         """
         city_key = city_key.lower().strip()
 
-        # ── 1. Cache check ──────────────────────────────────────────────────
+        # Cache check
         if not force_refresh:
             with self._city_cache_lock:
                 entry = self._city_cache.get(city_key)
@@ -357,7 +344,7 @@ class NewsHazardFetcher:
         logger.info(f"[{city_key}] fetching fresh hazards from {cfg['crime_source']}")
         all_hazards: list = []
 
-        # ── 2. Primary crime data ────────────────────────────────────────────
+        # Primary crime data
         source = cfg["crime_source"]
         try:
             if source == "wprdc_ckan":
@@ -377,7 +364,7 @@ class NewsHazardFetcher:
         except Exception as exc:
             logger.error(f"[{city_key}] crime fetch failed: {exc}")
 
-        # ── 3. GDELT news hazards (all cities) ───────────────────────────────
+        # GDELT news hazards (all cities)
         try:
             from gdelt_fetcher import get_gdelt_fetcher
             gdelt_hazards = get_gdelt_fetcher().fetch_hazards_for_city(
@@ -388,7 +375,7 @@ class NewsHazardFetcher:
         except Exception as exc:
             logger.warning(f"[{city_key}] GDELT fetch failed: {exc}")
 
-        # ── 4. PulsePoint real-time (skip if in backoff) ─────────────────────
+        # PulsePoint real-time (skip if in backoff)
         if self._pulsepoint_backoff_until <= time.time():
             try:
                 pp = self._fetch_pulsepoint_for_coords(
@@ -399,7 +386,7 @@ class NewsHazardFetcher:
             except Exception as exc:
                 logger.warning(f"[{city_key}] PulsePoint failed: {exc}")
 
-        # ── 5. Filter + deduplicate ──────────────────────────────────────────
+        # Filter + deduplicate
         filtered = [h for h in all_hazards if h.get("severity", 0) >= MIN_SEVERITY_THRESHOLD]
         deduped = self.deduplicate_hazards(filtered)
         logger.info(
@@ -407,7 +394,7 @@ class NewsHazardFetcher:
             f"(dropped {len(all_hazards) - len(deduped)} low-threat/dups)"
         )
 
-        # ── 6. Store in per-city cache ────────────────────────────────────────
+        # Store in per-city cache
         with self._city_cache_lock:
             self._city_cache[city_key] = {
                 "hazards": deduped,
@@ -472,9 +459,8 @@ class NewsHazardFetcher:
                 unique.append(hazard)
         return unique
 
-    # ----------------------------------------------------------------------
+
     # Crime data fetchers
-    # ----------------------------------------------------------------------
     def _fetch_wprdc_crime(self, cfg: dict, city_key: str) -> List[Dict[str, Any]]:
         """Fetch crime data from WPRDC CKAN SQL API. Used by Pittsburgh."""
         hazards = []
@@ -741,7 +727,6 @@ class NewsHazardFetcher:
         city_name = cfg["display_name"]
 
         try:
-            # Clean params - removed spatialRel/geometryType/inSR which caused 400s on some servers
             params = {
                 "where":             where,
                 "outFields":         "*",
@@ -851,7 +836,7 @@ class NewsHazardFetcher:
         except Exception as exc:
             logger.error(f"ArcGIS [{city_name}] error: {exc}")
 
-        # ── Fallback (if configured) ──────────────────────────────────────────
+        # ── Fallback if configured 
         fallback_url = cfg.get("crime_fallback_endpoint")
         if fallback_url:
             logger.info(f"ArcGIS [{city_name}] → falling back to fallback endpoint")
@@ -860,9 +845,7 @@ class NewsHazardFetcher:
         
         return hazards
 
-    # ----------------------------------------------------------------------
     # PulsePoint fetcher (city‑aware)
-    # ----------------------------------------------------------------------
     def _fetch_pulsepoint_for_coords(self, coords_str: str) -> List[Dict[str, Any]]:
         """Fetch live PulsePoint incidents for a given lat,lng coordinate string."""
         if self._pulsepoint_backoff_until > time.time():
@@ -937,9 +920,7 @@ class NewsHazardFetcher:
             logger.warning(f"PulsePoint fetch error: {exc}")
             return []
 
-    # ----------------------------------------------------------------------
-    # Helper methods
-    # ----------------------------------------------------------------------
+   
     def _get_severity_and_type(self, offense: str) -> tuple:
         """Determine severity and type based on offense description.
         Uses longest-match-first to ensure specific offenses are correctly

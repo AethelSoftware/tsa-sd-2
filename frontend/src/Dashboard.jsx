@@ -2100,15 +2100,6 @@ export default function AccessibleMap() {
       lng: -81.6944,
       bbox: { min_lat: 41.35, max_lat: 41.60, min_lng: -81.88, max_lng: -81.53 },
     },
-    /*
-    {
-      key: "columbus",
-      name: "Columbus, OH",
-      lat: 39.9612,
-      lng: -82.9988,
-      bbox: { min_lat: 39.85, max_lat: 40.16, min_lng: -83.20, max_lng: -82.77 },
-    },
-    */
     {
       key: "cincinnati",
       name: "Cincinnati, OH",
@@ -3885,7 +3876,7 @@ export default function AccessibleMap() {
           {toast}
         </div>
 
-        {/* ═══ MAP ═══ */}
+        {/* MAP */}
         <div className="map-wrap">
           <MapContainer
             center={validCenter}
@@ -4299,7 +4290,7 @@ export default function AccessibleMap() {
                     </>
                   )}
 
-            {/* ── ALTERNATE ROUTES TO SAME DESTINATION ── */}
+            {/* ALTERNATE ROUTES TO SAME DESTINATION  */}
             {mode !== "transit" &&
               alternateRoutes.map((altRoute, idx) => {
                 const isHovered = hoveredAlternateRoute === idx;
@@ -4406,7 +4397,7 @@ export default function AccessibleMap() {
                 );
               })}
 
-            {/* ── ALTERNATE DESTINATION ROUTES ── */}
+            {/* ALTERNATE DESTINATION ROUTES  */}
             {mode !== "transit" &&
               showAlternateDestinations &&
               !alternatesDismissed &&
@@ -4539,7 +4530,7 @@ export default function AccessibleMap() {
           </MapContainer>
         </div>
 
-        {/* ═══ 3D NAVIGATION PANEL ═══ */}
+        {/* 3D NAVIGATION PANEL */}
         {(navigationActive || show3D) && routePath.length > 0 && (
           <div className="nav-3d-panel">
             <Suspense
@@ -4585,7 +4576,7 @@ export default function AccessibleMap() {
           </button>
         )}
 
-        {/* ═══ RAIL NAVIGATION ═══ */}
+        {/* RAIL NAVIGATION  */}
         <nav className="rail" role="navigation" aria-label="Main navigation">
           <div className="r-logo" aria-hidden="true">
             <Accessibility size={20} />
@@ -4646,7 +4637,7 @@ export default function AccessibleMap() {
           </button>
         </nav>
 
-        {/* ═══ SIDE PANELS ═══ */}
+        {/* SIDE PANELS  */}
         <aside
           ref={panelRef}
           className={`panel${panel ? " open" : ""}`}
@@ -4966,7 +4957,7 @@ export default function AccessibleMap() {
           </div>
         </aside>
 
-        {/* ═══ SEARCH CARD ═══ */}
+        {/* SEARCH CARD  */}
         <div
           ref={searchCardRef}
           className={`sc${searchPanelCollapsed ? " collapsed" : ""}`}
@@ -5154,7 +5145,7 @@ export default function AccessibleMap() {
           </div>
         </div>
 
-        {/* ═══ NO HAZARD NOTICE ═══ */}
+        {/* NO HAZARD NOTICE  */}
         {routeInfo && noHazardNotice && mode !== "transit" && (
           <div
             style={{
@@ -5228,7 +5219,7 @@ export default function AccessibleMap() {
           </div>
         )}
 
-        {/* ═══ DIRECTIONS PANEL ═══ */}
+        {/* DIRECTIONS PANEL  */}
         {showDirections && routeSteps.length > 0 && (
           <div
             className="directions-attached"
@@ -5248,7 +5239,7 @@ export default function AccessibleMap() {
           </div>
         )}
 
-        {/* ═══ ALTERNATE DESTINATIONS PANEL ═══ */}
+        {/* ALTERNATE DESTINATIONS PANEL  */}
         {mode !== "transit" &&
           (alternateRoutes.length > 0 ||
             (showAlternateDestinations && alternateDestinations.length > 0)) &&
@@ -5294,7 +5285,7 @@ export default function AccessibleMap() {
             </Suspense>
           )}
 
-        {/* ═══ ALTERNATE ROUTE COMPARISON DRAWER ═══ */}
+        {/* ALTERNATE ROUTE COMPARISON DRAWER  */}
         {mode !== "transit" &&
           showAlternateRouteComparison &&
           selectedAlternateRoute && (
@@ -5385,7 +5376,7 @@ export default function AccessibleMap() {
             </div>
           )}
 
-        {/* ═══ MAP TYPE BAR ═══ */}
+        {/* MAP TYPE BAR  */}
         <div className="mt-bar" role="radiogroup">
           {Object.entries(mapTypes).map(([k, v]) => {
             const MIcon = MAP_TYPE_ICONS[k] || Layers;
@@ -5405,7 +5396,7 @@ export default function AccessibleMap() {
           })}
         </div>
 
-        {/* ═══ ZOOM CONTROLS ═══ */}
+        {/* ZOOM CONTROLS */}
         <div className="mctrl">
           <button
             className="mc"
@@ -5423,7 +5414,7 @@ export default function AccessibleMap() {
           </button>
         </div>
 
-        {/* ═══ ROUTE INFO BAR (WITH SAFETY GAUGE) ═══ */}
+        {/* ROUTE INFO BAR (WITH SAFETY GAUGE) */}
         {routeInfo && (
           <div className="rbar" role="region" aria-label="Route information">
             <div className="rs">
@@ -5544,7 +5535,7 @@ export default function AccessibleMap() {
           </div>
         )}
 
-        {/* ═══ ROUTE ALERT ═══ */}
+        {/* ROUTE ALERT */}
         {showRouteAlert && routeAlert && (
           <div className="route-alert">
             <div className="route-alert-header">
@@ -5598,7 +5589,7 @@ export default function AccessibleMap() {
           </div>
         )}
 
-        {/* ═══ TRANSIT INFO MODAL ═══ */}
+        {/* TRANSIT INFO MODAL */}
         {showTransitInfo && transitInfo && (
           <div className="transit-modal">
             <div className="p-head">

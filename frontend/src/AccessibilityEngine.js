@@ -1,8 +1,3 @@
-/**
- * Accessibility Engine for multi-sensory output
- * Supports blind, deaf, and mobility-impaired users
- */
-
 class AccessibilityEngine {
     constructor() {
       this.audioContext = null;

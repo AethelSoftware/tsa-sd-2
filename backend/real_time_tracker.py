@@ -1,8 +1,3 @@
-"""
-Real-time pedestrian tracking system with WebSocket communication
-and safety-aware rerouting.
-"""
-#real_time_tracker.py
 import os
 import asyncio
 import json
@@ -497,7 +492,7 @@ class RealTimeTracker:
         step = max(1, len(route_coords) // 20)
         sample_points = route_coords[::step]
 
-        # --- Check construction zones via Google routing if available ---
+        # Check construction zones via Google routing if available
         try:
             from google_routing import GoogleMapsRouter
             router = GoogleMapsRouter()

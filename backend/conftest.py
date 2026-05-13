@@ -1,6 +1,4 @@
 """
-Shared pytest fixtures for Tryver backend tests.
-
 Run all tests:     cd backend && pytest test_routing.py -v
 Run one test:      cd backend && pytest test_routing.py::TestCacheInvalidation::test_clear_cache_actually_empties -v
 Run with coverage: cd backend && pytest test_routing.py --cov=. --cov-report=term-missing

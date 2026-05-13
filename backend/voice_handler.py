@@ -1,16 +1,3 @@
-"""
-voice_handler.py — Faster-Whisper Speech Recognition for Tryver
-OPTIMIZED FOR M1 MACBOOK PRO + ADVANCED ADDRESS RESOLUTION
-
-Key improvements:
-- No API timeouts (removed all timeout limits)
-- Number hyphen removal (1-0-4 → 104)
-- Fuzzy address matching
-- Landmark resolution
-- Full address normalization
-- Enhanced walking detection with phonetic matching
-"""
-
 import os
 import re
 import time
@@ -26,9 +13,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-# ============================================================================
-# CONFIGURATION
-# ============================================================================
+# config
 
 WHISPER_AVAILABLE = False
 WHISPER_MODEL_NAME = os.getenv('WHISPER_MODEL', 'base.en')
@@ -53,10 +38,7 @@ except ImportError:
 
 TOMTOM_API_KEY = os.getenv('TOMTOM_API_KEY', 'pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM')
 
-# ============================================================================
-# ADVANCED ADDRESS CORRECTION DATABASE
-# ============================================================================
-
+# advanced address correction database
 _ADDRESS_CORRECTIONS: Dict[str, str] = {
     # Street types
     'stree': 'Street', 'stret': 'Street', 'st': 'Street',
@@ -137,10 +119,8 @@ _LANDMARK_ADDRESSES: Dict[str, Dict[str, str]] = {
     }
 }
 
-# ============================================================================
-# NUMBER HYPHEN REMOVAL (FIX FOR 1-0-4 → 104)
-# ============================================================================
 
+# Number hyphen removal
 def remove_number_hyphens(text: str) -> str:
     """
     Convert hyphenated number sequences like "1-0-4" to "104"
@@ -160,10 +140,8 @@ def remove_number_hyphens(text: str) -> str:
     
     return text
 
-# ============================================================================
-# PHONETIC FINGERPRINT FOR FUZZY MATCHING
-# ============================================================================
 
+# phonetic fingerprint for fuzzy matching
 def phonetic_fingerprint(text: str) -> str:
     """Create a simple phonetic fingerprint for fuzzy matching."""
     if not text:
@@ -193,10 +171,8 @@ def phonetic_fingerprint(text: str) -> str:
     
     return result.strip()
 
-# ============================================================================
-# ADVANCED ADDRESS NORMALIZATION
-# ============================================================================
 
+# advanced address normalization
 @lru_cache(maxsize=1000)
 def normalize_address(text: str) -> str:
     """Normalize address text by fixing misspellings and standardizing format."""
@@ -247,10 +223,7 @@ def calculate_address_similarity(addr1: str, addr2: str) -> float:
     # Simple ratio for speed
     return SequenceMatcher(None, norm1, norm2).ratio()
 
-# ============================================================================
-# LANDMARK RESOLUTION
-# ============================================================================
-
+# landmark resolution
 def resolve_landmark_to_address(landmark_name: str) -> Optional[Dict[str, str]]:
     """Convert a landmark name to a physical address."""
     landmark_lower = landmark_name.lower().strip()
@@ -272,10 +245,7 @@ def resolve_landmark_to_address(landmark_name: str) -> Optional[Dict[str, str]]:
     
     return best_match
 
-# ============================================================================
-# TOMTOM SEARCH (NO TIMEOUTS)
-# ============================================================================
-
+# tomtom search and no timeouts
 def search_address_autocomplete(query: str, limit: int = 5) -> List[Dict]:
     """Search for addresses using TomTom autocomplete (no timeout)."""
     if not query or len(query) < 3:
@@ -356,10 +326,7 @@ def fuzzy_search_address(query: str, limit: int = 5) -> List[Dict]:
     
     return unique_results[:limit]
 
-# ============================================================================
-# GEOCODING (NO TIMEOUTS)
-# ============================================================================
-
+# geocoding w/o timeouts
 _geocode_cache: Dict[str, Tuple[float, float, str, float]] = {}
 _geocode_cache_lock = threading.Lock()
 _GEOCODE_CACHE_TTL = 3600
@@ -415,10 +382,7 @@ def geocode_address(address: str, bias_lat: float = 40.4406, bias_lng: float = -
         logger.error(f"Geocoding failed for '{address}': {e}")
         return None
 
-# ============================================================================
-# ENHANCED CORRECTION FOR ADDRESSES
-# ============================================================================
-
+# enhanced correction for addresses
 _correction_cache: Dict[str, Tuple[str, float, float]] = {}
 _correction_cache_lock = threading.Lock()
 _CORRECTION_CACHE_TTL = 300
@@ -484,10 +448,7 @@ def correct_transcript(raw: str, context: str = "address") -> Tuple[str, float]:
     
     return text, confidence
 
-# ============================================================================
-# INTENT DETECTION
-# ============================================================================
-
+# intent detection
 _RE_CURRENT_LOCATION = re.compile(r'\b(current|my|use|gps)\s+(location|locate|gps)\b|\b(here|right here|i\'m here)\b', re.I)
 _RE_WALK_MODE = re.compile(r'\b(walk|walking|foot|pedestrian)\b', re.I)
 _RE_TRANSIT_MODE = re.compile(r'\b(transit|bus|train|subway|trolley)\b', re.I)
@@ -514,7 +475,7 @@ def detect_travel_mode_intent(transcript: str) -> Tuple[Optional[str], float]:
     if _RE_WHEELCHAIR_MODE.search(transcript):
         return "wheelchair", 0.95
 
-    # ========== ENHANCED WALKING DETECTION ==========
+    # enhanced walking detection
     # Common mishearings for "walking" / "walk"
     walking_mishearings = [
         'walking', 'walkin', 'walken', 'wakin', 'wok in', 'woking',
@@ -567,7 +528,7 @@ def detect_travel_mode_intent(transcript: str) -> Tuple[Optional[str], float]:
             logger.info(f"Detected walk from short word: '{word}'")
             return "walk", 0.8
 
-    # ========== TRANSIT DETECTION (existing) ==========
+    # transit detection
     transit_mishearings = [
         'transit', 'trans it', 'tran sit', 'transit', 'transat',
         'did', 'did it', 'did i', 'did he', 'did she', 'did we',
@@ -667,10 +628,7 @@ def detect_confirmation_intent(transcript: str) -> Tuple[Optional[bool], float]:
     
     return None, 0.0
 
-# ============================================================================
-# WHISPER MODEL (M1 Optimized)
-# ============================================================================
-
+# whisper model
 _whisper_model = None
 _model_lock = threading.Lock()
 
@@ -748,10 +706,7 @@ def transcribe_audio_bytes(audio_bytes: bytes, context: str = "address") -> Tupl
         logger.error(f"Transcription failed: {e}")
         return "", 0.0
 
-# ============================================================================
-# SESSION MANAGEMENT
-# ============================================================================
-
+# session management
 class VoiceSession:
     __slots__ = ('session_id', 'socket_id', 'audio_buffer', 'context', 'created_at', 'last_activity')
     def __init__(self, session_id: str, socket_id: str):
@@ -815,10 +770,7 @@ def cleanup_stale_sessions():
     for sid in stale:
         destroy_voice_session(sid)
 
-# ============================================================================
-# SOCKET.IO HANDLERS
-# ============================================================================
-
+# socket.io handlers
 def init_voice_handler(app, socketio):
     """Register voice handlers with Socket.IO."""
     

@@ -1,8 +1,5 @@
-"""
-gdelt_fetcher.py — GDELT GKG v2 hazard source for any city
-Queries https://api.gdeltproject.org/api/v2/doc/doc for real-time news
-extracting violence/accident/protest themes and geocoding to hazard points.
-"""
+
+# Query link: https://api.gdeltproject.org/api/v2/doc/doc
 import os
 import logging
 import requests

@@ -1,4 +1,3 @@
-// AlternateDestinationsPanel.jsx
 import React, { useState, useCallback } from "react";
 import {
   MapPin,
@@ -11,15 +10,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-/*
- * ─── CSS (injected once) ───
- * Uses the Dashboard's existing CSS vars:
- *   --surface, --card, --inset, --border, --border2,
- *   --wood, --wood-dim, --wood-g, --wood-glow,
- *   --green, --green-dim, --red, --red-dim, --amber,
- *   --blue, --blue-dim, --txt, --txt2, --txt3,
- *   --ff-d, --ff-b, --sh, --sh-lg, --sh-w
- */
+
 const PANEL_CSS = `
 /* ═══ ALT-PANEL SHELL ═══ */
 .altp {

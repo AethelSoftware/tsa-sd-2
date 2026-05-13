@@ -1,8 +1,3 @@
-"""
-Main entry point for Tryver Safety Routing System
-Includes ML safety wiring for transit routes and all bug fixes.
-"""
-#app.py
 import os
 import sys
 import time
@@ -197,9 +192,7 @@ class RequestDebouncer:
 # Create instance
 request_debouncer = RequestDebouncer()
 
-# ----------------------------------------------------------------------
 # ML ROUTING CONSTANTS
-# ----------------------------------------------------------------------
 ENABLE_ROUTE_VDB_CACHE = False
 
 ML_ROUTING_WEIGHTS = {
@@ -302,9 +295,6 @@ def select_safest_route(
         'all_candidates_scored': scored,
     }
 
-# ============================================================================
-# HELPER FUNCTIONS
-# ============================================================================
 
 def haversine_distance(lat1, lon1, lat2, lon2):
     """Calculate distance between two points in meters using Haversine formula"""
@@ -500,9 +490,6 @@ def build_display_steps(steps):
             })
     return display
 
-# ============================================================================
-# MODEL MANAGEMENT FUNCTIONS
-# ============================================================================
 
 def check_model_status():
     """Check if model exists and prompt for training"""
@@ -667,9 +654,6 @@ def train_model_interactive():
         print("Check app.log for details.")
         return False
 
-# ============================================================================
-# API ENDPOINTS
-# ============================================================================
 
 def add_model_endpoints(app):
     """Add model-related endpoints to Flask app with combined features"""
@@ -1237,7 +1221,7 @@ def add_model_endpoints(app):
             provider_used = None
             error_messages = []
 
-            # ========== TRY 1: GTFS Transit Router ==========
+            # TRY 1: GTFS Transit Router
             if travel_mode == 'transit' and transit_router:
                 try:
                     logger.info(f"Attempting GTFS transit route from {start_lat},{start_lng} to {end_lat},{end_lng}")
@@ -1286,7 +1270,7 @@ def add_model_endpoints(app):
                     logger.warning(f"GTFS transit routing failed: {e}")
                     error_messages.append(f"GTFS Transit: {str(e)}")
 
-            # ========== TRY 2: Google Maps Transit ==========
+            # TRY 2: Google Maps Transit
             if not route_result and travel_mode == 'transit' and google_router:
                 try:
                     logger.info(f"Attempting Google Maps transit route from {start_lat},{start_lng} to {end_lat},{end_lng}")
@@ -1338,10 +1322,10 @@ def add_model_endpoints(app):
                     logger.warning(f"Google Maps transit API failed: {e}")
                     error_messages.append(f"Google Transit: {str(e)}")
 
-            # ========== TRY 3: TomTom API (ML-ranked with hazard avoidance) ==========
+            # TRY 3: TomTom API (ML-ranked with hazard avoidance)
             if not route_result and tomtom_router and tomtom_router.api_key and travel_mode != 'transit':
                 try:
-                    # ── FORCE CLEAR ALL CACHES ──────────────────────────────────
+                    # force clear all caches
                     if hasattr(tomtom_router, 'route_cache'):
                         with getattr(tomtom_router, 'cache_lock', threading.Lock()):
                             tomtom_router.route_cache.clear()
@@ -1426,7 +1410,7 @@ def add_model_endpoints(app):
                     logger.info(f"Start: {float(start_lat):.6f}, {float(start_lng):.6f}")
                     logger.info(f"Dest: {float(end_lat):.6f}, {float(end_lng):.6f}")
 
-                    # ── Gather up to 3 TomTom route candidates ────────────────
+                    # ── Gather up to 3 TomTom route candidates
                     candidates = []
                     ROUTE_VARIANTS = [
                         {'routeType': 'fastest'},
@@ -1453,7 +1437,7 @@ def add_model_endpoints(app):
                     if not candidates:
                         route_result = None
                     else:
-                        # ── ML selection ──────────────────────────────────────
+                        # ML selection
                         ml_result = select_safest_route(
                             candidates,
                             get_safety_ai_instance(),
@@ -1509,7 +1493,7 @@ def add_model_endpoints(app):
                     logger.warning(f"TomTom API failed: {e}")
                     error_messages.append(f"TomTom: {str(e)}")
 
-            # ========== PROCESS SUCCESSFUL ROUTE ==========
+            # process successful route
             if route_result:
                 # Convert points to coordinate objects
                 route_coords = [{'lat': p[0], 'lng': p[1]} for p in route_result['points']] if route_result.get('points') else []
@@ -1670,7 +1654,7 @@ def add_model_endpoints(app):
 
                 return jsonify(response_data)
 
-            # ========== FALLBACK: CALCULATED ROUTE ==========
+            # fallback: calculated route
             logger.warning(f"All routing providers failed: {error_messages}. Using calculated fallback.")
 
             straight_distance = haversine_distance(
@@ -2167,7 +2151,7 @@ def add_model_endpoints(app):
                 except Exception as e:
                     logger.error(f"TomTom incidents API error: {e}")
 
-            # PART 2: 911 EMERGENCIES
+            # part 2- 911 emergencies
             if include_emergencies:
                 try:
                     fetcher = get_emergency_fetcher()
@@ -2197,7 +2181,7 @@ def add_model_endpoints(app):
                 except Exception as e:
                     logger.error(f"Failed to fetch 911 emergencies: {e}")
 
-            # PART 3: NEWS-BASED HAZARDS
+            # part 3- news based hazards
             if include_news:
                 try:
                     news_fetcher = get_news_fetcher()
@@ -3149,7 +3133,7 @@ def add_model_endpoints(app):
                 user_info = {}
             
             # Redirect to dashboard
-            # (Optional: pass email as query param so frontend knows who logged in)
+            # pass email as query param so frontend knows who logged in
             email = user_info.get('email', '')
             return redirect(f"http://localhost:3000/dashboard?email={email}")
             
@@ -3229,9 +3213,8 @@ def add_model_endpoints(app):
 
     return app
 
-# ============================================================================
-# SOCKETIO SETUP
-# ============================================================================
+
+# socket io setup
 
 def setup_socketio_handlers(socketio_instance, app):
     """Setup SocketIO event handlers with combined features"""
@@ -3462,9 +3445,7 @@ def setup_socketio_handlers(socketio_instance, app):
             logger.error(f"Error handling route request: {e}")
             emit('error', {'message': str(e)})
 
-# ============================================================================
-# MAIN ENTRY POINT
-# ============================================================================
+
 
 def open_browser():
     """Open web browser to the application"""

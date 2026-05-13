@@ -1,7 +1,3 @@
-"""
-Real API client for fetching actual data from all available sources.
-"""
-
 import os
 import requests
 import json
@@ -11,7 +7,7 @@ from typing import Dict, List, Optional, Any
 import time
 import urllib.parse
 
-# Optional: for coordinate conversion
+# for coordinate conversion
 try:
     import pyproj
     PYPROJ_AVAILABLE = True

@@ -1,7 +1,3 @@
-"""
-Transit Router — GTFS Dijkstra with transfer-minimization
-Priority: 1) fewest transfers  2) least walking  3) shortest time
-"""
 from typing import List, Dict, Tuple, Optional, Set
 from datetime import datetime, timedelta
 import heapq
@@ -65,9 +61,7 @@ class TransitRouter:
         self._build_route_stops_index()
         self._build_shape_index()
 
-    # ================================================================
-    # INIT
-    # ================================================================
+    # init
     def _build_route_stops_index(self):
         for tid, sl in self._trip_stop_cache.items():
             t = self.gtfs.trips.get(tid)
@@ -145,9 +139,7 @@ class TransitRouter:
             self._trip_stop_cache[tid] = [(s.stop_id, s.stop_sequence) for s in st]
         logger.info(f"Cached {len(self._trip_stop_cache)} trips")
 
-    # ================================================================
-    # GEOMETRY
-    # ================================================================
+    # geometry
     def _haversine(self, lat1, lon1, lat2, lon2):
         R = 6371000; p1, p2 = math.radians(lat1), math.radians(lat2)
         dp, dl = math.radians(lat2-lat1), math.radians(lon2-lon1)
@@ -163,9 +155,7 @@ class TransitRouter:
                 return self._trip_stop_cache[tid][i+1][0]
         return None
 
-    # ================================================================
-    # SHAPE PATH
-    # ================================================================
+    # shape path
     @lru_cache(maxsize=10000)
     def _shape_path_cached(self, tid, fsid, tsid):
         sid = self.trip_to_shape.get(tid)
@@ -194,9 +184,7 @@ class TransitRouter:
     def _shape_path(self, tid, fsid, tsid):
         return list(self._shape_path_cached(tid, fsid, tsid))
 
-    # ================================================================
-    # WALKING
-    # ================================================================
+    # walking
     def _decode_polyline(self, enc):
         pts=[]; idx=lat=lng=0
         while idx<len(enc):
@@ -240,9 +228,7 @@ class TransitRouter:
     def _walk(self, flat, flon, tlat, tlon):
         return list(self._walk_cached(flat, flon, tlat, tlon))
 
-    # ================================================================
-    # STOP FINDING
-    # ================================================================
+    # stop finding
     def _find_stops(self, lat, lon, pref=800, mx=15000, mn=1):
         for r in [pref, 1500, 3000, 5000, 8000, 10000, mx]:
             s = self.gtfs.find_nearby_stops(lat, lon, r)
@@ -252,9 +238,7 @@ class TransitRouter:
         logger.warning(f"No stops within {mx}m")
         return []
 
-    # ================================================================
-    # TIME ADJUSTMENT
-    # ================================================================
+    # time adjustment
     def _find_usable_time(self, start_stops, end_stops, orig, window):
         for stop, _ in start_stops[:5]:
             if self.gtfs.get_next_departure(stop.stop_id, orig, window):
@@ -283,9 +267,7 @@ class TransitRouter:
         try: return orig.replace(hour=8, minute=0, second=0, microsecond=0)
         except: return orig
 
-    # ================================================================
-    # MAIN ROUTING
-    # ================================================================
+    # main routing
     def find_route(self, start_lat, start_lon, end_lat, end_lon, start_time,
                    max_walk_distance=800, max_transfers=2,
                    time_window_minutes=120, num_alternatives=3):
@@ -356,9 +338,7 @@ class TransitRouter:
             routes.append(rd)
         return routes if routes else None
 
-    # ================================================================
-    # DIJKSTRA CORE
-    # ================================================================
+    # dijkstra core
     def _dijkstra(self, start_stops, end_stops, eff_time, eff_window, max_xfers):
         """Run Dijkstra with a hard transfer cap.
         
@@ -473,9 +453,7 @@ class TransitRouter:
 
         return goals
 
-    # ================================================================
-    # HELPERS
-    # ================================================================
+    
     @staticmethod
     def _count_xfers(state):
         trips = set()
@@ -521,9 +499,8 @@ class TransitRouter:
             if p != c[-1]: c.append(p)
         return ' -> '.join(c)
 
-    # ================================================================
-    # BUILD STEPS
-    # ================================================================
+   
+    # build steps
     def _build_steps(self, final_state, end_stop, slat, slon, elat, elon):
         states = []
         s = final_state

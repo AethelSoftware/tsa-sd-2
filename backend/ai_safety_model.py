@@ -1,7 +1,3 @@
-"""
-SafetyAIModel v3 — Trains on REAL data from WPRDC, TomTom incidents, GDELT, and news hazards.
-FIXED: No data leakage, correct proximity-based features, noise added.
-"""
 import os
 import math
 import logging
@@ -18,9 +14,7 @@ from sklearn.model_selection import train_test_split, cross_val_score
 
 logger = logging.getLogger(__name__)
 
-# ----------------------------------------------------------------------
 # Constants
-# ----------------------------------------------------------------------
 MODEL_DIR = "models"
 MODEL_FILENAME = "safety_model_real.joblib"
 MODEL_PATH = os.path.join(MODEL_DIR, MODEL_FILENAME)
@@ -35,9 +29,8 @@ PITT_CENTER_LNG = -79.9959
 # API Keys (from environment)
 TOMTOM_API_KEY = os.getenv('TOMTOM_API_KEY', 'pGgvcZ6eZtE6gWrrV7bDZO3ei4XaKOnM')
 
-# ----------------------------------------------------------------------
-# Helper: Haversine distance
-# ----------------------------------------------------------------------
+
+# Haversine distance
 def haversine(lat1, lng1, lat2, lng2) -> float:
     R = 6371000
     phi1, phi2 = math.radians(lat1), math.radians(lat2)
@@ -46,9 +39,8 @@ def haversine(lat1, lng1, lat2, lng2) -> float:
     a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlam/2)**2
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
 
-# ----------------------------------------------------------------------
+
 # Fallback heuristic (used when model not available)
-# ----------------------------------------------------------------------
 def heuristic_safety(lat: float, lng: float) -> float:
     hour = datetime.now().hour
     base = 0.75 if 6 <= hour <= 18 else 0.45
@@ -56,9 +48,8 @@ def heuristic_safety(lat: float, lng: float) -> float:
     penalty = min(0.3, dist * 8.0)
     return max(0.2, min(0.95, base - penalty))
 
-# ----------------------------------------------------------------------
+
 # TomTom Real-time Incidents (with correct categories)
-# ----------------------------------------------------------------------
 def fetch_tomtom_hazards(bbox: Tuple[float, float, float, float] = None) -> List[Dict]:
     """
     Fetch real-time TomTom incidents (construction, accidents, hazards).
@@ -148,9 +139,8 @@ def fetch_tomtom_hazards(bbox: Tuple[float, float, float, float] = None) -> List
         logger.error(f"TomTom incidents fetch error: {e}")
         return []
 
-# ----------------------------------------------------------------------
+
 # News Hazards (using news_hazard_fetcher)
-# ----------------------------------------------------------------------
 def fetch_news_hazards() -> List[Dict]:
     """Fetch news-based hazards using the existing fetcher."""
     try:
@@ -170,9 +160,8 @@ def fetch_news_hazards() -> List[Dict]:
         logger.warning(f"News hazard fetch failed: {e}")
         return []
 
-# ----------------------------------------------------------------------
+
 # WPRDC Crime Data (as before)
-# ----------------------------------------------------------------------
 def fetch_wprdc_crime_incidents(days_back: int = 90, limit: int = 2000) -> List[Dict]:
     """Fetch real crime incidents from WPRDC CKAN SQL API."""
     cutoff = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
@@ -220,9 +209,8 @@ def fetch_wprdc_crime_incidents(days_back: int = 90, limit: int = 2000) -> List[
         logger.error(f"WPRDC fetch failed: {e}")
     return []
 
-# ----------------------------------------------------------------------
+
 # Safe POI generation (unchanged)
-# ----------------------------------------------------------------------
 def fetch_safe_pois(limit: int = 200) -> List[Tuple[float, float]]:
     safe_areas = [
         (40.452, -79.920), (40.438, -79.923), (40.445, -79.995),
@@ -237,9 +225,8 @@ def fetch_safe_pois(limit: int = 200) -> List[Tuple[float, float]]:
         points.append((lat, lng))
     return points
 
-# ----------------------------------------------------------------------
+
 # Main Model Class
-# ----------------------------------------------------------------------
 class SafetyAIModel:
     def __init__(self):
         self.model: Optional[GradientBoostingClassifier] = None
@@ -602,9 +589,8 @@ class SafetyAIModel:
         risk = 'low' if overall >= 0.75 else 'medium' if overall >= 0.5 else 'high'
         return {'overall_safety': round(overall, 3), 'risk_level': risk, 'segments': segment_scores}
 
-# ----------------------------------------------------------------------
+
 # Singleton factory
-# ----------------------------------------------------------------------
 _safety_model = None
 
 def get_safety_ai() -> SafetyAIModel:

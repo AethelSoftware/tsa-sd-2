@@ -1,40 +1,6 @@
-"""
-city_config.py — Canonical city registry for Tryver multi-city expansion.
-
-Each city dict contains everything needed to:
-  1. Fetch crime data from the city's open-data portal
-  2. Initialise a PulsePoint agency search
-  3. Query GDELT for news-based hazards
-  4. Validate coordinates against the city bounding box
-
-ADDING A NEW CITY: add one entry to CITIES and restart the server. No other changes needed.
-
-Crime source types currently supported by news_hazard_fetcher.py:
-  - "wprdc_ckan"   → Pittsburgh's WPRDC SQL API
-  - "socrata_json" → Standard Socrata Open Data API (Philadelphia, Cincinnati)
-  - "arcgis_rest"  → ESRI ArcGIS REST FeatureServer (Cleveland)
-  - "gdelt_only"   → No primary crime source; news-derived hazards only
-
-CITIES INTENTIONALLY NOT SUPPORTED:
-  - Columbus, OH — Columbus Division of Police does not publish a point-level
-    incident feed via any public API. Confirmed 2026-05-12 after exhaustive
-    search of: data.columbus.gov (DNS dead), opendata.columbus.gov (only
-    boundary polygons + aggregated dashboards), arc.columbus.gov (no crime
-    services), services1.arcgis.com/9yy6msODkIBzkUXU (only crashes, OD data,
-    homicide aggregates), SpotCrime ($199/mo paywall), LexisNexis CCM (no API),
-    and FBI UCR (annual aggregates only). Records are records-request-only.
-    To re-add Columbus when data becomes available, add a new entry following
-    the pattern of the four cities below — no other code changes needed.
-"""
-
 from datetime import datetime, timedelta
 
 CITIES = {
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # PITTSBURGH, PA — WPRDC CKAN SQL API
-    # Resource ID stable since 2024. Baseline city for the platform.
-    # ─────────────────────────────────────────────────────────────────────────
     "pittsburgh": {
         "display_name":   "Pittsburgh, PA",
         "center_lat":     40.4406,
@@ -58,12 +24,6 @@ CITIES = {
         "crime_limit":           500,
         "crime_lookback_days":   42,
     },
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # PHILADELPHIA, PA — Socrata JSON API
-    # FIXED 2026-05-08: lookback_days raised 30→330 because the sspu-uyfa dataset
-    # has not been updated since Aug 2025. Yields ~327 hazards/fetch.
-    # ─────────────────────────────────────────────────────────────────────────
     "philadelphia": {
         "display_name":   "Philadelphia, PA",
         "center_lat":     39.9526,
@@ -90,16 +50,6 @@ CITIES = {
         "crime_date_format":        "%Y-%m-%dT%H:%M:%S",
         "crime_supports_order":     True,
     },
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # CLEVELAND, OH — ArcGIS REST FeatureServer (post-RMS migration)
-    # CONFIRMED 2026-05-10: Crime_Incidents_P1RMS exposes LIVE data from the
-    # new Records Management System (deployed 2025-11-11).
-    # Item ID: e15e8989c83e4cbd841fb171a6c62f68
-    # Schema differs from the older Crime_Incidents service:
-    #   - Offense field renamed UCRdesc → IncidentDesc (NIBRS code description)
-    #   - ReportedDate is more reliable than OffenseDate (no nulls)
-    # ─────────────────────────────────────────────────────────────────────────
     "cleveland": {
         "display_name":   "Cleveland, OH",
         "center_lat":     41.4993,
@@ -125,13 +75,6 @@ CITIES = {
         "crime_where_template":   "ReportedDate >= TIMESTAMP '{cutoff} 00:00:00'",
         "crime_supports_order":   True,
     },
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # CINCINNATI, OH — Socrata JSON API
-    # CONFIRMED via curl 2026-05-04: resource 7aqy-xrv9 is active.
-    # NOTE: $order parameter causes HTTP 400 on this dataset — disabled below.
-    # Uses stars_category (Part 1 / Part 2 UCR groupings); ~238 hazards/fetch.
-    # ─────────────────────────────────────────────────────────────────────────
     "cincinnati": {
         "display_name":   "Cincinnati, OH",
         "center_lat":     39.1031,

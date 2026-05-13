@@ -1,4 +1,3 @@
-// Walking3DView.jsx – Full revised version with all fixes (time-of-day lighting + routeVersion state + mode badge)
 import React, {
   useRef,
   useMemo,
@@ -10,9 +9,8 @@ import React, {
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
-// ---------------------------------------------------------------------------
+
 // Constants
-// ---------------------------------------------------------------------------
 const SCALE = 1 / 2;
 const M_LAT = 111139;
 const ROAD_WIDTH = 4.5;
@@ -20,9 +18,8 @@ const SIDEWALK_WIDTH = 1.8;
 const MAX_BUILDINGS = 40; // desktop
 const MOBILE_MAX_BUILDINGS = 20;
 
-// ---------------------------------------------------------------------------
+
 // Geo conversion (instance‑scoped, not module‑level)
-// ---------------------------------------------------------------------------
 function useGeoConversion() {
   const originRef = useRef(null);
   const mLngRef = useRef(null);
@@ -47,9 +44,7 @@ function useGeoConversion() {
   return { initOrigin, geo2w, resetOrigin };
 }
 
-// ---------------------------------------------------------------------------
 // Time-of-day lighting (Patch 1)
-// ---------------------------------------------------------------------------
 function useTimeOfDay() {
   const hour = new Date().getHours();
   if (hour >= 6 && hour < 10)
@@ -134,9 +129,7 @@ const Lighting = React.memo(() => {
   );
 });
 
-// ---------------------------------------------------------------------------
 // Road segments, sidewalks, dashes built from the actual route polyline (with brighter materials)
-// ---------------------------------------------------------------------------
 const RoadNetwork = React.memo(({ routeW }) => {
   const segments = useMemo(() => {
     if (!routeW.length)
@@ -253,9 +246,7 @@ const RoadNetwork = React.memo(({ routeW }) => {
   );
 });
 
-// ---------------------------------------------------------------------------
 // Buildings scattered along the full route (procedural)
-// ---------------------------------------------------------------------------
 const CityBlocks = React.memo(({ routeW, seed = 42 }) => {
   const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
   const maxCount = isMobile ? MOBILE_MAX_BUILDINGS : MAX_BUILDINGS;
@@ -403,9 +394,7 @@ const CityBlocks = React.memo(({ routeW, seed = 42 }) => {
   );
 });
 
-// ---------------------------------------------------------------------------
 // Real buildings from Overpass API (unchanged)
-// ---------------------------------------------------------------------------
 const RealBuildings = React.memo(({ routeW, geo2w }) => {
   const [buildings, setBuildings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -515,9 +504,7 @@ function computeBboxFromRoute(routeW, geo2wInv) {
   };
 }
 
-// ---------------------------------------------------------------------------
 // RouteTube (unchanged)
-// ---------------------------------------------------------------------------
 const RouteTube = React.memo(({ points, progressIdx }) => {
   const completedCurve = useMemo(() => {
     if (points.length < 2 || progressIdx < 1) return null;
@@ -581,9 +568,7 @@ const RouteTube = React.memo(({ points, progressIdx }) => {
   );
 });
 
-// ---------------------------------------------------------------------------
 // HazardMarker3D (existing)
-// ---------------------------------------------------------------------------
 const HazardMarker3D = React.memo(({ worldX, worldZ, severity = 0.7 }) => {
   const ringRef = useRef();
   const color =
@@ -646,9 +631,7 @@ const HazardMarker3D = React.memo(({ worldX, worldZ, severity = 0.7 }) => {
   );
 });
 
-// ---------------------------------------------------------------------------
 // ConstructionMarker3D (unchanged)
-// ---------------------------------------------------------------------------
 const ConstructionMarker3D = React.memo(({ worldX, worldZ }) => {
   const lightRef = useRef();
   const ringRef = useRef();
@@ -717,9 +700,7 @@ const ConstructionMarker3D = React.memo(({ worldX, worldZ }) => {
   );
 });
 
-// ---------------------------------------------------------------------------
 // EmergencyMarker3D (unchanged)
-// ---------------------------------------------------------------------------
 const EmergencyMarker3D = React.memo(
   ({ worldX, worldZ, type = "accident" }) => {
     const ringRef = useRef();
@@ -803,9 +784,7 @@ const EmergencyMarker3D = React.memo(
   },
 );
 
-// ---------------------------------------------------------------------------
 // WalkerModel (unchanged)
-// ---------------------------------------------------------------------------
 const WalkerModel = React.memo(({ posRef, directionAngle = 0 }) => {
   const groupRef = useRef();
   const leftArmRef = useRef();
@@ -889,9 +868,7 @@ const WalkerModel = React.memo(({ posRef, directionAngle = 0 }) => {
   );
 });
 
-// ---------------------------------------------------------------------------
 // DestinationMarker (unchanged)
-// ---------------------------------------------------------------------------
 const DestinationMarker = React.memo(({ worldX, worldZ }) => {
   const ref = useRef();
   const ringMat = useMemo(
@@ -937,9 +914,7 @@ const DestinationMarker = React.memo(({ worldX, worldZ }) => {
   );
 });
 
-// ---------------------------------------------------------------------------
 // FollowCamera (unchanged)
-// ---------------------------------------------------------------------------
 const FollowCamera = React.memo(({ posRef }) => {
   const { camera } = useThree();
   const targetPos = useRef({ x: 0, z: 0 });
@@ -965,9 +940,7 @@ const FollowCamera = React.memo(({ posRef }) => {
   return null;
 });
 
-// ---------------------------------------------------------------------------
 // HUDOverlay (fixed mode badge)
-// ---------------------------------------------------------------------------
 const HUDOverlay = React.memo(
   ({
     steps,
@@ -1215,9 +1188,7 @@ const HUDOverlay = React.memo(
   },
 );
 
-// ---------------------------------------------------------------------------
 // Error boundary (unchanged)
-// ---------------------------------------------------------------------------
 class ErrBoundary extends React.Component {
   state = { err: false };
   static getDerivedStateFromError() {
@@ -1268,9 +1239,7 @@ class ErrBoundary extends React.Component {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Main Component (with routeVersion state)
-// ---------------------------------------------------------------------------
 export default function Walking3DView({
   route = [],
   routeSteps = [],

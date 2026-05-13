@@ -1,4 +1,3 @@
-# FILE: backend/tomtom_router.py
 import os
 import requests
 import logging
@@ -19,7 +18,7 @@ else:
 
 logger = logging.getLogger(__name__)
 
-# ── Helper formatting functions ────────────────────────────────────────────────
+# Helper formatting functions
 def fmt_dist(meters: float) -> str:
     """Format meters to readable string"""
     if not meters or meters <= 0:
@@ -51,7 +50,7 @@ class TomTomRouter:
         self.search_url = "https://api.tomtom.com/search/2"
         
         self.route_cache = {}
-        self.geocode_cache = {}          # <-- ADDED: external cache attribute
+        self.geocode_cache = {}          
         self.cache_lock = Lock()
         self.cache_max_size = 100
         self.cache_ttl = 300
@@ -108,7 +107,7 @@ class TomTomRouter:
                 del self.route_cache[oldest_key]
             self.route_cache[key] = (value, datetime.now())
     
-    # ========== GET STREET NAME FROM COORDINATES ==========
+    # get street name from coordinates
     def _get_street_name(self, lat: float, lng: float) -> str:
         """Reverse geocode to get street name at a point"""
         try:
@@ -125,8 +124,7 @@ class TomTomRouter:
             return ""
         except Exception:
             return ""
-    
-    # ========== TURN-BY-TURN INSTRUCTION GENERATOR WITH STREET NAMES ==========
+    # turn by turn instruction generator with street names
     def _generate_turn_by_turn_from_geometry(self, route_points: List[Tuple[float, float]]) -> List[Dict]:
         """
         Generate detailed turn-by-turn instructions with street names.
@@ -305,7 +303,7 @@ class TomTomRouter:
         
         return instructions
     
-    # ========== OSRM PEDESTRIAN ROUTING ==========
+    # osrm pedestrian routing
     def _route_pedestrian_osrm(self, start_lat: float, start_lng: float,
                                 dest_lat: float, dest_lng: float) -> Optional[Dict]:
         for attempt in range(2):
@@ -419,7 +417,7 @@ class TomTomRouter:
             })
         return segments
     
-    # ========== PROCESS TOMTOM ROUTE ==========
+    # process tomtom route
     def _process_tomtom_route(self, route: Dict, start_lat: float, start_lng: float,
                                dest_lat: float, dest_lng: float) -> Dict:
         
@@ -486,7 +484,7 @@ class TomTomRouter:
             'end_point': {'lat': dest_lat, 'lng': dest_lng}
         }
     
-    # ========== MAIN ROUTING METHOD WITH HAZARD AVOIDANCE ==========
+    # main routing method with hazard avoidance
     def calculate_route(self, start_lat: float, start_lng: float, 
                         dest_lat: float, dest_lng: float,
                         travel_mode: str = "pedestrian",
@@ -636,7 +634,7 @@ class TomTomRouter:
         return self.calculate_route(start_lat, start_lng, dest_lat, dest_lng,
                                     travel_mode, accessibility_needs=accessibility_needs)
     
-    # ========== HELPER METHODS ==========
+    
     def _calculate_hazard_score(self, route_points: List[Tuple], hazard_zones: List[Dict], 
                                 dest_in_hazard=False, dest_coords=None) -> float:
         if not hazard_zones:

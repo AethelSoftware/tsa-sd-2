@@ -1,7 +1,3 @@
-"""
-Geoapify client using direct requests.
-"""
-#geoapify_cleint.py
 import os
 import requests
 import logging
